@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 import { HeroSection } from "@/components/HeroSection";
@@ -7,285 +8,75 @@ import { FeatureCard } from "@/components/FeatureCard";
 import { SummaryCard } from "@/components/SummaryCard";
 import { LoadingState } from "@/components/LoadingState";
 import { ErrorState } from "@/components/ErrorState";
-import { FileText, Brain, CheckCircle, Smartphone, Laptop, Tablet, Watch, Car, Zap, Battery, Server, Cloud, Gamepad2 } from "lucide-react";
+import { FileText, Brain, CheckCircle, Smartphone, Laptop, Tablet, Watch, Car, Zap, Battery, Server, Cloud, Gamepad2, Package, Code, Globe, Music, Video, Tv, Search, Cpu } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft } from "lucide-react";
+import { CompanySummary } from "@shared/schema";
 
 type ViewState = "input" | "loading" | "success" | "error";
 
-// TODO: remove mock functionality - this is for design prototype only
-const mockResults = {
-  AAPL: {
-    companyName: "Apple Inc.",
-    ticker: "AAPL",
-    filingDate: "November 3, 2023",
-    fiscalYear: "2023",
-    tagline: "Consumer electronics and digital services leader",
-    products: [
-      { name: "iPhone", icon: Smartphone, description: "Flagship smartphone line" },
-      { name: "Mac", icon: Laptop, description: "Computers & laptops" },
-      { name: "iPad", icon: Tablet, description: "Tablet devices" },
-      { name: "Wearables", icon: Watch, description: "Watch & AirPods" }
-    ],
-    operations: {
-      regions: ["Americas", "Europe", "Greater China", "Japan", "Rest of Asia Pacific"],
-      channels: ["Retail Stores", "Online Store", "Direct Sales", "Third-Party Resellers"],
-      scale: "Global presence in 150+ countries with 500+ retail stores"
-    },
-    competitors: [
-      { name: "Samsung", focus: "Smartphones & consumer electronics" },
-      { name: "Google", focus: "Software, services & Pixel devices" },
-      { name: "Microsoft", focus: "Software, cloud services & Surface" },
-      { name: "Amazon", focus: "E-commerce & cloud services" }
-    ],
-    leaders: [
-      { name: "Tim Cook", role: "Chief Executive Officer", initials: "TC", twitter: "tim_cook" },
-      { name: "Luca Maestri", role: "Chief Financial Officer", initials: "LM" },
-      { name: "Jeff Williams", role: "Chief Operating Officer", initials: "JW" },
-      { name: "Katherine Adams", role: "General Counsel", initials: "KA" }
-    ],
-    metrics: [
-      { label: "Annual Revenue", value: "$383B", trend: "up" as const },
-      { label: "Net Income", value: "$97B", trend: "up" as const },
-      { label: "Employees", value: "161K" },
-      { label: "R&D Spending", value: "$30B", trend: "up" as const }
-    ],
-    metadata: {
-      homepage: "https://www.apple.com",
-      investorRelations: "https://investor.apple.com",
-      news: [
-        {
-          title: "Apple Reports Record Q4 2023 Results",
-          source: "Apple Newsroom",
-          date: "Nov 2, 2023",
-          url: "https://www.apple.com/newsroom/"
-        },
-        {
-          title: "Apple Vision Pro Launch Date Announced",
-          source: "TechCrunch",
-          date: "Oct 28, 2023",
-          url: "https://techcrunch.com"
-        },
-        {
-          title: "iPhone 15 Demand Exceeds Expectations",
-          source: "Bloomberg",
-          date: "Oct 15, 2023",
-          url: "https://www.bloomberg.com"
-        }
-      ],
-      videos: [
-        {
-          title: "Understanding Apple's Business Model",
-          channel: "The Plain Bagel",
-          url: "https://youtube.com"
-        },
-        {
-          title: "Apple's Services Strategy Explained",
-          channel: "Wall Street Journal",
-          url: "https://youtube.com"
-        },
-        {
-          title: "Why Investors Love Apple Stock",
-          channel: "CNBC Television",
-          url: "https://youtube.com"
-        }
-      ]
-    },
-    cik: "0000320193"
-  },
-  TSLA: {
-    companyName: "Tesla, Inc.",
-    ticker: "TSLA",
-    filingDate: "January 29, 2024",
-    fiscalYear: "2023",
-    tagline: "Electric vehicles and sustainable energy solutions",
-    products: [
-      { name: "Model 3 & Y", icon: Car, description: "Mass market EVs" },
-      { name: "Model S & X", icon: Car, description: "Premium EVs" },
-      { name: "Energy Storage", icon: Battery, description: "Powerwall & Megapack" },
-      { name: "Solar", icon: Zap, description: "Solar panels & roofs" }
-    ],
-    operations: {
-      regions: ["North America", "Europe", "China", "Other Markets"],
-      channels: ["Direct Sales", "Online Orders", "Tesla Stores", "Delivery Centers"],
-      scale: "Gigafactories in Texas, Nevada, California, Shanghai, and Berlin"
-    },
-    competitors: [
-      { name: "Traditional Automakers", focus: "Ford, GM transitioning to EVs" },
-      { name: "EV Startups", focus: "Rivian, Lucid Motors" },
-      { name: "Chinese EVs", focus: "BYD, NIO, XPeng" },
-      { name: "Energy Companies", focus: "Solar & storage providers" }
-    ],
-    leaders: [
-      { name: "Elon Musk", role: "Chief Executive Officer", initials: "EM", twitter: "elonmusk" },
-      { name: "Vaibhav Taneja", role: "Chief Financial Officer", initials: "VT" },
-      { name: "Andrew Baglino", role: "SVP Powertrain & Energy", initials: "AB" },
-      { name: "Franz von Holzhausen", role: "Chief Designer", initials: "FH" }
-    ],
-    metrics: [
-      { label: "Annual Revenue", value: "$96B", trend: "up" as const },
-      { label: "Vehicles Delivered", value: "1.8M", trend: "up" as const },
-      { label: "Employees", value: "140K" },
-      { label: "Production Capacity", value: "2M+/yr", trend: "up" as const }
-    ],
-    metadata: {
-      homepage: "https://www.tesla.com",
-      investorRelations: "https://ir.tesla.com",
-      news: [
-        {
-          title: "Tesla Cybertruck Deliveries Begin",
-          source: "Tesla",
-          date: "Jan 25, 2024",
-          url: "https://www.tesla.com"
-        },
-        {
-          title: "Tesla Opens New Gigafactory in Mexico",
-          source: "Reuters",
-          date: "Jan 18, 2024",
-          url: "https://reuters.com"
-        },
-        {
-          title: "Full Self-Driving Beta Reaches 2M Users",
-          source: "Electrek",
-          date: "Jan 10, 2024",
-          url: "https://electrek.co"
-        }
-      ],
-      videos: [
-        {
-          title: "Tesla's Master Plan Part 3 Explained",
-          channel: "Solving The Money Problem",
-          url: "https://youtube.com"
-        },
-        {
-          title: "How Tesla Builds Electric Cars",
-          channel: "Donut Media",
-          url: "https://youtube.com"
-        },
-        {
-          title: "Tesla Stock Analysis 2024",
-          channel: "Meet Kevin",
-          url: "https://youtube.com"
-        }
-      ]
-    },
-    cik: "0001318605"
-  },
-  MSFT: {
-    companyName: "Microsoft Corporation",
-    ticker: "MSFT",
-    filingDate: "July 27, 2023",
-    fiscalYear: "2023",
-    tagline: "Cloud computing and enterprise software leader",
-    products: [
-      { name: "Azure", icon: Cloud, description: "Cloud platform" },
-      { name: "Microsoft 365", icon: Laptop, description: "Productivity suite" },
-      { name: "Windows", icon: Server, description: "Operating system" },
-      { name: "Xbox", icon: Gamepad2, description: "Gaming platform" }
-    ],
-    operations: {
-      regions: ["United States", "Europe", "Asia Pacific", "Other Americas"],
-      channels: ["Cloud Services", "Enterprise Licensing", "OEM Partners", "Consumer Retail"],
-      scale: "Operates in 190+ countries with major data centers worldwide"
-    },
-    competitors: [
-      { name: "Amazon (AWS)", focus: "Cloud infrastructure leader" },
-      { name: "Google Cloud", focus: "Cloud & AI services" },
-      { name: "Salesforce", focus: "CRM and business apps" },
-      { name: "Oracle", focus: "Database & enterprise software" }
-    ],
-    leaders: [
-      { name: "Satya Nadella", role: "Chief Executive Officer", initials: "SN", twitter: "satyanadella" },
-      { name: "Amy Hood", role: "Chief Financial Officer", initials: "AH" },
-      { name: "Brad Smith", role: "President & Vice Chair", initials: "BS", twitter: "BradSmi" },
-      { name: "Judson Althoff", role: "EVP & Chief Commercial Officer", initials: "JA" }
-    ],
-    metrics: [
-      { label: "Annual Revenue", value: "$212B", trend: "up" as const },
-      { label: "Cloud Revenue", value: "$111B", trend: "up" as const },
-      { label: "Employees", value: "221K" },
-      { label: "R&D Investment", value: "$27B", trend: "up" as const }
-    ],
-    metadata: {
-      homepage: "https://www.microsoft.com",
-      investorRelations: "https://www.microsoft.com/investor",
-      news: [
-        {
-          title: "Microsoft and OpenAI Expand Partnership",
-          source: "Microsoft News",
-          date: "Jul 20, 2023",
-          url: "https://news.microsoft.com"
-        },
-        {
-          title: "Azure AI Services Reach New Milestone",
-          source: "The Verge",
-          date: "Jul 15, 2023",
-          url: "https://theverge.com"
-        },
-        {
-          title: "Microsoft 365 Copilot Goes Enterprise",
-          source: "ZDNet",
-          date: "Jul 8, 2023",
-          url: "https://zdnet.com"
-        }
-      ],
-      videos: [
-        {
-          title: "Microsoft's AI Strategy Explained",
-          channel: "CNBC",
-          url: "https://youtube.com"
-        },
-        {
-          title: "How Microsoft Makes Money",
-          channel: "Company Man",
-          url: "https://youtube.com"
-        },
-        {
-          title: "Azure vs AWS: The Cloud War",
-          channel: "Tech Vision",
-          url: "https://youtube.com"
-        }
-      ]
-    },
-    cik: "0000789019"
-  }
+const iconMap: Record<string, any> = {
+  Smartphone, Laptop, Tablet, Watch, Car, Zap, Battery, Server, 
+  Cloud, Gamepad2, Package, Code, Globe, Music, Video, Tv, Search, 
+  Brain, Cpu
 };
 
 export default function HomePage() {
   const [viewState, setViewState] = useState<ViewState>("input");
   const [currentTicker, setCurrentTicker] = useState("");
+  const [summaryData, setSummaryData] = useState<CompanySummary | null>(null);
   const [errorInfo, setErrorInfo] = useState({ title: "", message: "" });
 
-  // TODO: remove mock functionality
-  const handleTickerSubmit = (ticker: string) => {
+  const { refetch, isFetching } = useQuery({
+    queryKey: ["/api/analyze", currentTicker],
+    enabled: false,
+    retry: false,
+  });
+
+  const handleTickerSubmit = async (ticker: string) => {
     setCurrentTicker(ticker);
     setViewState("loading");
 
-    // Simulate API call
-    setTimeout(() => {
-      if (mockResults[ticker as keyof typeof mockResults]) {
-        setViewState("success");
-      } else {
-        setErrorInfo({
-          title: "Ticker Not Found",
-          message: `We couldn't find a 10-K filing for "${ticker}". Please verify the ticker symbol and try again.`
-        });
-        setViewState("error");
+    try {
+      const response = await fetch(`/api/analyze/${ticker}`);
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.message || data.error || "Analysis failed");
       }
-    }, 2000);
+
+      setSummaryData(data);
+      setViewState("success");
+    } catch (error: any) {
+      setErrorInfo({
+        title: error.message?.includes("not found") ? "Ticker Not Found" : "Analysis Failed",
+        message: error.message || `We couldn't analyze "${ticker}". Please try again.`
+      });
+      setViewState("error");
+    }
   };
 
   const handleBack = () => {
     setViewState("input");
     setCurrentTicker("");
+    setSummaryData(null);
   };
 
   const handleRetry = () => {
-    setViewState("input");
+    if (currentTicker) {
+      handleTickerSubmit(currentTicker);
+    } else {
+      setViewState("input");
+    }
   };
 
-  // TODO: remove mock functionality
-  const currentResult = mockResults[currentTicker as keyof typeof mockResults];
+  const preparedSummary = summaryData ? {
+    ...summaryData,
+    products: summaryData.products.map(p => ({
+      ...p,
+      icon: iconMap[p.icon] || Package
+    }))
+  } : null;
 
   return (
     <div className="flex min-h-screen flex-col">
@@ -298,7 +89,7 @@ export default function HomePage() {
             
             <div className="mx-auto max-w-7xl px-4 pb-16 sm:px-6 lg:px-8">
               <div className="mb-16">
-                <TickerInput onSubmit={handleTickerSubmit} />
+                <TickerInput onSubmit={handleTickerSubmit} isLoading={isFetching} />
               </div>
 
               <div className="grid gap-8 md:grid-cols-3">
@@ -328,7 +119,7 @@ export default function HomePage() {
           </div>
         )}
 
-        {viewState === "success" && currentResult && (
+        {viewState === "success" && preparedSummary && (
           <div className="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8">
             <div className="mb-6">
               <Button 
@@ -340,7 +131,7 @@ export default function HomePage() {
                 New Search
               </Button>
             </div>
-            <SummaryCard {...currentResult} />
+            <SummaryCard {...preparedSummary} />
           </div>
         )}
 
