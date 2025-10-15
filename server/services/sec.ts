@@ -20,8 +20,7 @@ interface SECSubmission {
 
 const SEC_HEADERS = {
   "User-Agent": "Know What You Own info@restnvest.com",
-  "Accept-Encoding": "gzip, deflate",
-  "Host": "www.sec.gov"
+  "Accept-Encoding": "gzip, deflate"
 };
 
 export class SECService {
