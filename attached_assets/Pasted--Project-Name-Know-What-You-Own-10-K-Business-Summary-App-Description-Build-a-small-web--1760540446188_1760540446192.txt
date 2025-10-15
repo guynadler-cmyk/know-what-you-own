@@ -1,0 +1,120 @@
+🧠 Project Name:
+"Know What You Own" — 10-K Business Summary App
+
+📌 Description:
+Build a small web app where users input a stock ticker symbol (e.g. AAPL, TSLA), and the app fetches the company’s most recent 10-K filing from the SEC EDGAR system, extracts the business description section, and returns a plain-English summary.
+
+This app is a proof-of-concept for Restnvest, a platform that promotes sensible investing by helping people understand the businesses they own — not just tickers or ETFs.
+
+💡 Key Features:
+
+User inputs a stock ticker
+
+App maps ticker to CIK (Central Index Key)
+
+App finds the latest 10-K filing for that CIK via SEC API
+
+App extracts the "Item 1. Business" section from the 10-K
+
+App sends that section to OpenAI to generate a summary
+
+App returns a clean, plain-English summary for display
+
+📦 Stack
+
+Frontend: Simple HTML form (or Flask Jinja template)
+
+Backend: Python (Flask)
+
+External APIs:
+
+SEC.gov’s EDGAR Submissions API
+
+OpenAI GPT-4 (for summarization)
+
+🌐 API Details:
+✅ 1. Get CIK from Ticker
+
+Use this static JSON file:
+
+https://www.sec.gov/files/company_tickers.json
+
+
+It maps each ticker to its 10-digit CIK (zero-padded).
+
+✅ 2. Get Recent Filings for CIK:
+
+Once you have the 10-digit CIK, call:
+
+https://data.sec.gov/submissions/CIK##########.json
+
+
+Example (Apple):
+
+https://data.sec.gov/submissions/CIK0000320193.json
+
+
+Look under:
+filings.recent → find the most recent filing with form type 10-K
+Then get the accession number (e.g. 0000320193-23-000066)
+
+✅ 3. Construct Filing URL:
+
+To fetch the raw text of the 10-K filing:
+
+Convert the accession number to this path format:
+
+0000320193/000032019323000066
+
+
+Build this URL:
+
+https://www.sec.gov/Archives/edgar/data/320193/000032019323000066/filing.txt
+
+
+That contains the full plain-text 10-K.
+
+✅ 4. Extract Business Section:
+
+From the .txt filing, extract the section:
+
+From: ITEM 1. Business
+
+To: ITEM 1A. (Risks)
+
+Regex pattern suggestion:
+
+re.search(r'ITEM\s+1[\.\:]?\s+Business(.*?)ITEM\s+1A', text, re.DOTALL | re.IGNORECASE)
+
+✅ 5. Summarize via OpenAI:
+
+Send that extracted section to the OpenAI API with this prompt:
+
+"Summarize the business description below in plain English, for a beginner investor. Keep it concise and under 150 words."
+
+✅ Output:
+
+Display the summary back to the user as simple text:
+
+“Apple designs and sells iPhones, Macs, and services like iCloud. It generated $X revenue in 2023. Main risks include global supply chains and declining iPhone growth.”
+
+🧪 Optional Enhancements
+
+Add a “risk summary” from Item 1A
+
+Add a toggle between beginner/analyst summary
+
+Show key stats: revenue, net income, etc.
+
+Bookmark feature for “companies I understand”
+
+🧵 Suggested File Structure
+/main.py              → Flask app
+/templates/index.html → Input form
+/templates/result.html → Summary output
+/utils/sec.py         → SEC API helpers (CIK lookup, filing fetch)
+/utils/summarize.py   → OpenAI summarizer
+
+✍️ Start Instruction to Ghostwriter (or Yourself):
+
+“Create a Flask app that accepts a stock ticker, fetches the latest 10-K filing from SEC EDGAR via the data.sec.gov API, extracts the ‘Item 1. Business’ section, summarizes it using OpenAI GPT, and returns the summary on a results page. Use clean structure and error handling.”
