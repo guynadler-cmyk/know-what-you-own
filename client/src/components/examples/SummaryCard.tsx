@@ -1,5 +1,5 @@
 import { SummaryCard } from '../SummaryCard'
-import { Package, TrendingUp, Globe, Users, Zap, Target } from 'lucide-react'
+import { Smartphone, Laptop, Tablet, Watch } from 'lucide-react'
 
 export default function SummaryCardExample() {
   return (
@@ -10,67 +10,50 @@ export default function SummaryCardExample() {
         filingDate="November 3, 2023"
         fiscalYear="2023"
         tagline="Consumer electronics and digital services leader"
-        sections={[
+        products={[
           {
-            icon: <Package className="h-4 w-4" />,
-            title: "Products",
-            items: [
-              "iPhone smartphones",
-              "Mac computers & laptops",
-              "iPad tablets",
-              "Apple Watch & AirPods"
-            ]
+            name: "iPhone",
+            icon: Smartphone,
+            description: "Flagship smartphone line"
           },
           {
-            icon: <Zap className="h-4 w-4" />,
-            title: "Services",
-            items: [
-              "App Store ecosystem",
-              "Apple Music streaming",
-              "iCloud storage",
-              "Apple Pay & AppleCare"
-            ]
+            name: "Mac",
+            icon: Laptop,
+            description: "Computers & laptops"
           },
           {
-            icon: <Globe className="h-4 w-4" />,
-            title: "Market Reach",
-            items: [
-              "Global retail presence",
-              "Online store platform",
-              "Consumer & enterprise",
-              "150+ countries"
-            ]
+            name: "iPad",
+            icon: Tablet,
+            description: "Tablet devices"
           },
           {
-            icon: <TrendingUp className="h-4 w-4" />,
-            title: "Business Model",
-            items: [
-              "Hardware sales revenue",
-              "Subscription services",
-              "Ecosystem integration",
-              "Premium positioning"
-            ]
-          },
-          {
-            icon: <Users className="h-4 w-4" />,
-            title: "Competitive Edge",
-            items: [
-              "Brand loyalty & premium",
-              "Seamless device integration",
-              "Innovation focus",
-              "Privacy & security first"
-            ]
-          },
-          {
-            icon: <Target className="h-4 w-4" />,
-            title: "Strategy",
-            items: [
-              "Expand services revenue",
-              "Sustainable innovation",
-              "AR/VR technologies",
-              "Emerging markets growth"
-            ]
+            name: "Wearables",
+            icon: Watch,
+            description: "Watch & AirPods"
           }
+        ]}
+        operations={{
+          regions: ["Americas", "Europe", "Greater China", "Japan", "Rest of Asia Pacific"],
+          channels: ["Retail Stores", "Online Store", "Direct Sales", "Third-Party Resellers"],
+          scale: "Global presence in 150+ countries with 500+ retail stores"
+        }}
+        competitors={[
+          { name: "Samsung", focus: "Smartphones & consumer electronics" },
+          { name: "Google", focus: "Software, services & Pixel devices" },
+          { name: "Microsoft", focus: "Software, cloud services & Surface" },
+          { name: "Amazon", focus: "E-commerce & cloud services" }
+        ]}
+        leaders={[
+          { name: "Tim Cook", role: "Chief Executive Officer", initials: "TC" },
+          { name: "Luca Maestri", role: "Chief Financial Officer", initials: "LM" },
+          { name: "Jeff Williams", role: "Chief Operating Officer", initials: "JW" },
+          { name: "Katherine Adams", role: "General Counsel", initials: "KA" }
+        ]}
+        metrics={[
+          { label: "Annual Revenue", value: "$383B", trend: "up" },
+          { label: "Net Income", value: "$97B", trend: "up" },
+          { label: "Employees", value: "161K" },
+          { label: "R&D Spending", value: "$30B", trend: "up" }
         ]}
         cik="0000320193"
       />

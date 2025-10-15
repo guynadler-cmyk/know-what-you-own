@@ -7,7 +7,7 @@ import { FeatureCard } from "@/components/FeatureCard";
 import { SummaryCard } from "@/components/SummaryCard";
 import { LoadingState } from "@/components/LoadingState";
 import { ErrorState } from "@/components/ErrorState";
-import { FileText, Brain, CheckCircle, Package, Zap, Globe, TrendingUp, Users, Target, Cpu, Shield } from "lucide-react";
+import { FileText, Brain, CheckCircle, Smartphone, Laptop, Tablet, Watch, Car, Zap, Battery, Server, Cloud, Gamepad2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft } from "lucide-react";
 
@@ -21,67 +21,34 @@ const mockResults = {
     filingDate: "November 3, 2023",
     fiscalYear: "2023",
     tagline: "Consumer electronics and digital services leader",
-    sections: [
-      {
-        icon: <Package className="h-4 w-4" />,
-        title: "Products",
-        items: [
-          "iPhone smartphones",
-          "Mac computers & laptops",
-          "iPad tablets",
-          "Apple Watch & AirPods"
-        ]
-      },
-      {
-        icon: <Zap className="h-4 w-4" />,
-        title: "Services",
-        items: [
-          "App Store ecosystem",
-          "Apple Music streaming",
-          "iCloud storage",
-          "Apple Pay & AppleCare"
-        ]
-      },
-      {
-        icon: <Globe className="h-4 w-4" />,
-        title: "Market Reach",
-        items: [
-          "Global retail presence",
-          "Online store platform",
-          "Consumer & enterprise",
-          "150+ countries"
-        ]
-      },
-      {
-        icon: <TrendingUp className="h-4 w-4" />,
-        title: "Business Model",
-        items: [
-          "Hardware sales revenue",
-          "Subscription services",
-          "Ecosystem integration",
-          "Premium positioning"
-        ]
-      },
-      {
-        icon: <Users className="h-4 w-4" />,
-        title: "Competitive Edge",
-        items: [
-          "Brand loyalty & premium",
-          "Seamless device integration",
-          "Innovation focus",
-          "Privacy & security first"
-        ]
-      },
-      {
-        icon: <Target className="h-4 w-4" />,
-        title: "Strategy",
-        items: [
-          "Expand services revenue",
-          "Sustainable innovation",
-          "AR/VR technologies",
-          "Emerging markets growth"
-        ]
-      }
+    products: [
+      { name: "iPhone", icon: Smartphone, description: "Flagship smartphone line" },
+      { name: "Mac", icon: Laptop, description: "Computers & laptops" },
+      { name: "iPad", icon: Tablet, description: "Tablet devices" },
+      { name: "Wearables", icon: Watch, description: "Watch & AirPods" }
+    ],
+    operations: {
+      regions: ["Americas", "Europe", "Greater China", "Japan", "Rest of Asia Pacific"],
+      channels: ["Retail Stores", "Online Store", "Direct Sales", "Third-Party Resellers"],
+      scale: "Global presence in 150+ countries with 500+ retail stores"
+    },
+    competitors: [
+      { name: "Samsung", focus: "Smartphones & consumer electronics" },
+      { name: "Google", focus: "Software, services & Pixel devices" },
+      { name: "Microsoft", focus: "Software, cloud services & Surface" },
+      { name: "Amazon", focus: "E-commerce & cloud services" }
+    ],
+    leaders: [
+      { name: "Tim Cook", role: "Chief Executive Officer", initials: "TC" },
+      { name: "Luca Maestri", role: "Chief Financial Officer", initials: "LM" },
+      { name: "Jeff Williams", role: "Chief Operating Officer", initials: "JW" },
+      { name: "Katherine Adams", role: "General Counsel", initials: "KA" }
+    ],
+    metrics: [
+      { label: "Annual Revenue", value: "$383B", trend: "up" as const },
+      { label: "Net Income", value: "$97B", trend: "up" as const },
+      { label: "Employees", value: "161K" },
+      { label: "R&D Spending", value: "$30B", trend: "up" as const }
     ],
     cik: "0000320193"
   },
@@ -91,67 +58,34 @@ const mockResults = {
     filingDate: "January 29, 2024",
     fiscalYear: "2023",
     tagline: "Electric vehicles and sustainable energy solutions",
-    sections: [
-      {
-        icon: <Package className="h-4 w-4" />,
-        title: "Vehicles",
-        items: [
-          "Model 3 & Model Y",
-          "Model S & Model X",
-          "Cybertruck",
-          "Semi & Roadster (upcoming)"
-        ]
-      },
-      {
-        icon: <Zap className="h-4 w-4" />,
-        title: "Energy",
-        items: [
-          "Solar panels & Solar Roof",
-          "Powerwall home battery",
-          "Megapack grid storage",
-          "Supercharger network"
-        ]
-      },
-      {
-        icon: <Cpu className="h-4 w-4" />,
-        title: "Technology",
-        items: [
-          "Full Self-Driving (FSD)",
-          "Battery innovation",
-          "Manufacturing automation",
-          "AI & neural networks"
-        ]
-      },
-      {
-        icon: <Globe className="h-4 w-4" />,
-        title: "Manufacturing",
-        items: [
-          "Gigafactory network",
-          "Vertical integration",
-          "US, China, Germany plants",
-          "Rapid scaling capacity"
-        ]
-      },
-      {
-        icon: <Target className="h-4 w-4" />,
-        title: "Mission",
-        items: [
-          "Accelerate sustainable energy",
-          "Mass market EVs",
-          "Renewable energy transition",
-          "Reduce carbon footprint"
-        ]
-      },
-      {
-        icon: <TrendingUp className="h-4 w-4" />,
-        title: "Growth Focus",
-        items: [
-          "Scale production globally",
-          "Autonomous driving revenue",
-          "Energy storage expansion",
-          "Cost reduction innovation"
-        ]
-      }
+    products: [
+      { name: "Model 3 & Y", icon: Car, description: "Mass market EVs" },
+      { name: "Model S & X", icon: Car, description: "Premium EVs" },
+      { name: "Energy Storage", icon: Battery, description: "Powerwall & Megapack" },
+      { name: "Solar", icon: Zap, description: "Solar panels & roofs" }
+    ],
+    operations: {
+      regions: ["North America", "Europe", "China", "Other Markets"],
+      channels: ["Direct Sales", "Online Orders", "Tesla Stores", "Delivery Centers"],
+      scale: "Gigafactories in Texas, Nevada, California, Shanghai, and Berlin"
+    },
+    competitors: [
+      { name: "Traditional Automakers", focus: "Ford, GM transitioning to EVs" },
+      { name: "EV Startups", focus: "Rivian, Lucid Motors" },
+      { name: "Chinese EVs", focus: "BYD, NIO, XPeng" },
+      { name: "Energy Companies", focus: "Solar & storage providers" }
+    ],
+    leaders: [
+      { name: "Elon Musk", role: "Chief Executive Officer", initials: "EM" },
+      { name: "Vaibhav Taneja", role: "Chief Financial Officer", initials: "VT" },
+      { name: "Andrew Baglino", role: "SVP Powertrain & Energy", initials: "AB" },
+      { name: "Franz von Holzhausen", role: "Chief Designer", initials: "FH" }
+    ],
+    metrics: [
+      { label: "Annual Revenue", value: "$96B", trend: "up" as const },
+      { label: "Vehicles Delivered", value: "1.8M", trend: "up" as const },
+      { label: "Employees", value: "140K" },
+      { label: "Production Capacity", value: "2M+/yr", trend: "up" as const }
     ],
     cik: "0001318605"
   },
@@ -161,67 +95,34 @@ const mockResults = {
     filingDate: "July 27, 2023",
     fiscalYear: "2023",
     tagline: "Cloud computing and enterprise software leader",
-    sections: [
-      {
-        icon: <Package className="h-4 w-4" />,
-        title: "Productivity",
-        items: [
-          "Microsoft 365 suite",
-          "Office applications",
-          "LinkedIn platform",
-          "Dynamics 365 CRM"
-        ]
-      },
-      {
-        icon: <Zap className="h-4 w-4" />,
-        title: "Cloud",
-        items: [
-          "Azure infrastructure",
-          "Server products",
-          "Enterprise services",
-          "AI & OpenAI partnership"
-        ]
-      },
-      {
-        icon: <Users className="h-4 w-4" />,
-        title: "Personal Computing",
-        items: [
-          "Windows OS",
-          "Surface devices",
-          "Xbox gaming ecosystem",
-          "Bing search & ads"
-        ]
-      },
-      {
-        icon: <Shield className="h-4 w-4" />,
-        title: "Security",
-        items: [
-          "Cloud security solutions",
-          "Identity management",
-          "Threat protection",
-          "Compliance tools"
-        ]
-      },
-      {
-        icon: <Cpu className="h-4 w-4" />,
-        title: "Innovation",
-        items: [
-          "AI integration across products",
-          "Copilot assistants",
-          "Quantum computing",
-          "Mixed reality (HoloLens)"
-        ]
-      },
-      {
-        icon: <Target className="h-4 w-4" />,
-        title: "Strategy",
-        items: [
-          "Cloud-first transformation",
-          "AI democratization",
-          "Platform ecosystem",
-          "Enterprise partnerships"
-        ]
-      }
+    products: [
+      { name: "Azure", icon: Cloud, description: "Cloud platform" },
+      { name: "Microsoft 365", icon: Laptop, description: "Productivity suite" },
+      { name: "Windows", icon: Server, description: "Operating system" },
+      { name: "Xbox", icon: Gamepad2, description: "Gaming platform" }
+    ],
+    operations: {
+      regions: ["United States", "Europe", "Asia Pacific", "Other Americas"],
+      channels: ["Cloud Services", "Enterprise Licensing", "OEM Partners", "Consumer Retail"],
+      scale: "Operates in 190+ countries with major data centers worldwide"
+    },
+    competitors: [
+      { name: "Amazon (AWS)", focus: "Cloud infrastructure leader" },
+      { name: "Google Cloud", focus: "Cloud & AI services" },
+      { name: "Salesforce", focus: "CRM and business apps" },
+      { name: "Oracle", focus: "Database & enterprise software" }
+    ],
+    leaders: [
+      { name: "Satya Nadella", role: "Chief Executive Officer", initials: "SN" },
+      { name: "Amy Hood", role: "Chief Financial Officer", initials: "AH" },
+      { name: "Brad Smith", role: "President & Vice Chair", initials: "BS" },
+      { name: "Judson Althoff", role: "EVP & Chief Commercial Officer", initials: "JA" }
+    ],
+    metrics: [
+      { label: "Annual Revenue", value: "$212B", trend: "up" as const },
+      { label: "Cloud Revenue", value: "$111B", trend: "up" as const },
+      { label: "Employees", value: "221K" },
+      { label: "R&D Investment", value: "$27B", trend: "up" as const }
     ],
     cik: "0000789019"
   }
