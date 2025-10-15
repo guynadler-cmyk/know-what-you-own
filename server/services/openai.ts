@@ -93,10 +93,10 @@ Provide a JSON response with this EXACT structure:
   "metadata": {
     "homepage": "https://company.com",
     "news": [
-      {"title": "Plausible news headline", "source": "Source name", "date": "MMM DD, YYYY", "url": "#"}
+      {"title": "Plausible news headline", "source": "Source name", "date": "MMM DD, YYYY", "url": "https://news.google.com/search?q=CompanyName+news"}
     ],
     "videos": [
-      {"title": "Plausible video title about the business", "channel": "Channel name", "url": "#"}
+      {"title": "Plausible video title about the business", "channel": "Channel name", "url": "https://www.youtube.com/results?search_query=CompanyName"}
     ]
   }
 }
@@ -106,7 +106,8 @@ Requirements:
 - Include 3-4 competitors
 - Include 3-5 key leaders if mentioned (use initials from first/last name)
 - Include 3-4 key metrics (revenue, employees, etc) if mentioned
-- Generate 3 plausible news items and 3 video resources
+- Generate 3 plausible news items with Google News search URLs: https://news.google.com/search?q=${ticker}+recent+news
+- Generate 3 video resources with YouTube search URLs: https://www.youtube.com/results?search_query=${ticker}+stock+analysis
 - Keep all text concise and scannable
 - Use actual data from the filing when available`;
 
@@ -133,6 +134,21 @@ Requirements:
       icon: mapIconName(p.name),
     })) || [];
 
+    // Fix URLs: Replace placeholder "#" URLs with actual search URLs
+    const news = result.metadata?.news?.map((item: any) => ({
+      ...item,
+      url: item.url === "#" || !item.url || item.url.includes("CompanyName")
+        ? `https://news.google.com/search?q=${encodeURIComponent(ticker)}+recent+news`
+        : item.url
+    })) || [];
+
+    const videos = result.metadata?.videos?.map((item: any) => ({
+      ...item,
+      url: item.url === "#" || !item.url || item.url.includes("CompanyName")
+        ? `https://www.youtube.com/results?search_query=${encodeURIComponent(ticker)}+stock+analysis`
+        : item.url
+    })) || [];
+
     const summary: CompanySummary = {
       companyName,
       ticker,
@@ -155,8 +171,8 @@ Requirements:
       metadata: {
         homepage: result.metadata?.homepage || `https://${ticker.toLowerCase()}.com`,
         investorRelations: result.metadata?.investorRelations,
-        news: result.metadata?.news || [],
-        videos: result.metadata?.videos || [],
+        news,
+        videos,
       },
       cik,
     };
