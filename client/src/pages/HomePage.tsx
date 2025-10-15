@@ -7,7 +7,7 @@ import { FeatureCard } from "@/components/FeatureCard";
 import { SummaryCard } from "@/components/SummaryCard";
 import { LoadingState } from "@/components/LoadingState";
 import { ErrorState } from "@/components/ErrorState";
-import { FileText, Brain, CheckCircle } from "lucide-react";
+import { FileText, Brain, CheckCircle, Package, Zap, Globe, TrendingUp, Users, Target, Cpu, Shield } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft } from "lucide-react";
 
@@ -20,7 +20,69 @@ const mockResults = {
     ticker: "AAPL",
     filingDate: "November 3, 2023",
     fiscalYear: "2023",
-    summary: "Apple Inc. designs, manufactures, and markets smartphones, personal computers, tablets, wearables, and accessories worldwide. The Company's product lineup includes iPhone, Mac, iPad, and wearables like Apple Watch and AirPods. Apple also provides digital content and services through the App Store, Apple Music, iCloud, Apple Pay, and AppleCare. The company operates retail and online stores globally, serving consumers, businesses, and government customers. With a focus on innovation and seamless integration across devices, Apple has established itself as a leader in consumer technology and services.",
+    tagline: "Consumer electronics and digital services leader",
+    sections: [
+      {
+        icon: <Package className="h-4 w-4" />,
+        title: "Products",
+        items: [
+          "iPhone smartphones",
+          "Mac computers & laptops",
+          "iPad tablets",
+          "Apple Watch & AirPods"
+        ]
+      },
+      {
+        icon: <Zap className="h-4 w-4" />,
+        title: "Services",
+        items: [
+          "App Store ecosystem",
+          "Apple Music streaming",
+          "iCloud storage",
+          "Apple Pay & AppleCare"
+        ]
+      },
+      {
+        icon: <Globe className="h-4 w-4" />,
+        title: "Market Reach",
+        items: [
+          "Global retail presence",
+          "Online store platform",
+          "Consumer & enterprise",
+          "150+ countries"
+        ]
+      },
+      {
+        icon: <TrendingUp className="h-4 w-4" />,
+        title: "Business Model",
+        items: [
+          "Hardware sales revenue",
+          "Subscription services",
+          "Ecosystem integration",
+          "Premium positioning"
+        ]
+      },
+      {
+        icon: <Users className="h-4 w-4" />,
+        title: "Competitive Edge",
+        items: [
+          "Brand loyalty & premium",
+          "Seamless device integration",
+          "Innovation focus",
+          "Privacy & security first"
+        ]
+      },
+      {
+        icon: <Target className="h-4 w-4" />,
+        title: "Strategy",
+        items: [
+          "Expand services revenue",
+          "Sustainable innovation",
+          "AR/VR technologies",
+          "Emerging markets growth"
+        ]
+      }
+    ],
     cik: "0000320193"
   },
   TSLA: {
@@ -28,7 +90,69 @@ const mockResults = {
     ticker: "TSLA",
     filingDate: "January 29, 2024",
     fiscalYear: "2023",
-    summary: "Tesla designs, develops, manufactures, and sells fully electric vehicles, energy generation and storage systems. The company's automotive segment includes Model 3, Model Y, Model S, Model X, and Cybertruck. Tesla also develops autonomous driving technology and operates a network of Supercharger stations. The Energy Generation and Storage segment offers solar panels, Solar Roof, and energy storage products like Powerwall and Megapack. Tesla aims to accelerate the world's transition to sustainable energy through innovative electric vehicles and renewable energy solutions.",
+    tagline: "Electric vehicles and sustainable energy solutions",
+    sections: [
+      {
+        icon: <Package className="h-4 w-4" />,
+        title: "Vehicles",
+        items: [
+          "Model 3 & Model Y",
+          "Model S & Model X",
+          "Cybertruck",
+          "Semi & Roadster (upcoming)"
+        ]
+      },
+      {
+        icon: <Zap className="h-4 w-4" />,
+        title: "Energy",
+        items: [
+          "Solar panels & Solar Roof",
+          "Powerwall home battery",
+          "Megapack grid storage",
+          "Supercharger network"
+        ]
+      },
+      {
+        icon: <Cpu className="h-4 w-4" />,
+        title: "Technology",
+        items: [
+          "Full Self-Driving (FSD)",
+          "Battery innovation",
+          "Manufacturing automation",
+          "AI & neural networks"
+        ]
+      },
+      {
+        icon: <Globe className="h-4 w-4" />,
+        title: "Manufacturing",
+        items: [
+          "Gigafactory network",
+          "Vertical integration",
+          "US, China, Germany plants",
+          "Rapid scaling capacity"
+        ]
+      },
+      {
+        icon: <Target className="h-4 w-4" />,
+        title: "Mission",
+        items: [
+          "Accelerate sustainable energy",
+          "Mass market EVs",
+          "Renewable energy transition",
+          "Reduce carbon footprint"
+        ]
+      },
+      {
+        icon: <TrendingUp className="h-4 w-4" />,
+        title: "Growth Focus",
+        items: [
+          "Scale production globally",
+          "Autonomous driving revenue",
+          "Energy storage expansion",
+          "Cost reduction innovation"
+        ]
+      }
+    ],
     cik: "0001318605"
   },
   MSFT: {
@@ -36,7 +160,69 @@ const mockResults = {
     ticker: "MSFT",
     filingDate: "July 27, 2023",
     fiscalYear: "2023",
-    summary: "Microsoft develops, licenses, and supports software products, services, and devices. The company operates through three segments: Productivity and Business Processes (Office, LinkedIn, Dynamics), Intelligent Cloud (Azure, server products, enterprise services), and More Personal Computing (Windows, devices, gaming including Xbox, search advertising). Microsoft is a leader in cloud computing with Azure, offers enterprise software solutions, and has made significant investments in artificial intelligence and cloud-based services to help businesses and individuals achieve more.",
+    tagline: "Cloud computing and enterprise software leader",
+    sections: [
+      {
+        icon: <Package className="h-4 w-4" />,
+        title: "Productivity",
+        items: [
+          "Microsoft 365 suite",
+          "Office applications",
+          "LinkedIn platform",
+          "Dynamics 365 CRM"
+        ]
+      },
+      {
+        icon: <Zap className="h-4 w-4" />,
+        title: "Cloud",
+        items: [
+          "Azure infrastructure",
+          "Server products",
+          "Enterprise services",
+          "AI & OpenAI partnership"
+        ]
+      },
+      {
+        icon: <Users className="h-4 w-4" />,
+        title: "Personal Computing",
+        items: [
+          "Windows OS",
+          "Surface devices",
+          "Xbox gaming ecosystem",
+          "Bing search & ads"
+        ]
+      },
+      {
+        icon: <Shield className="h-4 w-4" />,
+        title: "Security",
+        items: [
+          "Cloud security solutions",
+          "Identity management",
+          "Threat protection",
+          "Compliance tools"
+        ]
+      },
+      {
+        icon: <Cpu className="h-4 w-4" />,
+        title: "Innovation",
+        items: [
+          "AI integration across products",
+          "Copilot assistants",
+          "Quantum computing",
+          "Mixed reality (HoloLens)"
+        ]
+      },
+      {
+        icon: <Target className="h-4 w-4" />,
+        title: "Strategy",
+        items: [
+          "Cloud-first transformation",
+          "AI democratization",
+          "Platform ecosystem",
+          "Enterprise partnerships"
+        ]
+      }
+    ],
     cik: "0000789019"
   }
 };
