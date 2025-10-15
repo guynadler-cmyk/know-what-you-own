@@ -39,7 +39,7 @@ const mockResults = {
       { name: "Amazon", focus: "E-commerce & cloud services" }
     ],
     leaders: [
-      { name: "Tim Cook", role: "Chief Executive Officer", initials: "TC" },
+      { name: "Tim Cook", role: "Chief Executive Officer", initials: "TC", twitter: "tim_cook" },
       { name: "Luca Maestri", role: "Chief Financial Officer", initials: "LM" },
       { name: "Jeff Williams", role: "Chief Operating Officer", initials: "JW" },
       { name: "Katherine Adams", role: "General Counsel", initials: "KA" }
@@ -50,6 +50,47 @@ const mockResults = {
       { label: "Employees", value: "161K" },
       { label: "R&D Spending", value: "$30B", trend: "up" as const }
     ],
+    metadata: {
+      homepage: "https://www.apple.com",
+      investorRelations: "https://investor.apple.com",
+      news: [
+        {
+          title: "Apple Reports Record Q4 2023 Results",
+          source: "Apple Newsroom",
+          date: "Nov 2, 2023",
+          url: "https://www.apple.com/newsroom/"
+        },
+        {
+          title: "Apple Vision Pro Launch Date Announced",
+          source: "TechCrunch",
+          date: "Oct 28, 2023",
+          url: "https://techcrunch.com"
+        },
+        {
+          title: "iPhone 15 Demand Exceeds Expectations",
+          source: "Bloomberg",
+          date: "Oct 15, 2023",
+          url: "https://www.bloomberg.com"
+        }
+      ],
+      videos: [
+        {
+          title: "Understanding Apple's Business Model",
+          channel: "The Plain Bagel",
+          url: "https://youtube.com"
+        },
+        {
+          title: "Apple's Services Strategy Explained",
+          channel: "Wall Street Journal",
+          url: "https://youtube.com"
+        },
+        {
+          title: "Why Investors Love Apple Stock",
+          channel: "CNBC Television",
+          url: "https://youtube.com"
+        }
+      ]
+    },
     cik: "0000320193"
   },
   TSLA: {
@@ -76,7 +117,7 @@ const mockResults = {
       { name: "Energy Companies", focus: "Solar & storage providers" }
     ],
     leaders: [
-      { name: "Elon Musk", role: "Chief Executive Officer", initials: "EM" },
+      { name: "Elon Musk", role: "Chief Executive Officer", initials: "EM", twitter: "elonmusk" },
       { name: "Vaibhav Taneja", role: "Chief Financial Officer", initials: "VT" },
       { name: "Andrew Baglino", role: "SVP Powertrain & Energy", initials: "AB" },
       { name: "Franz von Holzhausen", role: "Chief Designer", initials: "FH" }
@@ -87,6 +128,47 @@ const mockResults = {
       { label: "Employees", value: "140K" },
       { label: "Production Capacity", value: "2M+/yr", trend: "up" as const }
     ],
+    metadata: {
+      homepage: "https://www.tesla.com",
+      investorRelations: "https://ir.tesla.com",
+      news: [
+        {
+          title: "Tesla Cybertruck Deliveries Begin",
+          source: "Tesla",
+          date: "Jan 25, 2024",
+          url: "https://www.tesla.com"
+        },
+        {
+          title: "Tesla Opens New Gigafactory in Mexico",
+          source: "Reuters",
+          date: "Jan 18, 2024",
+          url: "https://reuters.com"
+        },
+        {
+          title: "Full Self-Driving Beta Reaches 2M Users",
+          source: "Electrek",
+          date: "Jan 10, 2024",
+          url: "https://electrek.co"
+        }
+      ],
+      videos: [
+        {
+          title: "Tesla's Master Plan Part 3 Explained",
+          channel: "Solving The Money Problem",
+          url: "https://youtube.com"
+        },
+        {
+          title: "How Tesla Builds Electric Cars",
+          channel: "Donut Media",
+          url: "https://youtube.com"
+        },
+        {
+          title: "Tesla Stock Analysis 2024",
+          channel: "Meet Kevin",
+          url: "https://youtube.com"
+        }
+      ]
+    },
     cik: "0001318605"
   },
   MSFT: {
@@ -113,9 +195,9 @@ const mockResults = {
       { name: "Oracle", focus: "Database & enterprise software" }
     ],
     leaders: [
-      { name: "Satya Nadella", role: "Chief Executive Officer", initials: "SN" },
+      { name: "Satya Nadella", role: "Chief Executive Officer", initials: "SN", twitter: "satyanadella" },
       { name: "Amy Hood", role: "Chief Financial Officer", initials: "AH" },
-      { name: "Brad Smith", role: "President & Vice Chair", initials: "BS" },
+      { name: "Brad Smith", role: "President & Vice Chair", initials: "BS", twitter: "BradSmi" },
       { name: "Judson Althoff", role: "EVP & Chief Commercial Officer", initials: "JA" }
     ],
     metrics: [
@@ -124,6 +206,47 @@ const mockResults = {
       { label: "Employees", value: "221K" },
       { label: "R&D Investment", value: "$27B", trend: "up" as const }
     ],
+    metadata: {
+      homepage: "https://www.microsoft.com",
+      investorRelations: "https://www.microsoft.com/investor",
+      news: [
+        {
+          title: "Microsoft and OpenAI Expand Partnership",
+          source: "Microsoft News",
+          date: "Jul 20, 2023",
+          url: "https://news.microsoft.com"
+        },
+        {
+          title: "Azure AI Services Reach New Milestone",
+          source: "The Verge",
+          date: "Jul 15, 2023",
+          url: "https://theverge.com"
+        },
+        {
+          title: "Microsoft 365 Copilot Goes Enterprise",
+          source: "ZDNet",
+          date: "Jul 8, 2023",
+          url: "https://zdnet.com"
+        }
+      ],
+      videos: [
+        {
+          title: "Microsoft's AI Strategy Explained",
+          channel: "CNBC",
+          url: "https://youtube.com"
+        },
+        {
+          title: "How Microsoft Makes Money",
+          channel: "Company Man",
+          url: "https://youtube.com"
+        },
+        {
+          title: "Azure vs AWS: The Cloud War",
+          channel: "Tech Vision",
+          url: "https://youtube.com"
+        }
+      ]
+    },
     cik: "0000789019"
   }
 };

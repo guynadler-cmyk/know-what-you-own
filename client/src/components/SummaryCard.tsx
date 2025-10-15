@@ -1,8 +1,9 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { Calendar, Building2, MapPin, Users, TrendingUp, Briefcase, Award, DollarSign } from "lucide-react";
+import { Calendar, Building2, MapPin, Users, TrendingUp, Briefcase, Award, DollarSign, ExternalLink, Youtube, Newspaper, Globe } from "lucide-react";
 import { LucideIcon } from "lucide-react";
+import { SiX } from "react-icons/si";
 
 interface Product {
   name: string;
@@ -14,6 +15,7 @@ interface Leader {
   name: string;
   role: string;
   initials: string;
+  twitter?: string;
 }
 
 interface Competitor {
@@ -25,6 +27,19 @@ interface Metric {
   label: string;
   value: string;
   trend?: "up" | "down" | "stable";
+}
+
+interface NewsItem {
+  title: string;
+  source: string;
+  date: string;
+  url: string;
+}
+
+interface VideoResource {
+  title: string;
+  channel: string;
+  url: string;
 }
 
 interface SummaryCardProps {
@@ -53,6 +68,14 @@ interface SummaryCardProps {
   // Success metrics
   metrics: Metric[];
   
+  // Metadata
+  metadata: {
+    homepage: string;
+    investorRelations?: string;
+    news: NewsItem[];
+    videos: VideoResource[];
+  };
+  
   cik?: string;
 }
 
@@ -67,6 +90,7 @@ export function SummaryCard({
   competitors,
   leaders,
   metrics,
+  metadata,
   cik 
 }: SummaryCardProps) {
   return (
@@ -92,6 +116,32 @@ export function SummaryCard({
                   <Building2 className="h-4 w-4" />
                   <span>10-K • FY {fiscalYear}</span>
                 </div>
+              </div>
+              <div className="flex flex-wrap items-center gap-3 pt-2">
+                <a 
+                  href={metadata.homepage}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-1.5 text-sm text-primary hover:underline hover-elevate px-2 py-1 rounded"
+                  data-testid="link-homepage"
+                >
+                  <Globe className="h-4 w-4" />
+                  Website
+                  <ExternalLink className="h-3 w-3" />
+                </a>
+                {metadata.investorRelations && (
+                  <a 
+                    href={metadata.investorRelations}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-1.5 text-sm text-primary hover:underline hover-elevate px-2 py-1 rounded"
+                    data-testid="link-investor-relations"
+                  >
+                    <DollarSign className="h-4 w-4" />
+                    Investor Relations
+                    <ExternalLink className="h-3 w-3" />
+                  </a>
+                )}
               </div>
             </div>
           </div>
@@ -204,7 +254,20 @@ export function SummaryCard({
                     </AvatarFallback>
                   </Avatar>
                   <div className="flex-1 min-w-0">
-                    <p className="font-medium text-sm">{leader.name}</p>
+                    <div className="flex items-center gap-2">
+                      <p className="font-medium text-sm">{leader.name}</p>
+                      {leader.twitter && (
+                        <a 
+                          href={`https://x.com/${leader.twitter}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-muted-foreground hover:text-foreground transition-colors"
+                          data-testid={`link-twitter-${leader.twitter}`}
+                        >
+                          <SiX className="h-3 w-3" />
+                        </a>
+                      )}
+                    </div>
                     <p className="text-xs text-muted-foreground">{leader.role}</p>
                   </div>
                 </div>
@@ -238,6 +301,77 @@ export function SummaryCard({
           </div>
         </CardContent>
       </Card>
+
+      {/* News & Resources */}
+      <div className="grid gap-6 md:grid-cols-2">
+        {/* Recent News */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Newspaper className="h-5 w-5" />
+              Recent News
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-3">
+              {metadata.news.map((item, index) => (
+                <a 
+                  key={index}
+                  href={item.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="block p-3 rounded-lg bg-muted/50 hover-elevate transition-all group"
+                  data-testid={`link-news-${index}`}
+                >
+                  <div className="flex items-start justify-between gap-2 mb-1">
+                    <p className="font-medium text-sm group-hover:text-primary transition-colors line-clamp-2">
+                      {item.title}
+                    </p>
+                    <ExternalLink className="h-3 w-3 text-muted-foreground flex-shrink-0 mt-0.5" />
+                  </div>
+                  <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                    <span>{item.source}</span>
+                    <span>•</span>
+                    <span>{item.date}</span>
+                  </div>
+                </a>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Video Resources */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Youtube className="h-5 w-5" />
+              Video Analysis
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-3">
+              {metadata.videos.map((video, index) => (
+                <a 
+                  key={index}
+                  href={video.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="block p-3 rounded-lg bg-muted/50 hover-elevate transition-all group"
+                  data-testid={`link-video-${index}`}
+                >
+                  <div className="flex items-start justify-between gap-2 mb-1">
+                    <p className="font-medium text-sm group-hover:text-primary transition-colors line-clamp-2">
+                      {video.title}
+                    </p>
+                    <Youtube className="h-4 w-4 text-destructive flex-shrink-0 mt-0.5" />
+                  </div>
+                  <p className="text-xs text-muted-foreground">{video.channel}</p>
+                </a>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      </div>
 
       {/* Footer */}
       <Card>

@@ -44,7 +44,7 @@ export default function SummaryCardExample() {
           { name: "Amazon", focus: "E-commerce & cloud services" }
         ]}
         leaders={[
-          { name: "Tim Cook", role: "Chief Executive Officer", initials: "TC" },
+          { name: "Tim Cook", role: "Chief Executive Officer", initials: "TC", twitter: "tim_cook" },
           { name: "Luca Maestri", role: "Chief Financial Officer", initials: "LM" },
           { name: "Jeff Williams", role: "Chief Operating Officer", initials: "JW" },
           { name: "Katherine Adams", role: "General Counsel", initials: "KA" }
@@ -55,6 +55,47 @@ export default function SummaryCardExample() {
           { label: "Employees", value: "161K" },
           { label: "R&D Spending", value: "$30B", trend: "up" }
         ]}
+        metadata={{
+          homepage: "https://www.apple.com",
+          investorRelations: "https://investor.apple.com",
+          news: [
+            {
+              title: "Apple Reports Fourth Quarter Results",
+              source: "Apple Newsroom",
+              date: "Nov 2, 2023",
+              url: "#"
+            },
+            {
+              title: "Apple Unveils Vision Pro Spatial Computer",
+              source: "TechCrunch",
+              date: "Oct 28, 2023",
+              url: "#"
+            },
+            {
+              title: "iPhone 15 Series Exceeds Sales Expectations",
+              source: "Bloomberg",
+              date: "Oct 15, 2023",
+              url: "#"
+            }
+          ],
+          videos: [
+            {
+              title: "Understanding Apple's Business Model",
+              channel: "The Plain Bagel",
+              url: "#"
+            },
+            {
+              title: "Apple's 2023 Strategy Breakdown",
+              channel: "Wall Street Journal",
+              url: "#"
+            },
+            {
+              title: "Why Apple Stock is a Buy (Analysis)",
+              channel: "Financial Education",
+              url: "#"
+            }
+          ]
+        }}
         cik="0000320193"
       />
     </div>
