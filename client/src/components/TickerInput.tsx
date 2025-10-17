@@ -83,7 +83,7 @@ export function TickerInput({ onSubmit, isLoading = false }: TickerInputProps) {
       <div className="mt-6 text-center">
         <p className="text-sm text-muted-foreground mb-3">Try these examples:</p>
         <div className="flex flex-wrap justify-center gap-2">
-          {['AAPL', 'MSFT', 'GOOGL', 'TSLA', 'AMZN', 'NVDA'].map((example) => (
+          {['AAPL', 'MSFT', 'GOOGL', 'TSLA', 'META', 'NVDA'].map((example) => (
             <button
               key={example}
               onClick={() => {
