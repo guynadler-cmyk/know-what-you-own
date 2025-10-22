@@ -62,7 +62,7 @@ export function TickerInput({ onSubmit, isLoading = false }: TickerInputProps) {
         
         <Button 
           type="submit" 
-          className="w-full h-12 text-base bg-teal-600 hover:bg-teal-700 text-white"
+          className="w-full h-12 text-base bg-teal-600 hover:bg-teal-700 text-white rounded-full"
           disabled={isLoading}
           data-testid="button-analyze"
         >
