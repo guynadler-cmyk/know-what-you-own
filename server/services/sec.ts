@@ -72,25 +72,40 @@ export class SECService {
     const response = await axios.get(url, { headers: SEC_HEADERS });
     const text = response.data;
 
-    const businessRegex = new RegExp(
+    // Try multiple regex patterns to handle different 10-K formatting
+    const patterns = [
+      // Standard format: ITEM 1. Business ... ITEM 1A
       'ITEM\\s+1[\\.\\:\\-]?\\s*Business(.*?)ITEM\\s+1A',
-      'is'
-    );
-    const businessMatch = text.match(businessRegex);
+      // Alternative: ITEM 1 ... ITEM 1A (Business might be on new line)
+      'ITEM\\s+1[\\.\\:\\-]?\\s*[\\r\\n]*(.*?)ITEM\\s+1A',
+      // Looser pattern: Look for ITEM 1 followed by content until next ITEM
+      'ITEM\\s+1[\\.\\:\\-]?\\s*(?:Business)?[\\r\\n]*(.*?)(?:ITEM\\s+(?:1A|1B|2))',
+    ];
 
-    if (!businessMatch) {
+    let businessMatch = null;
+    for (const pattern of patterns) {
+      const regex = new RegExp(pattern, 'is');
+      businessMatch = text.match(regex);
+      if (businessMatch) break;
+    }
+
+    if (!businessMatch || !businessMatch[1]) {
+      console.error(`Failed to extract business section for CIK ${cik}, accession ${accessionNumber}`);
       throw new Error("Could not extract business section from 10-K");
     }
 
     let businessSection = businessMatch[1];
     
+    // Clean up HTML tags and entities
     businessSection = businessSection
       .replace(/<[^>]*>/g, ' ')
       .replace(/&nbsp;/g, ' ')
       .replace(/&[a-z]+;/g, ' ')
+      .replace(/&#\d+;/g, ' ')
       .replace(/\s+/g, ' ')
       .trim();
 
+    // Return first 15000 characters for the business section
     return businessSection.slice(0, 15000);
   }
 
