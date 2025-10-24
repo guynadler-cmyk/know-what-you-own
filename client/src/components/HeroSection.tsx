@@ -1,16 +1,13 @@
 export function HeroSection() {
   return (
-    <div className="relative bg-gradient-to-b from-primary/10 to-transparent">
-      <div className="mx-auto max-w-7xl px-4 py-16 sm:px-6 sm:py-24 lg:px-8">
-        <div className="text-center">
-          <h1 className="text-4xl font-bold tracking-tight text-foreground sm:text-5xl md:text-6xl">
-            Understand the businesses you own
-          </h1>
-          <p className="mx-auto mt-6 max-w-2xl text-lg text-muted-foreground">
-            Get plain-English summaries of SEC 10-K filings, powered by AI. 
-            Research stocks with confidence and truly know what you're investing in.
-          </p>
-        </div>
+    <div className="relative flex items-center justify-center min-h-[80vh] px-4">
+      <div className="max-w-5xl text-center space-y-8">
+        <h1 className="text-6xl sm:text-7xl md:text-8xl font-bold tracking-tight leading-[1.1]">
+          Know what you own.
+        </h1>
+        <p className="text-xl sm:text-2xl md:text-3xl text-muted-foreground font-light max-w-3xl mx-auto leading-relaxed">
+          Plain-English summaries of SEC filings.
+        </p>
       </div>
     </div>
   );

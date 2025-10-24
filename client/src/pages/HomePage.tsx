@@ -4,11 +4,10 @@ import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 import { HeroSection } from "@/components/HeroSection";
 import { TickerInput } from "@/components/TickerInput";
-import { FeatureCard } from "@/components/FeatureCard";
 import { SummaryCard } from "@/components/SummaryCard";
 import { LoadingState } from "@/components/LoadingState";
 import { ErrorState } from "@/components/ErrorState";
-import { FileText, Brain, CheckCircle, Smartphone, Laptop, Tablet, Watch, Car, Zap, Battery, Server, Cloud, Gamepad2, Package, Code, Globe, Music, Video, Tv, Search, Cpu } from "lucide-react";
+import { Smartphone, Laptop, Tablet, Watch, Car, Zap, Battery, Server, Cloud, Gamepad2, Package, Code, Globe, Music, Video, Tv, Search, Cpu, Brain } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft } from "lucide-react";
 import { CompanySummary } from "@shared/schema";
@@ -84,33 +83,12 @@ export default function HomePage() {
       
       <main className="flex-1">
         {viewState === "input" && (
-          <>
+          <div className="mx-auto max-w-7xl px-4 pb-24 sm:px-6 lg:px-8">
             <HeroSection />
-            
-            <div className="mx-auto max-w-7xl px-4 pb-16 sm:px-6 lg:px-8">
-              <div className="mb-16">
-                <TickerInput onSubmit={handleTickerSubmit} isLoading={isFetching} />
-              </div>
-
-              <div className="grid gap-8 md:grid-cols-3">
-                <FeatureCard
-                  icon={FileText}
-                  title="SEC 10-K Filings"
-                  description="Direct access to official company business descriptions from SEC EDGAR"
-                />
-                <FeatureCard
-                  icon={Brain}
-                  title="AI-Powered Analysis"
-                  description="Advanced AI summarizes complex filings into clear, concise insights"
-                />
-                <FeatureCard
-                  icon={CheckCircle}
-                  title="Plain English"
-                  description="Beginner-friendly summaries that help you truly understand what you own"
-                />
-              </div>
+            <div className="mt-16">
+              <TickerInput onSubmit={handleTickerSubmit} isLoading={isFetching} />
             </div>
-          </>
+          </div>
         )}
 
         {viewState === "loading" && (
@@ -120,11 +98,12 @@ export default function HomePage() {
         )}
 
         {viewState === "success" && preparedSummary && (
-          <div className="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8">
-            <div className="mb-6">
+          <div className="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
+            <div className="mb-12 text-center">
               <Button 
-                variant="ghost" 
+                variant="outline" 
                 onClick={handleBack}
+                className="h-12 px-8 rounded-full"
                 data-testid="button-back-to-search"
               >
                 <ArrowLeft className="mr-2 h-4 w-4" />

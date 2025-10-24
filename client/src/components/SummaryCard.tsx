@@ -49,26 +49,18 @@ interface SummaryCardProps {
   fiscalYear: string;
   tagline: string;
   
-  // What they do
   products: Product[];
   
-  // Where/How they operate
   operations: {
     regions: string[];
     channels: string[];
     scale: string;
   };
   
-  // Competition
   competitors: Competitor[];
-  
-  // Leadership
   leaders: Leader[];
-  
-  // Success metrics
   metrics: Metric[];
   
-  // Metadata
   metadata: {
     homepage: string;
     investorRelations?: string;
@@ -94,298 +86,216 @@ export function SummaryCard({
   cik 
 }: SummaryCardProps) {
   return (
-    <div className="w-full max-w-6xl mx-auto space-y-6 animate-fade-in">
-      {/* Header Card */}
-      <Card className="border-success/20">
-        <CardHeader>
-          <div className="flex items-start justify-between gap-4 flex-wrap">
-            <div className="space-y-3 flex-1">
-              <div className="flex items-center gap-3 flex-wrap">
-                <h2 className="text-3xl font-bold">{companyName}</h2>
-                <Badge variant="outline" className="font-mono text-base px-3 py-1" data-testid="text-ticker">
-                  {ticker}
-                </Badge>
-              </div>
-              <p className="text-lg text-muted-foreground">{tagline}</p>
-              <div className="flex flex-wrap items-center gap-4 text-sm text-muted-foreground">
-                <div className="flex items-center gap-2">
-                  <Calendar className="h-4 w-4" />
-                  <span data-testid="text-filing-date">{filingDate}</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <Building2 className="h-4 w-4" />
-                  <span>10-K • FY {fiscalYear}</span>
-                </div>
-              </div>
-              <div className="flex flex-wrap items-center gap-3 pt-2">
-                <a 
-                  href={metadata.homepage}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-flex items-center gap-1.5 text-sm text-primary hover:underline hover-elevate px-2 py-1 rounded"
-                  data-testid="link-homepage"
-                >
-                  <Globe className="h-4 w-4" />
-                  Website
-                  <ExternalLink className="h-3 w-3" />
-                </a>
-                {metadata.investorRelations && (
-                  <a 
-                    href={metadata.investorRelations}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="inline-flex items-center gap-1.5 text-sm text-primary hover:underline hover-elevate px-2 py-1 rounded"
-                    data-testid="link-investor-relations"
-                  >
-                    <DollarSign className="h-4 w-4" />
-                    Investor Relations
-                    <ExternalLink className="h-3 w-3" />
-                  </a>
-                )}
-              </div>
-            </div>
-          </div>
-        </CardHeader>
-      </Card>
-
-      {/* What They Do - Products */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Briefcase className="h-5 w-5" />
-            What They Do
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            {products.map((product, index) => (
-              <div 
-                key={index}
-                className="flex flex-col items-center text-center p-4 rounded-lg bg-card border border-card-border hover-elevate transition-all"
+    <div className="w-full max-w-6xl mx-auto space-y-16 pb-16 animate-fade-in">
+      {/* Hero Header */}
+      <div className="text-center space-y-6 py-12">
+        <h1 className="text-5xl sm:text-6xl md:text-7xl font-bold tracking-tight">{companyName}</h1>
+        <p className="text-2xl sm:text-3xl text-muted-foreground font-light max-w-4xl mx-auto leading-relaxed">
+          {tagline}
+        </p>
+        <div className="flex flex-wrap items-center justify-center gap-6 pt-4">
+          <Badge variant="outline" className="font-mono text-lg px-4 py-2" data-testid="text-ticker">
+            {ticker}
+          </Badge>
+          <span className="text-muted-foreground">•</span>
+          <p className="text-muted-foreground" data-testid="text-filing-date">
+            {filingDate}
+          </p>
+        </div>
+        <div className="flex flex-wrap items-center justify-center gap-6 pt-2">
+          <a 
+            href={metadata.homepage}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-2 text-primary hover:underline text-base"
+            data-testid="link-homepage"
+          >
+            <Globe className="h-4 w-4" />
+            Website
+          </a>
+          {metadata.investorRelations && (
+            <>
+              <span className="text-muted-foreground">•</span>
+              <a 
+                href={metadata.investorRelations}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-2 text-primary hover:underline text-base"
+                data-testid="link-investor-relations"
               >
-                <div className="flex h-16 w-16 items-center justify-center rounded-xl bg-primary/10 mb-3">
-                  <product.icon className="h-8 w-8 text-primary" />
-                </div>
-                <h4 className="font-semibold text-sm mb-1">{product.name}</h4>
-                <p className="text-xs text-muted-foreground">{product.description}</p>
-              </div>
-            ))}
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Where & How - Operations */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <MapPin className="h-5 w-5" />
-            Where & How They Operate
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="grid gap-6 md:grid-cols-3">
-            <div className="space-y-2">
-              <h4 className="text-sm font-semibold text-muted-foreground">Geographic Reach</h4>
-              <div className="flex flex-wrap gap-2">
-                {operations.regions.map((region, i) => (
-                  <Badge key={i} variant="secondary" className="text-xs">
-                    {region}
-                  </Badge>
-                ))}
-              </div>
-            </div>
-            <div className="space-y-2">
-              <h4 className="text-sm font-semibold text-muted-foreground">Sales Channels</h4>
-              <div className="flex flex-wrap gap-2">
-                {operations.channels.map((channel, i) => (
-                  <Badge key={i} variant="secondary" className="text-xs">
-                    {channel}
-                  </Badge>
-                ))}
-              </div>
-            </div>
-            <div className="space-y-2">
-              <h4 className="text-sm font-semibold text-muted-foreground">Scale</h4>
-              <p className="text-sm">{operations.scale}</p>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-
-      <div className="grid gap-6 md:grid-cols-2">
-        {/* Competition */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Award className="h-5 w-5" />
-              Key Competitors
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-3">
-              {competitors.map((competitor, index) => (
-                <div key={index} className="flex items-start gap-3 p-3 rounded-lg bg-muted/50">
-                  <div className="h-2 w-2 rounded-full bg-primary mt-2 flex-shrink-0" />
-                  <div className="flex-1 min-w-0">
-                    <p className="font-medium text-sm">{competitor.name}</p>
-                    <p className="text-xs text-muted-foreground">{competitor.focus}</p>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Leadership */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Users className="h-5 w-5" />
-              Leadership Team
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-3">
-              {leaders.map((leader, index) => (
-                <div key={index} className="flex items-center gap-3">
-                  <Avatar className="h-10 w-10">
-                    <AvatarFallback className="bg-primary/10 text-primary font-semibold text-sm">
-                      {leader.initials}
-                    </AvatarFallback>
-                  </Avatar>
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2">
-                      <p className="font-medium text-sm">{leader.name}</p>
-                      {leader.twitter && (
-                        <a 
-                          href={`https://x.com/${leader.twitter}`}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="text-muted-foreground hover:text-foreground transition-colors"
-                          data-testid={`link-twitter-${leader.twitter}`}
-                        >
-                          <SiX className="h-3 w-3" />
-                        </a>
-                      )}
-                    </div>
-                    <p className="text-xs text-muted-foreground">{leader.role}</p>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
+                <DollarSign className="h-4 w-4" />
+                Investors
+              </a>
+            </>
+          )}
+        </div>
       </div>
 
-      {/* Performance Metrics */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <TrendingUp className="h-5 w-5" />
-            Business Performance
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            {metrics.map((metric, index) => (
-              <div key={index} className="space-y-1">
-                <p className="text-xs text-muted-foreground">{metric.label}</p>
-                <div className="flex items-center gap-2">
-                  <p className="text-2xl font-bold">{metric.value}</p>
-                  {metric.trend === "up" && (
-                    <TrendingUp className="h-4 w-4 text-success" />
-                  )}
+      {/* What They Do */}
+      <section className="space-y-12">
+        <h2 className="text-4xl font-bold text-center">What they do</h2>
+        <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-4">
+          {products.map((product, index) => (
+            <div 
+              key={index}
+              className="flex flex-col items-center text-center space-y-4 p-8"
+            >
+              <product.icon className="h-12 w-12 text-foreground stroke-[1.5]" />
+              <h3 className="text-xl font-semibold">{product.name}</h3>
+              <p className="text-base text-muted-foreground leading-relaxed">{product.description}</p>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      {/* Where & How */}
+      <section className="space-y-12">
+        <h2 className="text-4xl font-bold text-center">Where & how</h2>
+        <div className="grid gap-12 md:grid-cols-3 max-w-5xl mx-auto">
+          <div className="space-y-4 text-center">
+            <h3 className="text-xl font-semibold">Global Reach</h3>
+            <div className="flex flex-wrap justify-center gap-3">
+              {operations.regions.map((region, i) => (
+                <Badge key={i} variant="secondary" className="text-sm px-4 py-1.5">
+                  {region}
+                </Badge>
+              ))}
+            </div>
+          </div>
+          <div className="space-y-4 text-center">
+            <h3 className="text-xl font-semibold">Sales</h3>
+            <div className="flex flex-wrap justify-center gap-3">
+              {operations.channels.map((channel, i) => (
+                <Badge key={i} variant="secondary" className="text-sm px-4 py-1.5">
+                  {channel}
+                </Badge>
+              ))}
+            </div>
+          </div>
+          <div className="space-y-4 text-center">
+            <h3 className="text-xl font-semibold">Scale</h3>
+            <p className="text-base text-muted-foreground">{operations.scale}</p>
+          </div>
+        </div>
+      </section>
+
+      {/* Performance */}
+      <section className="space-y-12">
+        <h2 className="text-4xl font-bold text-center">Performance</h2>
+        <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-4 max-w-5xl mx-auto">
+          {metrics.map((metric, index) => (
+            <div key={index} className="text-center space-y-2">
+              <p className="text-sm text-muted-foreground uppercase tracking-wide">{metric.label}</p>
+              <p className="text-4xl font-bold">{metric.value}</p>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      <div className="grid gap-16 md:grid-cols-2 max-w-5xl mx-auto">
+        {/* Competition */}
+        <section className="space-y-8">
+          <h2 className="text-3xl font-bold text-center">Competition</h2>
+          <div className="space-y-4">
+            {competitors.map((competitor, index) => (
+              <div key={index} className="space-y-1 py-4 border-b border-border last:border-0">
+                <p className="font-semibold text-lg">{competitor.name}</p>
+                <p className="text-base text-muted-foreground">{competitor.focus}</p>
+              </div>
+            ))}
+          </div>
+        </section>
+
+        {/* Leadership */}
+        <section className="space-y-8">
+          <h2 className="text-3xl font-bold text-center">Leadership</h2>
+          <div className="space-y-6">
+            {leaders.map((leader, index) => (
+              <div key={index} className="flex items-center gap-4 py-2">
+                <Avatar className="h-12 w-12">
+                  <AvatarFallback className="bg-muted text-foreground font-semibold">
+                    {leader.initials}
+                  </AvatarFallback>
+                </Avatar>
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2">
+                    <p className="font-semibold">{leader.name}</p>
+                    {leader.twitter && (
+                      <a 
+                        href={`https://x.com/${leader.twitter}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-muted-foreground hover:text-foreground transition-colors"
+                        data-testid={`link-twitter-${leader.twitter}`}
+                      >
+                        <SiX className="h-3.5 w-3.5" />
+                      </a>
+                    )}
+                  </div>
+                  <p className="text-sm text-muted-foreground">{leader.role}</p>
                 </div>
               </div>
             ))}
           </div>
-        </CardContent>
-      </Card>
+        </section>
+      </div>
 
-      {/* News & Resources */}
-      <div className="grid gap-6 md:grid-cols-2">
-        {/* Recent News */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Newspaper className="h-5 w-5" />
-              Recent News
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-3">
-              {metadata.news.map((item, index) => (
-                <a 
-                  key={index}
-                  href={item.url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="block p-3 rounded-lg bg-muted/50 hover-elevate transition-all group"
-                  data-testid={`link-news-${index}`}
-                >
-                  <div className="flex items-start justify-between gap-2 mb-1">
-                    <p className="font-medium text-sm group-hover:text-primary transition-colors line-clamp-2">
-                      {item.title}
-                    </p>
-                    <ExternalLink className="h-3 w-3 text-muted-foreground flex-shrink-0 mt-0.5" />
-                  </div>
-                  <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                    <span>{item.source}</span>
-                    <span>•</span>
-                    <span>{item.date}</span>
-                  </div>
-                </a>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
+      {/* Resources */}
+      <div className="grid gap-16 md:grid-cols-2 max-w-5xl mx-auto">
+        <section className="space-y-8">
+          <h2 className="text-3xl font-bold text-center">News</h2>
+          <div className="space-y-4">
+            {metadata.news.map((item, index) => (
+              <a 
+                key={index}
+                href={item.url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="block space-y-2 py-4 border-b border-border last:border-0 hover-elevate rounded px-2 -mx-2 transition-all group"
+                data-testid={`link-news-${index}`}
+              >
+                <p className="font-medium group-hover:text-primary transition-colors">
+                  {item.title}
+                </p>
+                <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                  <span>{item.source}</span>
+                  <span>•</span>
+                  <span>{item.date}</span>
+                </div>
+              </a>
+            ))}
+          </div>
+        </section>
 
-        {/* Video Resources */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Youtube className="h-5 w-5" />
-              Video Analysis
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-3">
-              {metadata.videos.map((video, index) => (
-                <a 
-                  key={index}
-                  href={video.url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="block p-3 rounded-lg bg-muted/50 hover-elevate transition-all group"
-                  data-testid={`link-video-${index}`}
-                >
-                  <div className="flex items-start justify-between gap-2 mb-1">
-                    <p className="font-medium text-sm group-hover:text-primary transition-colors line-clamp-2">
-                      {video.title}
-                    </p>
-                    <Youtube className="h-4 w-4 text-destructive flex-shrink-0 mt-0.5" />
-                  </div>
-                  <p className="text-xs text-muted-foreground">{video.channel}</p>
-                </a>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
+        <section className="space-y-8">
+          <h2 className="text-3xl font-bold text-center">Videos</h2>
+          <div className="space-y-4">
+            {metadata.videos.map((video, index) => (
+              <a 
+                key={index}
+                href={video.url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="block space-y-2 py-4 border-b border-border last:border-0 hover-elevate rounded px-2 -mx-2 transition-all group"
+                data-testid={`link-video-${index}`}
+              >
+                <p className="font-medium group-hover:text-primary transition-colors">
+                  {video.title}
+                </p>
+                <p className="text-sm text-muted-foreground">{video.channel}</p>
+              </a>
+            ))}
+          </div>
+        </section>
       </div>
 
       {/* Footer */}
-      <Card>
-        <CardContent className="py-3">
-          <p className="text-xs text-muted-foreground text-center">
-            Source: SEC EDGAR 10-K Filing
-            {cik && (
-              <span className="ml-2">
-                • CIK: <span className="font-mono">{cik}</span>
-              </span>
-            )}
-          </p>
-        </CardContent>
-      </Card>
+      <div className="text-center pt-8">
+        <p className="text-sm text-muted-foreground">
+          Source: SEC EDGAR 10-K Filing
+          {cik && ` • CIK ${cik}`}
+        </p>
+      </div>
     </div>
   );
 }

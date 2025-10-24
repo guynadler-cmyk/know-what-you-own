@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Search, Loader2 } from "lucide-react";
+import { Loader2 } from "lucide-react";
 
 interface TickerInputProps {
   onSubmit: (ticker: string) => void;
@@ -18,12 +18,12 @@ export function TickerInput({ onSubmit, isLoading = false }: TickerInputProps) {
     const trimmed = ticker.trim().toUpperCase();
     
     if (!trimmed) {
-      setError("Please enter a ticker symbol");
+      setError("Enter a ticker");
       return;
     }
     
     if (!/^[A-Z]{1,5}$/.test(trimmed)) {
-      setError("Please enter a valid ticker (1-5 letters)");
+      setError("Invalid ticker");
       return;
     }
     
@@ -37,24 +37,23 @@ export function TickerInput({ onSubmit, isLoading = false }: TickerInputProps) {
   };
 
   return (
-    <div className="w-full max-w-md mx-auto">
-      <form onSubmit={handleSubmit} className="space-y-4">
-        <div className="space-y-2">
-          <div className="relative">
-            <Input
-              type="text"
-              value={ticker}
-              onChange={handleInputChange}
-              placeholder="Enter stock ticker (e.g., AAPL, TSLA)"
-              className={`text-lg h-12 pr-12 ${error ? 'border-destructive focus-visible:ring-destructive' : ''}`}
-              disabled={isLoading}
-              data-testid="input-ticker"
-              maxLength={5}
-            />
-            <Search className="absolute right-4 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
-          </div>
+    <div className="w-full max-w-xl mx-auto space-y-12">
+      <form onSubmit={handleSubmit} className="space-y-6">
+        <div className="space-y-3">
+          <Input
+            type="text"
+            value={ticker}
+            onChange={handleInputChange}
+            placeholder="Which company?"
+            className={`text-2xl h-16 text-center font-mono tracking-wide border-2 rounded-xl ${
+              error ? 'border-destructive focus-visible:ring-destructive' : 'focus-visible:border-primary'
+            }`}
+            disabled={isLoading}
+            data-testid="input-ticker"
+            maxLength={5}
+          />
           {error && (
-            <p className="text-sm text-destructive" data-testid="text-error">
+            <p className="text-sm text-destructive text-center" data-testid="text-error">
               {error}
             </p>
           )}
@@ -62,7 +61,7 @@ export function TickerInput({ onSubmit, isLoading = false }: TickerInputProps) {
         
         <Button 
           type="submit" 
-          className="w-full h-12 text-base bg-teal-600 hover:bg-teal-700 text-white rounded-full"
+          className="w-full h-14 text-lg rounded-full font-semibold"
           disabled={isLoading}
           data-testid="button-analyze"
         >
@@ -72,25 +71,22 @@ export function TickerInput({ onSubmit, isLoading = false }: TickerInputProps) {
               Analyzing...
             </>
           ) : (
-            <>
-              <Search className="mr-2 h-5 w-5" />
-              Analyze Business
-            </>
+            'Analyze'
           )}
         </Button>
       </form>
       
-      <div className="mt-6 text-center">
-        <p className="text-sm text-muted-foreground mb-3">Try these examples:</p>
-        <div className="flex flex-wrap justify-center gap-2">
-          {['AAPL', 'MSFT', 'GE', 'TSLA', 'META', 'NVDA'].map((example) => (
+      <div className="text-center space-y-4">
+        <p className="text-sm text-muted-foreground">Try</p>
+        <div className="flex flex-wrap justify-center gap-3">
+          {['AAPL', 'MSFT', 'TSLA', 'NVDA'].map((example) => (
             <button
               key={example}
               onClick={() => {
                 setTicker(example);
                 setError("");
               }}
-              className="px-3 py-1 text-sm font-mono bg-card border border-card-border rounded-md hover-elevate active-elevate-2 transition-all"
+              className="px-6 py-2 text-base font-mono bg-muted border border-border rounded-full hover-elevate active-elevate-2 transition-all"
               data-testid={`button-example-${example.toLowerCase()}`}
               disabled={isLoading}
             >
