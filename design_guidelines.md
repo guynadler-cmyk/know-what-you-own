@@ -1,170 +1,197 @@
-# Design Guidelines: Know What You Own - 10-K Business Summary App
+# Design Guidelines - Steve Jobs Minimalist Aesthetic
 
-## Design Approach
+## Philosophy
+"Simplicity is the ultimate sophistication." - Leonardo da Vinci (Jobs' favorite quote)
 
-**Selected Approach:** Design System with Fintech Reference
-- **Inspiration:** Stripe's clarity + Robinhood's approachability + traditional finance trust
-- **Rationale:** Financial tools require trustworthiness, clarity, and efficiency. Users need to quickly understand complex business information without distraction.
-- **Principles:** Information hierarchy, trust through simplicity, purposeful use of space
+This app embodies Steve Jobs' design philosophy:
+- **Focus**: One thing at a time, clear hierarchy
+- **Minimalism**: Remove everything unnecessary
+- **Beauty**: Every pixel matters
+- **Premium**: Attention to detail creates delight
+- **Clarity**: No confusion, instant understanding
 
-## Core Design Elements
+## Color Palette
 
-### A. Color Palette
+### Monochrome Foundation
+- **Pure White**: `#FFFFFF` - Primary background, creates breathing room
+- **Deep Black**: `#000000` - Primary text, bold statements
+- **Subtle Gray**: `#F5F5F7` - Secondary backgrounds (Apple gray)
+- **Mid Gray**: `#86868B` - Secondary text, understated elements
+- **Divider Gray**: `#D2D2D7` - Subtle separation
 
-**Light Mode:**
-- Primary: 220 90% 56% (Trust Blue - CTAs, links, emphasis)
-- Background: 0 0% 100% (Pure White)
-- Surface: 220 14% 96% (Soft Gray - cards, elevated surfaces)
-- Text Primary: 220 9% 15% (Near Black)
-- Text Secondary: 220 9% 46% (Medium Gray)
-- Border: 220 13% 91% (Subtle borders)
-- Success: 142 71% 45% (Data positive)
-- Warning: 38 92% 50% (Alerts)
+### Single Premium Accent
+- **Electric Blue**: `#0071E3` - Primary actions, focus (Apple blue)
+- **Blue Hover**: `#0077ED` - Interactive states
 
-**Dark Mode:**
-- Primary: 220 90% 56% (Same blue, accessible on dark)
-- Background: 220 13% 9% (Deep Navy Black)
-- Surface: 220 12% 14% (Elevated surfaces)
-- Text Primary: 220 9% 98% (Near White)
-- Text Secondary: 220 9% 65% (Light Gray)
-- Border: 220 13% 20% (Subtle borders)
+### Status Colors (Minimal Use)
+- **Success Green**: `#30D158` - Positive feedback only
+- **Alert Red**: `#FF453A` - Errors only, sparingly
 
-### B. Typography
+## Typography
 
-**Font Families:**
-- Primary: Inter (Google Fonts) - Clean, professional, excellent readability for financial data
-- Monospace: JetBrains Mono - For ticker symbols, numbers, technical data
+### Typeface
+- **Primary**: SF Pro Display / Inter (clean, modern sans-serif)
+- **Monospace**: SF Mono / JetBrains Mono (for ticker symbols)
 
-**Hierarchy:**
-- H1: 2.5rem/3rem, font-bold (Page titles)
-- H2: 2rem/2.5rem, font-semibold (Section headers)
-- H3: 1.5rem/2rem, font-semibold (Card titles)
-- Body Large: 1.125rem/1.75rem, font-normal (Primary content)
-- Body: 1rem/1.5rem, font-normal (Standard text)
-- Small: 0.875rem/1.25rem, font-normal (Metadata, captions)
-- Ticker/Data: 1rem/1.5rem, font-mono, font-medium (Stock symbols, numbers)
+### Scale (Large & Bold)
+- **Hero**: 72px, weight 700, letter-spacing -0.02em
+- **Headline**: 48px, weight 700, letter-spacing -0.01em
+- **Title**: 32px, weight 600
+- **Subtitle**: 24px, weight 500
+- **Body Large**: 20px, weight 400, line-height 1.6
+- **Body**: 17px, weight 400, line-height 1.5
+- **Caption**: 15px, weight 400
+- **Small**: 13px, weight 400
 
-### C. Layout System
+### Rules
+- Headlines are BOLD and SHORT
+- Body text is generous in line-height (1.5-1.6)
+- Never use more than 2 font weights per view
+- Ticker symbols always in monospace
 
-**Spacing Primitives:** Use Tailwind units of 4, 6, 8, 12, 16, 24
-- Consistent spacing: p-4, p-6, p-8 for cards
-- Section gaps: gap-6, gap-8, gap-12
-- Page padding: px-4 md:px-6 lg:px-8
+## Spacing
 
-**Grid Structure:**
-- Single column focus on mobile/tablet
-- Max-width container: max-w-4xl for optimal reading
-- Form width: max-w-md for input sections
-- Results width: max-w-3xl for summaries
+### The 8-Point Grid
+All spacing uses multiples of 8px:
+- **Micro**: 8px (rare, tight relationships)
+- **Small**: 16px (related elements)
+- **Medium**: 24px (section separation)
+- **Large**: 48px (major sections)
+- **XLarge**: 80px (hero sections)
+- **XXLarge**: 120px (page sections)
 
-### D. Component Library
+### Whitespace Philosophy
+- "White space is like air - it lets content breathe"
+- Generous padding around all elements (minimum 24px)
+- Large margins between sections (80px+)
+- Content never touches edges (minimum 32px from viewport)
 
-**Input Section:**
-- Large, centered ticker input with clear label
-- Input styling: border-2, rounded-lg, px-6 py-4, text-lg
-- Search/Submit button: Primary color, rounded-lg, px-8 py-3
-- Placeholder: "Enter stock ticker (e.g., AAPL, TSLA)"
-- Real-time validation feedback below input
+## Layout
 
-**Results Card:**
-- White/dark surface card with border
-- Rounded corners: rounded-xl
-- Padding: p-8
-- Shadow: shadow-lg for depth
-- Header section: Company name + ticker (mono font) + filing date
-- Divider line between header and summary
-- Summary text: Body Large size, generous line-height
+### Centered, Focused Design
+- **Max Content Width**: 1200px (readable, not overwhelming)
+- **Centered**: All content centered on page
+- **Single Column**: One clear path through content
+- **Hierarchy**: Size creates importance, not color
 
-**Status Indicators:**
-- Loading state: Spinner with "Fetching 10-K filing..." message
-- Success: Subtle green accent on card border
-- Error: Warning color alert banner with clear message
-- Info badges: Small pills for filing type (10-K), fiscal year
+### Hero Section
+- Full viewport height (100vh)
+- Centered headline + tagline
+- Single, prominent CTA button
+- Minimal, no distractions
+- Generous whitespace (80% empty space)
 
-**Navigation (Header):**
-- Simple top bar with logo/app name left
-- Minimal navigation (About, How it Works links)
-- Height: h-16
-- Border bottom: Subtle border
+### Results Section
+- Clean cards with subtle shadows
+- One idea per card
+- Clear hierarchy within cards
+- Breathing room between all elements
 
-**Footer:**
-- Simple centered layout
-- SEC disclaimer text (small, secondary color)
-- Link to Restnvest, Privacy Policy
-- Note: "Powered by SEC EDGAR & OpenAI"
+## Components
 
-### E. Page Layouts
+### Buttons
+**Primary Button (CTA):**
+- Large pill shape (fully rounded)
+- Electric Blue background
+- White text, weight 600
+- Generous padding: 16px 48px
+- Minimum height: 56px
+- Smooth hover: slight scale (1.02)
+- Fast transition: 0.2s ease
 
-**Home/Input Page:**
-- Hero section (40vh): 
-  - Centered content
-  - App tagline: "Understand the businesses you own"
-  - Subtext: Brief value proposition
-  - Background: Subtle gradient from primary (10% opacity) to transparent
-- Input section: 
-  - Centered, max-w-md
-  - Large ticker input
-  - Clear CTA button
-  - Example tickers shown below
-- Features section:
-  - 3-column grid (mobile: stack)
-  - Icon + title + description
-  - Icons: Document (10-K filing), Brain (AI summary), Check (Plain English)
+**Secondary Button:**
+- Pill shape
+- Transparent background
+- 2px Electric Blue border
+- Blue text
+- Same padding as primary
 
-**Results Page:**
-- Back button (top left, secondary style)
-- Company header card:
-  - Large company name
-  - Ticker symbol (mono, muted)
-  - Filing date (small, secondary)
-- Business Summary card:
-  - "Business Description" heading
-  - AI-generated summary (generous spacing)
-  - Source attribution at bottom
-- Metadata section:
-  - Filing type, fiscal year, CIK (collapsed/expandable)
+**Text Button:**
+- No background, no border
+- Blue text only
+- Subtle underline on hover
 
-## Images
+### Input Fields
+- Large, spacious (height 56px)
+- Subtle border (1px #D2D2D7)
+- Rounded corners (12px, not fully rounded)
+- Focus: Blue border (2px)
+- Placeholder: Mid Gray
+- Padding: 16px 24px
 
-**Hero Section Background (Optional Enhancement):**
-- Abstract financial chart visualization or minimalist business imagery
-- Treatment: 20% opacity overlay, blurred slightly
-- Alt: Keep solid gradient if image complicates clarity
-- Position: Background of hero section only
+### Cards
+- White background
+- Subtle shadow: 0 2px 8px rgba(0,0,0,0.04)
+- Rounded corners: 16px
+- Generous internal padding: 32px
+- Hover: subtle lift (shadow grows)
 
-**No other images needed** - This is an information-focused utility tool where clarity trumps decoration.
+### Icons
+- Outlined style (not filled)
+- Consistent stroke width (2px)
+- Single color (usually Mid Gray)
+- Size: 24px standard, 32px for emphasis
 
-## Interaction Patterns
+## Animation & Motion
 
-**Input States:**
-- Default: Border subtle
-- Focus: Primary color border, ring effect
-- Error: Warning color border + shake animation
-- Valid: Success color border
+### Principles
+- **Fast**: 200ms for small changes
+- **Smooth**: Ease-out timing (starts fast, ends slow)
+- **Purposeful**: Every animation has a reason
+- **Subtle**: Never distracting
 
-**Button States:**
-- Default: Primary background, white text
-- Hover: Slightly darker (brightness-95)
-- Active: Even darker (brightness-90)
-- Loading: Disabled state with spinner
+### Examples
+- Hover states: 0.2s ease-out
+- Page transitions: 0.3s ease-out
+- Loading indicators: smooth, continuous
+- Card entrance: subtle fade + slide up
 
-**Card Animations:**
-- Results appear: Fade in + slide up (300ms ease)
-- No aggressive animations - maintain professional feel
+## Imagery & Visual Elements
 
-## Accessibility & Responsiveness
+### Minimal Use
+- No stock photos
+- No decorative graphics
+- No unnecessary illustrations
+- Only functional icons
 
-- Maintain WCAG AAA contrast ratios
-- Dark mode: Consistent implementation across all components
-- Input fields: Large touch targets (min 44px height)
-- Error messages: Clear, actionable text with icons
-- Responsive breakpoints: sm (640px), md (768px), lg (1024px)
-- Focus indicators: Clear ring on all interactive elements
+### When Used
+- High quality only
+- Ample breathing room around
+- Never distract from content
+- Support the message, don't compete
 
-## Design Philosophy
+## Voice & Tone
 
-**Trust Through Clarity:** Every design decision prioritizes user understanding over visual flourish. Financial information demands trustworthiness - achieved through consistent spacing, clear typography, and purposeful use of color.
+### Copywriting Style
+- **Bold statements**: Short, powerful headlines
+- **Clear benefit**: User understands value immediately  
+- **No jargon**: Plain English, accessible to all
+- **Confident**: Direct, authoritative, not apologetic
+- **Inspiring**: Connect emotionally
 
-**Progressive Disclosure:** Show essential information first, make additional details available without overwhelming. The ticker input is prominent, results are comprehensive but scannable, metadata is available but not intrusive.
+### Examples
+- ❌ "Analyze SEC 10-K filings using AI"
+- ✅ "Understand the businesses you own."
 
-**Professional Minimalism:** Clean interfaces build confidence. Use whitespace generously, limit color to purposeful accents, ensure every element serves the user's goal of understanding businesses.
+- ❌ "Please enter a stock ticker symbol"
+- ✅ "Which company?"
+
+## Dark Mode
+- Pure black background (#000000)
+- White text (#FFFFFF)
+- Slightly dimmed accent blue (#0A84FF)
+- Subtle grays adjusted for dark (#1C1C1E, #2C2C2E)
+
+## Accessibility
+- WCAG AA contrast minimum (4.5:1 for text)
+- Large touch targets (minimum 44x44px)
+- Clear focus indicators (blue outline, 2px)
+- Keyboard navigation fully supported
+
+## The "One More Thing"
+Every screen should have ONE clear focus:
+- Homepage: Enter ticker
+- Results: Understand the business
+- Error: Try again
+
+Never compete for attention. Clear hierarchy. Obvious next step.
