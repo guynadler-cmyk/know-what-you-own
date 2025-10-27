@@ -132,7 +132,14 @@ Preferred communication style: Simple, everyday language.
 
 ## Recent Changes
 
-### UI/UX Improvements (Latest)
+### Language Simplification (Latest)
+**Removed Professional Jargon:**
+- Hero tagline: "SEC filings" → "Understand any public company in minutes"
+- SummaryCard footer: "SEC EDGAR 10-K Filing • CIK..." → "Source: Official company report"
+- Global footer: Removed "SEC EDGAR • OpenAI" line, kept only disclaimer
+- Goal: Make the app accessible to non-financial professionals without technical jargon
+
+### UI/UX Improvements
 **Home Page Optimization:**
 - Reduced hero section height from 80vh to fixed padding (pt-12 pb-8)
 - Reduced spacing between hero and input from 64px to 32px
