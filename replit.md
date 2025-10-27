@@ -22,10 +22,12 @@ Preferred communication style: Simple, everyday language.
 - Tailwind CSS for styling with custom design system
 
 **Design System:**
-- Inspired by fintech aesthetics (Stripe's clarity + Robinhood's approachability)
-- Custom color palette supporting light/dark modes
-- Typography: Inter for primary text, JetBrains Mono for ticker symbols and financial data
-- Consistent spacing using Tailwind's 4px-based scale
+- Minimalist aesthetic inspired by Apple/Steve Jobs design philosophy
+- Monochrome palette (pure white/black) with Electric Blue (#0071E3) accent
+- Typography: Inter for primary text, JetBrains Mono for ticker symbols
+- Bold, large typography with generous whitespace
+- Strong visual hierarchy with bordered containers for clear section divisions
+- Consistent spacing using Tailwind's 8px-based scale (8, 16, 24, 48, 64px)
 
 **State Management:**
 - TanStack Query handles all server state with custom query client configuration
@@ -36,6 +38,10 @@ Preferred communication style: Simple, everyday language.
 - Single-page application with component-based architecture
 - Custom components for ticker input, loading states, error states, and summary cards
 - Theme toggle supporting light/dark modes with localStorage persistence
+- Hero section with reduced height to fit entire homepage on one screen
+- Results page with bordered section containers for clear visual clustering
+- Strong heading hierarchy (h1-h4) with uppercase main section headers
+- Visual separators (borders, dividers, underlines) for clear information architecture
 
 ### Backend Architecture
 
@@ -122,3 +128,31 @@ Preferred communication style: Simple, everyday language.
 - `@shared/`: Shared schemas and types
 - `@assets/`: Attached assets directory
 - Configured in both TypeScript and Vite for seamless imports
+
+## Recent Changes
+
+### UI/UX Improvements (Latest)
+**Home Page Optimization:**
+- Reduced hero section height from 80vh to fixed padding (pt-12 pb-8)
+- Reduced spacing between hero and input from 64px to 32px
+- Entire home screen (headline + input) now fits on one viewport without scrolling
+
+**Results Page Visual Hierarchy:**
+- Added strong bordered containers (2px borders) for each major section
+- Created header bars with solid backgrounds and uppercase titles
+- Implemented clear heading hierarchy: h2 (main sections), h3 (subsections), h4 (labels)
+- Added multiple visual separators: borders, dividers, underlines
+- Improved text alignment throughout with consistent spacing
+- Sections now have distinct visual boundaries preventing mixing
+
+**Visual Structure:**
+- Four main sections: BUSINESS OVERVIEW, PERFORMANCE, MARKET CONTEXT, RESOURCES
+- Each section has header bar + content area with subtle background
+- Subsections within sections have underlined headers
+- Clear separation prevents information from blending together
+
+### SEC Parsing Robustness
+- Implemented multiple fallback regex patterns for extracting ITEM 1 from 10-K filings
+- Handles various 10-K formatting styles (different SEC filing formats)
+- Added better error logging for debugging extraction failures
+- Improved HTML entity cleanup (including numeric entities)
