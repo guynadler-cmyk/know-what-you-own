@@ -20,8 +20,8 @@ This app embodies Steve Jobs' design philosophy:
 - **Divider Gray**: `#D2D2D7` - Subtle separation
 
 ### Single Premium Accent
-- **Electric Blue**: `#0071E3` - Primary actions, focus (Apple blue)
-- **Blue Hover**: `#0077ED` - Interactive states
+- **Teal**: `hsl(180, 70%, 28%)` - Primary actions, focus (company brand color, WCAG AA compliant)
+- **Teal Hover**: `hsl(180, 70%, 24%)` - Interactive states
 
 ### Status Colors (Minimal Use)
 - **Success Green**: `#30D158` - Positive feedback only
@@ -92,7 +92,7 @@ All spacing uses multiples of 8px:
 ### Buttons
 **Primary Button (CTA):**
 - Large pill shape (fully rounded)
-- Electric Blue background
+- Teal background
 - White text, weight 600
 - Generous padding: 16px 48px
 - Minimum height: 56px
@@ -102,20 +102,20 @@ All spacing uses multiples of 8px:
 **Secondary Button:**
 - Pill shape
 - Transparent background
-- 2px Electric Blue border
-- Blue text
+- 2px Teal border
+- Teal text
 - Same padding as primary
 
 **Text Button:**
 - No background, no border
-- Blue text only
+- Teal text only
 - Subtle underline on hover
 
 ### Input Fields
 - Large, spacious (height 56px)
 - Subtle border (1px #D2D2D7)
 - Rounded corners (12px, not fully rounded)
-- Focus: Blue border (2px)
+- Focus: Teal border (2px)
 - Placeholder: Mid Gray
 - Padding: 16px 24px
 
@@ -179,13 +179,14 @@ All spacing uses multiples of 8px:
 ## Dark Mode
 - Pure black background (#000000)
 - White text (#FFFFFF)
-- Slightly dimmed accent blue (#0A84FF)
+- Lighter teal for dark mode (hsl(180, 70%, 70%)) - WCAG AA compliant contrast on dark backgrounds
 - Subtle grays adjusted for dark (#1C1C1E, #2C2C2E)
+- Note: Primary buttons in dark mode use black text on lighter teal background (inverted from light mode)
 
 ## Accessibility
 - WCAG AA contrast minimum (4.5:1 for text)
 - Large touch targets (minimum 44x44px)
-- Clear focus indicators (blue outline, 2px)
+- Clear focus indicators (teal outline, 2px)
 - Keyboard navigation fully supported
 
 ## Visual Clustering
