@@ -85,7 +85,7 @@ export default function HomePage() {
         {viewState === "input" && (
           <div className="mx-auto max-w-7xl px-4 pb-24 sm:px-6 lg:px-8">
             <HeroSection />
-            <div className="mt-16">
+            <div className="mt-8">
               <TickerInput onSubmit={handleTickerSubmit} isLoading={isFetching} />
             </div>
           </div>

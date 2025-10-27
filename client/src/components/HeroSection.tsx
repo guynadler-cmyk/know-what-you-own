@@ -1,7 +1,7 @@
 export function HeroSection() {
   return (
-    <div className="relative flex items-center justify-center min-h-[80vh] px-4">
-      <div className="max-w-5xl text-center space-y-8">
+    <div className="relative flex items-center justify-center pt-12 pb-8 px-4">
+      <div className="max-w-5xl text-center space-y-6">
         <h1 className="text-6xl sm:text-7xl md:text-8xl font-bold tracking-tight leading-[1.1]">
           Know what you own.
         </h1>
