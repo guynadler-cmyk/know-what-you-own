@@ -86,7 +86,7 @@ export function TickerInput({ onSubmit, isLoading = false }: TickerInputProps) {
                 setTicker(example);
                 setError("");
               }}
-              className="px-6 py-2 text-base font-mono bg-muted border border-border rounded-full hover-elevate active-elevate-2 transition-all"
+              className="px-6 py-2 text-base font-mono text-primary bg-muted border border-border rounded-full hover-elevate active-elevate-2 transition-all"
               data-testid={`button-example-${example.toLowerCase()}`}
               disabled={isLoading}
             >

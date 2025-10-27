@@ -23,11 +23,12 @@ Preferred communication style: Simple, everyday language.
 
 **Design System:**
 - Minimalist aesthetic inspired by Apple/Steve Jobs design philosophy
-- Monochrome palette (pure white/black) with Electric Blue (#0071E3) accent
+- Monochrome palette (pure white/black) with Teal (hsl(180, 70%, 28%)) accent - company brand color
 - Typography: Inter for primary text, JetBrains Mono for ticker symbols
 - Bold, large typography with generous whitespace
 - Strong visual hierarchy with bordered containers for clear section divisions
 - Consistent spacing using Tailwind's 8px-based scale (8, 16, 24, 48, 64px)
+- WCAG AA compliant color contrast for accessibility (4.5:1 minimum)
 
 **State Management:**
 - TanStack Query handles all server state with custom query client configuration
