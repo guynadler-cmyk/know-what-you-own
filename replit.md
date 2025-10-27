@@ -151,6 +151,17 @@ Preferred communication style: Simple, everyday language.
 - Subsections within sections have underlined headers
 - Clear separation prevents information from blending together
 
+**Resources Section Enhancement:**
+- Added distinctive visual indicators to make news and videos stand out:
+  - News articles: Gray newspaper icon (SVG) on left that turns blue on hover
+  - YouTube videos: Red YouTube logo icon (SVG) on left that darkens on hover
+- Transformed plain links into attractive card components:
+  - Background, borders, rounded corners, generous padding
+  - Flex layout with icon prominently displayed on left
+  - Hover elevation effects for better clickable affordance
+- Removed overflow-hidden from section containers to allow hover shadows to display
+- Clear visual differentiation helps users immediately identify content type
+
 ### SEC Parsing Robustness
 - Implemented multiple fallback regex patterns for extracting ITEM 1 from 10-K filings
 - Handles various 10-K formatting styles (different SEC filing formats)
