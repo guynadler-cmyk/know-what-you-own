@@ -188,6 +188,29 @@ All spacing uses multiples of 8px:
 - Clear focus indicators (blue outline, 2px)
 - Keyboard navigation fully supported
 
+## Visual Clustering
+
+### Information Grouping
+Related information must be visually grouped to aid comprehension:
+- **Use subtle backgrounds** to cluster related sections
+- **Add spacing between clusters** (48px+) but tighter within (24px)
+- **Clear section dividers** between major topic areas
+- **Visual hierarchy** shows relationships at a glance
+
+### Section Containers
+- Subtle background color (muted/secondary tones)
+- Generous internal padding (32-48px)
+- Rounded corners (16px)
+- Clear spacing between containers
+- Never nest containers more than 2 levels deep
+
+### Grouping Strategy
+Group by logical relationship, not just type:
+- Business Overview (what + how)
+- Performance Data (metrics + operations)
+- Market Context (competition + leadership)
+- External Resources (news + videos)
+
 ## The "One More Thing"
 Every screen should have ONE clear focus:
 - Homepage: Enter ticker
