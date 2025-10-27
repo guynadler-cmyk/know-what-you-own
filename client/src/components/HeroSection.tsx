@@ -6,7 +6,7 @@ export function HeroSection() {
           Know what you own.
         </h1>
         <p className="text-xl sm:text-2xl md:text-3xl text-muted-foreground font-light max-w-3xl mx-auto leading-relaxed">
-          Plain-English summaries of SEC filings.
+          Understand any public company in minutes.
         </p>
       </div>
     </div>

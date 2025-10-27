@@ -331,8 +331,7 @@ export function SummaryCard({
       {/* Footer */}
       <div className="text-center pt-8 border-t border-border">
         <p className="text-sm text-muted-foreground">
-          Source: SEC EDGAR 10-K Filing
-          {cik && ` • CIK ${cik}`}
+          Source: Official company report
         </p>
       </div>
     </div>
