@@ -3,7 +3,7 @@ import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Calendar, Building2, MapPin, Users, TrendingUp, Briefcase, Award, DollarSign, ExternalLink, Youtube, Newspaper, Globe } from "lucide-react";
 import { LucideIcon } from "lucide-react";
-import { SiX } from "react-icons/si";
+import { SiX, SiYoutube } from "react-icons/si";
 
 interface Product {
   name: string;
@@ -132,7 +132,7 @@ export function SummaryCard({
       </div>
 
       {/* BUSINESS OVERVIEW CLUSTER */}
-      <div className="border-2 border-border rounded-2xl overflow-hidden">
+      <div className="border-2 border-border rounded-2xl">
         <div className="bg-muted px-8 py-4 border-b-2 border-border">
           <h2 className="text-2xl font-bold text-center uppercase tracking-wide">Business Overview</h2>
         </div>
@@ -190,7 +190,7 @@ export function SummaryCard({
       </div>
 
       {/* PERFORMANCE CLUSTER */}
-      <div className="border-2 border-border rounded-2xl overflow-hidden">
+      <div className="border-2 border-border rounded-2xl">
         <div className="bg-muted px-8 py-4 border-b-2 border-border">
           <h2 className="text-2xl font-bold text-center uppercase tracking-wide">Performance</h2>
         </div>
@@ -207,7 +207,7 @@ export function SummaryCard({
       </div>
 
       {/* MARKET CONTEXT CLUSTER */}
-      <div className="border-2 border-border rounded-2xl overflow-hidden">
+      <div className="border-2 border-border rounded-2xl">
         <div className="bg-muted px-8 py-4 border-b-2 border-border">
           <h2 className="text-2xl font-bold text-center uppercase tracking-wide">Market Context</h2>
         </div>
@@ -263,7 +263,7 @@ export function SummaryCard({
       </div>
 
       {/* RESOURCES CLUSTER */}
-      <div className="border-2 border-border rounded-2xl overflow-hidden">
+      <div className="border-2 border-border rounded-2xl">
         <div className="bg-muted px-8 py-4 border-b-2 border-border">
           <h2 className="text-2xl font-bold text-center uppercase tracking-wide">Resources</h2>
         </div>
@@ -278,16 +278,21 @@ export function SummaryCard({
                     href={item.url}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="block space-y-2 py-3 hover-elevate rounded px-2 -mx-2 transition-all group"
+                    className="flex items-start gap-4 p-4 bg-background border border-border rounded-lg hover-elevate active-elevate-2 transition-all group"
                     data-testid={`link-news-${index}`}
                   >
-                    <p className="font-medium group-hover:text-primary transition-colors">
-                      {item.title}
-                    </p>
-                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                      <span>{item.source}</span>
-                      <span>•</span>
-                      <span>{item.date}</span>
+                    <div className="shrink-0 mt-1">
+                      <Newspaper className="h-6 w-6 text-muted-foreground group-hover:text-primary transition-colors" />
+                    </div>
+                    <div className="flex-1 min-w-0 space-y-1">
+                      <p className="font-medium group-hover:text-primary transition-colors">
+                        {item.title}
+                      </p>
+                      <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                        <span>{item.source}</span>
+                        <span>•</span>
+                        <span>{item.date}</span>
+                      </div>
                     </div>
                   </a>
                 ))}
@@ -303,13 +308,18 @@ export function SummaryCard({
                     href={video.url}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="block space-y-2 py-3 hover-elevate rounded px-2 -mx-2 transition-all group"
+                    className="flex items-start gap-4 p-4 bg-background border border-border rounded-lg hover-elevate active-elevate-2 transition-all group"
                     data-testid={`link-video-${index}`}
                   >
-                    <p className="font-medium group-hover:text-primary transition-colors">
-                      {video.title}
-                    </p>
-                    <p className="text-sm text-muted-foreground">{video.channel}</p>
+                    <div className="shrink-0 mt-1">
+                      <SiYoutube className="h-6 w-6 text-[#FF0000] group-hover:text-[#CC0000] transition-colors" />
+                    </div>
+                    <div className="flex-1 min-w-0 space-y-1">
+                      <p className="font-medium group-hover:text-primary transition-colors">
+                        {video.title}
+                      </p>
+                      <p className="text-sm text-muted-foreground">{video.channel}</p>
+                    </div>
                   </a>
                 ))}
               </div>
