@@ -137,9 +137,10 @@ Preferred communication style: Simple, everyday language.
 - Competitors with ticker symbols are now expandable inline (accordion-style)
 - Click to expand/collapse directly within the competition section - no popup dialogs
 - Expanded view shows quick summary (tagline, key products, key metrics)
-- "Dive Deeper" button opens full competitor analysis in new tab
+- "Dive Deeper" button opens full competitor analysis in new tab with auto-analysis
 - ChevronDown icon rotates to indicate expansion state
 - **Instant expansion**: Competitor data is prefetched in background after main analysis loads, so expansion happens instantly with no loading delays
+- **Deep linking**: HomePage supports `?ticker=SYMBOL` URL parameter for auto-analysis on page load
 - Schema updated: Competitor objects now include optional `ticker` field
 
 **Sales Channel Tooltips:**
