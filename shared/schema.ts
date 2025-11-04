@@ -18,6 +18,7 @@ export const leaderSchema = z.object({
 // Competitor schema
 export const competitorSchema = z.object({
   name: z.string(),
+  ticker: z.string().optional(),
   focus: z.string(),
 });
 
@@ -43,10 +44,16 @@ export const videoResourceSchema = z.object({
   url: z.string(),
 });
 
+// Sales channel schema
+export const salesChannelSchema = z.object({
+  name: z.string(),
+  explanation: z.string(),
+});
+
 // Operations schema
 export const operationsSchema = z.object({
   regions: z.array(z.string()),
-  channels: z.array(z.string()),
+  channels: z.array(salesChannelSchema),
   scale: z.string(),
 });
 
@@ -80,6 +87,7 @@ export type Competitor = z.infer<typeof competitorSchema>;
 export type Metric = z.infer<typeof metricSchema>;
 export type NewsItem = z.infer<typeof newsItemSchema>;
 export type VideoResource = z.infer<typeof videoResourceSchema>;
+export type SalesChannel = z.infer<typeof salesChannelSchema>;
 export type Operations = z.infer<typeof operationsSchema>;
 export type Metadata = z.infer<typeof metadataSchema>;
 export type CompanySummary = z.infer<typeof companySummarySchema>;
