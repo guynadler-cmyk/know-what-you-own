@@ -132,7 +132,23 @@ Preferred communication style: Simple, everyday language.
 
 ## Recent Changes
 
-### Language Simplification (Latest)
+### Interactive Features (Latest)
+**Clickable Competitors:**
+- Competitors with ticker symbols are now clickable
+- Clicking opens a dialog showing a quick summary (tagline, key products, key metrics)
+- "View Full Analysis" button in dialog opens full competitor analysis in new tab
+- Schema updated: Competitor objects now include optional `ticker` field
+
+**Sales Channel Tooltips:**
+- Sales channel badges now display explanatory tooltips on hover
+- AI generates plain-English explanations for each channel
+- Example: "Third-party sellers: Products sold through retailers like Amazon or Best Buy"
+- Schema updated: Channels changed from string array to SalesChannel objects with `name` and `explanation`
+
+**Components Added:**
+- CompetitorSummaryDialog: Modal dialog for competitor quick-view analysis
+
+### Language Simplification
 **Removed Professional Jargon:**
 - Hero tagline: "SEC filings" → "Understand any public company in minutes"
 - SummaryCard footer: "SEC EDGAR 10-K Filing • CIK..." → "Source: Official company report"
