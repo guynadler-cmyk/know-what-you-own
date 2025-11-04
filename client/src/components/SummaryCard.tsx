@@ -1,12 +1,14 @@
 import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-import { Calendar, Building2, MapPin, Users, TrendingUp, Briefcase, Award, DollarSign, ExternalLink, Youtube, Newspaper, Globe } from "lucide-react";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import { Calendar, Building2, MapPin, Users, TrendingUp, Briefcase, Award, DollarSign, ExternalLink, Youtube, Newspaper, Globe, ChevronDown } from "lucide-react";
 import { LucideIcon } from "lucide-react";
 import { SiX, SiYoutube } from "react-icons/si";
-import { CompetitorSummaryDialog } from "./CompetitorSummaryDialog";
+import { useQuery } from "@tanstack/react-query";
 
 interface Product {
   name: string;
@@ -80,6 +82,79 @@ interface SummaryCardProps {
   cik?: string;
 }
 
+function CompetitorQuickSummary({ ticker }: { ticker: string }) {
+  const { data, isLoading, error } = useQuery<any>({
+    queryKey: ['/api/analyze', ticker],
+    enabled: !!ticker,
+    staleTime: 1000 * 60 * 60,
+  });
+
+  if (isLoading) {
+    return (
+      <div className="mt-4 p-4 bg-background/50 rounded-lg border border-border animate-pulse">
+        <div className="h-4 bg-muted rounded w-3/4 mb-3"></div>
+        <div className="h-3 bg-muted rounded w-full mb-2"></div>
+        <div className="h-3 bg-muted rounded w-5/6"></div>
+      </div>
+    );
+  }
+
+  if (error || !data) {
+    return (
+      <div className="mt-4 p-4 bg-background/50 rounded-lg border border-border text-muted-foreground">
+        <p>Unable to load competitor summary</p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="mt-4 p-6 bg-background/50 rounded-lg border border-border space-y-4">
+      <div>
+        <p className="text-sm font-semibold text-muted-foreground uppercase tracking-wide mb-2">Quick Summary</p>
+        <p className="text-base leading-relaxed">{data.tagline}</p>
+      </div>
+
+      {data.products && data.products.length > 0 && (
+        <div>
+          <p className="text-sm font-semibold text-muted-foreground uppercase tracking-wide mb-2">Key Products</p>
+          <div className="flex flex-wrap gap-2">
+            {data.products.slice(0, 4).map((product: Product, i: number) => (
+              <Badge key={i} variant="secondary" className="text-xs">
+                {product.name}
+              </Badge>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {data.metrics && data.metrics.length > 0 && (
+        <div>
+          <p className="text-sm font-semibold text-muted-foreground uppercase tracking-wide mb-2">Key Metrics</p>
+          <div className="grid grid-cols-2 gap-3">
+            {data.metrics.slice(0, 4).map((metric: Metric, i: number) => (
+              <div key={i} className="text-sm">
+                <span className="text-muted-foreground">{metric.label}:</span>{" "}
+                <span className="font-semibold">{metric.value}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      <Button
+        variant="outline"
+        size="sm"
+        className="w-full mt-2"
+        onClick={() => window.open(`/?ticker=${ticker}`, '_blank')}
+        data-testid={`button-dive-deeper-${ticker}`}
+      >
+        Dive Deeper
+        <ExternalLink className="ml-2 h-4 w-4" />
+      </Button>
+    </div>
+  );
+}
+
 export function SummaryCard({ 
   companyName, 
   ticker, 
@@ -94,16 +169,10 @@ export function SummaryCard({
   metadata,
   cik 
 }: SummaryCardProps) {
-  const [selectedCompetitor, setSelectedCompetitor] = useState<{ name: string; ticker?: string } | null>(null);
+  const [expandedCompetitor, setExpandedCompetitor] = useState<string | null>(null);
 
   return (
     <TooltipProvider>
-      <CompetitorSummaryDialog
-        competitorName={selectedCompetitor?.name || ""}
-        competitorTicker={selectedCompetitor?.ticker}
-        open={!!selectedCompetitor}
-        onOpenChange={(open) => !open && setSelectedCompetitor(null)}
-      />
     <div className="w-full max-w-6xl mx-auto space-y-16 pb-16 animate-fade-in">
       {/* Hero Header */}
       <div className="text-center space-y-6 py-8 border-b-2 border-border pb-12">
@@ -249,24 +318,53 @@ export function SummaryCard({
               <h3 className="text-2xl font-bold pb-3 border-b border-border">Competition</h3>
               <div className="space-y-4">
                 {competitors.map((competitor, index) => (
-                  <div 
-                    key={index} 
-                    className={`space-y-1 py-3 ${competitor.ticker ? 'cursor-pointer hover-elevate active-elevate-2 rounded-lg p-4 -m-1 transition-all' : ''}`}
-                    onClick={() => competitor.ticker && setSelectedCompetitor(competitor)}
-                    data-testid={`competitor-${index}`}
-                  >
-                    <div className="flex items-center gap-2">
-                      <p className={`font-semibold text-lg ${competitor.ticker ? 'text-primary hover:underline' : ''}`}>
-                        {competitor.name}
-                      </p>
-                      {competitor.ticker && (
-                        <Badge variant="outline" className="font-mono text-xs">
-                          {competitor.ticker}
-                        </Badge>
-                      )}
+                  competitor.ticker ? (
+                    <Collapsible
+                      key={index}
+                      open={expandedCompetitor === competitor.ticker}
+                      onOpenChange={(open) => setExpandedCompetitor(open ? competitor.ticker! : null)}
+                    >
+                      <div className="rounded-lg border border-border hover-elevate">
+                        <CollapsibleTrigger asChild>
+                          <div 
+                            className="w-full cursor-pointer p-4 space-y-1"
+                            data-testid={`competitor-${index}`}
+                          >
+                            <div className="flex items-center justify-between gap-2">
+                              <div className="flex items-center gap-2">
+                                <p className="font-semibold text-lg text-primary">
+                                  {competitor.name}
+                                </p>
+                                <Badge variant="outline" className="font-mono text-xs">
+                                  {competitor.ticker}
+                                </Badge>
+                              </div>
+                              <ChevronDown 
+                                className={`h-5 w-5 text-muted-foreground transition-transform ${
+                                  expandedCompetitor === competitor.ticker ? 'rotate-180' : ''
+                                }`}
+                              />
+                            </div>
+                            <p className="text-base text-muted-foreground text-left">{competitor.focus}</p>
+                          </div>
+                        </CollapsibleTrigger>
+                        <CollapsibleContent>
+                          <div className="px-4 pb-4">
+                            <CompetitorQuickSummary ticker={competitor.ticker} />
+                          </div>
+                        </CollapsibleContent>
+                      </div>
+                    </Collapsible>
+                  ) : (
+                    <div 
+                      key={index} 
+                      className="space-y-1 py-3"
+                      data-testid={`competitor-${index}`}
+                    >
+                      <p className="font-semibold text-lg">{competitor.name}</p>
+                      <p className="text-base text-muted-foreground">{competitor.focus}</p>
                     </div>
-                    <p className="text-base text-muted-foreground">{competitor.focus}</p>
-                  </div>
+                  )
                 ))}
               </div>
             </section>
