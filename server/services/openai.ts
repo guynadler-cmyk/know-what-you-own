@@ -78,11 +78,13 @@ Provide a JSON response with this EXACT structure:
   ],
   "operations": {
     "regions": ["Region names"],
-    "channels": ["Sales/distribution channels"],
+    "channels": [
+      {"name": "Channel name", "explanation": "Brief plain-English explanation of what this channel means (e.g., 'Third-party sellers: Products sold through retailers like Amazon or Best Buy')"}
+    ],
     "scale": "Brief description of operational scale"
   },
   "competitors": [
-    {"name": "Competitor name", "focus": "What they compete on"}
+    {"name": "Competitor name", "ticker": "TICKER (if known, otherwise omit)", "focus": "What they compete on"}
   ],
   "leaders": [
     {"name": "Full Name", "role": "Title", "initials": "XX"}
@@ -103,7 +105,8 @@ Provide a JSON response with this EXACT structure:
 
 Requirements:
 - Extract 3-6 products maximum
-- Include 3-4 competitors
+- Include 3-4 competitors with their stock ticker symbols if they are publicly traded companies
+- For each sales channel, provide a simple explanation that non-financial people can understand
 - Include 3-5 key leaders if mentioned (use initials from first/last name)
 - Include 3-4 key metrics (revenue, employees, etc) if mentioned
 - Generate 3 plausible news items with Google News search URLs: https://news.google.com/search?q=${ticker}+recent+news
