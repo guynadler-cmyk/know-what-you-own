@@ -133,10 +133,12 @@ Preferred communication style: Simple, everyday language.
 ## Recent Changes
 
 ### Interactive Features (Latest)
-**Clickable Competitors:**
-- Competitors with ticker symbols are now clickable
-- Clicking opens a dialog showing a quick summary (tagline, key products, key metrics)
-- "View Full Analysis" button in dialog opens full competitor analysis in new tab
+**Expandable Competitors:**
+- Competitors with ticker symbols are now expandable inline (accordion-style)
+- Click to expand/collapse directly within the competition section - no popup dialogs
+- Expanded view shows quick summary (tagline, key products, key metrics)
+- "Dive Deeper" button opens full competitor analysis in new tab
+- ChevronDown icon rotates to indicate expansion state
 - Schema updated: Competitor objects now include optional `ticker` field
 
 **Sales Channel Tooltips:**
@@ -146,7 +148,7 @@ Preferred communication style: Simple, everyday language.
 - Schema updated: Channels changed from string array to SalesChannel objects with `name` and `explanation`
 
 **Components Added:**
-- CompetitorSummaryDialog: Modal dialog for competitor quick-view analysis
+- CompetitorQuickSummary: Inline expandable component for competitor quick-view analysis
 
 ### Language Simplification
 **Removed Professional Jargon:**
