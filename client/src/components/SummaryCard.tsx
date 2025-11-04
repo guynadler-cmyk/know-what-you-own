@@ -194,13 +194,15 @@ export function SummaryCard({
                   {operations.channels.map((channel, i) => (
                     <Tooltip key={i}>
                       <TooltipTrigger asChild>
-                        <Badge 
-                          variant="secondary" 
-                          className="text-sm px-4 py-1.5 cursor-help"
-                          data-testid={`badge-channel-${i}`}
-                        >
-                          {channel.name}
-                        </Badge>
+                        <div>
+                          <Badge 
+                            variant="secondary" 
+                            className="text-sm px-4 py-1.5 cursor-help"
+                            data-testid={`badge-channel-${i}`}
+                          >
+                            {channel.name}
+                          </Badge>
+                        </div>
                       </TooltipTrigger>
                       <TooltipContent className="max-w-xs">
                         <p>{channel.explanation}</p>
