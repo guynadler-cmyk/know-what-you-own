@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
+import { queryClient } from "@/lib/queryClient";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 import { HeroSection } from "@/components/HeroSection";
@@ -46,6 +47,23 @@ export default function HomePage() {
 
       setSummaryData(data);
       setViewState("success");
+
+      // Prefetch all competitor data in the background for instant expansion
+      if (data.competitors && Array.isArray(data.competitors)) {
+        data.competitors.forEach((competitor: any) => {
+          if (competitor.ticker) {
+            queryClient.prefetchQuery({
+              queryKey: ['/api/analyze', competitor.ticker],
+              queryFn: async () => {
+                const res = await fetch(`/api/analyze/${competitor.ticker}`);
+                if (!res.ok) throw new Error('Failed to fetch competitor data');
+                return res.json();
+              },
+              staleTime: 1000 * 60 * 60, // Cache for 1 hour
+            });
+          }
+        });
+      }
     } catch (error: any) {
       setErrorInfo({
         title: error.message?.includes("not found") ? "Ticker Not Found" : "Analysis Failed",

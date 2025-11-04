@@ -139,6 +139,7 @@ Preferred communication style: Simple, everyday language.
 - Expanded view shows quick summary (tagline, key products, key metrics)
 - "Dive Deeper" button opens full competitor analysis in new tab
 - ChevronDown icon rotates to indicate expansion state
+- **Instant expansion**: Competitor data is prefetched in background after main analysis loads, so expansion happens instantly with no loading delays
 - Schema updated: Competitor objects now include optional `ticker` field
 
 **Sales Channel Tooltips:**
