@@ -1,5 +1,6 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
+import { useLocation } from "wouter";
 import { queryClient } from "@/lib/queryClient";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
@@ -22,6 +23,7 @@ const iconMap: Record<string, any> = {
 };
 
 export default function HomePage() {
+  const [location] = useLocation();
   const [viewState, setViewState] = useState<ViewState>("input");
   const [currentTicker, setCurrentTicker] = useState("");
   const [summaryData, setSummaryData] = useState<CompanySummary | null>(null);
@@ -32,6 +34,16 @@ export default function HomePage() {
     enabled: false,
     retry: false,
   });
+
+  // Auto-analyze if ticker is in URL query params
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const tickerParam = params.get('ticker');
+    
+    if (tickerParam && !currentTicker) {
+      handleTickerSubmit(tickerParam);
+    }
+  }, []);
 
   const handleTickerSubmit = async (ticker: string) => {
     setCurrentTicker(ticker);
