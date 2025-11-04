@@ -1,9 +1,12 @@
+import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { Calendar, Building2, MapPin, Users, TrendingUp, Briefcase, Award, DollarSign, ExternalLink, Youtube, Newspaper, Globe } from "lucide-react";
 import { LucideIcon } from "lucide-react";
 import { SiX, SiYoutube } from "react-icons/si";
+import { CompetitorSummaryDialog } from "./CompetitorSummaryDialog";
 
 interface Product {
   name: string;
@@ -20,7 +23,13 @@ interface Leader {
 
 interface Competitor {
   name: string;
+  ticker?: string;
   focus: string;
+}
+
+interface SalesChannel {
+  name: string;
+  explanation: string;
 }
 
 interface Metric {
@@ -53,7 +62,7 @@ interface SummaryCardProps {
   
   operations: {
     regions: string[];
-    channels: string[];
+    channels: SalesChannel[];
     scale: string;
   };
   
@@ -85,7 +94,16 @@ export function SummaryCard({
   metadata,
   cik 
 }: SummaryCardProps) {
+  const [selectedCompetitor, setSelectedCompetitor] = useState<{ name: string; ticker?: string } | null>(null);
+
   return (
+    <TooltipProvider>
+      <CompetitorSummaryDialog
+        competitorName={selectedCompetitor?.name || ""}
+        competitorTicker={selectedCompetitor?.ticker}
+        open={!!selectedCompetitor}
+        onOpenChange={(open) => !open && setSelectedCompetitor(null)}
+      />
     <div className="w-full max-w-6xl mx-auto space-y-16 pb-16 animate-fade-in">
       {/* Hero Header */}
       <div className="text-center space-y-6 py-8 border-b-2 border-border pb-12">
@@ -174,9 +192,20 @@ export function SummaryCard({
                 <h4 className="text-lg font-semibold">Sales Channels</h4>
                 <div className="flex flex-wrap justify-center gap-3">
                   {operations.channels.map((channel, i) => (
-                    <Badge key={i} variant="secondary" className="text-sm px-4 py-1.5">
-                      {channel}
-                    </Badge>
+                    <Tooltip key={i}>
+                      <TooltipTrigger asChild>
+                        <Badge 
+                          variant="secondary" 
+                          className="text-sm px-4 py-1.5 cursor-help"
+                          data-testid={`badge-channel-${i}`}
+                        >
+                          {channel.name}
+                        </Badge>
+                      </TooltipTrigger>
+                      <TooltipContent className="max-w-xs">
+                        <p>{channel.explanation}</p>
+                      </TooltipContent>
+                    </Tooltip>
                   ))}
                 </div>
               </div>
@@ -218,8 +247,22 @@ export function SummaryCard({
               <h3 className="text-2xl font-bold pb-3 border-b border-border">Competition</h3>
               <div className="space-y-4">
                 {competitors.map((competitor, index) => (
-                  <div key={index} className="space-y-1 py-3">
-                    <p className="font-semibold text-lg">{competitor.name}</p>
+                  <div 
+                    key={index} 
+                    className={`space-y-1 py-3 ${competitor.ticker ? 'cursor-pointer hover-elevate active-elevate-2 rounded-lg p-4 -m-1 transition-all' : ''}`}
+                    onClick={() => competitor.ticker && setSelectedCompetitor(competitor)}
+                    data-testid={`competitor-${index}`}
+                  >
+                    <div className="flex items-center gap-2">
+                      <p className={`font-semibold text-lg ${competitor.ticker ? 'text-primary hover:underline' : ''}`}>
+                        {competitor.name}
+                      </p>
+                      {competitor.ticker && (
+                        <Badge variant="outline" className="font-mono text-xs">
+                          {competitor.ticker}
+                        </Badge>
+                      )}
+                    </div>
                     <p className="text-base text-muted-foreground">{competitor.focus}</p>
                   </div>
                 ))}
@@ -335,5 +378,6 @@ export function SummaryCard({
         </p>
       </div>
     </div>
+    </TooltipProvider>
   );
 }
