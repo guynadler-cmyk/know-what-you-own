@@ -36,12 +36,19 @@ export default function AppPage() {
     retry: false,
   });
 
-  // Auto-analyze if ticker is in URL query params
+  // Auto-analyze if ticker is in URL query params or sessionStorage (from demo → login flow)
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const tickerParam = params.get('ticker');
     
-    if (tickerParam && !currentTicker) {
+    // Check sessionStorage for pending ticker from demo
+    const pendingTicker = sessionStorage.getItem('pendingTicker');
+    
+    if (pendingTicker && !currentTicker) {
+      // Clear it immediately so we don't keep analyzing on every page load
+      sessionStorage.removeItem('pendingTicker');
+      handleTickerSubmit(pendingTicker);
+    } else if (tickerParam && !currentTicker) {
       handleTickerSubmit(tickerParam);
     }
   }, []);
