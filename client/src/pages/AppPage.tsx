@@ -9,8 +9,10 @@ import { TickerInput } from "@/components/TickerInput";
 import { SummaryCard } from "@/components/SummaryCard";
 import { LoadingState } from "@/components/LoadingState";
 import { ErrorState } from "@/components/ErrorState";
-import { Smartphone, Laptop, Tablet, Watch, Car, Zap, Battery, Server, Cloud, Gamepad2, Package, Code, Globe, Music, Video, Tv, Search, Cpu, Brain } from "lucide-react";
+import { QRCodeDisplay } from "@/components/QRCodeDisplay";
+import { Smartphone, Laptop, Tablet, Watch, Car, Zap, Battery, Server, Cloud, Gamepad2, Package, Code, Globe, Music, Video, Tv, Search, Cpu, Brain, Download } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { ArrowLeft } from "lucide-react";
 import { CompanySummary } from "@shared/schema";
 import { generateMockStockPerformance } from "@/lib/mockStockData";
@@ -124,7 +126,7 @@ export default function AppPage() {
 
   return (
     <div className="flex min-h-screen flex-col">
-      <Header />
+      <Header showInstallButton={true} />
       
       <main className="flex-1">
         {viewState === "input" && (

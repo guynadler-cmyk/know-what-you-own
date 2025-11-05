@@ -1,8 +1,15 @@
 import { ThemeToggle } from "./ThemeToggle";
+import { QRCodeDisplay } from "./QRCodeDisplay";
 import { Button } from "@/components/ui/button";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Download } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 
-export function Header() {
+interface HeaderProps {
+  showInstallButton?: boolean;
+}
+
+export function Header({ showInstallButton = false }: HeaderProps) {
   const { isAuthenticated, isLoading } = useAuth();
 
   return (
@@ -18,6 +25,31 @@ export function Header() {
           </button>
           
           <div className="flex items-center gap-4">
+            {showInstallButton && (
+              <Dialog>
+                <DialogTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="rounded-full"
+                    data-testid="button-install-app"
+                  >
+                    <Download className="h-5 w-5" />
+                  </Button>
+                </DialogTrigger>
+                <DialogContent className="max-w-lg">
+                  <DialogHeader>
+                    <DialogTitle className="sr-only">Install App</DialogTitle>
+                  </DialogHeader>
+                  <QRCodeDisplay 
+                    url={window.location.origin}
+                    showInstructions={true}
+                    title="Install restnvest"
+                  />
+                </DialogContent>
+              </Dialog>
+            )}
+            
             {!isLoading && (
               isAuthenticated ? (
                 <Button
