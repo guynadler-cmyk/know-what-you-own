@@ -2,7 +2,11 @@
 
 ## Overview
 
-A web application that helps investors understand the businesses they own by providing AI-powered, plain-English summaries of SEC 10-K filings. Users input a stock ticker symbol, and the app fetches the company's most recent 10-K filing from the SEC EDGAR system, extracts the business description, and generates a comprehensive summary using OpenAI.
+A freemium web application that helps investors understand the businesses they own by providing AI-powered, plain-English summaries of SEC 10-K filings. The app features a two-tier architecture:
+
+**Public Landing Page (Demo):** Unauthenticated visitors can try the app with limited preview showing company tagline, website, products (max 3), CEO name, and one YouTube video. A "See Full Analysis" call-to-action encourages signup.
+
+**Full App (Authenticated):** After signing in via Replit Auth, users access complete analysis including business overview, performance metrics, market context with competitors, sales channels, multiple videos, and news articles.
 
 This is a proof-of-concept for Restnvest, a platform promoting sensible investing by helping people understand businesses beyond just ticker symbols or ETFs.
 
@@ -70,12 +74,62 @@ Preferred communication style: Simple, everyday language.
 - `openaiService`: Manages OpenAI API calls for business analysis
 - Clear separation of concerns between external API integrations
 
+### Authentication & Security
+
+**Replit Auth Integration:**
+- PostgreSQL-backed session management using Passport.js
+- OIDC (OpenID Connect) authentication with support for Google, GitHub, and email/password
+- Session storage in `sessions` table with automatic expiration
+- User data stored in `users` table (id, email, first_name, last_name, created_at, updated_at)
+
+**Freemium Architecture:**
+The `/api/analyze/:ticker` endpoint enforces data access restrictions:
+
+**Unauthenticated Users (Demo):**
+```json
+{
+  "ticker": "AAPL",
+  "companyName": "Apple Inc.",
+  "tagline": "...",
+  "website": "https://...",
+  "products": [...],  // Max 3 products
+  "leadership": {
+    "ceo": "Chief Executive Officer",
+    "ceoName": "Tim Cook"
+  },
+  "youtubeVideos": [...]  // Max 1 video
+  // NO metrics, competitors, salesChannels, news, operations
+}
+```
+
+**Authenticated Users (Full Access):**
+```json
+{
+  // All demo fields PLUS:
+  "metrics": [...],
+  "competitors": [...],
+  "salesChannels": [...],
+  "news": [...],
+  "operations": {...}
+  // All products and videos (no limits)
+}
+```
+
+**Data Quality Assurance:**
+- Zod schema validation ensures data completeness
+- If OpenAI returns incomplete data, endpoint errors rather than returning partial results
+- Empty arrays (e.g., `competitors: []`) are acceptable (some companies have no competitors)
+- Security enforced at API level - no bypass via direct API calls
+
 ### Data Storage
 
-**No Traditional Database:**
-- Application is stateless - no persistent data storage
-- All data fetched in real-time from SEC EDGAR API
-- No user accounts, sessions, or saved analyses
+**PostgreSQL Database (Authentication Only):**
+- `sessions` table: Passport.js session storage with expiration
+- `users` table: User profiles from OIDC providers
+
+**No Company Data Storage:**
+- Company analysis data is NOT persisted
+- All 10-K data fetched in real-time from SEC EDGAR API
 - Caching handled at HTTP level, not application level
 
 **Rationale:**
@@ -132,7 +186,21 @@ Preferred communication style: Simple, everyday language.
 
 ## Recent Changes
 
-### Interactive Features (Latest)
+### Freemium Authentication Architecture (Latest - Nov 2025)
+**Complete two-tier system with Replit Auth:**
+- Integrated PostgreSQL database for user authentication and session management
+- Created public LandingPage with hero section, 4 benefit cards, and live demo feature
+- Demo analysis shows limited preview (tagline, website, ≤3 products, CEO name, 1 video only)
+- "See Full Analysis" button prompts signup via Replit Auth (Google, GitHub, email/password)
+- After authentication, users access AppPage with complete analysis (metrics, competitors, sales channels, news)
+- Backend security: `/api/analyze/:ticker` endpoint checks `req.isAuthenticated()` and returns limited data for unauthenticated users
+- Frontend null-safety: LandingPage transforms limited API response to match DemoSummaryCard component structure
+- Header component shows conditional "Sign In" / "Log Out" buttons based on auth state
+- Footer updated with restnvest branding (About, Terms, Privacy, Contact links)
+- Routing logic in App.tsx: unauthenticated users see LandingPage, authenticated users see AppPage
+- End-to-end tested: demo functionality, login flow, full app access, logout
+
+### Interactive Features (Previous)
 **Expandable Competitors:**
 - Competitors with ticker symbols are now expandable inline (accordion-style)
 - Click to expand/collapse directly within the competition section - no popup dialogs
