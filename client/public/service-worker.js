@@ -1,4 +1,4 @@
-const CACHE_NAME = 'restnvest-v4';
+const CACHE_NAME = 'restnvest-v5';
 const urlsToCache = [
   '/',
   '/app',
