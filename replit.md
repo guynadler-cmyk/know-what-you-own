@@ -39,9 +39,39 @@ Shared Zod schemas, located in `/shared/schema.ts`, are central to maintaining t
     - **Lucide React & React Icons:** For various UI icons.
     - **cmdk:** Command palette component.
     - **date-fns:** Date formatting utilities.
+    - **qrcode.react:** QR code generation for PWA installation
 - **Development Tools:**
     - **Vite:** Frontend build tool.
     - **ESBuild:** Backend bundling.
     - **tsx:** For direct TypeScript execution in development.
 - **Clearbit Logo API:** Used for displaying company logos.
 - **recharts:** For charting and data visualization.
+
+## Recent Changes
+
+### Progressive Web App (PWA) Support (Latest - Nov 2025)
+**Made restnvest installable as a mobile app:**
+- Web App Manifest with restnvest branding, teal theme color, standalone display mode
+- Generated 192x192 and 512x512 app icons with teal brand color
+- Service worker for offline caching and faster load times
+- iOS and Android support with proper meta tags
+- QR code on landing page "Take it with you" section with installation instructions
+- Install App button in AppPage header for users who skip landing page
+- QRCodeDisplay reusable component using qrcode.react
+
+### Stock Performance Section & Company Logo (Nov 2025)
+**Added comprehensive stock performance visualization:**
+- Company logo display at top of results using Clearbit Logo API with Building icon fallback
+- Years to Doubling visualization with teal-branded card using Rule of 72
+- Metric carousel with 6 scrollable performance metrics (P/E, Revenue Growth, Profit Margin, FCF, ROE, Debt/Equity)
+- Each metric includes plain-English explanation and 5-year historical chart
+- Mock data generation function for testing
+- Section positioned between Market Context and Resources
+
+### Freemium Authentication (Nov 2025)
+**Complete two-tier system with Replit Auth:**
+- PostgreSQL database for authentication and session management
+- Public landing page with hero section and demo feature
+- Demo shows limited preview (tagline, website, ≤3 products, CEO, 1 video)
+- Seamless login flow with ticker preservation through sessionStorage
+- Full analysis available to authenticated users
