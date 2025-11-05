@@ -20,7 +20,7 @@ export function ShareButton({
   const handleShare = async () => {
     const shareData = {
       title: 'restnvest - Know What You Own',
-      text: 'Understand any public company in minutes with AI-powered analysis of SEC filings.',
+      text: 'Understand any public company in minutes.',
       url: window.location.origin
     };
 
