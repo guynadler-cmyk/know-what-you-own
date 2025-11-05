@@ -126,7 +126,7 @@ export default function AppPage() {
 
   return (
     <div className="flex min-h-screen flex-col">
-      <Header showInstallButton={true} />
+      <Header />
       
       <main className="flex-1">
         {viewState === "input" && (
