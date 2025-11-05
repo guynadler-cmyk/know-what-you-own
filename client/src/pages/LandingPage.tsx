@@ -5,6 +5,7 @@ import { TickerInput } from "@/components/TickerInput";
 import { DemoSummaryCard } from "@/components/DemoSummaryCard";
 import { LoadingState } from "@/components/LoadingState";
 import { ErrorState } from "@/components/ErrorState";
+import { QRCodeDisplay } from "@/components/QRCodeDisplay";
 import { Button } from "@/components/ui/button";
 import { Smartphone, Laptop, Tablet, Watch, Car, Zap, Battery, Server, Cloud, Gamepad2, Package, Code, Globe, Music, Video, Tv, Search, Cpu, Brain, CheckCircle, TrendingUp, Shield, Heart } from "lucide-react";
 import { CompanySummary } from "@shared/schema";
@@ -163,6 +164,25 @@ export default function LandingPage() {
                     </p>
                   </div>
                 </div>
+              </div>
+            </section>
+
+            {/* Mobile App Section */}
+            <section className="py-20 px-4 bg-muted/20">
+              <div className="mx-auto max-w-4xl space-y-12">
+                <div className="text-center space-y-4">
+                  <h2 className="text-3xl sm:text-4xl font-bold">
+                    Take it with you
+                  </h2>
+                  <p className="text-xl text-muted-foreground">
+                    Install restnvest on your phone for easy access anywhere
+                  </p>
+                </div>
+                
+                <QRCodeDisplay 
+                  url={window.location.origin}
+                  showInstructions={true}
+                />
               </div>
             </section>
 
