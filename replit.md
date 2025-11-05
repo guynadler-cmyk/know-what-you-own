@@ -2,7 +2,7 @@
 
 ## Overview
 
-"Know What You Own" is a freemium web application designed to help investors understand public companies by providing AI-powered, plain-English summaries of SEC 10-K filings. It aims to demystify financial reports, making investment research accessible beyond just ticker symbols. The application features a public landing page offering a limited demo, while authenticated users gain access to comprehensive analyses, including business overviews, performance metrics, market context, and resources. This project serves as a proof-of-concept for Restnvest, a platform dedicated to fostering sensible investing through deeper business understanding.
+"Know What You Own" is a free web application designed to help investors understand public companies by providing AI-powered, plain-English summaries of SEC 10-K filings. It aims to demystify financial reports, making investment research accessible beyond just ticker symbols. The application provides immediate access to comprehensive analyses, including business overviews, performance metrics, market context, and resources - no sign-up required. This project serves as a proof-of-concept for Restnvest, a platform dedicated to fostering sensible investing through deeper business understanding.
 
 ## User Preferences
 
@@ -18,13 +18,9 @@ The frontend is built with React and TypeScript, using Vite for fast development
 
 The backend is developed with Node.js and Express.js, leveraging TypeScript for type safety. It exposes a RESTful API with a primary `/api/analyze/:ticker` endpoint. Input validation is performed using Zod schemas, shared with the frontend to ensure consistency. The data flow involves ticker validation, mapping to CIK, fetching 10-K filings from SEC EDGAR, extracting the business section, and sending it to OpenAI for summarization. A service layer pattern separates concerns, with `secService` for SEC interactions and `openaiService` for OpenAI API calls.
 
-### Authentication & Security
+### Data Storage & Security
 
-The application integrates Replit Auth for user authentication, supporting Google, GitHub, and email/password sign-in. Session management is handled via Passport.js with a PostgreSQL backend. A freemium model is enforced at the API level: unauthenticated users receive a limited summary (company name, tagline, website, up to 3 products, CEO, 1 video), while authenticated users access the full analysis, including detailed metrics, competitors, sales channels, news, and operations. Zod schema validation ensures data quality and completeness, with incomplete AI responses resulting in errors rather than partial data.
-
-### Data Storage
-
-PostgreSQL is used solely for authentication data (sessions and user profiles). Company analysis data is not persisted; instead, it is fetched in real-time from the SEC EDGAR API to ensure data freshness and simplify the architecture, reducing infrastructure requirements.
+The application uses a fully public API with no authentication required. Company analysis data is not persisted; instead, it is fetched in real-time from the SEC EDGAR API to ensure data freshness and simplify the architecture. Zod schema validation ensures data quality and completeness, with incomplete AI responses resulting in errors rather than partial data. This zero-friction approach allows users to immediately access full company analyses without creating an account.
 
 ### Type Safety & Validation
 
@@ -49,7 +45,16 @@ Shared Zod schemas, located in `/shared/schema.ts`, are central to maintaining t
 
 ## Recent Changes
 
-### Share & Install Functionality (Latest - Nov 2025)
+### Removed Authentication - Open Access (Latest - Nov 2025)
+**Simplified user experience by removing all authentication barriers:**
+- **No sign-up required:** Users get immediate access to full company analyses
+- **Removed freemium restrictions:** Everyone receives complete data (all products, metrics, competitors, etc.)
+- **Simplified architecture:** Removed Replit Auth, session management, and user database
+- **Clean header:** Removed login/logout buttons - now only shows Share, Install, and Theme toggle
+- **Single-page experience:** Consolidated to one AppPage instead of separate landing/authenticated views
+- **Why:** Early validation phase - want users to try the full product before asking for accounts
+
+### Share & Install Functionality (Nov 2025)
 **Added easy link sharing and PWA installation throughout the app:**
 - **ShareButton Component:** Uses Web Share API for native mobile sharing (texts, email, social media)
   - Fallback to clipboard copy with toast notification on unsupported browsers
