@@ -13,6 +13,7 @@ import { Smartphone, Laptop, Tablet, Watch, Car, Zap, Battery, Server, Cloud, Ga
 import { Button } from "@/components/ui/button";
 import { ArrowLeft } from "lucide-react";
 import { CompanySummary } from "@shared/schema";
+import { generateMockStockPerformance } from "@/lib/mockStockData";
 
 type ViewState = "input" | "loading" | "success" | "error";
 
@@ -65,7 +66,13 @@ export default function AppPage() {
         throw new Error(data.message || data.error || "Analysis failed");
       }
 
-      setSummaryData(data);
+      // Add mock stock performance data
+      const enrichedData = {
+        ...data,
+        stockPerformance: generateMockStockPerformance(ticker),
+      };
+
+      setSummaryData(enrichedData);
       setViewState("success");
 
       // Prefetch all competitor data in the background for instant expansion

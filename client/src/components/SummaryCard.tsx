@@ -5,10 +5,13 @@ import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
-import { Calendar, Building2, MapPin, Users, TrendingUp, Briefcase, Award, DollarSign, ExternalLink, Youtube, Newspaper, Globe, ChevronDown } from "lucide-react";
+import { Calendar, Building2, MapPin, Users, TrendingUp, Briefcase, Award, DollarSign, ExternalLink, Youtube, Newspaper, Globe, ChevronDown, Building } from "lucide-react";
 import { LucideIcon } from "lucide-react";
 import { SiX, SiYoutube } from "react-icons/si";
 import { useQuery } from "@tanstack/react-query";
+import { YearsToDoublingCard } from "@/components/YearsToDoublingCard";
+import { MetricCarousel } from "@/components/MetricCarousel";
+import { StockPerformance } from "@shared/schema";
 
 interface Product {
   name: string;
@@ -71,6 +74,7 @@ interface SummaryCardProps {
   competitors: Competitor[];
   leaders: Leader[];
   metrics: Metric[];
+  stockPerformance?: StockPerformance;
   
   metadata: {
     homepage: string;
@@ -166,16 +170,50 @@ export function SummaryCard({
   competitors,
   leaders,
   metrics,
+  stockPerformance,
   metadata,
   cik 
 }: SummaryCardProps) {
   const [expandedCompetitor, setExpandedCompetitor] = useState<string | null>(null);
+  const [logoFailed, setLogoFailed] = useState(false);
+
+  // Extract domain from homepage for logo
+  const getLogoUrl = (homepage: string) => {
+    try {
+      const url = new URL(homepage);
+      return `https://logo.clearbit.com/${url.hostname}`;
+    } catch {
+      return null;
+    }
+  };
+
+  const logoUrl = getLogoUrl(metadata.homepage);
 
   return (
     <TooltipProvider>
     <div className="w-full max-w-6xl mx-auto space-y-16 pb-16 animate-fade-in">
       {/* Hero Header */}
       <div className="text-center space-y-6 py-8 border-b-2 border-border pb-12">
+        {/* Company Logo */}
+        <div className="flex justify-center mb-6">
+          {logoUrl && !logoFailed ? (
+            <img 
+              src={logoUrl} 
+              alt={`${companyName} logo`}
+              className="h-20 w-20 object-contain rounded-lg"
+              onError={() => setLogoFailed(true)}
+              data-testid="company-logo"
+            />
+          ) : (
+            <div 
+              className="h-20 w-20 rounded-lg bg-muted flex items-center justify-center"
+              data-testid="company-logo-fallback"
+            >
+              <Building className="h-10 w-10 text-muted-foreground" />
+            </div>
+          )}
+        </div>
+        
         <h1 className="text-5xl sm:text-6xl md:text-7xl font-bold tracking-tight">{companyName}</h1>
         <p className="text-2xl sm:text-3xl text-muted-foreground font-light max-w-4xl mx-auto leading-relaxed">
           {tagline}
@@ -404,6 +442,32 @@ export function SummaryCard({
           </div>
         </div>
       </div>
+
+      {/* STOCK PERFORMANCE CLUSTER */}
+      {stockPerformance && (
+        <div className="border-2 border-border rounded-2xl">
+          <div className="bg-muted px-8 py-4 border-b-2 border-border">
+            <h2 className="text-2xl font-bold text-center uppercase tracking-wide">Stock Performance</h2>
+          </div>
+          <div className="bg-muted/20 p-8 sm:p-12">
+            <div className="space-y-12">
+              {/* Years to Doubling Visualization */}
+              <section>
+                <YearsToDoublingCard 
+                  data={stockPerformance.yearsToDoubling} 
+                  companyName={companyName}
+                />
+              </section>
+
+              {/* Performance Metrics Carousel */}
+              <section>
+                <h3 className="text-xl font-bold mb-6 pb-2 border-b border-border">Key Metrics</h3>
+                <MetricCarousel metrics={stockPerformance.metrics} />
+              </section>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* RESOURCES CLUSTER */}
       <div className="border-2 border-border rounded-2xl">
