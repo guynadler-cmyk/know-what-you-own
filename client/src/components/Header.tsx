@@ -1,6 +1,9 @@
 import { ThemeToggle } from "./ThemeToggle";
 import { ShareButton } from "./ShareButton";
+import { QRCodeDisplay } from "./QRCodeDisplay";
 import { Button } from "@/components/ui/button";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Download } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 
 export function Header() {
@@ -20,6 +23,30 @@ export function Header() {
           
           <div className="flex items-center gap-3">
             <ShareButton variant="outline" size="sm" showText={true} />
+            
+            <Dialog>
+              <DialogTrigger asChild>
+                <Button 
+                  variant="ghost" 
+                  size="icon"
+                  data-testid="button-install"
+                >
+                  <Download className="h-4 w-4" />
+                </Button>
+              </DialogTrigger>
+              <DialogContent>
+                <DialogHeader>
+                  <DialogTitle className="flex items-center gap-2">
+                    <Download className="h-5 w-5" />
+                    Install restnvest
+                  </DialogTitle>
+                </DialogHeader>
+                <QRCodeDisplay 
+                  url={window.location.origin}
+                  showInstructions={true}
+                />
+              </DialogContent>
+            </Dialog>
             
             {!isLoading && (
               isAuthenticated ? (
