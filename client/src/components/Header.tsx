@@ -4,11 +4,8 @@ import { QRCodeDisplay } from "./QRCodeDisplay";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Smartphone } from "lucide-react";
-import { useAuth } from "@/hooks/useAuth";
 
 export function Header() {
-  const { isAuthenticated, isLoading } = useAuth();
-
   return (
     <header className="border-b border-border bg-background">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
@@ -21,7 +18,7 @@ export function Header() {
             Know What You Own
           </button>
           
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-3 ml-auto">
             <ShareButton variant="outline" size="sm" showText={true} />
             
             <Dialog>
@@ -49,29 +46,6 @@ export function Header() {
               </DialogContent>
             </Dialog>
             
-            {!isLoading && (
-              isAuthenticated ? (
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="rounded-full"
-                  onClick={() => window.location.href = '/api/logout'}
-                  data-testid="button-logout"
-                >
-                  Log Out
-                </Button>
-              ) : (
-                <Button
-                  variant="default"
-                  size="sm"
-                  className="rounded-full"
-                  onClick={() => window.location.href = '/api/login'}
-                  data-testid="button-login"
-                >
-                  Sign In
-                </Button>
-              )
-            )}
             <ThemeToggle />
           </div>
         </div>
