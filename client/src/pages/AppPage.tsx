@@ -22,7 +22,8 @@ const iconMap: Record<string, any> = {
   Brain, Cpu
 };
 
-export default function HomePage() {
+// Protected page - requires authentication
+export default function AppPage() {
   const [location] = useLocation();
   const [viewState, setViewState] = useState<ViewState>("input");
   const [currentTicker, setCurrentTicker] = useState("");
