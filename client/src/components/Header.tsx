@@ -1,5 +1,6 @@
 import { ThemeToggle } from "./ThemeToggle";
 import { QRCodeDisplay } from "./QRCodeDisplay";
+import { ShareButton } from "./ShareButton";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Download } from "lucide-react";
@@ -24,7 +25,9 @@ export function Header({ showInstallButton = false }: HeaderProps) {
             Know What You Own
           </button>
           
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-2">
+            <ShareButton variant="ghost" size="icon" showText={false} />
+            
             {showInstallButton && (
               <Dialog>
                 <DialogTrigger asChild>
