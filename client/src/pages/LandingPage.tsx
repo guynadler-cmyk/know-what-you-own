@@ -54,11 +54,26 @@ export default function LandingPage() {
   };
 
   const preparedSummary = summaryData ? {
-    ...summaryData,
-    products: summaryData.products.map(p => ({
+    companyName: summaryData.companyName,
+    ticker: summaryData.ticker,
+    tagline: summaryData.tagline,
+    products: (summaryData.products || []).map(p => ({
       ...p,
       icon: iconMap[p.icon] || Package
-    }))
+    })),
+    leaders: summaryData.leadership ? [{
+      name: summaryData.leadership.ceoName || '',
+      role: summaryData.leadership.ceo || 'CEO',
+      initials: (summaryData.leadership.ceoName || '').split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase()
+    }] : [],
+    metadata: {
+      homepage: summaryData.website || '',
+      videos: (summaryData.youtubeVideos || []).map(v => ({
+        title: v.title,
+        channel: v.channel,
+        url: v.url
+      }))
+    }
   } : null;
 
   return (

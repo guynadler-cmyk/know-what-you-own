@@ -22,10 +22,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Public endpoint - no auth required (for landing page demo)
-  app.get("/api/analyze/:ticker", async (req, res) => {
+  // Analysis endpoint - Returns limited demo data for unauthenticated users, full data for authenticated users
+  app.get("/api/analyze/:ticker", async (req: any, res) => {
     try {
       const { ticker } = req.params;
+      const isAuth = req.isAuthenticated && req.isAuthenticated();
       
       if (!ticker || !/^[A-Z]{1,5}$/i.test(ticker)) {
         return res.status(400).json({ 
@@ -50,6 +51,31 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       const validated = companySummarySchema.parse(summary);
       
+      // If user is not authenticated, return limited demo data only
+      if (!isAuth) {
+        const limitedData: any = {
+          ticker: validated.ticker,
+          companyName: validated.companyName,
+          tagline: validated.tagline,
+          website: validated.website,
+          products: validated.products ? validated.products.slice(0, 3) : [], // Only first 3 products
+          youtubeVideos: validated.youtubeVideos ? validated.youtubeVideos.slice(0, 1) : [], // Only 1 video
+          // Omit premium fields: metrics, competitors, salesChannels, news, operations
+        };
+        
+        // Only include leadership if it exists
+        if (validated.leadership) {
+          limitedData.leadership = {
+            ceo: validated.leadership.ceo || '',
+            ceoName: validated.leadership.ceoName || '',
+            // Omit other leadership fields
+          };
+        }
+        
+        return res.json(limitedData);
+      }
+      
+      // Authenticated users get full data
       res.json(validated);
     } catch (error: any) {
       console.error("Analysis error:", error);
