@@ -3,8 +3,26 @@ import { createServer, type Server } from "http";
 import { secService } from "./services/sec";
 import { openaiService } from "./services/openai";
 import { companySummarySchema } from "@shared/schema";
+import { setupAuth, isAuthenticated } from "./replitAuth";
+import { storage } from "./storage";
 
 export async function registerRoutes(app: Express): Promise<Server> {
+  // Referenced from Replit Auth blueprint - Setup authentication
+  await setupAuth(app);
+
+  // Auth routes (referenced from Replit Auth blueprint)
+  app.get('/api/auth/user', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const user = await storage.getUser(userId);
+      res.json(user);
+    } catch (error) {
+      console.error("Error fetching user:", error);
+      res.status(500).json({ message: "Failed to fetch user" });
+    }
+  });
+
+  // Public endpoint - no auth required (for landing page demo)
   app.get("/api/analyze/:ticker", async (req, res) => {
     try {
       const { ticker } = req.params;
