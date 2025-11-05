@@ -1,16 +1,9 @@
 import { ThemeToggle } from "./ThemeToggle";
-import { QRCodeDisplay } from "./QRCodeDisplay";
 import { ShareButton } from "./ShareButton";
 import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Download } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 
-interface HeaderProps {
-  showInstallButton?: boolean;
-}
-
-export function Header({ showInstallButton = false }: HeaderProps) {
+export function Header() {
   const { isAuthenticated, isLoading } = useAuth();
 
   return (
@@ -25,33 +18,8 @@ export function Header({ showInstallButton = false }: HeaderProps) {
             Know What You Own
           </button>
           
-          <div className="flex items-center gap-2">
-            <ShareButton variant="ghost" size="icon" showText={false} />
-            
-            {showInstallButton && (
-              <Dialog>
-                <DialogTrigger asChild>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="rounded-full"
-                    data-testid="button-install-app"
-                  >
-                    <Download className="h-5 w-5" />
-                  </Button>
-                </DialogTrigger>
-                <DialogContent className="max-w-lg">
-                  <DialogHeader>
-                    <DialogTitle className="sr-only">Install App</DialogTitle>
-                  </DialogHeader>
-                  <QRCodeDisplay 
-                    url={window.location.origin}
-                    showInstructions={true}
-                    title="Install restnvest"
-                  />
-                </DialogContent>
-              </Dialog>
-            )}
+          <div className="flex items-center gap-3">
+            <ShareButton variant="outline" size="sm" showText={true} />
             
             {!isLoading && (
               isAuthenticated ? (
