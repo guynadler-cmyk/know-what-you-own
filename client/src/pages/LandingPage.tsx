@@ -65,18 +65,10 @@ export default function LandingPage() {
       ...p,
       icon: iconMap[p.icon] || Package
     })),
-    leaders: summaryData.leadership ? [{
-      name: summaryData.leadership.ceoName || '',
-      role: summaryData.leadership.ceo || 'CEO',
-      initials: (summaryData.leadership.ceoName || '').split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase()
-    }] : [],
+    leaders: (summaryData.leaders || []).slice(0, 1),
     metadata: {
-      homepage: summaryData.website || '',
-      videos: (summaryData.youtubeVideos || []).map(v => ({
-        title: v.title,
-        channel: v.channel,
-        url: v.url
-      }))
+      homepage: summaryData.metadata?.homepage || '',
+      videos: (summaryData.metadata?.videos || []).slice(0, 1)
     }
   } : null;
 
