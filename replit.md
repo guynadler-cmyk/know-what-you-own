@@ -49,14 +49,17 @@ Shared Zod schemas, located in `/shared/schema.ts`, are central to maintaining t
 
 ## Recent Changes
 
-### Share Functionality (Latest - Nov 2025)
-**Added easy link sharing throughout the app:**
+### Share & Install Functionality (Latest - Nov 2025)
+**Added easy link sharing and PWA installation throughout the app:**
 - **ShareButton Component:** Uses Web Share API for native mobile sharing (texts, email, social media)
   - Fallback to clipboard copy with toast notification on unsupported browsers
   - Visible in header on all pages with "Share" text label and outline style
   - Accessible to both authenticated and unauthenticated users
-- **User Experience:** One-click sharing on mobile (share sheet) or desktop (copy to clipboard)
-- **Removed:** Install App button from header - simplified UX based on user feedback
+- **Install Button:** Download icon in header opens QR code dialog for PWA installation
+  - QR code can be scanned with phone camera to install on iOS/Android
+  - Shows step-by-step installation instructions
+  - Available on all pages for convenient installation access
+- **User Experience:** One-click sharing on mobile (share sheet) or desktop (copy to clipboard), and easy PWA installation via QR code
 
 ### Progressive Web App (PWA) Support (Nov 2025)
 **Made restnvest installable as a mobile app:**
