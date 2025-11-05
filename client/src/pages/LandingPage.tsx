@@ -6,7 +6,9 @@ import { DemoSummaryCard } from "@/components/DemoSummaryCard";
 import { LoadingState } from "@/components/LoadingState";
 import { ErrorState } from "@/components/ErrorState";
 import { QRCodeDisplay } from "@/components/QRCodeDisplay";
+import { ShareButton } from "@/components/ShareButton";
 import { Button } from "@/components/ui/button";
+import { useIsPWAInstalled } from "@/hooks/useIsPWAInstalled";
 import { Smartphone, Laptop, Tablet, Watch, Car, Zap, Battery, Server, Cloud, Gamepad2, Package, Code, Globe, Music, Video, Tv, Search, Cpu, Brain, CheckCircle, TrendingUp, Shield, Heart } from "lucide-react";
 import { CompanySummary } from "@shared/schema";
 
@@ -22,6 +24,7 @@ export default function LandingPage() {
   const [viewState, setViewState] = useState<ViewState>("input");
   const [summaryData, setSummaryData] = useState<CompanySummary | null>(null);
   const [errorInfo, setErrorInfo] = useState({ title: "", message: "" });
+  const isPWAInstalled = useIsPWAInstalled();
 
   const handleTickerSubmit = async (ticker: string) => {
     setViewState("loading");
@@ -109,6 +112,10 @@ export default function LandingPage() {
                     Try it now – Get a free company summary
                   </p>
                 </div>
+
+                <div className="flex justify-center gap-4 pt-4">
+                  <ShareButton variant="outline" />
+                </div>
               </div>
             </section>
 
@@ -167,24 +174,26 @@ export default function LandingPage() {
               </div>
             </section>
 
-            {/* Mobile App Section */}
-            <section className="py-20 px-4 bg-muted/20">
-              <div className="mx-auto max-w-4xl space-y-12">
-                <div className="text-center space-y-4">
-                  <h2 className="text-3xl sm:text-4xl font-bold">
-                    Take it with you
-                  </h2>
-                  <p className="text-xl text-muted-foreground">
-                    Install restnvest on your phone for easy access anywhere
-                  </p>
+            {/* Mobile App Section - Only show if PWA is not installed */}
+            {!isPWAInstalled && (
+              <section className="py-20 px-4 bg-muted/20">
+                <div className="mx-auto max-w-4xl space-y-12">
+                  <div className="text-center space-y-4">
+                    <h2 className="text-3xl sm:text-4xl font-bold">
+                      Take it with you
+                    </h2>
+                    <p className="text-xl text-muted-foreground">
+                      Install restnvest on your phone for easy access anywhere
+                    </p>
+                  </div>
+                  
+                  <QRCodeDisplay 
+                    url={window.location.origin}
+                    showInstructions={true}
+                  />
                 </div>
-                
-                <QRCodeDisplay 
-                  url={window.location.origin}
-                  showInstructions={true}
-                />
-              </div>
-            </section>
+              </section>
+            )}
 
             {/* Final CTA */}
             <section className="py-20 px-4 text-center">
