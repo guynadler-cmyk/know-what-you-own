@@ -49,17 +49,14 @@ Shared Zod schemas, located in `/shared/schema.ts`, are central to maintaining t
 
 ## Recent Changes
 
-### Share & Smart PWA Detection (Latest - Nov 2025)
-**Added mobile sharing and intelligent install prompts:**
+### Share Functionality (Latest - Nov 2025)
+**Added easy link sharing throughout the app:**
 - **ShareButton Component:** Uses Web Share API for native mobile sharing (texts, email, social media)
   - Fallback to clipboard copy with toast notification on unsupported browsers
-  - Icon-only variant in header, full button on landing page
-  - Accessible on both authenticated and unauthenticated pages
-- **useIsPWAInstalled Hook:** Detects if app is running in standalone/installed mode
-  - Uses `matchMedia('display-mode: standalone')` and iOS-specific `navigator.standalone`
-  - Automatically hides "Take it with you" QR section after PWA installation
-  - Prevents redundant install prompts for users who already installed the app
-- **Smart UX:** Landing page QR section disappears once PWA is installed, Share button remains available
+  - Visible in header on all pages with "Share" text label and outline style
+  - Accessible to both authenticated and unauthenticated users
+- **User Experience:** One-click sharing on mobile (share sheet) or desktop (copy to clipboard)
+- **Removed:** Install App button from header - simplified UX based on user feedback
 
 ### Progressive Web App (PWA) Support (Nov 2025)
 **Made restnvest installable as a mobile app:**
