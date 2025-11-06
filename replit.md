@@ -45,7 +45,17 @@ Shared Zod schemas, located in `/shared/schema.ts`, are central to maintaining t
 
 ## Recent Changes
 
-### Removed Authentication - Open Access (Latest - Nov 2025)
+### Investment Thesis Section (Latest - Nov 2025)
+**Added AI-powered investment thesis analysis at the top of company summaries:**
+- **Prominent placement:** First major section after company header, before business overview
+- **AI extraction:** GPT-4 analyzes 10-K filings to extract how management believes they'll create shareholder value
+- **Comprehensive content:** 2-3 paragraphs explaining strategic vision, competitive advantages/moats, market opportunity, and business model
+- **Teal branding:** Visually distinct section with primary color highlighting its importance
+- **Structured formatting:** Each paragraph rendered separately with proper spacing for readability
+- **Why:** Answers the Warren Buffett question - "How will this company make investors wealthy?" - directly from the filing
+- **Future enhancement:** Plan to compare thesis against market multiples vs peers to identify undervalued/overvalued opportunities
+
+### Removed Authentication - Open Access (Nov 2025)
 **Simplified user experience by removing all authentication barriers:**
 - **No sign-up required:** Users get immediate access to full company analyses
 - **Removed freemium restrictions:** Everyone receives complete data (all products, metrics, competitors, etc.)
