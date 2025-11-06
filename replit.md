@@ -45,18 +45,20 @@ Shared Zod schemas, located in `/shared/schema.ts`, are central to maintaining t
 
 ## Recent Changes
 
-### Investment Themes with Color-Coded Emphasis (Latest - Nov 2025)
-**Added strategic theme extraction and visual emphasis scoring:**
-- **AI extraction:** GPT-4 identifies 3-5 key strategic themes from the 10-K filing with emphasis scoring
-- **Color-coded badges:** Teal color intensity visualizes theme emphasis (dark=strong, medium=moderate, light=mentioned)
-- **Elegant legend:** Clear visual guide explaining the three emphasis levels with color swatches
-- **Strategic positioning:** Themes displayed above investment thesis paragraphs for immediate visibility
-- **Collapsible thesis paragraphs:** Detailed thesis text is collapsed by default with "Read Full Thesis" button to avoid overwhelming users
-- **Emphasis scoring:** AI analyzes frequency, depth of discussion, and strategic importance to determine high/medium/low emphasis
+### Multi-Dimensional Investment Analysis (Latest - Nov 2025)
+**Expanded investment thesis to four distinct tag categories with emphasis scoring:**
+- **Four-Dimensional Analysis:** AI extracts Strategic Themes (3-5), Competitive Moats (2-4), Market Opportunity (2-4), and Value Creation (2-4) drivers
+- **Visual Icons:** Each category distinguished by icon (TrendingUp, Shield, Target, Coins) for instant recognition
+- **Color-coded emphasis:** Teal color intensity visualizes emphasis levels (dark=high, medium=moderate, light=mentioned) across all categories
+- **2x2 Grid Layout:** Clean presentation with Strategic Themes & Moats in top row, Market Opportunity & Value Creation in bottom row
+- **Elegant legend:** Color swatches explain three emphasis levels (strong, moderate, mentioned)
+- **Strategic positioning:** All tags displayed above collapsible investment thesis paragraphs for scannable analysis
+- **Collapsible thesis:** Detailed thesis text collapsed by default with "Read Full Thesis" button to avoid overwhelming users
+- **Emphasis scoring:** AI analyzes frequency, depth of discussion, and strategic importance across all dimensions
 - **Brand consistency:** Uses teal color variations aligned with restnvest brand identity
-- **Example tickers updated:** Changed from well-known stocks (AAPL, MSFT, TSLA, NVDA) to hot AI stocks (IOT, SYM, PATH, SOUN, AI, PLTR, SMCI) to better demonstrate the app's value
-- **Why:** Helps investors quickly understand company's strategic priorities directly from the filing without information overload
-- **Service worker:** Cache bumped to v10 for PWA updates
+- **Example tickers updated:** Changed from well-known stocks (AAPL, MSFT, TSLA, NVDA) to hot AI stocks (IOT, SYM, PATH, SOUN, AI, PLTR, SMCI)
+- **Why:** Provides complete investment case at a glance - what they focus on (themes), how they defend (moats), where they're growing (opportunity), and how they profit (value creation)
+- **Service worker:** Cache bumped to v11 for PWA updates
 
 ### Investment Thesis Section (Nov 2025)
 **Added AI-powered investment thesis analysis at the top of company summaries:**
