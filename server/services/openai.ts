@@ -75,7 +75,16 @@ Provide a JSON response with this EXACT structure:
   "tagline": "One sentence describing what the company does (max 100 chars)",
   "investmentThesis": "2-3 paragraph explanation of how this company believes it will create shareholder value and make investors wealthy. Include: their strategic vision for growth, key competitive advantages/moats, market opportunity, and how their business model converts operations into shareholder returns. Write from management's perspective based on the 10-K.",
   "investmentThemes": [
-    {"name": "Theme name (e.g., AI, Electric Vehicles, Drug Development)", "emphasis": "high/medium/low"}
+    {"name": "Theme name (e.g., AI/ML, Cloud Infrastructure, Electric Vehicles)", "emphasis": "high/medium/low"}
+  ],
+  "moats": [
+    {"name": "Competitive advantage (e.g., Network Effects, Brand Power, Patents, Scale Economies)", "emphasis": "high/medium/low"}
+  ],
+  "marketOpportunity": [
+    {"name": "Market descriptor (e.g., TAM: $500B, Growing 20% YoY, International Expansion)", "emphasis": "high/medium/low"}
+  ],
+  "valueCreation": [
+    {"name": "Value driver (e.g., Recurring Revenue, High Margins 70%+, Platform Economics)", "emphasis": "high/medium/low"}
   ],
   "products": [
     {"name": "Product Name", "description": "Brief description (max 50 chars)"}
@@ -109,8 +118,11 @@ Provide a JSON response with this EXACT structure:
 
 Requirements:
 - Write the investment thesis in 2-3 well-structured paragraphs explaining how the company plans to create shareholder value
-- Extract 3-5 investment themes that represent the company's key strategic focus areas (e.g., AI, Cloud Computing, Electric Vehicles, Drug Development, etc.)
-- For each theme, assign emphasis based on how prominently it appears in the filing:
+- Extract 3-5 investment themes that represent the company's key strategic focus areas (e.g., AI/ML, Cloud Infrastructure, Electric Vehicles, Drug Development)
+- Extract 2-4 moats (competitive advantages) like Network Effects, Brand Power, Patents, Switching Costs, Scale Economies, Proprietary Data, etc.
+- Extract 2-4 market opportunity tags describing the addressable market (e.g., TAM: $100B, Growing 15% YoY, Underserved Market, International Expansion)
+- Extract 2-4 value creation drivers explaining how they make money (e.g., Recurring Revenue, High Margins 70%+, Asset-Light Model, Platform Economics, Cross-Sell)
+- For all tags (themes, moats, opportunities, value creation), assign emphasis based on prominence in the filing:
   * "high": Core strategy, mentioned frequently throughout, dedicated sections
   * "medium": Important but secondary focus, mentioned several times
   * "low": Mentioned or emerging area, not a primary focus
@@ -174,6 +186,9 @@ Requirements:
       tagline: result.tagline || "Business information",
       investmentThesis: result.investmentThesis || "Investment thesis information not available.",
       investmentThemes: result.investmentThemes || [],
+      moats: result.moats || [],
+      marketOpportunity: result.marketOpportunity || [],
+      valueCreation: result.valueCreation || [],
       products,
       operations: result.operations || {
         regions: [],
