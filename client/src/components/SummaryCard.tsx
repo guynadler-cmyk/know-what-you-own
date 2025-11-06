@@ -11,7 +11,7 @@ import { SiX, SiYoutube } from "react-icons/si";
 import { useQuery } from "@tanstack/react-query";
 import { YearsToDoublingCard } from "@/components/YearsToDoublingCard";
 import { MetricCarousel } from "@/components/MetricCarousel";
-import { StockPerformance } from "@shared/schema";
+import { StockPerformance, InvestmentTheme } from "@shared/schema";
 
 interface Product {
   name: string;
@@ -63,6 +63,7 @@ interface SummaryCardProps {
   fiscalYear: string;
   tagline: string;
   investmentThesis: string;
+  investmentThemes: InvestmentTheme[];
   
   products: Product[];
   
@@ -167,6 +168,7 @@ export function SummaryCard({
   fiscalYear,
   tagline,
   investmentThesis,
+  investmentThemes,
   products,
   operations,
   competitors,
@@ -186,6 +188,18 @@ export function SummaryCard({
       return `https://logo.clearbit.com/${url.hostname}`;
     } catch {
       return null;
+    }
+  };
+
+  // Get badge classes based on emphasis level
+  const getThemeBadgeClasses = (emphasis: "high" | "medium" | "low") => {
+    switch (emphasis) {
+      case "high":
+        return "bg-primary text-primary-foreground border-primary";
+      case "medium":
+        return "bg-primary/70 text-primary-foreground border-primary/70";
+      case "low":
+        return "bg-primary/40 text-primary-foreground border-primary/40";
     }
   };
 
@@ -264,16 +278,53 @@ export function SummaryCard({
           <h2 className="text-2xl font-bold text-center uppercase tracking-wide text-primary-foreground">Investment Thesis</h2>
         </div>
         <div className="p-8 sm:p-12">
-          <div className="max-w-4xl mx-auto space-y-6">
-            {investmentThesis.split('\n\n').map((paragraph, index) => (
-              <p 
-                key={index} 
-                className="text-lg leading-relaxed" 
-                data-testid={`text-investment-thesis-p${index + 1}`}
-              >
-                {paragraph}
-              </p>
-            ))}
+          <div className="max-w-4xl mx-auto space-y-8">
+            {/* Investment Themes with Legend */}
+            {investmentThemes && investmentThemes.length > 0 && (
+              <div className="space-y-4">
+                {/* Legend */}
+                <div className="flex items-center justify-end gap-4 text-sm">
+                  <div className="flex items-center gap-2">
+                    <div className="h-3 w-3 rounded-sm bg-primary" />
+                    <span className="text-muted-foreground">Strong emphasis</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <div className="h-3 w-3 rounded-sm bg-primary/70" />
+                    <span className="text-muted-foreground">Moderate</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <div className="h-3 w-3 rounded-sm bg-primary/40" />
+                    <span className="text-muted-foreground">Mentioned</span>
+                  </div>
+                </div>
+                
+                {/* Theme Badges */}
+                <div className="flex flex-wrap gap-3 justify-center" data-testid="investment-themes">
+                  {investmentThemes.map((theme, index) => (
+                    <Badge
+                      key={index}
+                      className={`text-base px-4 py-2 ${getThemeBadgeClasses(theme.emphasis)}`}
+                      data-testid={`theme-${theme.emphasis}-${index}`}
+                    >
+                      {theme.name}
+                    </Badge>
+                  ))}
+                </div>
+              </div>
+            )}
+            
+            {/* Thesis Paragraphs */}
+            <div className="space-y-6 pt-4">
+              {investmentThesis.split('\n\n').map((paragraph, index) => (
+                <p 
+                  key={index} 
+                  className="text-lg leading-relaxed" 
+                  data-testid={`text-investment-thesis-p${index + 1}`}
+                >
+                  {paragraph}
+                </p>
+              ))}
+            </div>
           </div>
         </div>
       </div>
