@@ -54,8 +54,9 @@ Shared Zod schemas, located in `/shared/schema.ts`, are central to maintaining t
 - **Collapsible thesis paragraphs:** Detailed thesis text is collapsed by default with "Read Full Thesis" button to avoid overwhelming users
 - **Emphasis scoring:** AI analyzes frequency, depth of discussion, and strategic importance to determine high/medium/low emphasis
 - **Brand consistency:** Uses teal color variations aligned with restnvest brand identity
+- **Example tickers updated:** Changed from well-known stocks (AAPL, MSFT, TSLA, NVDA) to hot AI stocks (IOT, SYM, PATH, SOUN, AI, PLTR, SMCI) to better demonstrate the app's value
 - **Why:** Helps investors quickly understand company's strategic priorities directly from the filing without information overload
-- **Service worker:** Cache bumped to v9 for PWA updates
+- **Service worker:** Cache bumped to v10 for PWA updates
 
 ### Investment Thesis Section (Nov 2025)
 **Added AI-powered investment thesis analysis at the top of company summaries:**
