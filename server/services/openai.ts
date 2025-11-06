@@ -73,6 +73,7 @@ ${businessSection}
 Provide a JSON response with this EXACT structure:
 {
   "tagline": "One sentence describing what the company does (max 100 chars)",
+  "investmentThesis": "2-3 paragraph explanation of how this company believes it will create shareholder value and make investors wealthy. Include: their strategic vision for growth, key competitive advantages/moats, market opportunity, and how their business model converts operations into shareholder returns. Write from management's perspective based on the 10-K.",
   "products": [
     {"name": "Product Name", "description": "Brief description (max 50 chars)"}
   ],
@@ -104,6 +105,7 @@ Provide a JSON response with this EXACT structure:
 }
 
 Requirements:
+- Write the investment thesis in 2-3 well-structured paragraphs explaining how the company plans to create shareholder value
 - Extract 3-6 products maximum
 - Include 3-4 competitors with their stock ticker symbols if they are publicly traded companies
 - For each sales channel, provide a simple explanation that non-financial people can understand
@@ -111,7 +113,7 @@ Requirements:
 - Include 3-4 key metrics (revenue, employees, etc) if mentioned
 - Generate 3 plausible news items with Google News search URLs: https://news.google.com/search?q=${ticker}+recent+news
 - Generate 3 video resources with YouTube search URLs: https://www.youtube.com/results?search_query=${ticker}+stock+analysis
-- Keep all text concise and scannable
+- Keep all text concise and scannable (except investmentThesis which should be comprehensive)
 - Use actual data from the filing when available`;
 
     const completion = await openai.chat.completions.create({
@@ -162,6 +164,7 @@ Requirements:
       }),
       fiscalYear,
       tagline: result.tagline || "Business information",
+      investmentThesis: result.investmentThesis || "Investment thesis information not available.",
       products,
       operations: result.operations || {
         regions: [],
