@@ -62,6 +62,7 @@ interface SummaryCardProps {
   filingDate: string;
   fiscalYear: string;
   tagline: string;
+  investmentThesis: string;
   
   products: Product[];
   
@@ -165,6 +166,7 @@ export function SummaryCard({
   filingDate, 
   fiscalYear,
   tagline,
+  investmentThesis,
   products,
   operations,
   competitors,
@@ -253,6 +255,20 @@ export function SummaryCard({
               </a>
             </>
           )}
+        </div>
+      </div>
+
+      {/* INVESTMENT THESIS SECTION */}
+      <div className="border-2 border-primary/20 rounded-2xl bg-primary/5">
+        <div className="bg-primary px-8 py-4 border-b-2 border-primary">
+          <h2 className="text-2xl font-bold text-center uppercase tracking-wide text-primary-foreground">Investment Thesis</h2>
+        </div>
+        <div className="p-8 sm:p-12">
+          <div className="max-w-4xl mx-auto prose prose-lg">
+            <p className="text-lg leading-relaxed whitespace-pre-line" data-testid="text-investment-thesis">
+              {investmentThesis}
+            </p>
+          </div>
         </div>
       </div>
 
