@@ -51,9 +51,10 @@ Shared Zod schemas, located in `/shared/schema.ts`, are central to maintaining t
 - **Color-coded badges:** Teal color intensity visualizes theme emphasis (dark=strong, medium=moderate, light=mentioned)
 - **Elegant legend:** Clear visual guide explaining the three emphasis levels with color swatches
 - **Strategic positioning:** Themes displayed above investment thesis paragraphs for immediate visibility
+- **Collapsible thesis paragraphs:** Detailed thesis text is collapsed by default with "Read Full Thesis" button to avoid overwhelming users
 - **Emphasis scoring:** AI analyzes frequency, depth of discussion, and strategic importance to determine high/medium/low emphasis
 - **Brand consistency:** Uses teal color variations aligned with restnvest brand identity
-- **Why:** Helps investors quickly understand company's strategic priorities directly from the filing
+- **Why:** Helps investors quickly understand company's strategic priorities directly from the filing without information overload
 - **Service worker:** Cache bumped to v9 for PWA updates
 
 ### Investment Thesis Section (Nov 2025)
