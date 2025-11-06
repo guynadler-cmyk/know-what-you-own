@@ -12,6 +12,7 @@ import { useQuery } from "@tanstack/react-query";
 import { YearsToDoublingCard } from "@/components/YearsToDoublingCard";
 import { MetricCarousel } from "@/components/MetricCarousel";
 import { StockPerformance, InvestmentTheme, Moat, MarketOpportunity, ValueCreation } from "@shared/schema";
+import { TagWithTooltip } from "@/components/TagWithTooltip";
 
 interface Product {
   name: string;
@@ -312,21 +313,14 @@ export function SummaryCard({
                   </div>
                   <div className="flex flex-wrap gap-2" data-testid="investment-themes">
                     {investmentThemes.map((theme, index) => (
-                      <Tooltip key={index}>
-                        <TooltipTrigger asChild>
-                          <div>
-                            <Badge
-                              className={`text-sm px-3 py-1 cursor-help ${getThemeBadgeClasses(theme.emphasis)}`}
-                              data-testid={`theme-${theme.emphasis}-${index}`}
-                            >
-                              {theme.name}
-                            </Badge>
-                          </div>
-                        </TooltipTrigger>
-                        <TooltipContent className="max-w-xs">
-                          <p>{theme.explanation}</p>
-                        </TooltipContent>
-                      </Tooltip>
+                      <TagWithTooltip
+                        key={index}
+                        name={theme.name}
+                        emphasis={theme.emphasis}
+                        explanation={theme.explanation}
+                        testId={`theme-${theme.emphasis}-${index}`}
+                        getThemeBadgeClasses={getThemeBadgeClasses}
+                      />
                     ))}
                   </div>
                 </div>
@@ -341,21 +335,14 @@ export function SummaryCard({
                   </div>
                   <div className="flex flex-wrap gap-2" data-testid="moats">
                     {moats.map((moat, index) => (
-                      <Tooltip key={index}>
-                        <TooltipTrigger asChild>
-                          <div>
-                            <Badge
-                              className={`text-sm px-3 py-1 cursor-help ${getThemeBadgeClasses(moat.emphasis)}`}
-                              data-testid={`moat-${moat.emphasis}-${index}`}
-                            >
-                              {moat.name}
-                            </Badge>
-                          </div>
-                        </TooltipTrigger>
-                        <TooltipContent className="max-w-xs">
-                          <p>{moat.explanation}</p>
-                        </TooltipContent>
-                      </Tooltip>
+                      <TagWithTooltip
+                        key={index}
+                        name={moat.name}
+                        emphasis={moat.emphasis}
+                        explanation={moat.explanation}
+                        testId={`moat-${moat.emphasis}-${index}`}
+                        getThemeBadgeClasses={getThemeBadgeClasses}
+                      />
                     ))}
                   </div>
                 </div>
@@ -370,21 +357,14 @@ export function SummaryCard({
                   </div>
                   <div className="flex flex-wrap gap-2" data-testid="market-opportunity">
                     {marketOpportunity.map((opportunity, index) => (
-                      <Tooltip key={index}>
-                        <TooltipTrigger asChild>
-                          <div>
-                            <Badge
-                              className={`text-sm px-3 py-1 cursor-help ${getThemeBadgeClasses(opportunity.emphasis)}`}
-                              data-testid={`opportunity-${opportunity.emphasis}-${index}`}
-                            >
-                              {opportunity.name}
-                            </Badge>
-                          </div>
-                        </TooltipTrigger>
-                        <TooltipContent className="max-w-xs">
-                          <p>{opportunity.explanation}</p>
-                        </TooltipContent>
-                      </Tooltip>
+                      <TagWithTooltip
+                        key={index}
+                        name={opportunity.name}
+                        emphasis={opportunity.emphasis}
+                        explanation={opportunity.explanation}
+                        testId={`opportunity-${opportunity.emphasis}-${index}`}
+                        getThemeBadgeClasses={getThemeBadgeClasses}
+                      />
                     ))}
                   </div>
                 </div>
@@ -399,21 +379,14 @@ export function SummaryCard({
                   </div>
                   <div className="flex flex-wrap gap-2" data-testid="value-creation">
                     {valueCreation.map((value, index) => (
-                      <Tooltip key={index}>
-                        <TooltipTrigger asChild>
-                          <div>
-                            <Badge
-                              className={`text-sm px-3 py-1 cursor-help ${getThemeBadgeClasses(value.emphasis)}`}
-                              data-testid={`value-${value.emphasis}-${index}`}
-                            >
-                              {value.name}
-                            </Badge>
-                          </div>
-                        </TooltipTrigger>
-                        <TooltipContent className="max-w-xs">
-                          <p>{value.explanation}</p>
-                        </TooltipContent>
-                      </Tooltip>
+                      <TagWithTooltip
+                        key={index}
+                        name={value.name}
+                        emphasis={value.emphasis}
+                        explanation={value.explanation}
+                        testId={`value-${value.emphasis}-${index}`}
+                        getThemeBadgeClasses={getThemeBadgeClasses}
+                      />
                     ))}
                   </div>
                 </div>
