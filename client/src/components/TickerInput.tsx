@@ -77,9 +77,9 @@ export function TickerInput({ onSubmit, isLoading = false }: TickerInputProps) {
       </form>
       
       <div className="text-center space-y-4">
-        <p className="text-sm text-muted-foreground">Try</p>
+        <p className="text-sm text-muted-foreground">Test your knowledge with hot AI stocks:</p>
         <div className="flex flex-wrap justify-center gap-3">
-          {['AAPL', 'MSFT', 'TSLA', 'NVDA'].map((example) => (
+          {['IOT', 'SYM', 'PATH', 'SOUN', 'AI', 'PLTR', 'SMCI'].map((example) => (
             <button
               key={example}
               onClick={() => {
