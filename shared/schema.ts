@@ -108,6 +108,7 @@ export const companySummarySchema = z.object({
   filingDate: z.string(),
   fiscalYear: z.string(),
   tagline: z.string(),
+  investmentThesis: z.string(),
   products: z.array(productSchema),
   operations: operationsSchema,
   competitors: z.array(competitorSchema),
