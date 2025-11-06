@@ -45,7 +45,18 @@ Shared Zod schemas, located in `/shared/schema.ts`, are central to maintaining t
 
 ## Recent Changes
 
-### Multi-Dimensional Investment Analysis (Latest - Nov 2025)
+### Mobile-Friendly Tag Explanations (Latest - Nov 2025)
+**Made investment tag tooltips accessible on mobile devices:**
+- **Click/Tap Support:** Replaced hover-only tooltips with Radix UI Popover that responds to clicks and taps
+- **Keyboard Accessibility:** All tags are focusable via Tab key and activatable via Enter/Space keys
+- **Screen Reader Support:** Each tag has descriptive aria-label for assistive technologies
+- **TagWithTooltip Component:** Reusable component wraps tags in semantic `<button>` elements for proper accessibility
+- **Cross-Platform UX:** Works on desktop (mouse + keyboard), mobile (touch), and with assistive technologies
+- **Plain-English Explanations:** Each tag shows 1-sentence explanation when clicked/tapped/activated
+- **Visual Feedback:** cursor-pointer indicates clickable interaction, focus rings for keyboard navigation
+- **Why:** Mobile users couldn't access hover tooltips - now everyone can learn what investment terms mean
+
+### Multi-Dimensional Investment Analysis (Nov 2025)
 **Expanded investment thesis to four distinct tag categories with emphasis scoring:**
 - **Four-Dimensional Analysis:** AI extracts Strategic Themes (3-5), Competitive Moats (2-4), Market Opportunity (2-4), and Value Creation (2-4) drivers
 - **Visual Icons:** Each category distinguished by icon (TrendingUp, Shield, Target, Coins) for instant recognition
