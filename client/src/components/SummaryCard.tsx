@@ -313,18 +313,35 @@ export function SummaryCard({
               </div>
             )}
             
-            {/* Thesis Paragraphs */}
-            <div className="space-y-6 pt-4">
-              {investmentThesis.split('\n\n').map((paragraph, index) => (
-                <p 
-                  key={index} 
-                  className="text-lg leading-relaxed" 
-                  data-testid={`text-investment-thesis-p${index + 1}`}
-                >
-                  {paragraph}
-                </p>
-              ))}
-            </div>
+            {/* Thesis Paragraphs - Collapsible */}
+            <Collapsible>
+              <div className="flex justify-center pt-4">
+                <CollapsibleTrigger asChild>
+                  <Button 
+                    variant="outline" 
+                    className="gap-2"
+                    data-testid="button-toggle-thesis"
+                  >
+                    <span>Read Full Thesis</span>
+                    <ChevronDown className="h-4 w-4" />
+                  </Button>
+                </CollapsibleTrigger>
+              </div>
+              
+              <CollapsibleContent>
+                <div className="space-y-6 pt-6">
+                  {investmentThesis.split('\n\n').map((paragraph, index) => (
+                    <p 
+                      key={index} 
+                      className="text-lg leading-relaxed" 
+                      data-testid={`text-investment-thesis-p${index + 1}`}
+                    >
+                      {paragraph}
+                    </p>
+                  ))}
+                </div>
+              </CollapsibleContent>
+            </Collapsible>
           </div>
         </div>
       </div>
