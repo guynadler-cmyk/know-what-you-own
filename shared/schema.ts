@@ -58,6 +58,12 @@ export const salesChannelSchema = z.object({
   explanation: z.string(),
 });
 
+// Investment theme schema
+export const investmentThemeSchema = z.object({
+  name: z.string(),
+  emphasis: z.enum(["high", "medium", "low"]),
+});
+
 // Operations schema
 export const operationsSchema = z.object({
   regions: z.array(z.string()),
@@ -109,6 +115,7 @@ export const companySummarySchema = z.object({
   fiscalYear: z.string(),
   tagline: z.string(),
   investmentThesis: z.string(),
+  investmentThemes: z.array(investmentThemeSchema),
   products: z.array(productSchema),
   operations: operationsSchema,
   competitors: z.array(competitorSchema),
@@ -126,6 +133,7 @@ export type Metric = z.infer<typeof metricSchema>;
 export type NewsItem = z.infer<typeof newsItemSchema>;
 export type VideoResource = z.infer<typeof videoResourceSchema>;
 export type SalesChannel = z.infer<typeof salesChannelSchema>;
+export type InvestmentTheme = z.infer<typeof investmentThemeSchema>;
 export type Operations = z.infer<typeof operationsSchema>;
 export type PerformanceMetric = z.infer<typeof performanceMetricSchema>;
 export type YearsToDoubling = z.infer<typeof yearsToDoublingSchema>;
