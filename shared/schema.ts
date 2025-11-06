@@ -64,6 +64,24 @@ export const investmentThemeSchema = z.object({
   emphasis: z.enum(["high", "medium", "low"]),
 });
 
+// Moat (competitive advantage) schema
+export const moatSchema = z.object({
+  name: z.string(),
+  emphasis: z.enum(["high", "medium", "low"]),
+});
+
+// Market opportunity schema
+export const marketOpportunitySchema = z.object({
+  name: z.string(),
+  emphasis: z.enum(["high", "medium", "low"]),
+});
+
+// Value creation model schema
+export const valueCreationSchema = z.object({
+  name: z.string(),
+  emphasis: z.enum(["high", "medium", "low"]),
+});
+
 // Operations schema
 export const operationsSchema = z.object({
   regions: z.array(z.string()),
@@ -116,6 +134,9 @@ export const companySummarySchema = z.object({
   tagline: z.string(),
   investmentThesis: z.string(),
   investmentThemes: z.array(investmentThemeSchema),
+  moats: z.array(moatSchema),
+  marketOpportunity: z.array(marketOpportunitySchema),
+  valueCreation: z.array(valueCreationSchema),
   products: z.array(productSchema),
   operations: operationsSchema,
   competitors: z.array(competitorSchema),
@@ -134,6 +155,9 @@ export type NewsItem = z.infer<typeof newsItemSchema>;
 export type VideoResource = z.infer<typeof videoResourceSchema>;
 export type SalesChannel = z.infer<typeof salesChannelSchema>;
 export type InvestmentTheme = z.infer<typeof investmentThemeSchema>;
+export type Moat = z.infer<typeof moatSchema>;
+export type MarketOpportunity = z.infer<typeof marketOpportunitySchema>;
+export type ValueCreation = z.infer<typeof valueCreationSchema>;
 export type Operations = z.infer<typeof operationsSchema>;
 export type PerformanceMetric = z.infer<typeof performanceMetricSchema>;
 export type YearsToDoubling = z.infer<typeof yearsToDoublingSchema>;
