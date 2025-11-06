@@ -5,13 +5,13 @@ import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
-import { Calendar, Building2, MapPin, Users, TrendingUp, Briefcase, Award, DollarSign, ExternalLink, Youtube, Newspaper, Globe, ChevronDown, Building } from "lucide-react";
+import { Calendar, Building2, MapPin, Users, TrendingUp, Briefcase, Award, DollarSign, ExternalLink, Youtube, Newspaper, Globe, ChevronDown, Building, Shield, Target, Coins } from "lucide-react";
 import { LucideIcon } from "lucide-react";
 import { SiX, SiYoutube } from "react-icons/si";
 import { useQuery } from "@tanstack/react-query";
 import { YearsToDoublingCard } from "@/components/YearsToDoublingCard";
 import { MetricCarousel } from "@/components/MetricCarousel";
-import { StockPerformance, InvestmentTheme } from "@shared/schema";
+import { StockPerformance, InvestmentTheme, Moat, MarketOpportunity, ValueCreation } from "@shared/schema";
 
 interface Product {
   name: string;
@@ -64,6 +64,9 @@ interface SummaryCardProps {
   tagline: string;
   investmentThesis: string;
   investmentThemes: InvestmentTheme[];
+  moats: Moat[];
+  marketOpportunity: MarketOpportunity[];
+  valueCreation: ValueCreation[];
   
   products: Product[];
   
@@ -169,6 +172,9 @@ export function SummaryCard({
   tagline,
   investmentThesis,
   investmentThemes,
+  moats,
+  marketOpportunity,
+  valueCreation,
   products,
   operations,
   competitors,
@@ -278,40 +284,109 @@ export function SummaryCard({
           <h2 className="text-2xl font-bold text-center uppercase tracking-wide text-primary-foreground">Investment Thesis</h2>
         </div>
         <div className="p-8 sm:p-12">
-          <div className="max-w-4xl mx-auto space-y-8">
-            {/* Investment Themes with Legend */}
-            {investmentThemes && investmentThemes.length > 0 && (
-              <div className="space-y-4">
-                {/* Legend */}
-                <div className="flex items-center justify-end gap-4 text-sm">
-                  <div className="flex items-center gap-2">
-                    <div className="h-3 w-3 rounded-sm bg-primary" />
-                    <span className="text-muted-foreground">Strong emphasis</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <div className="h-3 w-3 rounded-sm bg-primary/70" />
-                    <span className="text-muted-foreground">Moderate</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <div className="h-3 w-3 rounded-sm bg-primary/40" />
-                    <span className="text-muted-foreground">Mentioned</span>
-                  </div>
-                </div>
-                
-                {/* Theme Badges */}
-                <div className="flex flex-wrap gap-3 justify-center" data-testid="investment-themes">
-                  {investmentThemes.map((theme, index) => (
-                    <Badge
-                      key={index}
-                      className={`text-base px-4 py-2 ${getThemeBadgeClasses(theme.emphasis)}`}
-                      data-testid={`theme-${theme.emphasis}-${index}`}
-                    >
-                      {theme.name}
-                    </Badge>
-                  ))}
-                </div>
+          <div className="max-w-5xl mx-auto space-y-8">
+            {/* Legend */}
+            <div className="flex items-center justify-end gap-4 text-sm">
+              <div className="flex items-center gap-2">
+                <div className="h-3 w-3 rounded-sm bg-primary" />
+                <span className="text-muted-foreground">Strong emphasis</span>
               </div>
-            )}
+              <div className="flex items-center gap-2">
+                <div className="h-3 w-3 rounded-sm bg-primary/70" />
+                <span className="text-muted-foreground">Moderate</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <div className="h-3 w-3 rounded-sm bg-primary/40" />
+                <span className="text-muted-foreground">Mentioned</span>
+              </div>
+            </div>
+
+            {/* Tag Categories Grid */}
+            <div className="grid gap-6 sm:grid-cols-2">
+              {/* Strategic Themes */}
+              {investmentThemes && investmentThemes.length > 0 && (
+                <div className="space-y-3">
+                  <div className="flex items-center gap-2">
+                    <TrendingUp className="h-5 w-5 text-primary" />
+                    <h3 className="text-lg font-semibold">Strategic Themes</h3>
+                  </div>
+                  <div className="flex flex-wrap gap-2" data-testid="investment-themes">
+                    {investmentThemes.map((theme, index) => (
+                      <Badge
+                        key={index}
+                        className={`text-sm px-3 py-1 ${getThemeBadgeClasses(theme.emphasis)}`}
+                        data-testid={`theme-${theme.emphasis}-${index}`}
+                      >
+                        {theme.name}
+                      </Badge>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Competitive Moats */}
+              {moats && moats.length > 0 && (
+                <div className="space-y-3">
+                  <div className="flex items-center gap-2">
+                    <Shield className="h-5 w-5 text-primary" />
+                    <h3 className="text-lg font-semibold">Competitive Moats</h3>
+                  </div>
+                  <div className="flex flex-wrap gap-2" data-testid="moats">
+                    {moats.map((moat, index) => (
+                      <Badge
+                        key={index}
+                        className={`text-sm px-3 py-1 ${getThemeBadgeClasses(moat.emphasis)}`}
+                        data-testid={`moat-${moat.emphasis}-${index}`}
+                      >
+                        {moat.name}
+                      </Badge>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Market Opportunity */}
+              {marketOpportunity && marketOpportunity.length > 0 && (
+                <div className="space-y-3">
+                  <div className="flex items-center gap-2">
+                    <Target className="h-5 w-5 text-primary" />
+                    <h3 className="text-lg font-semibold">Market Opportunity</h3>
+                  </div>
+                  <div className="flex flex-wrap gap-2" data-testid="market-opportunity">
+                    {marketOpportunity.map((opportunity, index) => (
+                      <Badge
+                        key={index}
+                        className={`text-sm px-3 py-1 ${getThemeBadgeClasses(opportunity.emphasis)}`}
+                        data-testid={`opportunity-${opportunity.emphasis}-${index}`}
+                      >
+                        {opportunity.name}
+                      </Badge>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Value Creation */}
+              {valueCreation && valueCreation.length > 0 && (
+                <div className="space-y-3">
+                  <div className="flex items-center gap-2">
+                    <Coins className="h-5 w-5 text-primary" />
+                    <h3 className="text-lg font-semibold">Value Creation</h3>
+                  </div>
+                  <div className="flex flex-wrap gap-2" data-testid="value-creation">
+                    {valueCreation.map((value, index) => (
+                      <Badge
+                        key={index}
+                        className={`text-sm px-3 py-1 ${getThemeBadgeClasses(value.emphasis)}`}
+                        data-testid={`value-${value.emphasis}-${index}`}
+                      >
+                        {value.name}
+                      </Badge>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
             
             {/* Thesis Paragraphs - Collapsible */}
             <Collapsible>
