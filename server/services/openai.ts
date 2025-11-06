@@ -75,16 +75,16 @@ Provide a JSON response with this EXACT structure:
   "tagline": "One sentence describing what the company does (max 100 chars)",
   "investmentThesis": "2-3 paragraph explanation of how this company believes it will create shareholder value and make investors wealthy. Include: their strategic vision for growth, key competitive advantages/moats, market opportunity, and how their business model converts operations into shareholder returns. Write from management's perspective based on the 10-K.",
   "investmentThemes": [
-    {"name": "Theme name (e.g., AI/ML, Cloud Infrastructure, Electric Vehicles)", "emphasis": "high/medium/low"}
+    {"name": "Theme name (e.g., AI/ML, Cloud Infrastructure, Electric Vehicles)", "emphasis": "high/medium/low", "explanation": "1-sentence plain-English explanation of what this theme means and why it matters"}
   ],
   "moats": [
-    {"name": "Competitive advantage (e.g., Network Effects, Brand Power, Patents, Scale Economies)", "emphasis": "high/medium/low"}
+    {"name": "Competitive advantage (e.g., Network Effects, Brand Power, Patents, Scale Economies)", "emphasis": "high/medium/low", "explanation": "1-sentence plain-English explanation of how this advantage protects the business"}
   ],
   "marketOpportunity": [
-    {"name": "Market descriptor (e.g., TAM: $500B, Growing 20% YoY, International Expansion)", "emphasis": "high/medium/low"}
+    {"name": "Market descriptor (e.g., TAM: $500B, Growing 20% YoY, International Expansion)", "emphasis": "high/medium/low", "explanation": "1-sentence plain-English explanation of this market opportunity"}
   ],
   "valueCreation": [
-    {"name": "Value driver (e.g., Recurring Revenue, High Margins 70%+, Platform Economics)", "emphasis": "high/medium/low"}
+    {"name": "Value driver (e.g., Recurring Revenue, High Margins 70%+, Platform Economics)", "emphasis": "high/medium/low", "explanation": "1-sentence plain-English explanation of how this creates shareholder value"}
   ],
   "products": [
     {"name": "Product Name", "description": "Brief description (max 50 chars)"}
@@ -122,10 +122,13 @@ Requirements:
 - Extract 2-4 moats (competitive advantages) like Network Effects, Brand Power, Patents, Switching Costs, Scale Economies, Proprietary Data, etc.
 - Extract 2-4 market opportunity tags describing the addressable market (e.g., TAM: $100B, Growing 15% YoY, Underserved Market, International Expansion)
 - Extract 2-4 value creation drivers explaining how they make money (e.g., Recurring Revenue, High Margins 70%+, Asset-Light Model, Platform Economics, Cross-Sell)
-- For all tags (themes, moats, opportunities, value creation), assign emphasis based on prominence in the filing:
-  * "high": Core strategy, mentioned frequently throughout, dedicated sections
-  * "medium": Important but secondary focus, mentioned several times
-  * "low": Mentioned or emerging area, not a primary focus
+- For all tags (themes, moats, opportunities, value creation):
+  * Assign emphasis based on prominence in the filing:
+    - "high": Core strategy, mentioned frequently throughout, dedicated sections
+    - "medium": Important but secondary focus, mentioned several times
+    - "low": Mentioned or emerging area, not a primary focus
+  * Provide a concise 1-sentence plain-English explanation that non-financial people can understand
+  * Explanations should clarify what the term means and why it matters to investors
 - Extract 3-6 products maximum
 - Include 3-4 competitors with their stock ticker symbols if they are publicly traded companies
 - For each sales channel, provide a simple explanation that non-financial people can understand
