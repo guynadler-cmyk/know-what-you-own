@@ -45,7 +45,18 @@ Shared Zod schemas, located in `/shared/schema.ts`, are central to maintaining t
 
 ## Recent Changes
 
-### Investment Thesis Section (Latest - Nov 2025)
+### Investment Themes with Color-Coded Emphasis (Latest - Nov 2025)
+**Added strategic theme extraction and visual emphasis scoring:**
+- **AI extraction:** GPT-4 identifies 3-5 key strategic themes from the 10-K filing with emphasis scoring
+- **Color-coded badges:** Teal color intensity visualizes theme emphasis (dark=strong, medium=moderate, light=mentioned)
+- **Elegant legend:** Clear visual guide explaining the three emphasis levels with color swatches
+- **Strategic positioning:** Themes displayed above investment thesis paragraphs for immediate visibility
+- **Emphasis scoring:** AI analyzes frequency, depth of discussion, and strategic importance to determine high/medium/low emphasis
+- **Brand consistency:** Uses teal color variations aligned with restnvest brand identity
+- **Why:** Helps investors quickly understand company's strategic priorities directly from the filing
+- **Service worker:** Cache bumped to v9 for PWA updates
+
+### Investment Thesis Section (Nov 2025)
 **Added AI-powered investment thesis analysis at the top of company summaries:**
 - **Prominent placement:** First major section after company header, before business overview
 - **AI extraction:** GPT-4 analyzes 10-K filings to extract how management believes they'll create shareholder value
