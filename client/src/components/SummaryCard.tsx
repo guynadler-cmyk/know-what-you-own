@@ -264,10 +264,16 @@ export function SummaryCard({
           <h2 className="text-2xl font-bold text-center uppercase tracking-wide text-primary-foreground">Investment Thesis</h2>
         </div>
         <div className="p-8 sm:p-12">
-          <div className="max-w-4xl mx-auto prose prose-lg">
-            <p className="text-lg leading-relaxed whitespace-pre-line" data-testid="text-investment-thesis">
-              {investmentThesis}
-            </p>
+          <div className="max-w-4xl mx-auto space-y-6">
+            {investmentThesis.split('\n\n').map((paragraph, index) => (
+              <p 
+                key={index} 
+                className="text-lg leading-relaxed" 
+                data-testid={`text-investment-thesis-p${index + 1}`}
+              >
+                {paragraph}
+              </p>
+            ))}
           </div>
         </div>
       </div>
