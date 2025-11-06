@@ -74,6 +74,9 @@ Provide a JSON response with this EXACT structure:
 {
   "tagline": "One sentence describing what the company does (max 100 chars)",
   "investmentThesis": "2-3 paragraph explanation of how this company believes it will create shareholder value and make investors wealthy. Include: their strategic vision for growth, key competitive advantages/moats, market opportunity, and how their business model converts operations into shareholder returns. Write from management's perspective based on the 10-K.",
+  "investmentThemes": [
+    {"name": "Theme name (e.g., AI, Electric Vehicles, Drug Development)", "emphasis": "high/medium/low"}
+  ],
   "products": [
     {"name": "Product Name", "description": "Brief description (max 50 chars)"}
   ],
@@ -106,6 +109,11 @@ Provide a JSON response with this EXACT structure:
 
 Requirements:
 - Write the investment thesis in 2-3 well-structured paragraphs explaining how the company plans to create shareholder value
+- Extract 3-5 investment themes that represent the company's key strategic focus areas (e.g., AI, Cloud Computing, Electric Vehicles, Drug Development, etc.)
+- For each theme, assign emphasis based on how prominently it appears in the filing:
+  * "high": Core strategy, mentioned frequently throughout, dedicated sections
+  * "medium": Important but secondary focus, mentioned several times
+  * "low": Mentioned or emerging area, not a primary focus
 - Extract 3-6 products maximum
 - Include 3-4 competitors with their stock ticker symbols if they are publicly traded companies
 - For each sales channel, provide a simple explanation that non-financial people can understand
@@ -165,6 +173,7 @@ Requirements:
       fiscalYear,
       tagline: result.tagline || "Business information",
       investmentThesis: result.investmentThesis || "Investment thesis information not available.",
+      investmentThemes: result.investmentThemes || [],
       products,
       operations: result.operations || {
         regions: [],
