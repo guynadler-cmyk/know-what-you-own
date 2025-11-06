@@ -19,14 +19,13 @@ export function TagWithTooltip({
   return (
     <Popover>
       <PopoverTrigger asChild>
-        <div>
-          <Badge
-            className={`text-sm px-3 py-1 cursor-help ${getThemeBadgeClasses(emphasis)}`}
-            data-testid={testId}
-          >
-            {name}
-          </Badge>
-        </div>
+        <button
+          className={`text-sm px-3 py-1 cursor-pointer border rounded-md ${getThemeBadgeClasses(emphasis)}`}
+          data-testid={testId}
+          aria-label={`${name}. Click for explanation.`}
+        >
+          {name}
+        </button>
       </PopoverTrigger>
       <PopoverContent className="max-w-xs p-3 text-sm" side="top">
         <p>{explanation}</p>
