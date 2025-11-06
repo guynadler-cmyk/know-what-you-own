@@ -62,24 +62,28 @@ export const salesChannelSchema = z.object({
 export const investmentThemeSchema = z.object({
   name: z.string(),
   emphasis: z.enum(["high", "medium", "low"]),
+  explanation: z.string(),
 });
 
 // Moat (competitive advantage) schema
 export const moatSchema = z.object({
   name: z.string(),
   emphasis: z.enum(["high", "medium", "low"]),
+  explanation: z.string(),
 });
 
 // Market opportunity schema
 export const marketOpportunitySchema = z.object({
   name: z.string(),
   emphasis: z.enum(["high", "medium", "low"]),
+  explanation: z.string(),
 });
 
 // Value creation model schema
 export const valueCreationSchema = z.object({
   name: z.string(),
   emphasis: z.enum(["high", "medium", "low"]),
+  explanation: z.string(),
 });
 
 // Operations schema
