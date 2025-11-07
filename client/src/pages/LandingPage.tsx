@@ -4,6 +4,7 @@ import { Footer } from "@/components/Footer";
 import { TickerInput } from "@/components/TickerInput";
 import { QRCodeDisplay } from "@/components/QRCodeDisplay";
 import { ShareButton } from "@/components/ShareButton";
+import { PLTRPreview } from "@/components/PLTRPreview";
 import { Button } from "@/components/ui/button";
 import { useIsPWAInstalled } from "@/hooks/useIsPWAInstalled";
 import { CheckCircle, TrendingUp, Shield, Heart } from "lucide-react";
@@ -50,6 +51,22 @@ export default function LandingPage() {
             <div className="flex justify-center gap-4 pt-4">
               <ShareButton variant="outline" />
             </div>
+          </div>
+        </section>
+
+        {/* See it in Action Section */}
+        <section className="py-16 sm:py-24 px-4">
+          <div className="mx-auto max-w-6xl space-y-12">
+            <div className="text-center space-y-4">
+              <h2 className="text-3xl sm:text-4xl font-bold">
+                See it in action
+              </h2>
+              <p className="text-lg sm:text-xl text-muted-foreground max-w-2xl mx-auto">
+                Here's what you get when you analyze a company — complete with investment tags, thesis, and key insights.
+              </p>
+            </div>
+            
+            <PLTRPreview />
           </div>
         </section>
 

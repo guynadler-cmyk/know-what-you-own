@@ -49,6 +49,17 @@ export function PLTRPreview() {
     setLocation('/app?ticker=PLTR');
   };
 
+  const getThemeBadgeClasses = (emphasis: "high" | "medium" | "low") => {
+    switch (emphasis) {
+      case "high":
+        return "bg-primary text-primary-foreground border-primary";
+      case "medium":
+        return "bg-primary/70 text-primary-foreground border-primary/70";
+      case "low":
+        return "bg-primary/40 text-primary-foreground border-primary/40";
+    }
+  };
+
   return (
     <Card className="max-w-5xl mx-auto shadow-xl border-primary/20">
       <CardHeader className="space-y-4 pb-6">
@@ -82,6 +93,7 @@ export function PLTRPreview() {
                     name={theme.name}
                     emphasis={theme.emphasis}
                     explanation={theme.explanation}
+                    getThemeBadgeClasses={getThemeBadgeClasses}
                   />
                 ))}
               </div>
@@ -100,6 +112,7 @@ export function PLTRPreview() {
                     name={moat.name}
                     emphasis={moat.emphasis}
                     explanation={moat.explanation}
+                    getThemeBadgeClasses={getThemeBadgeClasses}
                   />
                 ))}
               </div>
@@ -118,6 +131,7 @@ export function PLTRPreview() {
                     name={opp.name}
                     emphasis={opp.emphasis}
                     explanation={opp.explanation}
+                    getThemeBadgeClasses={getThemeBadgeClasses}
                   />
                 ))}
               </div>
@@ -136,6 +150,7 @@ export function PLTRPreview() {
                     name={vc.name}
                     emphasis={vc.emphasis}
                     explanation={vc.explanation}
+                    getThemeBadgeClasses={getThemeBadgeClasses}
                   />
                 ))}
               </div>
