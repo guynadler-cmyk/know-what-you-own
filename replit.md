@@ -45,7 +45,17 @@ Shared Zod schemas, located in `/shared/schema.ts`, are central to maintaining t
 
 ## Recent Changes
 
-### Mobile-Friendly Tag Explanations (Latest - Nov 2025)
+### Landing Page & Header Navigation (Latest - Nov 2025)
+**Restored landing page experience with intuitive navigation:**
+- **Landing page at "/":** Hero section with ticker search, sample AI stock cards, benefits, PWA QR code, and CTA
+- **App page at "/app":** Main analysis interface with ticker query parameter (e.g., /app?ticker=TSLA)
+- **Clickable header:** "Know What You Own" text in AppPage header is now a Link component that navigates back to landing page
+- **Navigation flow:** Landing → search/sample ticker → /app?ticker=X → click header → back to landing
+- **Wouter routing:** All navigation uses wouter's Link component and useLocation hook for SPA experience
+- **User experience:** Users land on marketing page, enter/select ticker, view analysis, and can easily return home
+- **Why:** Provides proper marketing/onboarding experience while maintaining easy access to tool
+
+### Mobile-Friendly Tag Explanations (Nov 2025)
 **Made investment tag tooltips accessible on mobile devices:**
 - **Click/Tap Support:** Replaced hover-only tooltips with Radix UI Popover that responds to clicks and taps
 - **Keyboard Accessibility:** All tags are focusable via Tab key and activatable via Enter/Space keys
