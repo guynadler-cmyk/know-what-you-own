@@ -45,20 +45,19 @@ Shared Zod schemas, located in `/shared/schema.ts`, are central to maintaining t
 
 ## Recent Changes
 
-### Interactive Mobile Demo Carousel (Latest - Nov 2025)
-**Added interactive carousel simulating mobile app experience on landing page:**
-- **Mobile Phone Frame:** Realistic smartphone mockup with notch, rounded corners, and dark bezel creates authentic mobile experience
-- **Three Company Demos:** Interactive carousel featuring Palantir (PLTR), NVIDIA (NVDA), and SoundHound (SOUN) analyses
-- **Complete Analysis Preview:** Each slide shows all four investment tag dimensions (Strategic Themes, Moats, Market Opportunity, Value Creation) with color-coded emphasis
-- **Clickable Tags:** Investment tags use TagWithTooltip component for accessible explanations on all devices
+### Value-Driven Marketing Carousel (Latest - Nov 2025)
+**Transformed carousel from UI showcase to value proposition showcase:**
+- **Marketing Headlines:** Each slide headlines a killer feature above the phone frame ("AI reads 100+ page filings", "See what matters most", "Beyond the ticker symbol")
+- **Proof Badges:** Concrete proof points displayed prominently (e.g., "124-page 10-K → 2-minute read", "Color-coded emphasis scoring", "4-dimensional investment analysis")
+- **Slide-Specific Focus Areas:**
+  - **PLTR (Filing Analysis):** Emphasizes AI-powered filing digestion with page count proof
+  - **NVDA (Emphasis Scoring):** Showcases color-coded legend explaining High/Medium/Mentioned emphasis levels
+  - **SOUN (Four Dimensions):** Displays all 4 tag categories (Themes, Moats, Opportunity, Value Creation) with icons
+- **Value-Focused Section Copy:** "From 100+ page filing to instant clarity" headline emphasizing time savings and AI intelligence
+- **Mobile Phone Frame:** Realistic smartphone mockup with notch, rounded corners, and dark bezel
 - **Swipeable Navigation:** Touch-enabled swiping on mobile, prev/next buttons on desktop, navigation dots for all devices
-- **Mobile-Optimized Layout:** Compact 9:16 aspect ratio display with scrollable content inside phone frame
-- **Investment Thesis Snippet:** Shows condensed thesis text to demonstrate depth of analysis
-- **Key Products Display:** Shows top 2 products with icons and descriptions in mobile-optimized cards
-- **View Full Analysis CTA:** Each company has button navigating to /app?ticker={TICKER} for complete live analysis
-- **Static Data:** Uses pre-defined company data for instant loading, demonstrating app capabilities without API delays
-- **Visual Impact:** Simulates actual mobile experience while showcasing versatility across different company types
-- **Why:** Modern users expect mobile-first experiences - carousel demonstrates both the app's mobile readiness and analytical breadth across multiple companies
+- **Conditional Rendering:** Each slide customizes content based on its focus area for maximum impact
+- **Why:** Shows what the tool DOES (reads filings, scores emphasis, analyzes dimensions) vs what the UI LOOKS LIKE—compelling value propositions drive conversions
 
 ### Landing Page & Header Navigation (Nov 2025)
 **Restored landing page experience with intuitive navigation:**
