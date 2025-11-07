@@ -59,10 +59,10 @@ export default function LandingPage() {
           <div className="mx-auto max-w-6xl space-y-12">
             <div className="text-center space-y-4">
               <h2 className="text-3xl sm:text-4xl font-bold">
-                See it in action
+                From 100+ page filing to instant clarity
               </h2>
               <p className="text-lg sm:text-xl text-muted-foreground max-w-2xl mx-auto">
-                Swipe through real company analyses — see the investment tags, thesis, and insights you'll get instantly.
+                Our AI reads the actual SEC filings, extracts management's strategic vision, and ranks what matters most—saving you hours of research.
               </p>
             </div>
             

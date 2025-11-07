@@ -18,6 +18,13 @@ interface Product {
   description: string;
 }
 
+interface ValueProposition {
+  headline: string;
+  subtext: string;
+  proofBadge: string;
+  focusArea: "filing-analysis" | "emphasis-scoring" | "four-dimensions";
+}
+
 interface CompanyDemo {
   companyName: string;
   ticker: string;
@@ -28,6 +35,7 @@ interface CompanyDemo {
   valueCreation: InvestmentTag[];
   investmentThesis: string;
   products: Product[];
+  valueProposition: ValueProposition;
 }
 
 const demoCompanies: CompanyDemo[] = [
@@ -35,6 +43,12 @@ const demoCompanies: CompanyDemo[] = [
     companyName: "Palantir Technologies Inc.",
     ticker: "PLTR",
     tagline: "Enterprise AI and data analytics platform serving government and commercial clients with mission-critical decision-making software",
+    valueProposition: {
+      headline: "AI reads 100+ page filings",
+      subtext: "Management's strategic vision, automatically extracted",
+      proofBadge: "124-page 10-K → 2-minute read",
+      focusArea: "filing-analysis",
+    },
     investmentThemes: [
       { name: "AI Platform Leader", emphasis: "high" as const, explanation: "Palantir positions its Artificial Intelligence Platform (AIP) as central to its growth strategy" },
       { name: "Government Mission Software", emphasis: "high" as const, explanation: "Deep relationships with US government and allies for defense and intelligence operations" },
@@ -64,6 +78,12 @@ const demoCompanies: CompanyDemo[] = [
     companyName: "NVIDIA Corporation",
     ticker: "NVDA",
     tagline: "Leading designer of graphics processing units and AI computing platforms powering data centers, gaming, and autonomous systems worldwide",
+    valueProposition: {
+      headline: "See what matters most",
+      subtext: "AI ranks themes by how much management emphasizes them",
+      proofBadge: "Color-coded emphasis scoring",
+      focusArea: "emphasis-scoring",
+    },
     investmentThemes: [
       { name: "AI Infrastructure", emphasis: "high" as const, explanation: "NVIDIA's GPUs are the de facto standard for training and running AI models at scale" },
       { name: "Data Center Dominance", emphasis: "high" as const, explanation: "Commanding market share in accelerated computing for cloud and enterprise data centers" },
@@ -93,6 +113,12 @@ const demoCompanies: CompanyDemo[] = [
     companyName: "SoundHound AI, Inc.",
     ticker: "SOUN",
     tagline: "Voice AI and conversational intelligence platform enabling natural language interactions for automotive, restaurants, and smart devices",
+    valueProposition: {
+      headline: "Beyond the ticker symbol",
+      subtext: "Strategy + Defense + Growth + Profitability—all from the filing",
+      proofBadge: "4-dimensional investment analysis",
+      focusArea: "four-dimensions",
+    },
     investmentThemes: [
       { name: "Voice AI Pioneer", emphasis: "high" as const, explanation: "Independent voice AI platform competing against tech giants in conversational interfaces" },
       { name: "Automotive Integration", emphasis: "medium" as const, explanation: "Growing presence in vehicle voice assistants and in-car experiences" },
@@ -185,6 +211,21 @@ export function DemoCarousel() {
           <div className="flex">
             {demoCompanies.map((company, index) => (
               <div key={company.ticker} className="flex-[0_0_100%] min-w-0">
+                {/* Marketing Headline */}
+                <div className="text-center space-y-2 mb-6">
+                  <h3 className="text-2xl sm:text-3xl font-bold">
+                    {company.valueProposition.headline}
+                  </h3>
+                  <p className="text-sm sm:text-base text-muted-foreground max-w-md mx-auto">
+                    {company.valueProposition.subtext}
+                  </p>
+                  <div className="inline-block">
+                    <Badge variant="secondary" className="text-xs font-medium px-3 py-1">
+                      {company.valueProposition.proofBadge}
+                    </Badge>
+                  </div>
+                </div>
+
                 {/* Mobile Phone Frame */}
                 <div className="mx-auto w-full max-w-sm">
                   {/* Phone outer shell */}
@@ -249,6 +290,69 @@ export function DemoCarousel() {
                                   ))}
                                 </div>
                               </div>
+
+                              {/* Show all 4 dimensions for SOUN */}
+                              {company.valueProposition.focusArea === "four-dimensions" && (
+                                <>
+                                  {/* Market Opportunity */}
+                                  <div className="space-y-1.5">
+                                    <div className="flex items-center gap-1.5 text-xs font-semibold text-muted-foreground uppercase tracking-wide">
+                                      <Target className="w-3 h-3" />
+                                      <span>Opportunity</span>
+                                    </div>
+                                    <div className="flex flex-wrap gap-1.5">
+                                      {company.marketOpportunity.map((opp) => (
+                                        <TagWithTooltip
+                                          key={opp.name}
+                                          name={opp.name}
+                                          emphasis={opp.emphasis}
+                                          explanation={opp.explanation}
+                                          getThemeBadgeClasses={getThemeBadgeClasses}
+                                        />
+                                      ))}
+                                    </div>
+                                  </div>
+
+                                  {/* Value Creation */}
+                                  <div className="space-y-1.5">
+                                    <div className="flex items-center gap-1.5 text-xs font-semibold text-muted-foreground uppercase tracking-wide">
+                                      <Coins className="w-3 h-3" />
+                                      <span>Value Creation</span>
+                                    </div>
+                                    <div className="flex flex-wrap gap-1.5">
+                                      {company.valueCreation.map((value) => (
+                                        <TagWithTooltip
+                                          key={value.name}
+                                          name={value.name}
+                                          emphasis={value.emphasis}
+                                          explanation={value.explanation}
+                                          getThemeBadgeClasses={getThemeBadgeClasses}
+                                        />
+                                      ))}
+                                    </div>
+                                  </div>
+                                </>
+                              )}
+
+                              {/* Emphasis Legend for NVDA */}
+                              {company.valueProposition.focusArea === "emphasis-scoring" && (
+                                <div className="pt-2 pb-1">
+                                  <div className="flex items-center justify-center gap-3 text-xs">
+                                    <div className="flex items-center gap-1.5">
+                                      <div className="w-3 h-3 rounded-sm bg-primary"></div>
+                                      <span className="text-muted-foreground">High</span>
+                                    </div>
+                                    <div className="flex items-center gap-1.5">
+                                      <div className="w-3 h-3 rounded-sm bg-primary/70"></div>
+                                      <span className="text-muted-foreground">Medium</span>
+                                    </div>
+                                    <div className="flex items-center gap-1.5">
+                                      <div className="w-3 h-3 rounded-sm bg-primary/40"></div>
+                                      <span className="text-muted-foreground">Mentioned</span>
+                                    </div>
+                                  </div>
+                                </div>
+                              )}
                             </div>
                           </CardHeader>
 
