@@ -4,7 +4,7 @@ import { Footer } from "@/components/Footer";
 import { TickerInput } from "@/components/TickerInput";
 import { QRCodeDisplay } from "@/components/QRCodeDisplay";
 import { ShareButton } from "@/components/ShareButton";
-import { PLTRPreview } from "@/components/PLTRPreview";
+import { DemoCarousel } from "@/components/DemoCarousel";
 import { Button } from "@/components/ui/button";
 import { useIsPWAInstalled } from "@/hooks/useIsPWAInstalled";
 import { CheckCircle, TrendingUp, Shield, Heart } from "lucide-react";
@@ -62,11 +62,11 @@ export default function LandingPage() {
                 See it in action
               </h2>
               <p className="text-lg sm:text-xl text-muted-foreground max-w-2xl mx-auto">
-                Here's what you get when you analyze a company — complete with investment tags, thesis, and key insights.
+                Swipe through real company analyses — see the investment tags, thesis, and insights you'll get instantly.
               </p>
             </div>
             
-            <PLTRPreview />
+            <DemoCarousel />
           </div>
         </section>
 
