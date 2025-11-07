@@ -45,7 +45,19 @@ Shared Zod schemas, located in `/shared/schema.ts`, are central to maintaining t
 
 ## Recent Changes
 
-### Landing Page & Header Navigation (Latest - Nov 2025)
+### "See it in Action" PLTR Preview (Latest - Nov 2025)
+**Added visual example to landing page showing real company analysis:**
+- **PLTR Preview Section:** Static Palantir Technologies preview positioned between hero and benefits sections
+- **Complete Analysis Preview:** Shows all four investment tag dimensions (Strategic Themes, Moats, Market Opportunity, Value Creation) with color-coded emphasis levels
+- **Clickable Tags:** Investment tags use TagWithTooltip component for accessible explanations on all devices
+- **Investment Thesis Snippet:** Displays condensed thesis text to demonstrate depth of analysis
+- **Key Products Display:** Shows Foundry, Gotham, and AIP with icons and descriptions
+- **View Full Analysis CTA:** Button navigates to /app?ticker=PLTR to see complete live analysis
+- **Static Data:** Uses pre-defined PLTR data for instant loading, not live API calls
+- **Visual Impact:** Demonstrates value proposition immediately rather than requiring users to search first
+- **Why:** Shows don't tell - users can see exactly what they get before analyzing their first stock
+
+### Landing Page & Header Navigation (Nov 2025)
 **Restored landing page experience with intuitive navigation:**
 - **Landing page at "/":** Hero section with ticker search, sample AI stock cards, benefits, PWA QR code, and CTA
 - **App page at "/app":** Main analysis interface with ticker query parameter (e.g., /app?ticker=TSLA)
