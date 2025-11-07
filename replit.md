@@ -45,17 +45,20 @@ Shared Zod schemas, located in `/shared/schema.ts`, are central to maintaining t
 
 ## Recent Changes
 
-### "See it in Action" PLTR Preview (Latest - Nov 2025)
-**Added visual example to landing page showing real company analysis:**
-- **PLTR Preview Section:** Static Palantir Technologies preview positioned between hero and benefits sections
-- **Complete Analysis Preview:** Shows all four investment tag dimensions (Strategic Themes, Moats, Market Opportunity, Value Creation) with color-coded emphasis levels
+### Interactive Mobile Demo Carousel (Latest - Nov 2025)
+**Added interactive carousel simulating mobile app experience on landing page:**
+- **Mobile Phone Frame:** Realistic smartphone mockup with notch, rounded corners, and dark bezel creates authentic mobile experience
+- **Three Company Demos:** Interactive carousel featuring Palantir (PLTR), NVIDIA (NVDA), and SoundHound (SOUN) analyses
+- **Complete Analysis Preview:** Each slide shows all four investment tag dimensions (Strategic Themes, Moats, Market Opportunity, Value Creation) with color-coded emphasis
 - **Clickable Tags:** Investment tags use TagWithTooltip component for accessible explanations on all devices
-- **Investment Thesis Snippet:** Displays condensed thesis text to demonstrate depth of analysis
-- **Key Products Display:** Shows Foundry, Gotham, and AIP with icons and descriptions
-- **View Full Analysis CTA:** Button navigates to /app?ticker=PLTR to see complete live analysis
-- **Static Data:** Uses pre-defined PLTR data for instant loading, not live API calls
-- **Visual Impact:** Demonstrates value proposition immediately rather than requiring users to search first
-- **Why:** Shows don't tell - users can see exactly what they get before analyzing their first stock
+- **Swipeable Navigation:** Touch-enabled swiping on mobile, prev/next buttons on desktop, navigation dots for all devices
+- **Mobile-Optimized Layout:** Compact 9:16 aspect ratio display with scrollable content inside phone frame
+- **Investment Thesis Snippet:** Shows condensed thesis text to demonstrate depth of analysis
+- **Key Products Display:** Shows top 2 products with icons and descriptions in mobile-optimized cards
+- **View Full Analysis CTA:** Each company has button navigating to /app?ticker={TICKER} for complete live analysis
+- **Static Data:** Uses pre-defined company data for instant loading, demonstrating app capabilities without API delays
+- **Visual Impact:** Simulates actual mobile experience while showcasing versatility across different company types
+- **Why:** Modern users expect mobile-first experiences - carousel demonstrates both the app's mobile readiness and analytical breadth across multiple companies
 
 ### Landing Page & Header Navigation (Nov 2025)
 **Restored landing page experience with intuitive navigation:**
