@@ -44,9 +44,9 @@ const demoCompanies: CompanyDemo[] = [
     ticker: "PLTR",
     tagline: "Enterprise AI and data analytics platform serving government and commercial clients with mission-critical decision-making software",
     valueProposition: {
-      headline: "AI reads 100+ page filings",
-      subtext: "Management's strategic vision, automatically extracted",
-      proofBadge: "124-page 10-K → 2-minute read",
+      headline: "What hedge funds pay analysts $200K/year to read",
+      subtext: "We digest the 100+ page filing—like a Wall Street analyst on demand",
+      proofBadge: "Professional-grade filing intelligence",
       focusArea: "filing-analysis",
     },
     investmentThemes: [
@@ -79,9 +79,9 @@ const demoCompanies: CompanyDemo[] = [
     ticker: "NVDA",
     tagline: "Leading designer of graphics processing units and AI computing platforms powering data centers, gaming, and autonomous systems worldwide",
     valueProposition: {
-      headline: "See what matters most",
-      subtext: "AI ranks themes by how much management emphasizes them",
-      proofBadge: "Color-coded emphasis scoring",
+      headline: "Stop guessing what matters. We quantify it.",
+      subtext: "Analyst-level signal sorting, no Bloomberg terminal required",
+      proofBadge: "Institutional-grade emphasis analysis",
       focusArea: "emphasis-scoring",
     },
     investmentThemes: [
@@ -114,9 +114,9 @@ const demoCompanies: CompanyDemo[] = [
     ticker: "SOUN",
     tagline: "Voice AI and conversational intelligence platform enabling natural language interactions for automotive, restaurants, and smart devices",
     valueProposition: {
-      headline: "Beyond the ticker symbol",
-      subtext: "Strategy + Defense + Growth + Profitability—all from the filing",
-      proofBadge: "4-dimensional investment analysis",
+      headline: "The 4-part framework professionals use",
+      subtext: "Themes, moats, opportunity, value creation—pulled straight from the 10-K",
+      proofBadge: "Professional investment framework—free for retail",
       focusArea: "four-dimensions",
     },
     investmentThemes: [
@@ -235,170 +235,249 @@ export function DemoCarousel() {
                     
                     {/* Screen */}
                     <div className="relative bg-background rounded-[2rem] overflow-hidden" style={{ aspectRatio: "9/16" }}>
-                      {/* Screen Content - Scrollable */}
+                      {/* Screen Content - Unique per slide */}
                       <div className="h-full overflow-y-auto scrollbar-thin scrollbar-thumb-muted scrollbar-track-transparent">
-                        <Card className="border-0 rounded-none shadow-none">
-                          <CardHeader className="space-y-3 pb-4">
-                            <div className="space-y-2">
-                              <div className="flex items-center gap-2 flex-wrap">
-                                <h3 className="text-lg font-bold leading-tight">{company.companyName}</h3>
-                                <Badge variant="outline" className="font-mono text-xs">
-                                  {company.ticker}
-                                </Badge>
+                        {/* PLTR: Split-screen filing analysis */}
+                        {company.valueProposition.focusArea === "filing-analysis" && (
+                          <div className="h-full flex flex-col">
+                            {/* Dense 10-K excerpt (left side simulation) */}
+                            <div className="bg-muted/30 p-3 border-b-2 border-primary/20">
+                              <div className="space-y-1">
+                                <div className="flex items-center justify-between mb-2">
+                                  <p className="text-xs font-mono text-muted-foreground">10-K Filing (Page 87)</p>
+                                  <Badge variant="outline" className="text-xs">{company.ticker}</Badge>
+                                </div>
+                                <p className="text-xs font-mono leading-tight text-muted-foreground/70 line-clamp-4">
+                                  Item 1. Business. Palantir Technologies Inc. ("Palantir," "we," "us," or "our") builds and deploys software platforms for the intelligence community and defense sector in the United States, institutional investors, commercial enterprises, and government agencies around the world. Our software is used to integrate, manage, and secure data...
+                                </p>
+                                <div className="flex items-center gap-2 mt-2">
+                                  <div className="h-1 flex-1 bg-primary/20 rounded-full">
+                                    <div className="h-1 w-3/4 bg-primary rounded-full"></div>
+                                  </div>
+                                  <span className="text-xs text-primary font-semibold">AI Extracting...</span>
+                                </div>
                               </div>
-                              <p className="text-xs text-muted-foreground leading-snug">
-                                {company.tagline}
-                              </p>
                             </div>
 
-                            {/* Investment Tags - Compact */}
-                            <div className="space-y-3 pt-2">
-                              {/* Strategic Themes */}
-                              <div className="space-y-1.5">
-                                <div className="flex items-center gap-1.5 text-xs font-semibold text-muted-foreground uppercase tracking-wide">
-                                  <TrendingUp className="w-3 h-3" />
-                                  <span>Themes</span>
+                            {/* AI-extracted summary (right side simulation) */}
+                            <div className="flex-1 p-4 bg-background">
+                              <div className="space-y-3">
+                                <div className="flex items-center gap-2">
+                                  <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center">
+                                    <TrendingUp className="w-4 h-4 text-primary" />
+                                  </div>
+                                  <div>
+                                    <p className="text-xs font-semibold">AI Analysis</p>
+                                    <p className="text-xs text-muted-foreground">Strategic Themes</p>
+                                  </div>
                                 </div>
                                 <div className="flex flex-wrap gap-1.5">
-                                  {company.investmentThemes.map((theme) => (
-                                    <TagWithTooltip
+                                  {company.investmentThemes.slice(0, 3).map((theme) => (
+                                    <Badge
                                       key={theme.name}
-                                      name={theme.name}
-                                      emphasis={theme.emphasis}
-                                      explanation={theme.explanation}
-                                      getThemeBadgeClasses={getThemeBadgeClasses}
-                                    />
+                                      className={getThemeBadgeClasses(theme.emphasis) + " text-xs"}
+                                    >
+                                      {theme.name}
+                                    </Badge>
                                   ))}
                                 </div>
+                                <div className="pt-2 border-t border-border">
+                                  <p className="text-xs text-muted-foreground leading-relaxed">
+                                    {company.investmentThesis.slice(0, 120)}...
+                                  </p>
+                                </div>
+                                <Button
+                                  size="sm"
+                                  onClick={() => setLocation(`/app?ticker=${company.ticker}`)}
+                                  className="w-full gap-2 text-xs mt-4"
+                                  data-testid={`button-view-${company.ticker.toLowerCase()}`}
+                                >
+                                  See Full Analysis
+                                  <ArrowRight className="w-3 h-3" />
+                                </Button>
                               </div>
-
-                              {/* Moats */}
-                              <div className="space-y-1.5">
-                                <div className="flex items-center gap-1.5 text-xs font-semibold text-muted-foreground uppercase tracking-wide">
-                                  <Shield className="w-3 h-3" />
-                                  <span>Moats</span>
-                                </div>
-                                <div className="flex flex-wrap gap-1.5">
-                                  {company.moats.map((moat) => (
-                                    <TagWithTooltip
-                                      key={moat.name}
-                                      name={moat.name}
-                                      emphasis={moat.emphasis}
-                                      explanation={moat.explanation}
-                                      getThemeBadgeClasses={getThemeBadgeClasses}
-                                    />
-                                  ))}
-                                </div>
-                              </div>
-
-                              {/* Show all 4 dimensions for SOUN */}
-                              {company.valueProposition.focusArea === "four-dimensions" && (
-                                <>
-                                  {/* Market Opportunity */}
-                                  <div className="space-y-1.5">
-                                    <div className="flex items-center gap-1.5 text-xs font-semibold text-muted-foreground uppercase tracking-wide">
-                                      <Target className="w-3 h-3" />
-                                      <span>Opportunity</span>
-                                    </div>
-                                    <div className="flex flex-wrap gap-1.5">
-                                      {company.marketOpportunity.map((opp) => (
-                                        <TagWithTooltip
-                                          key={opp.name}
-                                          name={opp.name}
-                                          emphasis={opp.emphasis}
-                                          explanation={opp.explanation}
-                                          getThemeBadgeClasses={getThemeBadgeClasses}
-                                        />
-                                      ))}
-                                    </div>
-                                  </div>
-
-                                  {/* Value Creation */}
-                                  <div className="space-y-1.5">
-                                    <div className="flex items-center gap-1.5 text-xs font-semibold text-muted-foreground uppercase tracking-wide">
-                                      <Coins className="w-3 h-3" />
-                                      <span>Value Creation</span>
-                                    </div>
-                                    <div className="flex flex-wrap gap-1.5">
-                                      {company.valueCreation.map((value) => (
-                                        <TagWithTooltip
-                                          key={value.name}
-                                          name={value.name}
-                                          emphasis={value.emphasis}
-                                          explanation={value.explanation}
-                                          getThemeBadgeClasses={getThemeBadgeClasses}
-                                        />
-                                      ))}
-                                    </div>
-                                  </div>
-                                </>
-                              )}
-
-                              {/* Emphasis Legend for NVDA */}
-                              {company.valueProposition.focusArea === "emphasis-scoring" && (
-                                <div className="pt-2 pb-1">
-                                  <div className="flex items-center justify-center gap-3 text-xs">
-                                    <div className="flex items-center gap-1.5">
-                                      <div className="w-3 h-3 rounded-sm bg-primary"></div>
-                                      <span className="text-muted-foreground">High</span>
-                                    </div>
-                                    <div className="flex items-center gap-1.5">
-                                      <div className="w-3 h-3 rounded-sm bg-primary/70"></div>
-                                      <span className="text-muted-foreground">Medium</span>
-                                    </div>
-                                    <div className="flex items-center gap-1.5">
-                                      <div className="w-3 h-3 rounded-sm bg-primary/40"></div>
-                                      <span className="text-muted-foreground">Mentioned</span>
-                                    </div>
-                                  </div>
-                                </div>
-                              )}
                             </div>
-                          </CardHeader>
+                          </div>
+                        )}
 
-                          <CardContent className="space-y-4 pt-0">
-                            {/* Thesis Preview */}
-                            <div className="space-y-2">
-                              <h4 className="text-sm font-semibold">Investment Thesis</h4>
-                              <p className="text-xs text-muted-foreground leading-relaxed line-clamp-2">
-                                {company.investmentThesis}
+                        {/* NVDA: Zoomed-in emphasis scoring */}
+                        {company.valueProposition.focusArea === "emphasis-scoring" && (
+                          <div className="h-full flex flex-col p-4">
+                            {/* Before: Unstructured paragraph */}
+                            <div className="mb-4 p-3 bg-muted/20 rounded-lg border border-muted">
+                              <p className="text-xs font-semibold mb-2 text-muted-foreground">Before: Raw filing text</p>
+                              <p className="text-xs text-muted-foreground leading-relaxed line-clamp-3 font-mono">
+                                NVIDIA's AI computing platform is experiencing unprecedented demand across data centers globally. Our GPU architecture has become essential infrastructure for AI model training and inference, with CUDA software creating significant developer ecosystem advantages...
                               </p>
                             </div>
 
-                            {/* Products - Compact */}
-                            <div className="space-y-2">
-                              <h4 className="text-sm font-semibold">Key Products</h4>
-                              <div className="space-y-2">
-                                {company.products.slice(0, 2).map((product) => (
-                                  <div
-                                    key={product.name}
-                                    className="flex items-start gap-2 p-2 rounded-lg border border-border bg-background/50"
-                                  >
-                                    <div className="space-y-0.5 flex-1 min-w-0">
-                                      <p className="font-semibold text-xs">{product.name}</p>
-                                      <p className="text-xs text-muted-foreground line-clamp-1">
-                                        {product.description}
-                                      </p>
-                                    </div>
+                            {/* After: Color-coded emphasis tags (STAR of the show) */}
+                            <div className="flex-1">
+                              <p className="text-xs font-semibold mb-3">After: AI-ranked by emphasis</p>
+                              
+                              {/* Zoomed emphasis tags */}
+                              <div className="space-y-3">
+                                <div className="space-y-2">
+                                  <div className="flex items-center gap-2">
+                                    <TrendingUp className="w-4 h-4 text-primary" />
+                                    <span className="text-xs font-semibold uppercase text-muted-foreground">High Emphasis</span>
                                   </div>
-                                ))}
-                              </div>
-                            </div>
+                                  <div className="space-y-1.5">
+                                    {company.investmentThemes.filter(t => t.emphasis === "high").map((theme) => (
+                                      <div key={theme.name} className="flex items-center gap-2">
+                                        <div className="w-2 h-2 rounded-full bg-primary"></div>
+                                        <Badge className={getThemeBadgeClasses(theme.emphasis) + " text-xs flex-1"}>
+                                          {theme.name}
+                                        </Badge>
+                                      </div>
+                                    ))}
+                                  </div>
+                                </div>
 
-                            {/* CTA */}
-                            <div className="pt-2">
+                                <div className="space-y-2">
+                                  <div className="flex items-center gap-2">
+                                    <Shield className="w-4 h-4 text-primary/70" />
+                                    <span className="text-xs font-semibold uppercase text-muted-foreground">Medium Emphasis</span>
+                                  </div>
+                                  <div className="space-y-1.5">
+                                    {company.investmentThemes.filter(t => t.emphasis === "medium").map((theme) => (
+                                      <div key={theme.name} className="flex items-center gap-2">
+                                        <div className="w-2 h-2 rounded-full bg-primary/70"></div>
+                                        <Badge className={getThemeBadgeClasses(theme.emphasis) + " text-xs flex-1"}>
+                                          {theme.name}
+                                        </Badge>
+                                      </div>
+                                    ))}
+                                  </div>
+                                </div>
+                              </div>
+
+                              {/* Emphasis Legend */}
+                              <div className="mt-4 p-3 bg-primary/5 rounded-lg border border-primary/20">
+                                <p className="text-xs font-semibold mb-2">Emphasis Analysis</p>
+                                <p className="text-xs text-muted-foreground leading-relaxed">
+                                  We analyze frequency, depth of discussion, and strategic importance across the entire filing to rank what management emphasizes most.
+                                </p>
+                              </div>
+
                               <Button
                                 size="sm"
                                 onClick={() => setLocation(`/app?ticker=${company.ticker}`)}
-                                className="w-full gap-2 text-xs"
+                                className="w-full gap-2 text-xs mt-4"
                                 data-testid={`button-view-${company.ticker.toLowerCase()}`}
                               >
-                                View Full Analysis
+                                Analyze Any Stock
                                 <ArrowRight className="w-3 h-3" />
                               </Button>
                             </div>
-                          </CardContent>
-                        </Card>
+                          </div>
+                        )}
+
+                        {/* SOUN: 2x2 grid of 4 dimensions */}
+                        {company.valueProposition.focusArea === "four-dimensions" && (
+                          <div className="h-full flex flex-col p-4">
+                            <div className="text-center mb-4">
+                              <Badge variant="outline" className="font-mono text-xs mb-2">
+                                {company.ticker}
+                              </Badge>
+                              <p className="text-sm font-bold">{company.companyName}</p>
+                            </div>
+
+                            {/* 2x2 Grid Layout */}
+                            <div className="grid grid-cols-2 gap-3 flex-1">
+                              {/* Strategy (Themes) */}
+                              <Card className="p-3 hover-elevate">
+                                <div className="flex items-center gap-2 mb-2">
+                                  <TrendingUp className="w-4 h-4 text-primary" />
+                                  <span className="text-xs font-bold">Strategy</span>
+                                </div>
+                                <div className="space-y-1">
+                                  {company.investmentThemes.slice(0, 2).map((theme) => (
+                                    <Badge
+                                      key={theme.name}
+                                      className={getThemeBadgeClasses(theme.emphasis) + " text-xs w-full justify-start"}
+                                    >
+                                      {theme.name}
+                                    </Badge>
+                                  ))}
+                                </div>
+                              </Card>
+
+                              {/* Defense (Moats) */}
+                              <Card className="p-3 hover-elevate">
+                                <div className="flex items-center gap-2 mb-2">
+                                  <Shield className="w-4 h-4 text-primary" />
+                                  <span className="text-xs font-bold">Defense</span>
+                                </div>
+                                <div className="space-y-1">
+                                  {company.moats.slice(0, 2).map((moat) => (
+                                    <Badge
+                                      key={moat.name}
+                                      className={getThemeBadgeClasses(moat.emphasis) + " text-xs w-full justify-start"}
+                                    >
+                                      {moat.name}
+                                    </Badge>
+                                  ))}
+                                </div>
+                              </Card>
+
+                              {/* Growth (Opportunity) */}
+                              <Card className="p-3 hover-elevate">
+                                <div className="flex items-center gap-2 mb-2">
+                                  <Target className="w-4 h-4 text-primary" />
+                                  <span className="text-xs font-bold">Growth</span>
+                                </div>
+                                <div className="space-y-1">
+                                  {company.marketOpportunity.slice(0, 2).map((opp) => (
+                                    <Badge
+                                      key={opp.name}
+                                      className={getThemeBadgeClasses(opp.emphasis) + " text-xs w-full justify-start"}
+                                    >
+                                      {opp.name}
+                                    </Badge>
+                                  ))}
+                                </div>
+                              </Card>
+
+                              {/* Profit (Value Creation) */}
+                              <Card className="p-3 hover-elevate">
+                                <div className="flex items-center gap-2 mb-2">
+                                  <Coins className="w-4 h-4 text-primary" />
+                                  <span className="text-xs font-bold">Profit</span>
+                                </div>
+                                <div className="space-y-1">
+                                  {company.valueCreation.slice(0, 2).map((value) => (
+                                    <Badge
+                                      key={value.name}
+                                      className={getThemeBadgeClasses(value.emphasis) + " text-xs w-full justify-start"}
+                                    >
+                                      {value.name}
+                                    </Badge>
+                                  ))}
+                                </div>
+                              </Card>
+                            </div>
+
+                            {/* Framework Explanation */}
+                            <div className="mt-3 p-3 bg-primary/5 rounded-lg border border-primary/20">
+                              <p className="text-xs font-semibold mb-1">The Professional Framework</p>
+                              <p className="text-xs text-muted-foreground leading-relaxed">
+                                Wall Street analysts use this 4-part structure to build investment conviction. Now you can too.
+                              </p>
+                            </div>
+
+                            <Button
+                              size="sm"
+                              onClick={() => setLocation(`/app?ticker=${company.ticker}`)}
+                              className="w-full gap-2 text-xs mt-3"
+                              data-testid={`button-view-${company.ticker.toLowerCase()}`}
+                            >
+                              Try Your Own Stock
+                              <ArrowRight className="w-3 h-3" />
+                            </Button>
+                          </div>
+                        )}
+
                       </div>
                     </div>
                   </div>
