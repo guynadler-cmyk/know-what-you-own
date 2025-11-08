@@ -45,19 +45,23 @@ Shared Zod schemas, located in `/shared/schema.ts`, are central to maintaining t
 
 ## Recent Changes
 
-### Value-Driven Marketing Carousel (Latest - Nov 2025)
-**Transformed carousel from UI showcase to value proposition showcase:**
-- **Marketing Headlines:** Each slide headlines a killer feature above the phone frame ("AI reads 100+ page filings", "See what matters most", "Beyond the ticker symbol")
-- **Proof Badges:** Concrete proof points displayed prominently (e.g., "124-page 10-K → 2-minute read", "Color-coded emphasis scoring", "4-dimensional investment analysis")
-- **Slide-Specific Focus Areas:**
-  - **PLTR (Filing Analysis):** Emphasizes AI-powered filing digestion with page count proof
-  - **NVDA (Emphasis Scoring):** Showcases color-coded legend explaining High/Medium/Mentioned emphasis levels
-  - **SOUN (Four Dimensions):** Displays all 4 tag categories (Themes, Moats, Opportunity, Value Creation) with icons
-- **Value-Focused Section Copy:** "From 100+ page filing to instant clarity" headline emphasizing time savings and AI intelligence
-- **Mobile Phone Frame:** Realistic smartphone mockup with notch, rounded corners, and dark bezel
-- **Swipeable Navigation:** Touch-enabled swiping on mobile, prev/next buttons on desktop, navigation dots for all devices
-- **Conditional Rendering:** Each slide customizes content based on its focus area for maximum impact
-- **Why:** Shows what the tool DOES (reads filings, scores emphasis, analyzes dimensions) vs what the UI LOOKS LIKE—compelling value propositions drive conversions
+### Unique Visual Layouts Per Carousel Slide (Latest - Nov 2025)
+**Complete carousel redesign with three visually distinct slides and aggressive Wall Street vs Retail marketing:**
+- **Three Completely Different Visual Layouts:**
+  - **PLTR (Filing Analysis):** Split-screen layout showing dense 10-K excerpt transforming into AI-extracted insights with progress indicator
+  - **NVDA (Emphasis Scoring):** Before/After comparison with zoomed-in color-coded emphasis tags as the centerpiece
+  - **SOUN (Four Dimensions):** 2x2 grid layout equally highlighting Strategy/Defense/Growth/Profit framework
+- **Bold Wall Street vs Retail Headlines:**
+  - PLTR: "What hedge funds pay analysts $200K/year to read"
+  - NVDA: "Stop guessing what matters. We quantify it."
+  - SOUN: "The 4-part framework professionals use"
+- **Aggressive Value Messaging:**
+  - Subtext: "We digest the 100+ page filing—like a Wall Street analyst on demand", "Analyst-level signal sorting, no Bloomberg terminal required"
+  - Proof badges: "Professional-grade filing intelligence", "Institutional-grade emphasis analysis", "Professional investment framework—free for retail"
+- **Visual Differentiation:** Each slide uses completely different JSX structure and components - no shared layout patterns
+- **Conditional Rendering:** Based on `focusArea` property (filing-analysis, emphasis-scoring, four-dimensions)
+- **Marketing Psychology:** Frames product as institutional-grade intelligence bridging Wall Street/retail knowledge gap
+- **Why:** Eliminated visual sameness between slides, now each slide showcases a distinct feature with bold messaging that positions the tool as "the Wall Street playbook for retail investors"
 
 ### Landing Page & Header Navigation (Nov 2025)
 **Restored landing page experience with intuitive navigation:**
