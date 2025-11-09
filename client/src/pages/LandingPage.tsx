@@ -7,7 +7,7 @@ import { ShareButton } from "@/components/ShareButton";
 import { DemoCarousel } from "@/components/DemoCarousel";
 import { Button } from "@/components/ui/button";
 import { useIsPWAInstalled } from "@/hooks/useIsPWAInstalled";
-import { CheckCircle, TrendingUp, Shield, Heart } from "lucide-react";
+import { Clock, Zap, ShieldCheck, Smartphone } from "lucide-react";
 
 export default function LandingPage() {
   const [, setLocation] = useLocation();
@@ -62,7 +62,7 @@ export default function LandingPage() {
                 From 100+ page filing to instant clarity
               </h2>
               <p className="text-lg sm:text-xl text-muted-foreground max-w-2xl mx-auto">
-                Our AI reads the actual SEC filings, extracts management's strategic vision, and ranks what matters most—saving you hours of research.
+                Our AI reads official company reports submitted to regulators, extracts management's strategic vision, and ranks what matters most—saving you hours of research.
               </p>
             </div>
             
@@ -74,51 +74,51 @@ export default function LandingPage() {
         <section className="py-16 sm:py-24 px-4 bg-muted/20">
           <div className="mx-auto max-w-6xl">
             <h2 className="text-3xl sm:text-4xl font-bold text-center mb-16">
-              Why Business Analyzer?
+              Your analysis. Right now.
             </h2>
             
             <div className="grid sm:grid-cols-2 gap-8 sm:gap-12">
-              {/* Benefit 1 */}
+              {/* Benefit 1: Speed */}
               <div className="space-y-4">
                 <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-primary/10">
-                  <CheckCircle className="w-6 h-6 text-primary" />
+                  <Clock className="w-6 h-6 text-primary" />
                 </div>
-                <h3 className="text-2xl font-bold">Know what a company actually does</h3>
+                <h3 className="text-2xl font-bold">Instant results</h3>
                 <p className="text-lg text-muted-foreground leading-relaxed">
-                  Plain-English explanations of products, services, and how they make money.
+                  Enter a ticker, get your full analysis in under 60 seconds. No waiting, no subscriptions.
                 </p>
               </div>
 
-              {/* Benefit 2 */}
+              {/* Benefit 2: Clarity */}
               <div className="space-y-4">
                 <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-primary/10">
-                  <TrendingUp className="w-6 h-6 text-primary" />
+                  <Zap className="w-6 h-6 text-primary" />
                 </div>
-                <h3 className="text-2xl font-bold">Understand the money</h3>
+                <h3 className="text-2xl font-bold">Decision-ready clarity</h3>
                 <p className="text-lg text-muted-foreground leading-relaxed">
-                  See how profitable the company is — and where the money goes.
+                  Get the investment case summarized—no jargon, no fluff, just what matters for your decision.
                 </p>
               </div>
 
-              {/* Benefit 3 */}
+              {/* Benefit 3: Trust */}
               <div className="space-y-4">
                 <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-primary/10">
-                  <Shield className="w-6 h-6 text-primary" />
+                  <ShieldCheck className="w-6 h-6 text-primary" />
                 </div>
-                <h3 className="text-2xl font-bold">Spot red flags early</h3>
+                <h3 className="text-2xl font-bold">Confidence you can trust</h3>
                 <p className="text-lg text-muted-foreground leading-relaxed">
-                  We surface key risks, recent changes, and warning signs automatically.
+                  Sourced directly from official filings—the same documents Wall Street analysts rely on.
                 </p>
               </div>
 
-              {/* Benefit 4 */}
+              {/* Benefit 4: Accessibility */}
               <div className="space-y-4">
                 <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-primary/10">
-                  <Heart className="w-6 h-6 text-primary" />
+                  <Smartphone className="w-6 h-6 text-primary" />
                 </div>
-                <h3 className="text-2xl font-bold">Invest with long-term confidence</h3>
+                <h3 className="text-2xl font-bold">Access from anywhere</h3>
                 <p className="text-lg text-muted-foreground leading-relaxed">
-                  Insights that help you hold through downturns — not panic sell.
+                  Works on any device. Install as an app on your phone for instant access on the go.
                 </p>
               </div>
             </div>
