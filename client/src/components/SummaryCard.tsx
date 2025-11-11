@@ -9,7 +9,7 @@ import { Calendar, Building2, MapPin, Users, TrendingUp, Briefcase, Award, Dolla
 import { LucideIcon } from "lucide-react";
 import { SiX, SiYoutube } from "react-icons/si";
 import { useQuery } from "@tanstack/react-query";
-import { StockPerformance, InvestmentTheme, Moat, MarketOpportunity, ValueCreation } from "@shared/schema";
+import { InvestmentTheme, Moat, MarketOpportunity, ValueCreation } from "@shared/schema";
 import { TagWithTooltip } from "@/components/TagWithTooltip";
 
 interface Product {

@@ -32,7 +32,18 @@ The application employs a minimalist design system with a monochrome palette and
 
 ### Feature Specifications
 
-The application provides AI-powered investment thesis analysis, stock performance visualizations including "Years to Doubling" and a metric carousel with 6 scrollable metrics (P/E, Revenue Growth, Profit Margin, FCF, ROE, Debt/Equity), each with plain-English explanations and 5-year historical charts. It also includes share functionality via the Web Share API and PWA installation support via QR codes and instructions. The main carousel features three visually distinct slides, each showcasing a different aspect of the analysis (Filing Analysis, Emphasis Scoring, Four Dimensions) with aggressive marketing messaging.
+The application provides AI-powered investment thesis analysis with four distinct dimensions (Strategic Themes, Competitive Moats, Market Opportunity, Value Creation), comprehensive business overviews, key metrics from official filings, competitor analysis, leadership information, and curated resources. It includes share functionality via the Web Share API and PWA installation support via QR codes and instructions. The main carousel features three visually distinct slides, each showcasing a different aspect of the analysis (Filing Analysis, Emphasis Scoring, Four Dimensions) with aggressive marketing messaging.
+
+## Recent Changes
+
+### Stock Performance Section Removed (Nov 2025)
+**Removed mock data section based on beta tester feedback:**
+- **Removed Components:** Years to Doubling card and Metric Carousel (P/E, Revenue Growth, etc.)
+- **Rationale:** Beta testers indicated the mock stock performance visualizations were not adding value
+- **Cleanup:** Removed all related imports, props, and mock data generation
+- **Preserved Sections:** Investment Thesis, Business Overview, By The Numbers (filing metrics), Market Context, Resources
+- **Why:** Focus on high-value filing analysis rather than placeholder market data
+- **Testing:** End-to-end tests confirmed clean removal with no regressions
 
 ## External Dependencies
 
