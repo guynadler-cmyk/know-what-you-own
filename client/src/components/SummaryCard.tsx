@@ -186,6 +186,7 @@ export function SummaryCard({
   cik 
 }: SummaryCardProps) {
   const [expandedCompetitor, setExpandedCompetitor] = useState<string | null>(null);
+  const [metricsExpanded, setMetricsExpanded] = useState(false);
   const [logoFailed, setLogoFailed] = useState(false);
 
   // Extract domain from homepage for logo
@@ -497,19 +498,51 @@ export function SummaryCard({
         </div>
       </div>
 
-      {/* PERFORMANCE CLUSTER */}
+      {/* BY THE NUMBERS CLUSTER */}
       <div className="border-2 border-border rounded-2xl">
         <div className="bg-muted px-8 py-4 border-b-2 border-border">
-          <h2 className="text-2xl font-bold text-center uppercase tracking-wide">Performance</h2>
+          <div className="text-center space-y-1">
+            <h2 className="text-2xl font-bold uppercase tracking-wide">By The Numbers</h2>
+            <p className="text-sm text-muted-foreground">Metrics from their official company reports</p>
+          </div>
         </div>
         <div className="bg-muted/20 p-8 sm:p-12">
-          <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-4 max-w-5xl mx-auto">
-            {metrics.map((metric, index) => (
-              <div key={index} className="text-center space-y-2">
-                <p className="text-sm text-muted-foreground uppercase tracking-wide font-semibold">{metric.label}</p>
-                <p className="text-4xl font-bold">{metric.value}</p>
-              </div>
-            ))}
+          <div className="space-y-6 max-w-5xl mx-auto">
+            <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-3">
+              {metrics.slice(0, 3).map((metric, index) => (
+                <div key={index} className="text-center space-y-2" data-testid={`metric-${index}`}>
+                  <p className="text-sm text-muted-foreground uppercase tracking-wide font-semibold">{metric.label}</p>
+                  <p className="text-4xl font-bold">{metric.value}</p>
+                </div>
+              ))}
+            </div>
+            
+            {metrics.length > 3 && (
+              <>
+                {metricsExpanded && (
+                  <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-3 pt-2">
+                    {metrics.slice(3).map((metric, index) => (
+                      <div key={index + 3} className="text-center space-y-2" data-testid={`metric-${index + 3}`}>
+                        <p className="text-sm text-muted-foreground uppercase tracking-wide font-semibold">{metric.label}</p>
+                        <p className="text-4xl font-bold">{metric.value}</p>
+                      </div>
+                    ))}
+                  </div>
+                )}
+                
+                <div className="flex justify-center pt-2">
+                  <Button
+                    variant="outline"
+                    onClick={() => setMetricsExpanded(!metricsExpanded)}
+                    aria-expanded={metricsExpanded}
+                    data-testid="button-toggle-metrics"
+                  >
+                    {metricsExpanded ? "Show Less" : `Show All Metrics (${metrics.length})`}
+                    <ChevronDown className={`ml-2 h-4 w-4 transition-transform ${metricsExpanded ? 'rotate-180' : ''}`} />
+                  </Button>
+                </div>
+              </>
+            )}
           </div>
         </div>
       </div>
