@@ -1,5 +1,4 @@
 import { useState, useEffect } from "react";
-import { useQuery } from "@tanstack/react-query";
 import { useLocation } from "wouter";
 import { queryClient } from "@/lib/queryClient";
 import { Header } from "@/components/Header";
@@ -30,12 +29,6 @@ export default function AppPage() {
   const [currentTicker, setCurrentTicker] = useState("");
   const [summaryData, setSummaryData] = useState<CompanySummary | null>(null);
   const [errorInfo, setErrorInfo] = useState({ title: "", message: "" });
-
-  const { refetch, isFetching } = useQuery({
-    queryKey: ["/api/analyze", currentTicker],
-    enabled: false,
-    retry: false,
-  });
 
   // Auto-analyze if ticker is in URL query params
   useEffect(() => {
@@ -124,7 +117,7 @@ export default function AppPage() {
           <div className="mx-auto max-w-7xl px-4 pb-24 sm:px-6 lg:px-8">
             <HeroSection />
             <div className="mt-8">
-              <TickerInput onSubmit={handleTickerSubmit} isLoading={isFetching} />
+              <TickerInput onSubmit={handleTickerSubmit} isLoading={false} />
             </div>
           </div>
         )}
