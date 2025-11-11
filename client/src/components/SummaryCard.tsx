@@ -78,7 +78,6 @@ interface SummaryCardProps {
   competitors: Competitor[];
   leaders: Leader[];
   metrics: Metric[];
-  stockPerformance?: StockPerformance;
   
   metadata: {
     homepage: string;
@@ -184,7 +183,6 @@ export function SummaryCard({
   competitors,
   leaders,
   metrics,
-  stockPerformance,
   metadata,
   cik 
 }: SummaryCardProps) {
