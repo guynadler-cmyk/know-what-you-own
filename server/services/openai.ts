@@ -133,7 +133,13 @@ Requirements:
 - Include 3-4 competitors with their stock ticker symbols if they are publicly traded companies
 - For each sales channel, provide a simple explanation that non-financial people can understand
 - Include 3-5 key leaders if mentioned (use initials from first/last name)
-- Include 3-4 key metrics (revenue, employees, etc) if mentioned
+- Extract 5-10 material metrics that reveal business performance. Prioritize diversity across these categories:
+  * Financial: Revenue, Net Income, Profit Margin, Free Cash Flow, R&D Spending, Operating Expenses
+  * Operational: Customers, Units Sold/Shipped, Market Share %, Average Transaction Value, Active Users
+  * Scale: Employees, Locations, Countries/Regions Served, Production Capacity
+  * Growth: YoY Revenue Growth %, Customer Growth %, Geographic Expansion Metrics
+  Only include numbers explicitly mentioned in the filing that are material to understanding the business
+  Format values clearly (e.g., "$26.9 billion", "22,000", "15%", "711 customers")
 - Generate 3 plausible news items with Google News search URLs: https://news.google.com/search?q=${ticker}+recent+news
 - Generate 3 video resources with YouTube search URLs: https://www.youtube.com/results?search_query=${ticker}+stock+analysis
 - Keep all text concise and scannable (except investmentThesis which should be comprehensive)
