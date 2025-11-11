@@ -95,6 +95,11 @@ interface SummaryCardProps {
 function CompetitorQuickSummary({ ticker }: { ticker: string }) {
   const { data, isLoading, error } = useQuery<any>({
     queryKey: ['/api/analyze', ticker],
+    queryFn: async () => {
+      const res = await fetch(`/api/analyze/${ticker}`);
+      if (!res.ok) throw new Error('Failed to fetch competitor data');
+      return res.json();
+    },
     enabled: !!ticker,
     staleTime: 1000 * 60 * 60,
   });
