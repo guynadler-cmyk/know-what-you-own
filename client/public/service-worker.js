@@ -1,4 +1,4 @@
-const CACHE_NAME = 'restnvest-v11';
+const CACHE_NAME = 'restnvest-v12';
 const urlsToCache = [
   '/',
   '/app',
@@ -16,25 +16,59 @@ self.addEventListener('install', (event) => {
 });
 
 self.addEventListener('fetch', (event) => {
-  event.respondWith(
-    caches.match(event.request)
-      .then((response) => {
-        if (response) {
+  const { request } = event;
+  const url = new URL(request.url);
+
+  // Network-first strategy for HTML, JS, CSS, and API requests
+  // This ensures users always get the latest code
+  if (
+    request.method === 'GET' && 
+    (
+      request.headers.get('accept')?.includes('text/html') ||
+      url.pathname.endsWith('.js') ||
+      url.pathname.endsWith('.css') ||
+      url.pathname.startsWith('/api/')
+    )
+  ) {
+    event.respondWith(
+      fetch(request)
+        .then((response) => {
+          // Cache the fresh response for offline use
+          if (response && response.status === 200 && response.type === 'basic') {
+            const responseToCache = response.clone();
+            caches.open(CACHE_NAME).then((cache) => {
+              cache.put(request, responseToCache);
+            });
+          }
           return response;
-        }
-        return fetch(event.request).then((response) => {
-          if (!response || response.status !== 200 || response.type !== 'basic') {
+        })
+        .catch(() => {
+          // Fallback to cache when offline
+          return caches.match(request);
+        })
+    );
+  } else {
+    // Cache-first for static assets (images, fonts, etc.)
+    event.respondWith(
+      caches.match(request)
+        .then((response) => {
+          if (response) {
             return response;
           }
-          const responseToCache = response.clone();
-          caches.open(CACHE_NAME)
-            .then((cache) => {
-              cache.put(event.request, responseToCache);
-            });
-          return response;
-        });
-      })
-  );
+          return fetch(request).then((response) => {
+            if (!response || response.status !== 200 || response.type !== 'basic') {
+              return response;
+            }
+            const responseToCache = response.clone();
+            caches.open(CACHE_NAME)
+              .then((cache) => {
+                cache.put(request, responseToCache);
+              });
+            return response;
+          });
+        })
+    );
+  }
 });
 
 self.addEventListener('activate', (event) => {
@@ -48,6 +82,9 @@ self.addEventListener('activate', (event) => {
           }
         })
       );
+    }).then(() => {
+      // Immediately take control of all pages
+      return self.clients.claim();
     })
   );
 });
