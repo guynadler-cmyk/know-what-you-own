@@ -93,34 +93,6 @@ export const operationsSchema = z.object({
   scale: z.string(),
 });
 
-// Stock performance metric schema
-export const performanceMetricSchema = z.object({
-  name: z.string(),
-  value: z.string(),
-  explanation: z.string(),
-  chartData: z.array(z.object({
-    year: z.string(),
-    value: z.number(),
-  })),
-});
-
-// Years to doubling data schema
-export const yearsToDoublingSchema = z.object({
-  years: z.number(),
-  currentValue: z.string(),
-  projectedValue: z.string(),
-  chartData: z.array(z.object({
-    year: z.number(),
-    value: z.number(),
-  })),
-});
-
-// Stock performance schema
-export const stockPerformanceSchema = z.object({
-  yearsToDoubling: yearsToDoublingSchema,
-  metrics: z.array(performanceMetricSchema),
-});
-
 // Metadata schema
 export const metadataSchema = z.object({
   homepage: z.string(),
@@ -146,7 +118,6 @@ export const companySummarySchema = z.object({
   competitors: z.array(competitorSchema),
   leaders: z.array(leaderSchema),
   metrics: z.array(metricSchema),
-  stockPerformance: stockPerformanceSchema.optional(),
   metadata: metadataSchema,
   cik: z.string().optional(),
 });
@@ -163,9 +134,6 @@ export type Moat = z.infer<typeof moatSchema>;
 export type MarketOpportunity = z.infer<typeof marketOpportunitySchema>;
 export type ValueCreation = z.infer<typeof valueCreationSchema>;
 export type Operations = z.infer<typeof operationsSchema>;
-export type PerformanceMetric = z.infer<typeof performanceMetricSchema>;
-export type YearsToDoubling = z.infer<typeof yearsToDoublingSchema>;
-export type StockPerformance = z.infer<typeof stockPerformanceSchema>;
 export type Metadata = z.infer<typeof metadataSchema>;
 export type CompanySummary = z.infer<typeof companySummarySchema>;
 
