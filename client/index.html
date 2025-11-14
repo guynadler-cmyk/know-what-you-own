@@ -21,30 +21,47 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
     
-    <!-- Unregister old service workers and clear caches -->
+    <!-- Service Worker Registration -->
     <script>
       (async function() {
-        let hadServiceWorkers = false;
-        
         if ('serviceWorker' in navigator) {
-          const registrations = await navigator.serviceWorker.getRegistrations();
-          if (registrations.length > 0) {
-            hadServiceWorkers = true;
-            for (const registration of registrations) {
-              await registration.unregister();
+          try {
+            // Clean up any old service workers on first visit
+            const wasCleanedUp = localStorage.getItem('sw-cleanup-done');
+            
+            if (!wasCleanedUp) {
+              console.log('[PWA] Cleaning up old service workers...');
+              const registrations = await navigator.serviceWorker.getRegistrations();
+              for (const registration of registrations) {
+                await registration.unregister();
+              }
+              
+              const cacheNames = await caches.keys();
+              await Promise.all(cacheNames.map(name => caches.delete(name)));
+              
+              localStorage.setItem('sw-cleanup-done', 'true');
+              console.log('[PWA] Cleanup complete');
             }
+            
+            // Register the new service worker
+            const registration = await navigator.serviceWorker.register('/service-worker.js');
+            console.log('[PWA] Service Worker registered successfully');
+            
+            // Check for updates
+            registration.addEventListener('updatefound', () => {
+              const newWorker = registration.installing;
+              console.log('[PWA] New service worker found, updating...');
+              
+              newWorker.addEventListener('statechange', () => {
+                if (newWorker.state === 'activated') {
+                  console.log('[PWA] New service worker activated');
+                }
+              });
+            });
+            
+          } catch (error) {
+            console.error('[PWA] Service Worker registration failed:', error);
           }
-        }
-        
-        if ('caches' in window) {
-          const cacheNames = await caches.keys();
-          await Promise.all(cacheNames.map(name => caches.delete(name)));
-        }
-        
-        const wasCleanedUp = sessionStorage.getItem('sw-cleanup-done');
-        if (hadServiceWorkers && !wasCleanedUp) {
-          sessionStorage.setItem('sw-cleanup-done', 'true');
-          window.location.reload();
         }
       })();
     </script>
