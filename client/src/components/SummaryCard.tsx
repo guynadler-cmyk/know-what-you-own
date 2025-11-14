@@ -178,7 +178,6 @@ export function SummaryCard({
   competitors,
   leaders,
   metrics,
-  stockPerformance,
   metadata,
   cik 
 }: SummaryCardProps) {
