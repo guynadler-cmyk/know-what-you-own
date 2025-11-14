@@ -18,7 +18,7 @@ export function StageNavigation({ currentStage, onStageChange }: StageNavigation
   return (
     <Card className="mb-8" data-testid="stage-navigation">
       <CardContent className="pt-6 pb-6">
-        <div className="flex items-center justify-center gap-2 sm:gap-4">
+        <div className="flex items-center justify-center gap-1 sm:gap-4">
           {STAGES.map((stage, index) => (
             <div key={stage.number} className="flex items-center">
               <button
@@ -28,8 +28,8 @@ export function StageNavigation({ currentStage, onStageChange }: StageNavigation
               >
                 <div
                   className={`
-                    w-10 h-10 sm:w-12 sm:h-12 rounded-full flex items-center justify-center
-                    font-semibold text-sm sm:text-base transition-all
+                    w-8 h-8 sm:w-12 sm:h-12 rounded-full flex items-center justify-center
+                    font-semibold text-xs sm:text-base transition-all
                     ${
                       currentStage === stage.number
                         ? "bg-primary text-primary-foreground shadow-lg"
@@ -51,7 +51,7 @@ export function StageNavigation({ currentStage, onStageChange }: StageNavigation
               
               {index < STAGES.length - 1 && (
                 <div 
-                  className="w-6 sm:w-12 h-0.5 bg-border mx-1 sm:mx-2"
+                  className="w-3 sm:w-12 h-0.5 bg-border mx-0.5 sm:mx-2"
                   aria-hidden="true"
                 />
               )}
