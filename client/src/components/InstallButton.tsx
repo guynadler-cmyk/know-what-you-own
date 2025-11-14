@@ -9,54 +9,65 @@ interface BeforeInstallPromptEvent extends Event {
 
 export function InstallButton() {
   const [deferredPrompt, setDeferredPrompt] = useState<BeforeInstallPromptEvent | null>(null);
-  const [isInstallable, setIsInstallable] = useState(false);
+  const [showButton, setShowButton] = useState(false);
 
   useEffect(() => {
-    const handler = (e: Event) => {
-      e.preventDefault();
+    const handleBeforeInstallPrompt = (e: Event) => {
       console.log('[PWA] beforeinstallprompt event fired');
+      
+      // Prevent the mini-infobar from appearing on mobile
+      e.preventDefault();
+      
+      // Stash the event so it can be triggered later
       setDeferredPrompt(e as BeforeInstallPromptEvent);
-      setIsInstallable(true);
+      
+      // Show the install button
+      setShowButton(true);
     };
 
-    window.addEventListener('beforeinstallprompt', handler);
-
-    window.addEventListener('appinstalled', () => {
-      console.log('[PWA] App installed successfully');
-      setIsInstallable(false);
+    const handleAppInstalled = () => {
+      console.log('[PWA] App was installed');
+      setShowButton(false);
       setDeferredPrompt(null);
-    });
+    };
+
+    window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+    window.addEventListener('appinstalled', handleAppInstalled);
 
     return () => {
-      window.removeEventListener('beforeinstallprompt', handler);
+      window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+      window.removeEventListener('appinstalled', handleAppInstalled);
     };
   }, []);
 
-  const handleInstall = async () => {
+  const handleInstallClick = async () => {
     if (!deferredPrompt) {
-      console.log('[PWA] No install prompt available');
+      console.log('[PWA] No deferred prompt available');
       return;
     }
 
-    console.log('[PWA] Showing install prompt');
+    // Show the install prompt
     await deferredPrompt.prompt();
-    
+
+    // Wait for the user to respond to the prompt
     const { outcome } = await deferredPrompt.userChoice;
-    console.log(`[PWA] User response: ${outcome}`);
-    
+    console.log(`[PWA] User response to the install prompt: ${outcome}`);
+
+    // Clear the deferred prompt
     setDeferredPrompt(null);
-    setIsInstallable(false);
+    setShowButton(false);
   };
 
-  if (!isInstallable) {
+  if (!showButton) {
     return null;
   }
 
   return (
     <Button 
-      variant="outline" 
+      onClick={handleInstallClick}
+      variant="outline"
       size="sm"
-      onClick={handleInstall}
+      className="gap-2"
       data-testid="button-install-pwa"
     >
       <Download className="h-4 w-4" />
