@@ -24,8 +24,10 @@ export function Header() {
           <div className="flex items-center gap-3 ml-auto">
             <ShareButton variant="outline" size="sm" showText={true} />
             
+            {/* PWA Install Button - shows when beforeinstallprompt fires */}
             <InstallButton />
             
+            {/* QR Code Dialog - fallback for iOS and manual installation */}
             <Dialog>
               <DialogTrigger asChild>
                 <Button 
