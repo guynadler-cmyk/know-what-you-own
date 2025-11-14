@@ -2,6 +2,7 @@ import { Link } from "wouter";
 import { ThemeToggle } from "./ThemeToggle";
 import { ShareButton } from "./ShareButton";
 import { QRCodeDisplay } from "./QRCodeDisplay";
+import { InstallButton } from "./InstallButton";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Smartphone } from "lucide-react";
@@ -23,12 +24,14 @@ export function Header() {
           <div className="flex items-center gap-3 ml-auto">
             <ShareButton variant="outline" size="sm" showText={true} />
             
+            <InstallButton />
+            
             <Dialog>
               <DialogTrigger asChild>
                 <Button 
                   variant="outline" 
                   size="sm"
-                  data-testid="button-install"
+                  data-testid="button-install-qr"
                 >
                   <Smartphone className="h-4 w-4" />
                   Install
