@@ -9,9 +9,7 @@ import { Calendar, Building2, MapPin, Users, TrendingUp, Briefcase, Award, Dolla
 import { LucideIcon } from "lucide-react";
 import { SiX, SiYoutube } from "react-icons/si";
 import { useQuery } from "@tanstack/react-query";
-import { YearsToDoublingCard } from "@/components/YearsToDoublingCard";
-import { MetricCarousel } from "@/components/MetricCarousel";
-import { StockPerformance, InvestmentTheme, Moat, MarketOpportunity, ValueCreation } from "@shared/schema";
+import { InvestmentTheme, Moat, MarketOpportunity, ValueCreation } from "@shared/schema";
 import { TagWithTooltip } from "@/components/TagWithTooltip";
 
 interface Product {
@@ -80,7 +78,6 @@ interface SummaryCardProps {
   competitors: Competitor[];
   leaders: Leader[];
   metrics: Metric[];
-  stockPerformance?: StockPerformance;
   
   metadata: {
     homepage: string;
@@ -613,31 +610,6 @@ export function SummaryCard({
         </div>
       </div>
 
-      {/* STOCK PERFORMANCE CLUSTER */}
-      {stockPerformance && (
-        <div className="border-2 border-border rounded-2xl">
-          <div className="bg-muted px-8 py-4 border-b-2 border-border">
-            <h2 className="text-2xl font-bold text-center uppercase tracking-wide">Stock Performance</h2>
-          </div>
-          <div className="bg-muted/20 p-8 sm:p-12">
-            <div className="space-y-12">
-              {/* Years to Doubling Visualization */}
-              <section>
-                <YearsToDoublingCard 
-                  data={stockPerformance.yearsToDoubling} 
-                  companyName={companyName}
-                />
-              </section>
-
-              {/* Performance Metrics Carousel */}
-              <section>
-                <h3 className="text-xl font-bold mb-6 pb-2 border-b border-border">Key Metrics</h3>
-                <MetricCarousel metrics={stockPerformance.metrics} />
-              </section>
-            </div>
-          </div>
-        </div>
-      )}
 
       {/* RESOURCES CLUSTER */}
       <div className="border-2 border-border rounded-2xl">
