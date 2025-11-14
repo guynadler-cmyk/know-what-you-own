@@ -34,7 +34,24 @@ The application employs a minimalist design system with a monochrome palette and
 
 The application provides AI-powered investment thesis analysis with four distinct dimensions (Strategic Themes, Competitive Moats, Market Opportunity, Value Creation), comprehensive business overviews, key metrics from official filings, competitor analysis, leadership information, and curated resources. It includes share functionality via the Web Share API and PWA installation support via QR codes and instructions. The main carousel features three visually distinct slides, each showcasing a different aspect of the analysis (Filing Analysis, Emphasis Scoring, Four Dimensions) with aggressive marketing messaging.
 
+**6-Stage Investment Journey:** After analyzing a company, users navigate through six progressive stages: (1) Understand the Business (full analysis with SummaryCard), (2) Understand Performance, (3) Evaluate the Stock, (4) Plan Your Investment, (5) Time It Sensibly, and (6) Protect What's Yours. Features include a collapsible philosophy narrative explaining the investment approach, numbered circle navigation (1-6) with teal highlighting for the current stage, stage-specific content (Stage 1 shows full analysis, Stages 2-6 show "Coming Soon" placeholders), and contextual transition buttons ("I like this business - let's check performance →" for Stage 1, "Continue to Next Stage →" and "← Previous Stage" for others). URL syncing with `?ticker=X&stage=N` enables direct navigation and sharing of specific stages.
+
 ## Recent Changes
+
+### 6-Stage Investment Journey Added (Nov 2025)
+**Implemented progressive navigation system for investment decision-making:**
+- **Journey Narrative:** Collapsible section explaining investment philosophy ("We only buy great businesses at great prices, entered wisely, protected carefully") with 6-step breakdown
+- **Stage Navigation:** Numbered circles (1-6) with teal highlighting for current stage, clickable for direct navigation
+- **Stage Content:**
+  - Stage 1: "Understand the Business" - Full company analysis (existing SummaryCard)
+  - Stage 2: "Understand Performance" - Coming Soon
+  - Stage 3: "Evaluate the Stock" - Coming Soon
+  - Stage 4: "Plan Your Investment" - Coming Soon
+  - Stage 5: "Time It Sensibly" - Coming Soon
+  - Stage 6: "Protect What's Yours" - Coming Soon
+- **Transition Buttons:** Context-aware navigation with stage-specific button text
+- **URL Syncing:** Full support for `?ticker=AAPL&stage=3` format, enabling direct stage navigation and sharing
+- **LandingPage Redirect:** Automatic redirect from `/` to `/app` when ticker param is present in URL
 
 ### Service Worker Removed (Nov 2025)
 **Eliminated service worker to solve persistent caching issues:**
