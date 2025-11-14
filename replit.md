@@ -39,6 +39,8 @@ The application provides AI-powered investment thesis analysis with four distinc
 ### Service Worker Removed (Nov 2025)
 **Eliminated service worker to solve persistent caching issues:**
 - **Removed:** Service worker registration from `index.html` and `service-worker.js` file
+- **Added:** Cleanup script in `index.html` that actively unregisters any existing service workers and clears all caches
+- **How Cleanup Works:** Script runs on every page load, detects old service workers, unregisters them, clears caches, and reloads once
 - **Rationale:** Service worker caused aggressive caching that prevented users from seeing latest updates, even after deployments
 - **PWA Features Preserved:** App still supports "Add to Home Screen" on iOS/Android, Web Share API, and all PWA metadata via `manifest.json`
 - **Why Service Worker Not Needed:** App requires internet connection for SEC API and OpenAI calls, so offline mode provides no value

@@ -20,6 +20,34 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+    
+    <!-- Unregister old service workers and clear caches -->
+    <script>
+      (async function() {
+        let hadServiceWorkers = false;
+        
+        if ('serviceWorker' in navigator) {
+          const registrations = await navigator.serviceWorker.getRegistrations();
+          if (registrations.length > 0) {
+            hadServiceWorkers = true;
+            for (const registration of registrations) {
+              await registration.unregister();
+            }
+          }
+        }
+        
+        if ('caches' in window) {
+          const cacheNames = await caches.keys();
+          await Promise.all(cacheNames.map(name => caches.delete(name)));
+        }
+        
+        const wasCleanedUp = sessionStorage.getItem('sw-cleanup-done');
+        if (hadServiceWorkers && !wasCleanedUp) {
+          sessionStorage.setItem('sw-cleanup-done', 'true');
+          window.location.reload();
+        }
+      })();
+    </script>
   </head>
   <body>
     <div id="root"></div>
