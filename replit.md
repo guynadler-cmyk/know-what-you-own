@@ -45,6 +45,23 @@ Shared Zod schemas, located in `/shared/schema.ts`, are central to maintaining t
 
 ## Recent Changes
 
+### PWA Installation on Main Branch (Nov 2025)
+**Added complete PWA installation system to main branch:**
+- **Fixed manifest.json:** Changed invalid `"purpose": "any maskable"` to `"purpose": "any"` (PWA spec compliance)
+- **InstallButton Component:** Created component that:
+  - Listens for `beforeinstallprompt` event
+  - Shows "Install App" button when browser supports PWA installation
+  - Triggers native install prompt when clicked
+  - Automatically hides after installation
+  - Works on Chrome/Edge/Samsung Internet on Android
+- **Header Integration:** Added InstallButton alongside existing QR code dialog
+  - InstallButton: For native PWA installation on supported browsers
+  - QR Dialog: Fallback for iOS Safari and manual installation
+- **Service Worker:** Already in place with cache-first strategy
+- **Testing:** Ready to publish and test on filing-insight-guynadler.replit.app with Android Chrome
+
+## Recent Changes
+
 ### Unique Visual Layouts Per Carousel Slide (Latest - Nov 2025)
 **Complete carousel redesign with three visually distinct slides and aggressive Wall Street vs Retail marketing:**
 - **Three Completely Different Visual Layouts:**
