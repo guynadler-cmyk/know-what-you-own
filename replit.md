@@ -53,22 +53,27 @@ The application provides AI-powered investment thesis analysis with four distinc
 - **URL Syncing:** Full support for `?ticker=AAPL&stage=3` format, enabling direct stage navigation and sharing
 - **LandingPage Redirect:** Automatic redirect from `/` to `/app` when ticker param is present in URL
 
-### Minimal Service Worker Added (Nov 2025)
-**Implemented minimal network-first service worker to enable PWA installation:**
-- **Added:** `client/public/service-worker.js` with network-first caching strategy
-- **Registration:** Simple service worker registration in `index.html` on page load
-- **Caching Strategy:** 
+### PWA Installation Fixed (Nov 2025)
+**Implemented complete PWA installation with service worker and install button:**
+- **Service Worker:** `client/public/service-worker.js` with network-first caching strategy
   - Always fetches fresh content from network first
   - Only uses cache as fallback when offline
   - Never caches API requests (always fresh data)
   - Dynamic cache name with timestamp ensures fresh caches on each deployment
-- **Rationale:** Browsers require a service worker for PWA installation ("Add to Home Screen")
+- **Manifest Fix:** Changed invalid `"purpose": "any maskable"` to `"purpose": "any"` (PWA spec compliance)
+- **Install Button:** Added `InstallButton` component that:
+  - Listens for `beforeinstallprompt` event
+  - Shows "Install App" button when browser supports PWA installation
+  - Triggers native install prompt when clicked
+  - Automatically hides after installation
+  - Works on Chrome/Edge/Samsung Internet on Android
+- **Fallback:** QR code dialog remains for iOS Safari and manual installation
 - **Benefits:** 
-  - Enables PWA installation on mobile devices
+  - Native PWA installation on supported browsers
   - Always shows latest content (no stale cache issues)
   - Auto-updates on deployment
   - Works offline for static assets only
-- **Mobile Experience:** Users can install app to home screen while always seeing latest updates
+- **Mobile Experience:** Tap "Install App" button for one-click installation, or use QR code for iOS
 
 ### Stock Performance Section Removed (Nov 2025)
 **Removed mock data section based on beta tester feedback:**
