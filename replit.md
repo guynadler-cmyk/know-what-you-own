@@ -53,16 +53,22 @@ The application provides AI-powered investment thesis analysis with four distinc
 - **URL Syncing:** Full support for `?ticker=AAPL&stage=3` format, enabling direct stage navigation and sharing
 - **LandingPage Redirect:** Automatic redirect from `/` to `/app` when ticker param is present in URL
 
-### Service Worker Removed (Nov 2025)
-**Eliminated service worker to solve persistent caching issues:**
-- **Removed:** Service worker registration from `index.html` and `service-worker.js` file
-- **Added:** Cleanup script in `index.html` that actively unregisters any existing service workers and clears all caches
-- **How Cleanup Works:** Script runs on every page load, detects old service workers, unregisters them, clears caches, and reloads once
-- **Rationale:** Service worker caused aggressive caching that prevented users from seeing latest updates, even after deployments
-- **PWA Features Preserved:** App still supports "Add to Home Screen" on iOS/Android, Web Share API, and all PWA metadata via `manifest.json`
-- **Why Service Worker Not Needed:** App requires internet connection for SEC API and OpenAI calls, so offline mode provides no value
-- **Result:** Users now always get the latest version immediately, no more cache invalidation issues
-- **Mobile Experience:** Smooth installation, sharing, and updates without caching problems
+### Minimal Service Worker Added (Nov 2025)
+**Implemented minimal network-first service worker to enable PWA installation:**
+- **Added:** `client/public/service-worker.js` with network-first caching strategy
+- **Registration:** Simple service worker registration in `index.html` on page load
+- **Caching Strategy:** 
+  - Always fetches fresh content from network first
+  - Only uses cache as fallback when offline
+  - Never caches API requests (always fresh data)
+  - Dynamic cache name with timestamp ensures fresh caches on each deployment
+- **Rationale:** Browsers require a service worker for PWA installation ("Add to Home Screen")
+- **Benefits:** 
+  - Enables PWA installation on mobile devices
+  - Always shows latest content (no stale cache issues)
+  - Auto-updates on deployment
+  - Works offline for static assets only
+- **Mobile Experience:** Users can install app to home screen while always seeing latest updates
 
 ### Stock Performance Section Removed (Nov 2025)
 **Removed mock data section based on beta tester feedback:**
