@@ -1,79 +1,81 @@
-const CACHE_NAME = 'kwyo-v1.0.0';
-const STATIC_ASSETS = [
-  '/',
-  '/manifest.json',
-  '/icons/icon-192x192.png',
-  '/icons/icon-512x512.png'
-];
+// Minimal service worker for PWA installation only
+// Network-first strategy: always try network, cache only as offline fallback
+// Cache name includes timestamp to ensure fresh caches on each deployment
+const CACHE_NAME = 'restnvest-minimal-v1-' + Date.now();
 
-// Install event - cache static assets
+// Install event - activate immediately
 self.addEventListener('install', (event) => {
-  console.log('[ServiceWorker] Install');
-  event.waitUntil(
-    caches.open(CACHE_NAME).then((cache) => {
-      console.log('[ServiceWorker] Caching static assets');
-      return cache.addAll(STATIC_ASSETS);
-    }).then(() => self.skipWaiting())
-  );
+  console.log('[SW] Installing service worker, cache:', CACHE_NAME);
+  // Skip waiting to activate immediately
+  self.skipWaiting();
 });
 
-// Activate event - clean up old caches
+// Activate event - clean up old caches and take control immediately
 self.addEventListener('activate', (event) => {
-  console.log('[ServiceWorker] Activate');
+  console.log('[SW] Activating service worker');
   event.waitUntil(
-    caches.keys().then((cacheNames) => {
-      return Promise.all(
-        cacheNames.map((cacheName) => {
+    (async () => {
+      // Delete all old caches
+      const cacheNames = await caches.keys();
+      await Promise.all(
+        cacheNames.map(cacheName => {
           if (cacheName !== CACHE_NAME) {
-            console.log('[ServiceWorker] Deleting old cache:', cacheName);
+            console.log('[SW] Deleting old cache:', cacheName);
             return caches.delete(cacheName);
           }
         })
       );
-    }).then(() => self.clients.claim())
+      // Take control of all clients immediately
+      await self.clients.claim();
+      console.log('[SW] Service worker activated and claimed clients');
+    })()
   );
 });
 
-// Fetch event - Network-first strategy for fresh content
+// Fetch event - NETWORK FIRST, cache only as fallback
 self.addEventListener('fetch', (event) => {
   const { request } = event;
-  
-  // Skip non-GET requests
+  const url = new URL(request.url);
+
+  // NEVER cache API requests - always go to network
+  if (url.pathname.startsWith('/api/')) {
+    return; // Let browser handle it normally
+  }
+
+  // NEVER cache websocket or other non-GET requests
   if (request.method !== 'GET') {
     return;
   }
 
-  // Skip API calls and external requests - always fetch fresh
-  if (request.url.includes('/api/') || !request.url.startsWith(self.location.origin)) {
-    return;
-  }
-
+  // For everything else: NETWORK FIRST, cache as fallback
   event.respondWith(
-    // Network-first: Try network, fall back to cache only if offline
-    fetch(request)
-      .then((response) => {
-        // Only cache successful responses
-        if (response && response.status === 200) {
-          const responseToCache = response.clone();
-          caches.open(CACHE_NAME).then((cache) => {
-            cache.put(request, responseToCache);
-          });
+    (async () => {
+      try {
+        // Always try network first
+        const networkResponse = await fetch(request);
+        
+        // If successful, cache the response for offline fallback
+        if (networkResponse && networkResponse.status === 200) {
+          const cache = await caches.open(CACHE_NAME);
+          // Clone because response can only be used once
+          cache.put(request, networkResponse.clone());
         }
-        return response;
-      })
-      .catch(() => {
-        // Network failed, try cache
-        return caches.match(request).then((cachedResponse) => {
-          if (cachedResponse) {
-            console.log('[ServiceWorker] Serving from cache:', request.url);
-            return cachedResponse;
-          }
-          // No cache available either
-          return new Response('Offline - content not cached', {
-            status: 503,
-            statusText: 'Service Unavailable'
-          });
-        });
-      })
+        
+        return networkResponse;
+      } catch (error) {
+        // Network failed - try cache as fallback
+        console.log('[SW] Network failed, trying cache for:', url.pathname);
+        const cachedResponse = await caches.match(request);
+        
+        if (cachedResponse) {
+          console.log('[SW] Serving from cache:', url.pathname);
+          return cachedResponse;
+        }
+        
+        // No cache available - show error
+        console.log('[SW] No cache available for:', url.pathname);
+        throw error;
+      }
+    })()
   );
 });
