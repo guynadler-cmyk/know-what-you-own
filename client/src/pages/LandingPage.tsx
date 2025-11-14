@@ -1,3 +1,4 @@
+import { useEffect } from "react";
 import { useLocation } from "wouter";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
@@ -12,6 +13,17 @@ import { Clock, Zap, ShieldCheck, Smartphone } from "lucide-react";
 export default function LandingPage() {
   const [, setLocation] = useLocation();
   const isPWAInstalled = useIsPWAInstalled();
+
+  // Redirect to /app if ticker is in URL params (for direct URL sharing)
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const tickerParam = params.get('ticker');
+    
+    if (tickerParam) {
+      // Preserve all URL params when redirecting to /app
+      setLocation(`/app?${params.toString()}`);
+    }
+  }, [setLocation]);
 
   const handleTickerSubmit = (ticker: string) => {
     setLocation(`/app?ticker=${encodeURIComponent(ticker)}`);

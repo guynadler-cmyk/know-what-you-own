@@ -5,27 +5,22 @@ import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 import { HeroSection } from "@/components/HeroSection";
 import { TickerInput } from "@/components/TickerInput";
-import { SummaryCard } from "@/components/SummaryCard";
 import { LoadingState } from "@/components/LoadingState";
 import { ErrorState } from "@/components/ErrorState";
-import { Smartphone, Laptop, Tablet, Watch, Car, Zap, Battery, Server, Cloud, Gamepad2, Package, Code, Globe, Music, Video, Tv, Search, Cpu, Brain } from "lucide-react";
+import { JourneyNarrative } from "@/components/JourneyNarrative";
+import { StageNavigation } from "@/components/StageNavigation";
+import { StageContent } from "@/components/StageContent";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, ArrowRight } from "lucide-react";
 import { CompanySummary } from "@shared/schema";
 
 type ViewState = "input" | "loading" | "success" | "error";
 
-const iconMap: Record<string, any> = {
-  Smartphone, Laptop, Tablet, Watch, Car, Zap, Battery, Server, 
-  Cloud, Gamepad2, Package, Code, Globe, Music, Video, Tv, Search, 
-  Brain, Cpu
-};
-
-// Protected page - requires authentication
 export default function AppPage() {
   const [location] = useLocation();
   const [viewState, setViewState] = useState<ViewState>("input");
   const [currentTicker, setCurrentTicker] = useState("");
+  const [currentStage, setCurrentStage] = useState(1);
   const [summaryData, setSummaryData] = useState<CompanySummary | null>(null);
   const [errorInfo, setErrorInfo] = useState({ title: "", message: "" });
 
@@ -33,13 +28,24 @@ export default function AppPage() {
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const tickerParam = params.get('ticker');
+    const stageParam = params.get('stage');
     
     if (tickerParam && !currentTicker) {
-      handleTickerSubmit(tickerParam);
+      // Parse stage from URL if present
+      let initialStage = 1;
+      if (stageParam) {
+        const parsedStage = parseInt(stageParam, 10);
+        if (parsedStage >= 1 && parsedStage <= 6) {
+          initialStage = parsedStage;
+          setCurrentStage(parsedStage);
+        }
+      }
+      
+      handleTickerSubmit(tickerParam, initialStage);
     }
   }, []);
 
-  const handleTickerSubmit = async (ticker: string) => {
+  const handleTickerSubmit = async (ticker: string, targetStage?: number) => {
     setCurrentTicker(ticker);
     setViewState("loading");
 
@@ -53,6 +59,13 @@ export default function AppPage() {
 
       setSummaryData(data);
       setViewState("success");
+      
+      // Update URL with ticker and stage
+      const stageToUse = targetStage !== undefined ? targetStage : currentStage;
+      const params = new URLSearchParams();
+      params.set('ticker', ticker);
+      params.set('stage', stageToUse.toString());
+      window.history.pushState({}, '', `?${params.toString()}`);
 
       // Prefetch all competitor data in the background for instant expansion
       if (data.competitors && Array.isArray(data.competitors)) {
@@ -83,6 +96,32 @@ export default function AppPage() {
     setViewState("input");
     setCurrentTicker("");
     setSummaryData(null);
+    setCurrentStage(1);
+    
+    // Clear URL params
+    window.history.pushState({}, '', window.location.pathname);
+  };
+
+  const handleStageChange = (stage: number) => {
+    setCurrentStage(stage);
+    
+    // Update URL with ticker and stage
+    const params = new URLSearchParams();
+    params.set('ticker', currentTicker);
+    params.set('stage', stage.toString());
+    window.history.pushState({}, '', `?${params.toString()}`);
+  };
+
+  const handleNextStage = () => {
+    if (currentStage < 6) {
+      handleStageChange(currentStage + 1);
+    }
+  };
+
+  const handlePreviousStage = () => {
+    if (currentStage > 1) {
+      handleStageChange(currentStage - 1);
+    }
   };
 
   const handleRetry = () => {
@@ -93,13 +132,20 @@ export default function AppPage() {
     }
   };
 
-  const preparedSummary = summaryData ? {
-    ...summaryData,
-    products: summaryData.products.map(p => ({
-      ...p,
-      icon: iconMap[p.icon] || Package
-    }))
-  } : null;
+  const getStageButtonText = () => {
+    if (currentStage === 1) {
+      return {
+        next: "I like this business - let's check performance →",
+        previous: null
+      };
+    }
+    return {
+      next: currentStage < 6 ? "Continue to Next Stage →" : null,
+      previous: "← Previous Stage"
+    };
+  };
+
+  const buttonText = getStageButtonText();
 
   return (
     <div className="flex min-h-screen flex-col">
@@ -121,7 +167,7 @@ export default function AppPage() {
           </div>
         )}
 
-        {viewState === "success" && preparedSummary && (
+        {viewState === "success" && summaryData && (
           <div className="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
             <div className="mb-12 text-center">
               <Button 
@@ -134,7 +180,39 @@ export default function AppPage() {
                 New Search
               </Button>
             </div>
-            <SummaryCard {...preparedSummary} />
+            
+            <JourneyNarrative />
+            <StageNavigation 
+              currentStage={currentStage} 
+              onStageChange={handleStageChange} 
+            />
+            <StageContent 
+              stage={currentStage} 
+              summaryData={summaryData} 
+            />
+            
+            <div className="mt-8 flex items-center justify-between gap-4">
+              {buttonText.previous && (
+                <Button
+                  variant="outline"
+                  onClick={handlePreviousStage}
+                  className="h-12 px-8"
+                  data-testid="button-previous-stage"
+                >
+                  {buttonText.previous}
+                </Button>
+              )}
+              <div className="flex-1" />
+              {buttonText.next && (
+                <Button
+                  onClick={handleNextStage}
+                  className="h-12 px-8"
+                  data-testid="button-next-stage"
+                >
+                  {buttonText.next}
+                </Button>
+              )}
+            </div>
           </div>
         )}
 
