@@ -23,47 +23,17 @@
     
     <!-- Service Worker Registration -->
     <script>
-      (async function() {
-        if ('serviceWorker' in navigator) {
-          try {
-            // Clean up any old service workers on first visit
-            const wasCleanedUp = localStorage.getItem('sw-cleanup-done');
-            
-            if (!wasCleanedUp) {
-              console.log('[PWA] Cleaning up old service workers...');
-              const registrations = await navigator.serviceWorker.getRegistrations();
-              for (const registration of registrations) {
-                await registration.unregister();
-              }
-              
-              const cacheNames = await caches.keys();
-              await Promise.all(cacheNames.map(name => caches.delete(name)));
-              
-              localStorage.setItem('sw-cleanup-done', 'true');
-              console.log('[PWA] Cleanup complete');
-            }
-            
-            // Register the new service worker
-            const registration = await navigator.serviceWorker.register('/service-worker.js');
-            console.log('[PWA] Service Worker registered successfully');
-            
-            // Check for updates
-            registration.addEventListener('updatefound', () => {
-              const newWorker = registration.installing;
-              console.log('[PWA] New service worker found, updating...');
-              
-              newWorker.addEventListener('statechange', () => {
-                if (newWorker.state === 'activated') {
-                  console.log('[PWA] New service worker activated');
-                }
-              });
+      if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+          navigator.serviceWorker.register('/service-worker.js')
+            .then(registration => {
+              console.log('[PWA] Service Worker registered successfully:', registration.scope);
+            })
+            .catch(error => {
+              console.error('[PWA] Service Worker registration failed:', error);
             });
-            
-          } catch (error) {
-            console.error('[PWA] Service Worker registration failed:', error);
-          }
-        }
-      })();
+        });
+      }
     </script>
   </head>
   <body>
