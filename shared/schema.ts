@@ -177,6 +177,24 @@ export const temporalAnalysisSchema = z.object({
   newProducts: z.array(newProductSchema),
 });
 
+// Fine Print Analysis Schemas - for extracting and categorizing footnotes
+export const finePrintItemSchema = z.object({
+  title: z.string(),
+  summary: z.string(),
+  importance: z.enum(["high", "medium", "low"]),
+  details: z.string(),
+});
+
+export const finePrintAnalysisSchema = z.object({
+  fiscalYear: z.string(),
+  filingDate: z.string(),
+  criticalRisks: z.array(finePrintItemSchema),
+  financialCommitments: z.array(finePrintItemSchema),
+  accountingChanges: z.array(finePrintItemSchema),
+  relatedPartyTransactions: z.array(finePrintItemSchema),
+  otherMaterialDisclosures: z.array(finePrintItemSchema),
+});
+
 // Complete company summary schema
 export const companySummarySchema = z.object({
   companyName: z.string(),
@@ -222,6 +240,8 @@ export type EvolvedItem = z.infer<typeof evolvedItemSchema>;
 export type NewProduct = z.infer<typeof newProductSchema>;
 export type TemporalSummary = z.infer<typeof temporalSummarySchema>;
 export type TemporalAnalysis = z.infer<typeof temporalAnalysisSchema>;
+export type FinePrintItem = z.infer<typeof finePrintItemSchema>;
+export type FinePrintAnalysis = z.infer<typeof finePrintAnalysisSchema>;
 export type CompanySummary = z.infer<typeof companySummarySchema>;
 
 // Database Tables for Replit Auth

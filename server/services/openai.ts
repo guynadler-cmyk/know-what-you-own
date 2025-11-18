@@ -1,5 +1,5 @@
 import OpenAI from "openai";
-import { CompanySummary, TemporalAnalysis } from "@shared/schema";
+import { CompanySummary, TemporalAnalysis, FinePrintAnalysis } from "@shared/schema";
 
 const openai = new OpenAI({
   apiKey: process.env.AI_INTEGRATIONS_OPENAI_API_KEY,
@@ -503,6 +503,124 @@ Additional Guidelines:
     };
 
     return temporalAnalysis;
+  }
+
+  async analyzeFootnotes(
+    companyName: string,
+    ticker: string,
+    footnotesSection: string,
+    fiscalYear: string,
+    filingDate: string
+  ): Promise<FinePrintAnalysis> {
+    const prompt = `You are analyzing footnotes from a company's 10-K filing. Extract and categorize key information that investors should know.
+
+Company: ${companyName} (${ticker})
+Fiscal Year: ${fiscalYear}
+Filing Date: ${filingDate}
+
+Footnotes Section:
+${footnotesSection}
+
+Analyze the footnotes and extract material disclosures, categorizing them by investor relevance. Provide a JSON response with this EXACT structure:
+
+{
+  "criticalRisks": [
+    {
+      "title": "Brief title (max 60 chars)",
+      "summary": "One-sentence plain-English summary of the risk",
+      "importance": "high/medium/low",
+      "details": "2-3 sentence explanation providing key facts and numbers"
+    }
+  ],
+  "financialCommitments": [
+    {
+      "title": "Brief title (max 60 chars)",
+      "summary": "One-sentence plain-English summary of the commitment",
+      "importance": "high/medium/low",
+      "details": "2-3 sentence explanation with key amounts and dates"
+    }
+  ],
+  "accountingChanges": [
+    {
+      "title": "Brief title (max 60 chars)",
+      "summary": "One-sentence plain-English summary of the change",
+      "importance": "high/medium/low",
+      "details": "2-3 sentence explanation of impact and rationale"
+    }
+  ],
+  "relatedPartyTransactions": [
+    {
+      "title": "Brief title (max 60 chars)",
+      "summary": "One-sentence plain-English summary of the transaction",
+      "importance": "high/medium/low",
+      "details": "2-3 sentence explanation of who, what, and amounts"
+    }
+  ],
+  "otherMaterialDisclosures": [
+    {
+      "title": "Brief title (max 60 chars)",
+      "summary": "One-sentence plain-English summary",
+      "importance": "high/medium/low",
+      "details": "2-3 sentence explanation of significance"
+    }
+  ]
+}
+
+Category Guidelines:
+- **criticalRisks**: Lawsuits, regulatory issues, contingent liabilities, going concern warnings, material litigation, tax disputes
+- **financialCommitments**: Debt obligations, lease commitments, pension liabilities, capital commitments, purchase obligations
+- **accountingChanges**: Changes in revenue recognition, policy updates, restatements, new accounting standards adopted
+- **relatedPartyTransactions**: Transactions with executives/directors/major shareholders, conflicts of interest
+- **otherMaterialDisclosures**: Stock-based compensation changes, segment reporting changes, significant events not in other categories
+
+Importance Ratings:
+- **high**: Material impact on financials, significant risk to business model, large dollar amounts (>5% of revenue/assets)
+- **medium**: Notable but not business-threatening, moderate dollar amounts (1-5% of revenue/assets)
+- **low**: Informational, small dollar amounts (<1% of revenue/assets)
+
+Requirements:
+- Focus on material information investors need to know
+- Use plain English - avoid accounting jargon
+- Include specific dollar amounts, dates, and percentages where available
+- Each category should have 0-5 items (only include truly material items)
+- If a category has no material items, return an empty array
+- Prioritize clarity and investor relevance over comprehensiveness`;
+
+    const completion = await openai.chat.completions.create({
+      model: "gpt-4o",
+      messages: [{ role: "user", content: prompt }],
+      response_format: { type: "json_object" },
+      temperature: 0.2,
+    });
+
+    const result = JSON.parse(completion.choices[0].message.content || "{}");
+
+    // Sanitize each category
+    const sanitizeItems = (items: any[]): any[] => {
+      if (!Array.isArray(items)) return [];
+      
+      return items.filter(item => 
+        item &&
+        typeof item.title === 'string' &&
+        typeof item.summary === 'string' &&
+        typeof item.importance === 'string' &&
+        typeof item.details === 'string' &&
+        ['high', 'medium', 'low'].includes(item.importance) &&
+        item.title.length > 0 &&
+        item.summary.length > 0 &&
+        item.details.length > 0
+      );
+    };
+
+    return {
+      fiscalYear,
+      filingDate,
+      criticalRisks: sanitizeItems(result.criticalRisks || []),
+      financialCommitments: sanitizeItems(result.financialCommitments || []),
+      accountingChanges: sanitizeItems(result.accountingChanges || []),
+      relatedPartyTransactions: sanitizeItems(result.relatedPartyTransactions || []),
+      otherMaterialDisclosures: sanitizeItems(result.otherMaterialDisclosures || []),
+    };
   }
 }
 

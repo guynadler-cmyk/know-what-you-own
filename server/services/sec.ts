@@ -166,6 +166,52 @@ export class SECService {
     return businessSection.slice(0, 15000);
   }
 
+  async get10KFootnotesSection(cik: string, accessionNumber: string): Promise<string> {
+    const accessionPath = accessionNumber.replace(/-/g, '');
+    const url = `https://www.sec.gov/Archives/edgar/data/${parseInt(cik)}/${accessionPath}/${accessionNumber}.txt`;
+    
+    const response = await axios.get(url, { headers: SEC_HEADERS });
+    const text = response.data;
+
+    // Try multiple regex patterns to extract notes/footnotes
+    // Footnotes typically appear in Item 8 after the financial statements
+    const patterns = [
+      // Pattern: "Notes to" (Consolidated) Financial Statements
+      'Notes\\s+to\\s+(?:Consolidated\\s+)?Financial\\s+Statements(.*?)(?:ITEM\\s+9|ITEM\\s+15)',
+      // Pattern: Look for explicit "Note 1" or "NOTE 1" section
+      '(?:Note|NOTE)\\s+1[\\s\\-\\.\\:](.*?)(?:ITEM\\s+9|ITEM\\s+15)',
+      // Alternative: Item 8 content (contains financial statements and notes)
+      'ITEM\\s+8[\\.\\:\\-]?\\s*Financial\\s+Statements(.*?)ITEM\\s+9',
+    ];
+
+    let footnotesMatch = null;
+    for (const pattern of patterns) {
+      const regex = new RegExp(pattern, 'is');
+      footnotesMatch = text.match(regex);
+      if (footnotesMatch) break;
+    }
+
+    if (!footnotesMatch || !footnotesMatch[1]) {
+      console.error(`Failed to extract footnotes section for CIK ${cik}, accession ${accessionNumber}`);
+      throw new Error("Could not extract footnotes section from 10-K");
+    }
+
+    let footnotesSection = footnotesMatch[1];
+    
+    // Clean up HTML tags and entities
+    footnotesSection = footnotesSection
+      .replace(/<[^>]*>/g, ' ')
+      .replace(/&nbsp;/g, ' ')
+      .replace(/&[a-z]+;/g, ' ')
+      .replace(/&#\d+;/g, ' ')
+      .replace(/\s+/g, ' ')
+      .trim();
+
+    // Return first 20000 characters for the footnotes section
+    // (footnotes can be longer than business section)
+    return footnotesSection.slice(0, 20000);
+  }
+
   private async loadTickerMappings(): Promise<void> {
     const url = "https://www.sec.gov/files/company_tickers.json";
     const response = await axios.get(url, { headers: SEC_HEADERS });
