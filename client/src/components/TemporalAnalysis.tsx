@@ -57,89 +57,62 @@ export function TemporalAnalysis({ analysis, companyName }: TemporalAnalysisProp
             </CardDescription>
           </div>
         </div>
-
-        {/* Summary Stats */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 pt-4">
-          {analysis.summary.discontinuedCount > 0 && (
-            <div className="flex flex-col items-center p-4 bg-red-500/5 rounded-lg border border-red-500/10" data-testid="stat-discontinued">
-              <div className="text-3xl font-bold text-red-600 dark:text-red-400">
-                {analysis.summary.discontinuedCount}
-              </div>
-              <div className="text-sm text-muted-foreground mt-1">Discontinued</div>
-            </div>
-          )}
-          {analysis.summary.newSustainedCount > 0 && (
-            <div className="flex flex-col items-center p-4 bg-green-500/5 rounded-lg border border-green-500/10" data-testid="stat-new-sustained">
-              <div className="text-3xl font-bold text-green-600 dark:text-green-400">
-                {analysis.summary.newSustainedCount}
-              </div>
-              <div className="text-sm text-muted-foreground mt-1">New & Sustained</div>
-            </div>
-          )}
-          {analysis.summary.evolvedCount > 0 && (
-            <div className="flex flex-col items-center p-4 bg-blue-500/5 rounded-lg border border-blue-500/10" data-testid="stat-evolved">
-              <div className="text-3xl font-bold text-blue-600 dark:text-blue-400">
-                {analysis.summary.evolvedCount}
-              </div>
-              <div className="text-sm text-muted-foreground mt-1">Evolved</div>
-            </div>
-          )}
-          {analysis.summary.newProductsCount > 0 && (
-            <div className="flex flex-col items-center p-4 bg-purple-500/5 rounded-lg border border-purple-500/10" data-testid="stat-new-products">
-              <div className="text-3xl font-bold text-purple-600 dark:text-purple-400">
-                {analysis.summary.newProductsCount}
-              </div>
-              <div className="text-sm text-muted-foreground mt-1">New Products</div>
-            </div>
-          )}
-        </div>
       </CardHeader>
 
       <CardContent>
         <Tabs defaultValue={defaultTab} className="w-full">
-          <TabsList className="grid w-full grid-cols-2 md:grid-cols-4 h-auto gap-2 bg-transparent p-0">
+          {/* Stat Cards as Tab Triggers */}
+          <TabsList className="grid w-full grid-cols-2 md:grid-cols-4 gap-3 h-auto bg-transparent p-0 mb-6">
             {analysis.discontinued.length > 0 && (
               <TabsTrigger 
                 value="discontinued" 
-                className="data-[state=active]:bg-red-500/10 data-[state=active]:text-red-700 dark:data-[state=active]:text-red-300 flex items-center gap-2"
-                data-testid="tab-discontinued"
+                className="h-auto p-6 flex-col items-center border-2 rounded-lg data-[state=active]:border-red-500 data-[state=active]:bg-red-500/10 data-[state=inactive]:border-border hover-elevate"
+                data-testid="stat-discontinued"
               >
-                <TrendingDown className="w-4 h-4" />
-                <span className="hidden sm:inline">Discontinued</span>
-                <Badge variant="secondary" className="ml-auto">{analysis.discontinued.length}</Badge>
+                <TrendingDown className="w-6 h-6 text-red-600 dark:text-red-400 mb-2" />
+                <div className="text-3xl font-bold text-red-600 dark:text-red-400">
+                  {analysis.summary.discontinuedCount}
+                </div>
+                <div className="text-sm text-muted-foreground mt-1">Discontinued</div>
               </TabsTrigger>
             )}
             {analysis.newAndSustained.length > 0 && (
               <TabsTrigger 
                 value="new" 
-                className="data-[state=active]:bg-green-500/10 data-[state=active]:text-green-700 dark:data-[state=active]:text-green-300 flex items-center gap-2"
-                data-testid="tab-new-sustained"
+                className="h-auto p-6 flex-col items-center border-2 rounded-lg data-[state=active]:border-green-500 data-[state=active]:bg-green-500/10 data-[state=inactive]:border-border hover-elevate"
+                data-testid="stat-new-sustained"
               >
-                <TrendingUp className="w-4 h-4" />
-                <span className="hidden sm:inline">New</span>
-                <Badge variant="secondary" className="ml-auto">{analysis.newAndSustained.length}</Badge>
+                <TrendingUp className="w-6 h-6 text-green-600 dark:text-green-400 mb-2" />
+                <div className="text-3xl font-bold text-green-600 dark:text-green-400">
+                  {analysis.summary.newSustainedCount}
+                </div>
+                <div className="text-sm text-muted-foreground mt-1">New & Sustained</div>
               </TabsTrigger>
             )}
             {analysis.evolved.length > 0 && (
               <TabsTrigger 
                 value="evolved" 
-                className="data-[state=active]:bg-blue-500/10 data-[state=active]:text-blue-700 dark:data-[state=active]:text-blue-300 flex items-center gap-2"
-                data-testid="tab-evolved"
+                className="h-auto p-6 flex-col items-center border-2 rounded-lg data-[state=active]:border-blue-500 data-[state=active]:bg-blue-500/10 data-[state=inactive]:border-border hover-elevate"
+                data-testid="stat-evolved"
               >
-                <ArrowUpRight className="w-4 h-4" />
-                <span className="hidden sm:inline">Evolved</span>
-                <Badge variant="secondary" className="ml-auto">{analysis.evolved.length}</Badge>
+                <ArrowUpRight className="w-6 h-6 text-blue-600 dark:text-blue-400 mb-2" />
+                <div className="text-3xl font-bold text-blue-600 dark:text-blue-400">
+                  {analysis.summary.evolvedCount}
+                </div>
+                <div className="text-sm text-muted-foreground mt-1">Evolved</div>
               </TabsTrigger>
             )}
             {analysis.newProducts.length > 0 && (
               <TabsTrigger 
                 value="products" 
-                className="data-[state=active]:bg-purple-500/10 data-[state=active]:text-purple-700 dark:data-[state=active]:text-purple-300 flex items-center gap-2"
-                data-testid="tab-new-products"
+                className="h-auto p-6 flex-col items-center border-2 rounded-lg data-[state=active]:border-purple-500 data-[state=active]:bg-purple-500/10 data-[state=inactive]:border-border hover-elevate"
+                data-testid="stat-new-products"
               >
-                <Package className="w-4 h-4" />
-                <span className="hidden sm:inline">Products</span>
-                <Badge variant="secondary" className="ml-auto">{analysis.newProducts.length}</Badge>
+                <Package className="w-6 h-6 text-purple-600 dark:text-purple-400 mb-2" />
+                <div className="text-3xl font-bold text-purple-600 dark:text-purple-400">
+                  {analysis.summary.newProductsCount}
+                </div>
+                <div className="text-sm text-muted-foreground mt-1">New Products</div>
               </TabsTrigger>
             )}
           </TabsList>
