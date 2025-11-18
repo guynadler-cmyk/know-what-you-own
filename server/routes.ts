@@ -69,23 +69,64 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error: any) {
       console.error("Analysis error:", error);
       
+      // Ticker not found
       if (error.message?.includes("not found")) {
         return res.status(404).json({ 
-          error: "Ticker not found",
-          message: `Could not find company information for ticker "${req.params.ticker}"`
+          error: "Company Not Found",
+          message: `We couldn't find "${req.params.ticker.toUpperCase()}" in our database. Double-check the ticker symbol and try again.`
         });
       }
       
+      // No 10-K filing
       if (error.message?.includes("No 10-K")) {
         return res.status(404).json({ 
-          error: "No 10-K filing found",
-          message: "This company does not have a 10-K filing available"
+          error: "No 10-K Available",
+          message: `${req.params.ticker.toUpperCase()} doesn't have a 10-K filing available yet. This might be a newer company or one that doesn't file 10-Ks.`
         });
       }
 
+      // Business section extraction failed
+      if (error.message?.includes("business section") || error.message?.includes("business description")) {
+        return res.status(500).json({ 
+          error: "Filing Format Error",
+          message: "We had trouble reading this company's 10-K filing. The document format might be unusual. Please try again later or contact support."
+        });
+      }
+      
+      // OpenAI API errors
+      if (error.status === 429) {
+        return res.status(429).json({ 
+          error: "Too Many Requests",
+          message: "Our AI service is experiencing high demand. Please wait a moment and try again."
+        });
+      }
+      
+      if (error.status >= 500 || error.code === 'ECONNRESET' || error.code === 'ETIMEDOUT') {
+        return res.status(503).json({ 
+          error: "Service Temporarily Unavailable",
+          message: "Our analysis service is temporarily unavailable. Please try again in a few moments."
+        });
+      }
+      
+      // SEC API errors
+      if (error.response?.status === 429) {
+        return res.status(429).json({ 
+          error: "Rate Limited",
+          message: "We're receiving too many requests right now. Please wait a minute and try again."
+        });
+      }
+      
+      if (error.response?.status >= 500) {
+        return res.status(503).json({ 
+          error: "SEC Database Unavailable",
+          message: "The SEC's database is temporarily unavailable. This usually resolves quickly - please try again in a few minutes."
+        });
+      }
+
+      // Generic fallback
       res.status(500).json({ 
-        error: "Analysis failed",
-        message: "Unable to analyze this company. Please try again later."
+        error: "Analysis Failed",
+        message: "Something went wrong while analyzing this company. Please try again, and if the problem persists, let us know."
       });
     }
   });
