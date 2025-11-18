@@ -249,55 +249,70 @@ Analyze these filings to identify:
 3. EVOLVED ITEMS: Descriptions, strategies, or products that changed significantly over time
 4. NEW PRODUCTS: Products that were introduced during this period
 
+CRITICAL FILTERING RULES - IGNORE THESE COMPLETELY:
+❌ Section headers or labels (e.g., "Business 1", "Business 2", "Item 1", "Part I")
+❌ Document structure changes or reorganizations
+❌ Generic phrases like "our business", "we operate", "the company"
+❌ Boilerplate text or legal disclaimers
+❌ Changes in writing style or document formatting
+❌ Administrative or procedural updates
+❌ Vague or context-free statements
+
+ONLY INCLUDE ITEMS WITH:
+✅ Specific product names, service names, or technology names
+✅ Concrete market details (specific countries, regions, customer segments)
+✅ Named partnerships, acquisitions, or divestitures
+✅ Measurable strategic shifts with business substance
+✅ Real operational changes (e.g., closing a factory, entering a new market)
+✅ Meaningful context that explains WHY this matters to investors
+
+QUALITY OVER QUANTITY: If you cannot find items that meet these strict criteria, return empty arrays. Better to show nothing than show meaningless noise.
+
 Provide a JSON response with this EXACT structure:
 {
   "discontinued": [
     {
-      "item": "Name/title of the discontinued item",
+      "item": "Specific product/strategy/market name (NOT generic text)",
       "category": "product/strategy/market/partnership/initiative",
       "lastMentionedYear": "YYYY",
       "yearsActive": "YYYY-YYYY",
-      "context": "One sentence explaining what it was and why its disappearance matters"
+      "context": "One sentence with concrete details explaining what it was and why its disappearance matters"
     }
   ],
   "newAndSustained": [
     {
-      "item": "Name/title of the new item",
+      "item": "Specific product/strategy/market name (NOT generic text)",
       "category": "product/strategy/market/partnership/initiative",
       "introducedYear": "YYYY",
-      "context": "One sentence explaining what it is and its significance"
+      "context": "One sentence with concrete details explaining what it is and its significance"
     }
   ],
   "evolved": [
     {
-      "item": "Name/title of what evolved",
+      "item": "Specific product/strategy/market name (NOT generic text)",
       "category": "product/strategy/market/description",
       "yearRange": "YYYY-YYYY",
-      "changeDescription": "One sentence describing how it changed",
-      "beforeSnapshot": "Brief quote or description from earlier year (max 100 chars)",
-      "afterSnapshot": "Brief quote or description from later year (max 100 chars)"
+      "changeDescription": "One sentence with concrete business details describing how it changed",
+      "beforeSnapshot": "Specific description from earlier year with concrete business details (max 100 chars)",
+      "afterSnapshot": "Specific description from later year with concrete business details (max 100 chars)"
     }
   ],
   "newProducts": [
     {
-      "name": "Product name",
+      "name": "Specific product name (NOT generic description)",
       "introducedYear": "YYYY",
-      "description": "Brief description (max 80 chars)",
-      "significance": "One sentence on why this product matters to investors"
+      "description": "Brief description with concrete details (max 80 chars)",
+      "significance": "One sentence on why this specific product matters to investors"
     }
   ]
 }
 
-Guidelines:
-- Only include SIGNIFICANT changes that an investor would care about
-- Focus on business-material items, not administrative details
-- For discontinued items, only include things that were important/mentioned multiple times before disappearing
-- For new & sustained, only include items mentioned in at least 2 consecutive years after introduction
-- For evolved items, focus on meaningful strategic or product shifts
+Additional Guidelines:
 - Prioritize quality over quantity - max 5-6 items per category
 - Be specific with year ranges and dates
 - Categories should be: product, strategy, market, partnership, initiative, or description
-- Keep all text concise and investor-focused`;
+- Keep all text concise and investor-focused
+- When in doubt, EXCLUDE the item - only show high-confidence, meaningful changes`;
 
     const completion = await openai.chat.completions.create({
       model: "gpt-4o",
@@ -317,48 +332,154 @@ Guidelines:
 
     const result = JSON.parse(completion.choices[0].message.content || "{}");
 
+    // Shared function to check if text looks like structural/generic content
+    // More forgiving patterns that catch variants with punctuation, suffixes, etc.
+    const looksLikeStructuralNoise = (text: string): boolean => {
+      const textLower = text.toLowerCase().trim();
+      
+      // Structural patterns - comprehensive to catch all common variants
+      const structuralPatterns = [
+        /business\s*\d+/i,                    // "Business 1", "Business 2.", "Business 3 - Overview"
+        /item\s*\d+/i,                        // "Item 1", "Item 2.", "Item 1: Business"
+        /part\s*[ivi]+/i,                     // "Part I", "Part II", "Part III"
+        /section\s*\d+/i,                     // "Section 1", "Section 2"
+        /^our business\.?$/i,                 // "our business", "our business."
+        /^the company\.?$/i,                  // "the company", "the company."
+        /^we operate\.?$/i,                   // "we operate", "we operate."
+        /^overview\.?$/i,                     // "overview", "Overview"
+        /^description\.?$/i,                  // "description"
+        /^general\.?$/i,                      // "general"
+        /^business overview/i,                // "Business Overview"
+        /^company overview/i,                 // "Company Overview"
+        /^corporate overview/i,               // "Corporate Overview"
+        /^business description/i,             // "Business Description"
+        /^company description/i,              // "Company Description"
+        /^company profile/i,                  // "Company Profile"
+        /^corporate profile/i,                // "Corporate Profile"
+        /^general information/i,              // "General Information"
+        /^description of (the\s+)?business/i, // "Description of Business", "Description of the Business"
+        /^description of (the\s+)?company/i,  // "Description of Company"
+        /^general (business\s+)?description/i,// "General Description", "General Business Description"
+        /^company (business\s+)?description/i,// "Company Description", "Company Business Description"
+        /^operations overview/i,              // "Operations Overview"
+        /^general development/i,              // "General Development of Business"
+        /^organizational structure/i,         // "Organizational Structure"
+        /^corporate structure/i,              // "Corporate Structure"
+        /^the business$/i,                    // "The Business"
+        /^summary$/i,                         // "Summary"
+        /^background$/i,                      // "Background"
+        /^introduction$/i,                    // "Introduction"
+      ];
+      
+      // Also reject if text is very short and generic (likely a header)
+      if (textLower.length < 5) {
+        return true;
+      }
+      
+      // Return true if ANY pattern matches
+      return structuralPatterns.some(pattern => pattern.test(textLower));
+    };
+
     // Safely extract and sanitize arrays with defaults
     const sanitizeDiscontinued = (items: any[]): any[] => {
-      return items.filter(item => 
-        item && 
-        typeof item.item === 'string' && 
-        typeof item.category === 'string' &&
-        typeof item.lastMentionedYear === 'string' &&
-        typeof item.yearsActive === 'string' &&
-        typeof item.context === 'string'
-      );
+      return items.filter(item => {
+        if (!item || 
+            typeof item.item !== 'string' || 
+            typeof item.category !== 'string' ||
+            typeof item.lastMentionedYear !== 'string' ||
+            typeof item.yearsActive !== 'string' ||
+            typeof item.context !== 'string') {
+          return false;
+        }
+        
+        // Reject structural noise
+        if (looksLikeStructuralNoise(item.item)) {
+          return false;
+        }
+        
+        // Require minimum substance
+        if (item.context.length < 20) {
+          return false;
+        }
+        
+        return true;
+      });
     };
 
     const sanitizeNewSustained = (items: any[]): any[] => {
-      return items.filter(item =>
-        item &&
-        typeof item.item === 'string' &&
-        typeof item.category === 'string' &&
-        typeof item.introducedYear === 'string' &&
-        typeof item.context === 'string'
-      );
+      return items.filter(item => {
+        if (!item ||
+            typeof item.item !== 'string' ||
+            typeof item.category !== 'string' ||
+            typeof item.introducedYear !== 'string' ||
+            typeof item.context !== 'string') {
+          return false;
+        }
+        
+        // Reject structural noise
+        if (looksLikeStructuralNoise(item.item)) {
+          return false;
+        }
+        
+        // Require minimum substance
+        if (item.context.length < 20) {
+          return false;
+        }
+        
+        return true;
+      });
     };
 
     const sanitizeEvolved = (items: any[]): any[] => {
-      return items.filter(item =>
-        item &&
-        typeof item.item === 'string' &&
-        typeof item.category === 'string' &&
-        typeof item.yearRange === 'string' &&
-        typeof item.changeDescription === 'string' &&
-        typeof item.beforeSnapshot === 'string' &&
-        typeof item.afterSnapshot === 'string'
-      );
+      return items.filter(item => {
+        if (!item ||
+            typeof item.item !== 'string' ||
+            typeof item.category !== 'string' ||
+            typeof item.yearRange !== 'string' ||
+            typeof item.changeDescription !== 'string' ||
+            typeof item.beforeSnapshot !== 'string' ||
+            typeof item.afterSnapshot !== 'string') {
+          return false;
+        }
+        
+        // Reject structural noise in item name or snapshots
+        if (looksLikeStructuralNoise(item.item) ||
+            looksLikeStructuralNoise(item.beforeSnapshot) ||
+            looksLikeStructuralNoise(item.afterSnapshot)) {
+          return false;
+        }
+        
+        // Require minimum substance in description
+        if (item.changeDescription.length < 20) {
+          return false;
+        }
+        
+        return true;
+      });
     };
 
     const sanitizeNewProducts = (items: any[]): any[] => {
-      return items.filter(item =>
-        item &&
-        typeof item.name === 'string' &&
-        typeof item.introducedYear === 'string' &&
-        typeof item.description === 'string' &&
-        typeof item.significance === 'string'
-      );
+      return items.filter(item => {
+        if (!item ||
+            typeof item.name !== 'string' ||
+            typeof item.introducedYear !== 'string' ||
+            typeof item.description !== 'string' ||
+            typeof item.significance !== 'string') {
+          return false;
+        }
+        
+        // Reject structural noise in product name
+        if (looksLikeStructuralNoise(item.name)) {
+          return false;
+        }
+        
+        // Require minimum substance
+        if (item.description.length < 15 || item.significance.length < 20) {
+          return false;
+        }
+        
+        return true;
+      });
     };
 
     const discontinued = Array.isArray(result.discontinued) ? sanitizeDiscontinued(result.discontinued) : [];
