@@ -1,4 +1,4 @@
-import axios from "axios";
+import axios, { AxiosError } from "axios";
 
 interface CompanyTickerMapping {
   cik_str: number;
@@ -22,6 +22,42 @@ const SEC_HEADERS = {
   "User-Agent": "Know What You Own info@restnvest.com",
   "Accept-Encoding": "gzip, deflate"
 };
+
+async function retryWithBackoff<T>(
+  fn: () => Promise<T>,
+  maxRetries = 3,
+  baseDelay = 1000
+): Promise<T> {
+  let lastError: Error | undefined;
+  
+  for (let attempt = 0; attempt <= maxRetries; attempt++) {
+    try {
+      return await fn();
+    } catch (error) {
+      lastError = error as Error;
+      
+      const isAxiosError = error instanceof Error && 'isAxiosError' in error;
+      const axiosError = error as AxiosError;
+      const statusCode = axiosError.response?.status;
+      
+      const shouldRetry = 
+        !statusCode || 
+        statusCode === 429 || 
+        statusCode >= 500 || 
+        (isAxiosError && !axiosError.response);
+      
+      if (!shouldRetry || attempt === maxRetries) {
+        throw error;
+      }
+      
+      const delay = baseDelay * Math.pow(2, attempt);
+      console.log(`[SEC] Retry attempt ${attempt + 1}/${maxRetries} after ${delay}ms`);
+      await new Promise(resolve => setTimeout(resolve, delay));
+    }
+  }
+  
+  throw lastError;
+}
 
 export class SECService {
   private tickerCache: Map<string, CompanyTickerMapping> = new Map();
@@ -47,22 +83,24 @@ export class SECService {
     filingDate: string;
     fiscalYear: string;
   }> {
-    const url = `https://data.sec.gov/submissions/CIK${cik}.json`;
-    
-    const response = await axios.get<SECSubmission>(url, { headers: SEC_HEADERS });
-    const { filings } = response.data;
+    return retryWithBackoff(async () => {
+      const url = `https://data.sec.gov/submissions/CIK${cik}.json`;
+      
+      const response = await axios.get<SECSubmission>(url, { headers: SEC_HEADERS });
+      const { filings } = response.data;
 
-    const index = filings.recent.form.findIndex(form => form === "10-K");
-    
-    if (index === -1) {
-      throw new Error("No 10-K filing found");
-    }
+      const index = filings.recent.form.findIndex(form => form === "10-K");
+      
+      if (index === -1) {
+        throw new Error("No 10-K filing found for this company");
+      }
 
-    const accessionNumber = filings.recent.accessionNumber[index];
-    const filingDate = filings.recent.filingDate[index];
-    const fiscalYear = new Date(filingDate).getFullYear().toString();
+      const accessionNumber = filings.recent.accessionNumber[index];
+      const filingDate = filings.recent.filingDate[index];
+      const fiscalYear = new Date(filingDate).getFullYear().toString();
 
-    return { accessionNumber, filingDate, fiscalYear };
+      return { accessionNumber, filingDate, fiscalYear };
+    });
   }
 
   async getLast5Years10K(cik: string): Promise<Array<{
@@ -123,47 +161,49 @@ export class SECService {
   }
 
   async get10KBusinessSection(cik: string, accessionNumber: string): Promise<string> {
-    const accessionPath = accessionNumber.replace(/-/g, '');
-    const url = `https://www.sec.gov/Archives/edgar/data/${parseInt(cik)}/${accessionPath}/${accessionNumber}.txt`;
-    
-    const response = await axios.get(url, { headers: SEC_HEADERS });
-    const text = response.data;
+    return retryWithBackoff(async () => {
+      const accessionPath = accessionNumber.replace(/-/g, '');
+      const url = `https://www.sec.gov/Archives/edgar/data/${parseInt(cik)}/${accessionPath}/${accessionNumber}.txt`;
+      
+      const response = await axios.get(url, { headers: SEC_HEADERS });
+      const text = response.data;
 
-    // Try multiple regex patterns to handle different 10-K formatting
-    const patterns = [
-      // Standard format: ITEM 1. Business ... ITEM 1A
-      'ITEM\\s+1[\\.\\:\\-]?\\s*Business(.*?)ITEM\\s+1A',
-      // Alternative: ITEM 1 ... ITEM 1A (Business might be on new line)
-      'ITEM\\s+1[\\.\\:\\-]?\\s*[\\r\\n]*(.*?)ITEM\\s+1A',
-      // Looser pattern: Look for ITEM 1 followed by content until next ITEM
-      'ITEM\\s+1[\\.\\:\\-]?\\s*(?:Business)?[\\r\\n]*(.*?)(?:ITEM\\s+(?:1A|1B|2))',
-    ];
+      // Try multiple regex patterns to handle different 10-K formatting
+      const patterns = [
+        // Standard format: ITEM 1. Business ... ITEM 1A
+        'ITEM\\s+1[\\.\\:\\-]?\\s*Business(.*?)ITEM\\s+1A',
+        // Alternative: ITEM 1 ... ITEM 1A (Business might be on new line)
+        'ITEM\\s+1[\\.\\:\\-]?\\s*[\\r\\n]*(.*?)ITEM\\s+1A',
+        // Looser pattern: Look for ITEM 1 followed by content until next ITEM
+        'ITEM\\s+1[\\.\\:\\-]?\\s*(?:Business)?[\\r\\n]*(.*?)(?:ITEM\\s+(?:1A|1B|2))',
+      ];
 
-    let businessMatch = null;
-    for (const pattern of patterns) {
-      const regex = new RegExp(pattern, 'is');
-      businessMatch = text.match(regex);
-      if (businessMatch) break;
-    }
+      let businessMatch = null;
+      for (const pattern of patterns) {
+        const regex = new RegExp(pattern, 'is');
+        businessMatch = text.match(regex);
+        if (businessMatch) break;
+      }
 
-    if (!businessMatch || !businessMatch[1]) {
-      console.error(`Failed to extract business section for CIK ${cik}, accession ${accessionNumber}`);
-      throw new Error("Could not extract business section from 10-K");
-    }
+      if (!businessMatch || !businessMatch[1]) {
+        console.error(`Failed to extract business section for CIK ${cik}, accession ${accessionNumber}`);
+        throw new Error("Unable to find the business description in this 10-K filing");
+      }
 
-    let businessSection = businessMatch[1];
-    
-    // Clean up HTML tags and entities
-    businessSection = businessSection
-      .replace(/<[^>]*>/g, ' ')
-      .replace(/&nbsp;/g, ' ')
-      .replace(/&[a-z]+;/g, ' ')
-      .replace(/&#\d+;/g, ' ')
-      .replace(/\s+/g, ' ')
-      .trim();
+      let businessSection = businessMatch[1];
+      
+      // Clean up HTML tags and entities
+      businessSection = businessSection
+        .replace(/<[^>]*>/g, ' ')
+        .replace(/&nbsp;/g, ' ')
+        .replace(/&[a-z]+;/g, ' ')
+        .replace(/&#\d+;/g, ' ')
+        .replace(/\s+/g, ' ')
+        .trim();
 
-    // Return first 15000 characters for the business section
-    return businessSection.slice(0, 15000);
+      // Return first 15000 characters for the business section
+      return businessSection.slice(0, 15000);
+    });
   }
 
   async get10KFootnotesSection(cik: string, accessionNumber: string): Promise<string> {
@@ -213,15 +253,17 @@ export class SECService {
   }
 
   private async loadTickerMappings(): Promise<void> {
-    const url = "https://www.sec.gov/files/company_tickers.json";
-    const response = await axios.get(url, { headers: SEC_HEADERS });
-    
-    const data = response.data;
-    
-    for (const key in data) {
-      const company = data[key] as CompanyTickerMapping;
-      this.tickerCache.set(company.ticker.toUpperCase(), company);
-    }
+    return retryWithBackoff(async () => {
+      const url = "https://www.sec.gov/files/company_tickers.json";
+      const response = await axios.get(url, { headers: SEC_HEADERS });
+      
+      const data = response.data;
+      
+      for (const key in data) {
+        const company = data[key] as CompanyTickerMapping;
+        this.tickerCache.set(company.ticker.toUpperCase(), company);
+      }
+    });
   }
 }
 
