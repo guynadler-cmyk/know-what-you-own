@@ -9,9 +9,10 @@ import { Calendar, Building2, MapPin, Users, TrendingUp, Briefcase, Award, Dolla
 import { LucideIcon } from "lucide-react";
 import { SiX, SiYoutube } from "react-icons/si";
 import { useQuery } from "@tanstack/react-query";
-import { InvestmentTheme, Moat, MarketOpportunity, ValueCreation, TemporalAnalysis as TemporalAnalysisType } from "@shared/schema";
+import { InvestmentTheme, Moat, MarketOpportunity, ValueCreation, TemporalAnalysis as TemporalAnalysisType, FinePrintAnalysis as FinePrintAnalysisType } from "@shared/schema";
 import { TagWithTooltip } from "@/components/TagWithTooltip";
 import { TemporalAnalysis } from "@/components/TemporalAnalysis";
+import { FinePrintAnalysis } from "@/components/FinePrintAnalysis";
 
 interface Product {
   name: string;
@@ -186,6 +187,29 @@ export function SummaryCard({
 }: SummaryCardProps) {
   const [expandedCompetitor, setExpandedCompetitor] = useState<string | null>(null);
   const [logoFailed, setLogoFailed] = useState(false);
+
+  // Fetch fine print analysis - custom queryFn to handle 404s gracefully
+  const { data: finePrintAnalysis } = useQuery<FinePrintAnalysisType | null>({
+    queryKey: ['/api/analyze', ticker, 'fine-print'],
+    queryFn: async () => {
+      try {
+        const response = await fetch(`/api/analyze/${ticker}/fine-print`);
+        if (response.status === 404) {
+          return null;
+        }
+        if (!response.ok) {
+          return null;
+        }
+        return await response.json();
+      } catch (error) {
+        console.warn('Fine print analysis failed:', error);
+        return null;
+      }
+    },
+    enabled: !!ticker,
+    staleTime: 1000 * 60 * 60,
+    retry: false,
+  });
 
   // Extract domain from homepage for logo
   const getLogoUrl = (homepage: string) => {
@@ -499,6 +523,11 @@ export function SummaryCard({
       {/* TEMPORAL ANALYSIS SECTION */}
       {temporalAnalysis && (
         <TemporalAnalysis analysis={temporalAnalysis} companyName={companyName} />
+      )}
+
+      {/* FINE PRINT ANALYSIS SECTION */}
+      {finePrintAnalysis && (
+        <FinePrintAnalysis analysis={finePrintAnalysis} companyName={companyName} />
       )}
 
       {/* PERFORMANCE CLUSTER */}
