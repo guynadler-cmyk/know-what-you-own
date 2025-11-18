@@ -278,11 +278,6 @@ export function SummaryCard({
         </div>
       </div>
 
-      {/* TEMPORAL ANALYSIS SECTION */}
-      {temporalAnalysis && (
-        <TemporalAnalysis analysis={temporalAnalysis} companyName={companyName} />
-      )}
-
       {/* INVESTMENT THESIS SECTION */}
       <div className="border-2 border-primary/20 rounded-2xl bg-primary/5">
         <div className="bg-primary px-8 py-4 border-b-2 border-primary">
@@ -500,6 +495,11 @@ export function SummaryCard({
           </section>
         </div>
       </div>
+
+      {/* TEMPORAL ANALYSIS SECTION */}
+      {temporalAnalysis && (
+        <TemporalAnalysis analysis={temporalAnalysis} companyName={companyName} />
+      )}
 
       {/* PERFORMANCE CLUSTER */}
       <div className="border-2 border-border rounded-2xl">
