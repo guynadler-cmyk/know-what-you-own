@@ -52,7 +52,12 @@ export default function AppPage() {
       const data = await response.json();
 
       if (!response.ok) {
-        throw new Error(data.message || data.error || "Analysis failed");
+        // Store the error data for better error messaging
+        const errorData = {
+          error: data.error || "Analysis Failed",
+          message: data.message || "Something went wrong. Please try again."
+        };
+        throw { errorData };
       }
 
       setSummaryData(data);
@@ -80,9 +85,14 @@ export default function AppPage() {
         });
       }
     } catch (error: any) {
+      // Extract error information from thrown error or fallback to generic message
+      const errorTitle = error.errorData?.error || "Analysis Failed";
+      const errorMessage = error.errorData?.message || 
+        `We couldn't analyze "${ticker}". Please try again.`;
+      
       setErrorInfo({
-        title: error.message?.includes("not found") ? "Ticker Not Found" : "Analysis Failed",
-        message: error.message || `We couldn't analyze "${ticker}". Please try again.`
+        title: errorTitle,
+        message: errorMessage
       });
       setViewState("error");
     }
