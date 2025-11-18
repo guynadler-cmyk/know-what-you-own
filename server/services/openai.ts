@@ -224,9 +224,17 @@ Requirements:
   ): Promise<TemporalAnalysis> {
     const yearsAnalyzed = yearlyData.map(d => d.fiscalYear).sort();
     
+    // Truncate each business section to avoid token limits and timeouts
+    const MAX_CHARS_PER_YEAR = 8000;
+    
     const sectionsText = yearlyData
       .sort((a, b) => parseInt(a.fiscalYear) - parseInt(b.fiscalYear))
-      .map(d => `=== FISCAL YEAR ${d.fiscalYear} (Filed: ${d.filingDate}) ===\n${d.businessSection}`)
+      .map(d => {
+        const truncated = d.businessSection.length > MAX_CHARS_PER_YEAR 
+          ? d.businessSection.substring(0, MAX_CHARS_PER_YEAR) + "\n\n[...truncated for length...]"
+          : d.businessSection;
+        return `=== FISCAL YEAR ${d.fiscalYear} (Filed: ${d.filingDate}) ===\n${truncated}`;
+      })
       .join('\n\n');
 
     const prompt = `You are analyzing ${companyName} (${ticker}) across ${yearlyData.length} years of 10-K filings to identify significant changes over time.

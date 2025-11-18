@@ -31,18 +31,28 @@ export async function registerRoutes(app: Express): Promise<Server> {
         cik
       );
 
-      // Fetch 5 years of data for temporal analysis
+      // Fetch 5 years of data for temporal analysis with timeout
       let temporalAnalysis;
       try {
         const yearlyData = await secService.get5YearsBusinessSections(cik);
         
         // Only run temporal analysis if we have at least 2 years of data
         if (yearlyData.length >= 2) {
-          temporalAnalysis = await openaiService.analyzeTemporalChanges(
+          console.log(`Starting temporal analysis for ${ticker} with ${yearlyData.length} years of data`);
+          
+          // Add 30 second timeout for temporal analysis
+          const timeoutPromise = new Promise((_, reject) => 
+            setTimeout(() => reject(new Error('Temporal analysis timeout')), 30000)
+          );
+          
+          const analysisPromise = openaiService.analyzeTemporalChanges(
             name,
             ticker.toUpperCase(),
             yearlyData
           );
+          
+          temporalAnalysis = await Promise.race([analysisPromise, timeoutPromise]) as any;
+          console.log(`Temporal analysis completed for ${ticker}`);
         }
       } catch (temporalError) {
         console.warn("Temporal analysis failed, continuing without it:", temporalError);
