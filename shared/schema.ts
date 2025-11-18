@@ -129,6 +129,54 @@ export const metadataSchema = z.object({
   videos: z.array(videoResourceSchema),
 });
 
+// Temporal Analysis Schemas - for tracking changes across 5 years of filings
+export const discontinuedItemSchema = z.object({
+  item: z.string(),
+  category: z.string(),
+  lastMentionedYear: z.string(),
+  yearsActive: z.string(),
+  context: z.string(),
+});
+
+export const newSustainedItemSchema = z.object({
+  item: z.string(),
+  category: z.string(),
+  introducedYear: z.string(),
+  context: z.string(),
+});
+
+export const evolvedItemSchema = z.object({
+  item: z.string(),
+  category: z.string(),
+  yearRange: z.string(),
+  changeDescription: z.string(),
+  beforeSnapshot: z.string(),
+  afterSnapshot: z.string(),
+});
+
+export const newProductSchema = z.object({
+  name: z.string(),
+  introducedYear: z.string(),
+  description: z.string(),
+  significance: z.string(),
+});
+
+export const temporalSummarySchema = z.object({
+  yearsAnalyzed: z.array(z.string()),
+  discontinuedCount: z.number(),
+  newSustainedCount: z.number(),
+  evolvedCount: z.number(),
+  newProductsCount: z.number(),
+});
+
+export const temporalAnalysisSchema = z.object({
+  summary: temporalSummarySchema,
+  discontinued: z.array(discontinuedItemSchema),
+  newAndSustained: z.array(newSustainedItemSchema),
+  evolved: z.array(evolvedItemSchema),
+  newProducts: z.array(newProductSchema),
+});
+
 // Complete company summary schema
 export const companySummarySchema = z.object({
   companyName: z.string(),
@@ -149,6 +197,7 @@ export const companySummarySchema = z.object({
   stockPerformance: stockPerformanceSchema.optional(),
   metadata: metadataSchema,
   cik: z.string().optional(),
+  temporalAnalysis: temporalAnalysisSchema.optional(),
 });
 
 export type Product = z.infer<typeof productSchema>;
@@ -167,6 +216,12 @@ export type PerformanceMetric = z.infer<typeof performanceMetricSchema>;
 export type YearsToDoubling = z.infer<typeof yearsToDoublingSchema>;
 export type StockPerformance = z.infer<typeof stockPerformanceSchema>;
 export type Metadata = z.infer<typeof metadataSchema>;
+export type DiscontinuedItem = z.infer<typeof discontinuedItemSchema>;
+export type NewSustainedItem = z.infer<typeof newSustainedItemSchema>;
+export type EvolvedItem = z.infer<typeof evolvedItemSchema>;
+export type NewProduct = z.infer<typeof newProductSchema>;
+export type TemporalSummary = z.infer<typeof temporalSummarySchema>;
+export type TemporalAnalysis = z.infer<typeof temporalAnalysisSchema>;
 export type CompanySummary = z.infer<typeof companySummarySchema>;
 
 // Database Tables for Replit Auth

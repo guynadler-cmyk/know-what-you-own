@@ -1,5 +1,5 @@
 import OpenAI from "openai";
-import { CompanySummary } from "@shared/schema";
+import { CompanySummary, TemporalAnalysis } from "@shared/schema";
 
 const openai = new OpenAI({
   apiKey: process.env.AI_INTEGRATIONS_OPENAI_API_KEY,
@@ -211,6 +211,169 @@ Requirements:
     };
 
     return summary;
+  }
+
+  async analyzeTemporalChanges(
+    companyName: string,
+    ticker: string,
+    yearlyData: Array<{
+      fiscalYear: string;
+      filingDate: string;
+      businessSection: string;
+    }>
+  ): Promise<TemporalAnalysis> {
+    const yearsAnalyzed = yearlyData.map(d => d.fiscalYear).sort();
+    
+    const sectionsText = yearlyData
+      .sort((a, b) => parseInt(a.fiscalYear) - parseInt(b.fiscalYear))
+      .map(d => `=== FISCAL YEAR ${d.fiscalYear} (Filed: ${d.filingDate}) ===\n${d.businessSection}`)
+      .join('\n\n');
+
+    const prompt = `You are analyzing ${companyName} (${ticker}) across ${yearlyData.length} years of 10-K filings to identify significant changes over time.
+
+Here are the business sections from each year, in chronological order:
+
+${sectionsText}
+
+Analyze these filings to identify:
+1. DISCONTINUED ITEMS: Things mentioned in earlier years but dropped/omitted in later filings
+2. NEW & SUSTAINED ITEMS: Things introduced in a later year that continued to be reported
+3. EVOLVED ITEMS: Descriptions, strategies, or products that changed significantly over time
+4. NEW PRODUCTS: Products that were introduced during this period
+
+Provide a JSON response with this EXACT structure:
+{
+  "discontinued": [
+    {
+      "item": "Name/title of the discontinued item",
+      "category": "product/strategy/market/partnership/initiative",
+      "lastMentionedYear": "YYYY",
+      "yearsActive": "YYYY-YYYY",
+      "context": "One sentence explaining what it was and why its disappearance matters"
+    }
+  ],
+  "newAndSustained": [
+    {
+      "item": "Name/title of the new item",
+      "category": "product/strategy/market/partnership/initiative",
+      "introducedYear": "YYYY",
+      "context": "One sentence explaining what it is and its significance"
+    }
+  ],
+  "evolved": [
+    {
+      "item": "Name/title of what evolved",
+      "category": "product/strategy/market/description",
+      "yearRange": "YYYY-YYYY",
+      "changeDescription": "One sentence describing how it changed",
+      "beforeSnapshot": "Brief quote or description from earlier year (max 100 chars)",
+      "afterSnapshot": "Brief quote or description from later year (max 100 chars)"
+    }
+  ],
+  "newProducts": [
+    {
+      "name": "Product name",
+      "introducedYear": "YYYY",
+      "description": "Brief description (max 80 chars)",
+      "significance": "One sentence on why this product matters to investors"
+    }
+  ]
+}
+
+Guidelines:
+- Only include SIGNIFICANT changes that an investor would care about
+- Focus on business-material items, not administrative details
+- For discontinued items, only include things that were important/mentioned multiple times before disappearing
+- For new & sustained, only include items mentioned in at least 2 consecutive years after introduction
+- For evolved items, focus on meaningful strategic or product shifts
+- Prioritize quality over quantity - max 5-6 items per category
+- Be specific with year ranges and dates
+- Categories should be: product, strategy, market, partnership, initiative, or description
+- Keep all text concise and investor-focused`;
+
+    const completion = await openai.chat.completions.create({
+      model: "gpt-4o",
+      messages: [
+        {
+          role: "system",
+          content: "You are a financial analyst expert at identifying material changes in SEC filings over time. Focus on investor-relevant changes. Always respond with valid JSON only.",
+        },
+        {
+          role: "user",
+          content: prompt,
+        },
+      ],
+      response_format: { type: "json_object" },
+      temperature: 0.2,
+    });
+
+    const result = JSON.parse(completion.choices[0].message.content || "{}");
+
+    // Safely extract and sanitize arrays with defaults
+    const sanitizeDiscontinued = (items: any[]): any[] => {
+      return items.filter(item => 
+        item && 
+        typeof item.item === 'string' && 
+        typeof item.category === 'string' &&
+        typeof item.lastMentionedYear === 'string' &&
+        typeof item.yearsActive === 'string' &&
+        typeof item.context === 'string'
+      );
+    };
+
+    const sanitizeNewSustained = (items: any[]): any[] => {
+      return items.filter(item =>
+        item &&
+        typeof item.item === 'string' &&
+        typeof item.category === 'string' &&
+        typeof item.introducedYear === 'string' &&
+        typeof item.context === 'string'
+      );
+    };
+
+    const sanitizeEvolved = (items: any[]): any[] => {
+      return items.filter(item =>
+        item &&
+        typeof item.item === 'string' &&
+        typeof item.category === 'string' &&
+        typeof item.yearRange === 'string' &&
+        typeof item.changeDescription === 'string' &&
+        typeof item.beforeSnapshot === 'string' &&
+        typeof item.afterSnapshot === 'string'
+      );
+    };
+
+    const sanitizeNewProducts = (items: any[]): any[] => {
+      return items.filter(item =>
+        item &&
+        typeof item.name === 'string' &&
+        typeof item.introducedYear === 'string' &&
+        typeof item.description === 'string' &&
+        typeof item.significance === 'string'
+      );
+    };
+
+    const discontinued = Array.isArray(result.discontinued) ? sanitizeDiscontinued(result.discontinued) : [];
+    const newAndSustained = Array.isArray(result.newAndSustained) ? sanitizeNewSustained(result.newAndSustained) : [];
+    const evolved = Array.isArray(result.evolved) ? sanitizeEvolved(result.evolved) : [];
+    const newProducts = Array.isArray(result.newProducts) ? sanitizeNewProducts(result.newProducts) : [];
+
+    // Build the temporal analysis with computed summary
+    const temporalAnalysis: TemporalAnalysis = {
+      summary: {
+        yearsAnalyzed,
+        discontinuedCount: discontinued.length,
+        newSustainedCount: newAndSustained.length,
+        evolvedCount: evolved.length,
+        newProductsCount: newProducts.length,
+      },
+      discontinued,
+      newAndSustained,
+      evolved,
+      newProducts,
+    };
+
+    return temporalAnalysis;
   }
 }
 

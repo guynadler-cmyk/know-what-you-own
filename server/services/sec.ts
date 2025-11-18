@@ -65,6 +65,63 @@ export class SECService {
     return { accessionNumber, filingDate, fiscalYear };
   }
 
+  async getLast5Years10K(cik: string): Promise<Array<{
+    accessionNumber: string;
+    filingDate: string;
+    fiscalYear: string;
+  }>> {
+    const url = `https://data.sec.gov/submissions/CIK${cik}.json`;
+    
+    const response = await axios.get<SECSubmission>(url, { headers: SEC_HEADERS });
+    const { filings } = response.data;
+
+    const tenKFilings: Array<{
+      accessionNumber: string;
+      filingDate: string;
+      fiscalYear: string;
+    }> = [];
+
+    for (let i = 0; i < filings.recent.form.length && tenKFilings.length < 5; i++) {
+      if (filings.recent.form[i] === "10-K") {
+        const accessionNumber = filings.recent.accessionNumber[i];
+        const filingDate = filings.recent.filingDate[i];
+        const fiscalYear = new Date(filingDate).getFullYear().toString();
+        
+        tenKFilings.push({ accessionNumber, filingDate, fiscalYear });
+      }
+    }
+
+    if (tenKFilings.length === 0) {
+      throw new Error("No 10-K filings found");
+    }
+
+    return tenKFilings;
+  }
+
+  async get5YearsBusinessSections(cik: string): Promise<Array<{
+    fiscalYear: string;
+    filingDate: string;
+    businessSection: string;
+  }>> {
+    const filings = await this.getLast5Years10K(cik);
+    const sections = [];
+
+    for (const filing of filings) {
+      try {
+        const businessSection = await this.get10KBusinessSection(cik, filing.accessionNumber);
+        sections.push({
+          fiscalYear: filing.fiscalYear,
+          filingDate: filing.filingDate,
+          businessSection,
+        });
+      } catch (error) {
+        console.warn(`Failed to fetch business section for ${filing.fiscalYear}:`, error);
+      }
+    }
+
+    return sections;
+  }
+
   async get10KBusinessSection(cik: string, accessionNumber: string): Promise<string> {
     const accessionPath = accessionNumber.replace(/-/g, '');
     const url = `https://www.sec.gov/Archives/edgar/data/${parseInt(cik)}/${accessionPath}/${accessionNumber}.txt`;

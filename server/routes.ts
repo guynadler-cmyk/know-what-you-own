@@ -31,7 +31,28 @@ export async function registerRoutes(app: Express): Promise<Server> {
         cik
       );
 
-      const validated = companySummarySchema.parse(summary);
+      // Fetch 5 years of data for temporal analysis
+      let temporalAnalysis;
+      try {
+        const yearlyData = await secService.get5YearsBusinessSections(cik);
+        
+        // Only run temporal analysis if we have at least 2 years of data
+        if (yearlyData.length >= 2) {
+          temporalAnalysis = await openaiService.analyzeTemporalChanges(
+            name,
+            ticker.toUpperCase(),
+            yearlyData
+          );
+        }
+      } catch (temporalError) {
+        console.warn("Temporal analysis failed, continuing without it:", temporalError);
+        // Don't fail the whole request if temporal analysis fails
+      }
+
+      const validated = companySummarySchema.parse({
+        ...summary,
+        ...(temporalAnalysis ? { temporalAnalysis } : {}),
+      });
       
       // Everyone gets full data - no authentication required
       res.json(validated);
