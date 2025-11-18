@@ -9,8 +9,9 @@ import { Calendar, Building2, MapPin, Users, TrendingUp, Briefcase, Award, Dolla
 import { LucideIcon } from "lucide-react";
 import { SiX, SiYoutube } from "react-icons/si";
 import { useQuery } from "@tanstack/react-query";
-import { InvestmentTheme, Moat, MarketOpportunity, ValueCreation } from "@shared/schema";
+import { InvestmentTheme, Moat, MarketOpportunity, ValueCreation, TemporalAnalysis as TemporalAnalysisType } from "@shared/schema";
 import { TagWithTooltip } from "@/components/TagWithTooltip";
+import { TemporalAnalysis } from "@/components/TemporalAnalysis";
 
 interface Product {
   name: string;
@@ -87,6 +88,7 @@ interface SummaryCardProps {
   };
   
   cik?: string;
+  temporalAnalysis?: TemporalAnalysisType;
 }
 
 function CompetitorQuickSummary({ ticker }: { ticker: string }) {
@@ -179,7 +181,8 @@ export function SummaryCard({
   leaders,
   metrics,
   metadata,
-  cik 
+  cik,
+  temporalAnalysis
 }: SummaryCardProps) {
   const [expandedCompetitor, setExpandedCompetitor] = useState<string | null>(null);
   const [logoFailed, setLogoFailed] = useState(false);
@@ -274,6 +277,11 @@ export function SummaryCard({
           )}
         </div>
       </div>
+
+      {/* TEMPORAL ANALYSIS SECTION */}
+      {temporalAnalysis && (
+        <TemporalAnalysis analysis={temporalAnalysis} companyName={companyName} />
+      )}
 
       {/* INVESTMENT THESIS SECTION */}
       <div className="border-2 border-primary/20 rounded-2xl bg-primary/5">
