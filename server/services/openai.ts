@@ -6,6 +6,38 @@ const openai = new OpenAI({
   baseURL: process.env.AI_INTEGRATIONS_OPENAI_BASE_URL,
 });
 
+async function retryWithBackoff<T>(
+  fn: () => Promise<T>,
+  maxRetries = 3,
+  baseDelay = 2000
+): Promise<T> {
+  let lastError: Error | undefined;
+  
+  for (let attempt = 0; attempt <= maxRetries; attempt++) {
+    try {
+      return await fn();
+    } catch (error: any) {
+      lastError = error as Error;
+      
+      const shouldRetry = 
+        error?.status === 429 || 
+        error?.status >= 500 || 
+        error?.code === 'ECONNRESET' ||
+        error?.code === 'ETIMEDOUT';
+      
+      if (!shouldRetry || attempt === maxRetries) {
+        throw error;
+      }
+      
+      const delay = baseDelay * Math.pow(2, attempt);
+      console.log(`[OpenAI] Retry attempt ${attempt + 1}/${maxRetries} after ${delay}ms`);
+      await new Promise(resolve => setTimeout(resolve, delay));
+    }
+  }
+  
+  throw lastError;
+}
+
 const ICON_MAPPING: Record<string, string> = {
   smartphone: "Smartphone",
   phone: "Smartphone",
@@ -139,20 +171,22 @@ Requirements:
 - Keep all text concise and scannable (except investmentThesis which should be comprehensive)
 - Use actual data from the filing when available`;
 
-    const completion = await openai.chat.completions.create({
-      model: "gpt-4o-mini",
-      messages: [
-        {
-          role: "system",
-          content: "You are a financial analyst expert at extracting structured business information from SEC filings. Always respond with valid JSON only.",
-        },
-        {
-          role: "user",
-          content: prompt,
-        },
-      ],
-      response_format: { type: "json_object" },
-      temperature: 0.3,
+    const completion = await retryWithBackoff(async () => {
+      return await openai.chat.completions.create({
+        model: "gpt-4o-mini",
+        messages: [
+          {
+            role: "system",
+            content: "You are a financial analyst expert at extracting structured business information from SEC filings. Always respond with valid JSON only.",
+          },
+          {
+            role: "user",
+            content: prompt,
+          },
+        ],
+        response_format: { type: "json_object" },
+        temperature: 0.3,
+      });
     });
 
     const result = JSON.parse(completion.choices[0].message.content || "{}");
