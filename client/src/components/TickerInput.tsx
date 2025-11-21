@@ -44,7 +44,7 @@ export function TickerInput({ onSubmit, isLoading = false }: TickerInputProps) {
             type="text"
             value={ticker}
             onChange={handleInputChange}
-            placeholder="Which company?"
+            placeholder="Which Stock Ticker?"
             className={`text-2xl h-16 text-center font-mono tracking-wide border-2 rounded-xl ${
               error ? 'border-destructive focus-visible:ring-destructive' : 'focus-visible:border-primary'
             }`}
