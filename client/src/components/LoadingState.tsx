@@ -12,8 +12,9 @@ export function LoadingState({ message = "Analyzing..." }: LoadingStateProps) {
         <p className="text-2xl font-semibold" data-testid="text-loading-message">
           {message}
         </p>
-        <p className="text-base text-muted-foreground">
-          This may take a moment.
+        <p className="text-base text-muted-foreground leading-relaxed">
+          Beta version - still optimizing for speed.<br />
+          Thanks for your patience while we build something worth sticking with.
         </p>
       </div>
     </div>
