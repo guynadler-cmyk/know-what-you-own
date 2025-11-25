@@ -16,6 +16,11 @@ import {
 } from "lucide-react";
 import { useState } from "react";
 
+import businessOverviewImg from "@assets/generated_images/business_overview_app_mockup.png";
+import valuationAnalysisImg from "@assets/generated_images/valuation_analysis_app_mockup.png";
+import investmentPlanningImg from "@assets/generated_images/investment_planning_app_mockup.png";
+import portfolioTrackerImg from "@assets/generated_images/portfolio_tracker_app_mockup.png";
+
 export default function LandingPage() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
@@ -311,13 +316,13 @@ export default function LandingPage() {
             {/* Demo Screenshots Grid */}
             <div className="grid sm:grid-cols-2 gap-8 lg:gap-12">
               <div className="space-y-4" data-testid="card-demo-1">
-                <div className="aspect-[4/3] rounded-xl bg-muted border border-border flex items-center justify-center">
-                  <div className="text-center p-8">
-                    <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-primary/10 flex items-center justify-center">
-                      <Search className="h-8 w-8 text-primary" />
-                    </div>
-                    <p className="text-muted-foreground">App Screenshot</p>
-                  </div>
+                <div className="aspect-[4/3] rounded-xl overflow-hidden border border-border">
+                  <img 
+                    src={businessOverviewImg} 
+                    alt="Business overview dashboard showing revenue breakdown and company metrics"
+                    className="w-full h-full object-cover"
+                    data-testid="img-demo-1"
+                  />
                 </div>
                 <p className="text-center text-lg text-muted-foreground font-medium" data-testid="text-demo-caption-1">
                   See how the company makes money
@@ -325,13 +330,13 @@ export default function LandingPage() {
               </div>
               
               <div className="space-y-4" data-testid="card-demo-2">
-                <div className="aspect-[4/3] rounded-xl bg-muted border border-border flex items-center justify-center">
-                  <div className="text-center p-8">
-                    <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-primary/10 flex items-center justify-center">
-                      <Scale className="h-8 w-8 text-primary" />
-                    </div>
-                    <p className="text-muted-foreground">App Screenshot</p>
-                  </div>
+                <div className="aspect-[4/3] rounded-xl overflow-hidden border border-border">
+                  <img 
+                    src={valuationAnalysisImg} 
+                    alt="Valuation analysis screen with price vs value gauge"
+                    className="w-full h-full object-cover"
+                    data-testid="img-demo-2"
+                  />
                 </div>
                 <p className="text-center text-lg text-muted-foreground font-medium" data-testid="text-demo-caption-2">
                   Evaluate value vs price
@@ -339,13 +344,13 @@ export default function LandingPage() {
               </div>
               
               <div className="space-y-4" data-testid="card-demo-3">
-                <div className="aspect-[4/3] rounded-xl bg-muted border border-border flex items-center justify-center">
-                  <div className="text-center p-8">
-                    <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-primary/10 flex items-center justify-center">
-                      <Target className="h-8 w-8 text-primary" />
-                    </div>
-                    <p className="text-muted-foreground">App Screenshot</p>
-                  </div>
+                <div className="aspect-[4/3] rounded-xl overflow-hidden border border-border">
+                  <img 
+                    src={investmentPlanningImg} 
+                    alt="Investment planning interface with entry and exit rules"
+                    className="w-full h-full object-cover"
+                    data-testid="img-demo-3"
+                  />
                 </div>
                 <p className="text-center text-lg text-muted-foreground font-medium" data-testid="text-demo-caption-3">
                   Set your entry and exit rules
@@ -353,13 +358,13 @@ export default function LandingPage() {
               </div>
               
               <div className="space-y-4" data-testid="card-demo-4">
-                <div className="aspect-[4/3] rounded-xl bg-muted border border-border flex items-center justify-center">
-                  <div className="text-center p-8">
-                    <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-primary/10 flex items-center justify-center">
-                      <TrendingUp className="h-8 w-8 text-primary" />
-                    </div>
-                    <p className="text-muted-foreground">App Screenshot</p>
-                  </div>
+                <div className="aspect-[4/3] rounded-xl overflow-hidden border border-border">
+                  <img 
+                    src={portfolioTrackerImg} 
+                    alt="Portfolio tracker showing holdings and performance"
+                    className="w-full h-full object-cover"
+                    data-testid="img-demo-4"
+                  />
                 </div>
                 <p className="text-center text-lg text-muted-foreground font-medium" data-testid="text-demo-caption-4">
                   Track your portfolio with logic, not emotion
