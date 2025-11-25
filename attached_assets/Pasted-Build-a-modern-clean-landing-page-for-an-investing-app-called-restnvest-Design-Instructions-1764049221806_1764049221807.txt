@@ -1,0 +1,120 @@
+Build a modern, clean landing page for an investing app called "restnvest".
+
+🖼️ Design Instructions
+
+Layout: vertical scrolling, clear section breaks, full-width hero.
+
+Spacing: generous white space between sections (like Stripe, Linear, or Notion’s websites).
+
+Fonts: use Inter, Open Sans, or SF Pro for clarity.
+
+Colors: calming palette — light background (white or off-white), cool accents (navy, sage, slate, or warm neutrals).
+
+Mobile responsive: Must stack well and keep CTA visible.
+
+Use TailwindCSS or standard CSS flex/grid layout.
+
+No animations required, but allow for smooth scroll/jump to sections.
+
+🧱 Sections to Include
+1. Hero Section
+
+Headline: “Sensible investing beats optimal — because you’ll actually stick with it.”
+
+Subheadline: “Information isn’t enough. Action builds wealth. Sustainable habits keep it growing.”
+
+CTA Button: “→ Try Restnvest” (scrolls to demo or signup)
+
+Optional: add a background illustration or soft gradient
+
+2. Problem Section
+
+Headline: “Most investing advice is built for theory. Not for humans.”
+
+Bullets:
+
+Institutions optimize for averages. But people don’t live in averages.
+
+What’s ‘optimal’ is often fragile in real life — too abstract, too volatile, too hard to stick with.
+
+Retail investors get stuck in churn. The industry keeps winning.
+
+3. Restnvest Approach Section
+
+Headline: “Sensible > Optimal”
+
+Description: “Restnvest turns investing into a process you can actually follow — not a guessing game.”
+
+Visual: Horizontal list or grid of 5 icons or steps (with icons or placeholder images)
+
+Understand the business
+
+Evaluate the deal
+
+Plan your investment
+
+Make your move
+
+Protect what you own
+
+4. Product Demo Section
+
+Headline: “What the app actually does”
+
+Use 4–5 placeholder images (we’ll replace with app screenshots).
+
+Under each image, a caption:
+
+“See how the company makes money”
+
+“Evaluate value vs price”
+
+“Set your entry and exit rules”
+
+“Track your portfolio with logic, not emotion”
+
+5. Audience Section
+
+Headline: “Built for people who want to build wealth — not chase hype.”
+
+3 blocks/icons for:
+
+Professionals managing family wealth
+
+First-time long-term investors
+
+Business owners without retirement plans
+
+6. Why It Works
+
+Headline: “Compounding only works if you stay invested.”
+
+Bullets:
+
+Avoid panic selling
+
+Stick with winners
+
+Build habits that compound
+
+Own companies, not tickers
+
+7. Call to Action (CTA) Section
+
+Headline: “Start investing sensibly”
+
+CTA Button: “→ Try Restnvest”
+
+Optional: small FAQ or quote/testimonial placeholder below
+
+🧩 Functionality & Behavior
+
+Anchor links from nav to each section
+
+Sticky nav bar (optional)
+
+Responsive layout for mobile/tablet
+
+Replaceable image assets
+
+Simple page structure: no login, no product backend — just static site for now
