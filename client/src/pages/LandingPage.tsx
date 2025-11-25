@@ -1,173 +1,436 @@
-import { useLocation } from "wouter";
-import { Header } from "@/components/Header";
-import { Footer } from "@/components/Footer";
-import { TickerInput } from "@/components/TickerInput";
-import { QRCodeDisplay } from "@/components/QRCodeDisplay";
-import { ShareButton } from "@/components/ShareButton";
-import { DemoCarousel } from "@/components/DemoCarousel";
 import { Button } from "@/components/ui/button";
-import { useIsPWAInstalled } from "@/hooks/useIsPWAInstalled";
-import { Clock, Zap, ShieldCheck, Smartphone } from "lucide-react";
+import { ThemeToggle } from "@/components/ThemeToggle";
+import { 
+  Search, 
+  Scale, 
+  Target, 
+  TrendingUp, 
+  Shield,
+  Briefcase,
+  Sprout,
+  Building2,
+  ArrowRight,
+  CheckCircle2,
+  Menu,
+  X
+} from "lucide-react";
+import { useState } from "react";
 
 export default function LandingPage() {
-  const [, setLocation] = useLocation();
-  const isPWAInstalled = useIsPWAInstalled();
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
-  const handleTickerSubmit = (ticker: string) => {
-    setLocation(`/app?ticker=${encodeURIComponent(ticker)}`);
+  const scrollToSection = (sectionId: string) => {
+    const element = document.getElementById(sectionId);
+    if (element) {
+      element.scrollIntoView({ behavior: 'smooth' });
+      setMobileMenuOpen(false);
+    }
   };
 
+  const navLinks = [
+    { label: "Problem", id: "problem" },
+    { label: "Approach", id: "approach" },
+    { label: "Product", id: "product" },
+    { label: "For You", id: "audience" },
+    { label: "Why It Works", id: "why-it-works" },
+  ];
+
   return (
-    <div className="flex min-h-screen flex-col">
-      <Header />
-      
+    <div className="flex min-h-screen flex-col bg-background">
+      {/* Sticky Navigation */}
+      <header className="sticky top-0 z-50 border-b border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+          <div className="flex h-16 items-center justify-between gap-4">
+            {/* Logo */}
+            <button 
+              onClick={() => scrollToSection('hero')}
+              className="text-lg font-semibold hover-elevate px-3 py-2 rounded-md transition-all"
+              data-testid="link-logo"
+            >
+              restnvest
+            </button>
+            
+            {/* Desktop Navigation */}
+            <nav className="hidden md:flex items-center gap-1">
+              {navLinks.map((link) => (
+                <button
+                  key={link.id}
+                  onClick={() => scrollToSection(link.id)}
+                  className="px-4 py-2 text-sm text-muted-foreground hover:text-foreground transition-colors rounded-md hover-elevate"
+                  data-testid={`nav-${link.id}`}
+                >
+                  {link.label}
+                </button>
+              ))}
+            </nav>
+
+            {/* Right side */}
+            <div className="flex items-center gap-3">
+              <Button
+                onClick={() => scrollToSection('cta')}
+                className="hidden sm:flex rounded-full"
+                data-testid="nav-cta"
+              >
+                Try Restnvest
+              </Button>
+              <ThemeToggle />
+              
+              {/* Mobile menu button */}
+              <button
+                onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+                className="md:hidden p-2 rounded-md hover-elevate"
+                data-testid="button-mobile-menu"
+              >
+                {mobileMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+              </button>
+            </div>
+          </div>
+
+          {/* Mobile Navigation */}
+          {mobileMenuOpen && (
+            <nav className="md:hidden py-4 border-t border-border">
+              <div className="flex flex-col gap-2">
+                {navLinks.map((link) => (
+                  <button
+                    key={link.id}
+                    onClick={() => scrollToSection(link.id)}
+                    className="px-4 py-3 text-left text-muted-foreground hover:text-foreground transition-colors rounded-md hover-elevate"
+                    data-testid={`nav-mobile-${link.id}`}
+                  >
+                    {link.label}
+                  </button>
+                ))}
+                <Button
+                  onClick={() => scrollToSection('cta')}
+                  className="mt-2 rounded-full"
+                  data-testid="nav-mobile-cta"
+                >
+                  Try Restnvest
+                </Button>
+              </div>
+            </nav>
+          )}
+        </div>
+      </header>
+
       <main className="flex-1">
         {/* Hero Section */}
-        <section className="relative py-20 sm:py-32 px-4">
+        <section id="hero" className="relative py-24 sm:py-32 lg:py-40 px-4">
           <div className="mx-auto max-w-4xl text-center space-y-8">
-            <div className="inline-block">
-              <span className="inline-block px-4 py-1.5 rounded-full border border-primary/20 bg-primary/5 text-primary text-sm font-medium mb-6">
-                Understand what you own.
-              </span>
-            </div>
-            
-            <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold tracking-tight leading-tight">
-              Know the company.
-              <br />
-              <span className="text-muted-foreground">Not just the stock.</span>
+            <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold tracking-tight leading-[1.1]">
+              Sensible investing beats optimal — because you'll actually stick with it.
             </h1>
             
             <p className="text-xl sm:text-2xl text-muted-foreground max-w-3xl mx-auto leading-relaxed">
-              We turn public company information into simple, powerful insights you can actually use.
+              Information isn't enough. Action builds wealth. Sustainable habits keep it growing.
             </p>
             
             <div className="pt-8">
-              <TickerInput onSubmit={handleTickerSubmit} isLoading={false} />
-              <p className="text-sm text-muted-foreground mt-4">
-                Try it now – Get a free company summary
-              </p>
-            </div>
-
-            <div className="flex justify-center gap-4 pt-4">
-              <ShareButton variant="outline" />
+              <Button
+                size="lg"
+                onClick={() => scrollToSection('cta')}
+                className="rounded-full px-8 py-6 text-lg font-semibold gap-2"
+                data-testid="hero-cta"
+              >
+                <ArrowRight className="h-5 w-5" />
+                Try Restnvest
+              </Button>
             </div>
           </div>
         </section>
 
-        {/* See it in Action Section */}
-        <section className="py-16 sm:py-24 px-4">
-          <div className="mx-auto max-w-6xl space-y-12">
+        {/* Problem Section */}
+        <section id="problem" className="py-20 sm:py-28 px-4 bg-muted/30">
+          <div className="mx-auto max-w-4xl space-y-12">
             <div className="text-center space-y-4">
-              <h2 className="text-3xl sm:text-4xl font-bold">
-                From 100+ page filing to instant clarity
+              <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold tracking-tight">
+                Most investing advice is built for theory. Not for humans.
               </h2>
-              <p className="text-lg sm:text-xl text-muted-foreground max-w-2xl mx-auto">
-                Our AI reads official company reports submitted to regulators, extracts management's strategic vision, and ranks what matters most—saving you hours of research.
-              </p>
             </div>
             
-            <DemoCarousel />
-          </div>
-        </section>
-
-        {/* Benefits Section */}
-        <section className="py-16 sm:py-24 px-4 bg-muted/20">
-          <div className="mx-auto max-w-6xl">
-            <h2 className="text-3xl sm:text-4xl font-bold text-center mb-16">
-              Your analysis. Right now.
-            </h2>
-            
-            <div className="grid sm:grid-cols-2 gap-8 sm:gap-12">
-              {/* Benefit 1: Speed */}
-              <div className="space-y-4">
-                <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-primary/10">
-                  <Clock className="w-6 h-6 text-primary" />
-                </div>
-                <h3 className="text-2xl font-bold">Instant results</h3>
+            <div className="space-y-6 max-w-3xl mx-auto">
+              <div className="flex gap-4 items-start p-6 rounded-xl bg-background border border-border">
+                <div className="flex-shrink-0 w-2 h-2 mt-3 rounded-full bg-primary" />
                 <p className="text-lg text-muted-foreground leading-relaxed">
-                  Enter a ticker, get your full analysis in under 60 seconds. No waiting, no subscriptions.
-                </p>
-              </div>
-
-              {/* Benefit 2: Clarity */}
-              <div className="space-y-4">
-                <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-primary/10">
-                  <Zap className="w-6 h-6 text-primary" />
-                </div>
-                <h3 className="text-2xl font-bold">Decision-ready clarity</h3>
-                <p className="text-lg text-muted-foreground leading-relaxed">
-                  Get the investment case summarized—no jargon, no fluff, just what matters for your decision.
-                </p>
-              </div>
-
-              {/* Benefit 3: Trust */}
-              <div className="space-y-4">
-                <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-primary/10">
-                  <ShieldCheck className="w-6 h-6 text-primary" />
-                </div>
-                <h3 className="text-2xl font-bold">Confidence you can trust</h3>
-                <p className="text-lg text-muted-foreground leading-relaxed">
-                  Sourced directly from official filings—the same documents Wall Street analysts rely on.
-                </p>
-              </div>
-
-              {/* Benefit 4: Accessibility */}
-              <div className="space-y-4">
-                <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-primary/10">
-                  <Smartphone className="w-6 h-6 text-primary" />
-                </div>
-                <h3 className="text-2xl font-bold">Access from anywhere</h3>
-                <p className="text-lg text-muted-foreground leading-relaxed">
-                  Works on any device. Install as an app on your phone for instant access on the go.
-                </p>
-              </div>
-            </div>
-          </div>
-        </section>
-
-        {/* Mobile App Section - Only show if PWA is not installed */}
-        {!isPWAInstalled && (
-          <section className="py-20 px-4 bg-muted/20">
-            <div className="mx-auto max-w-4xl space-y-12">
-              <div className="text-center space-y-4">
-                <h2 className="text-3xl sm:text-4xl font-bold">
-                  Take it with you
-                </h2>
-                <p className="text-xl text-muted-foreground">
-                  Install restnvest on your phone for easy access anywhere
+                  Institutions optimize for averages. But people don't live in averages.
                 </p>
               </div>
               
-              <QRCodeDisplay 
-                url={window.location.origin}
-                showInstructions={true}
-              />
+              <div className="flex gap-4 items-start p-6 rounded-xl bg-background border border-border">
+                <div className="flex-shrink-0 w-2 h-2 mt-3 rounded-full bg-primary" />
+                <p className="text-lg text-muted-foreground leading-relaxed">
+                  What's "optimal" is often fragile in real life — too abstract, too volatile, too hard to stick with.
+                </p>
+              </div>
+              
+              <div className="flex gap-4 items-start p-6 rounded-xl bg-background border border-border">
+                <div className="flex-shrink-0 w-2 h-2 mt-3 rounded-full bg-primary" />
+                <p className="text-lg text-muted-foreground leading-relaxed">
+                  Retail investors get stuck in churn. The industry keeps winning.
+                </p>
+              </div>
             </div>
-          </section>
-        )}
+          </div>
+        </section>
 
-        {/* Final CTA */}
-        <section className="py-20 px-4 text-center">
-          <div className="mx-auto max-w-2xl space-y-6">
-            <h2 className="text-3xl sm:text-4xl font-bold">
-              Ready to invest with clarity?
+        {/* Restnvest Approach Section */}
+        <section id="approach" className="py-20 sm:py-28 px-4">
+          <div className="mx-auto max-w-6xl space-y-16">
+            <div className="text-center space-y-4">
+              <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold tracking-tight">
+                Sensible &gt; Optimal
+              </h2>
+              <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
+                Restnvest turns investing into a process you can actually follow — not a guessing game.
+              </p>
+            </div>
+            
+            {/* 5 Steps Grid */}
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-6 lg:gap-8">
+              <div className="flex flex-col items-center text-center space-y-4 p-6 rounded-xl hover-elevate">
+                <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center">
+                  <Search className="h-7 w-7 text-primary" />
+                </div>
+                <div className="space-y-2">
+                  <div className="text-sm font-semibold text-primary">Step 1</div>
+                  <p className="font-medium">Understand the business</p>
+                </div>
+              </div>
+              
+              <div className="flex flex-col items-center text-center space-y-4 p-6 rounded-xl hover-elevate">
+                <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center">
+                  <Scale className="h-7 w-7 text-primary" />
+                </div>
+                <div className="space-y-2">
+                  <div className="text-sm font-semibold text-primary">Step 2</div>
+                  <p className="font-medium">Evaluate the deal</p>
+                </div>
+              </div>
+              
+              <div className="flex flex-col items-center text-center space-y-4 p-6 rounded-xl hover-elevate">
+                <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center">
+                  <Target className="h-7 w-7 text-primary" />
+                </div>
+                <div className="space-y-2">
+                  <div className="text-sm font-semibold text-primary">Step 3</div>
+                  <p className="font-medium">Plan your investment</p>
+                </div>
+              </div>
+              
+              <div className="flex flex-col items-center text-center space-y-4 p-6 rounded-xl hover-elevate">
+                <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center">
+                  <TrendingUp className="h-7 w-7 text-primary" />
+                </div>
+                <div className="space-y-2">
+                  <div className="text-sm font-semibold text-primary">Step 4</div>
+                  <p className="font-medium">Make your move</p>
+                </div>
+              </div>
+              
+              <div className="flex flex-col items-center text-center space-y-4 p-6 rounded-xl hover-elevate col-span-2 sm:col-span-1">
+                <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center">
+                  <Shield className="h-7 w-7 text-primary" />
+                </div>
+                <div className="space-y-2">
+                  <div className="text-sm font-semibold text-primary">Step 5</div>
+                  <p className="font-medium">Protect what you own</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* Product Demo Section */}
+        <section id="product" className="py-20 sm:py-28 px-4 bg-muted/30">
+          <div className="mx-auto max-w-6xl space-y-16">
+            <div className="text-center space-y-4">
+              <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold tracking-tight">
+                What the app actually does
+              </h2>
+            </div>
+            
+            {/* Demo Screenshots Grid */}
+            <div className="grid sm:grid-cols-2 gap-8 lg:gap-12">
+              <div className="space-y-4">
+                <div className="aspect-[4/3] rounded-xl bg-muted border border-border flex items-center justify-center">
+                  <div className="text-center p-8">
+                    <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-primary/10 flex items-center justify-center">
+                      <Search className="h-8 w-8 text-primary" />
+                    </div>
+                    <p className="text-muted-foreground">App Screenshot</p>
+                  </div>
+                </div>
+                <p className="text-center text-lg text-muted-foreground font-medium">
+                  See how the company makes money
+                </p>
+              </div>
+              
+              <div className="space-y-4">
+                <div className="aspect-[4/3] rounded-xl bg-muted border border-border flex items-center justify-center">
+                  <div className="text-center p-8">
+                    <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-primary/10 flex items-center justify-center">
+                      <Scale className="h-8 w-8 text-primary" />
+                    </div>
+                    <p className="text-muted-foreground">App Screenshot</p>
+                  </div>
+                </div>
+                <p className="text-center text-lg text-muted-foreground font-medium">
+                  Evaluate value vs price
+                </p>
+              </div>
+              
+              <div className="space-y-4">
+                <div className="aspect-[4/3] rounded-xl bg-muted border border-border flex items-center justify-center">
+                  <div className="text-center p-8">
+                    <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-primary/10 flex items-center justify-center">
+                      <Target className="h-8 w-8 text-primary" />
+                    </div>
+                    <p className="text-muted-foreground">App Screenshot</p>
+                  </div>
+                </div>
+                <p className="text-center text-lg text-muted-foreground font-medium">
+                  Set your entry and exit rules
+                </p>
+              </div>
+              
+              <div className="space-y-4">
+                <div className="aspect-[4/3] rounded-xl bg-muted border border-border flex items-center justify-center">
+                  <div className="text-center p-8">
+                    <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-primary/10 flex items-center justify-center">
+                      <TrendingUp className="h-8 w-8 text-primary" />
+                    </div>
+                    <p className="text-muted-foreground">App Screenshot</p>
+                  </div>
+                </div>
+                <p className="text-center text-lg text-muted-foreground font-medium">
+                  Track your portfolio with logic, not emotion
+                </p>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* Audience Section */}
+        <section id="audience" className="py-20 sm:py-28 px-4">
+          <div className="mx-auto max-w-5xl space-y-16">
+            <div className="text-center space-y-4">
+              <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold tracking-tight">
+                Built for people who want to build wealth — not chase hype.
+              </h2>
+            </div>
+            
+            {/* Audience Cards */}
+            <div className="grid sm:grid-cols-3 gap-8">
+              <div className="flex flex-col items-center text-center space-y-4 p-8 rounded-xl border border-border bg-background hover-elevate">
+                <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center">
+                  <Briefcase className="h-8 w-8 text-primary" />
+                </div>
+                <h3 className="text-xl font-semibold">Professionals</h3>
+                <p className="text-muted-foreground leading-relaxed">
+                  Managing family wealth with intention and discipline
+                </p>
+              </div>
+              
+              <div className="flex flex-col items-center text-center space-y-4 p-8 rounded-xl border border-border bg-background hover-elevate">
+                <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center">
+                  <Sprout className="h-8 w-8 text-primary" />
+                </div>
+                <h3 className="text-xl font-semibold">First-time Investors</h3>
+                <p className="text-muted-foreground leading-relaxed">
+                  Starting their long-term investing journey the right way
+                </p>
+              </div>
+              
+              <div className="flex flex-col items-center text-center space-y-4 p-8 rounded-xl border border-border bg-background hover-elevate">
+                <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center">
+                  <Building2 className="h-8 w-8 text-primary" />
+                </div>
+                <h3 className="text-xl font-semibold">Business Owners</h3>
+                <p className="text-muted-foreground leading-relaxed">
+                  Building retirement plans outside of their business
+                </p>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* Why It Works Section */}
+        <section id="why-it-works" className="py-20 sm:py-28 px-4 bg-muted/30">
+          <div className="mx-auto max-w-4xl space-y-12">
+            <div className="text-center space-y-4">
+              <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold tracking-tight">
+                Compounding only works if you stay invested.
+              </h2>
+            </div>
+            
+            <div className="grid sm:grid-cols-2 gap-6 max-w-3xl mx-auto">
+              <div className="flex gap-4 items-start p-6 rounded-xl bg-background border border-border">
+                <CheckCircle2 className="h-6 w-6 text-primary flex-shrink-0 mt-0.5" />
+                <p className="text-lg font-medium">Avoid panic selling</p>
+              </div>
+              
+              <div className="flex gap-4 items-start p-6 rounded-xl bg-background border border-border">
+                <CheckCircle2 className="h-6 w-6 text-primary flex-shrink-0 mt-0.5" />
+                <p className="text-lg font-medium">Stick with winners</p>
+              </div>
+              
+              <div className="flex gap-4 items-start p-6 rounded-xl bg-background border border-border">
+                <CheckCircle2 className="h-6 w-6 text-primary flex-shrink-0 mt-0.5" />
+                <p className="text-lg font-medium">Build habits that compound</p>
+              </div>
+              
+              <div className="flex gap-4 items-start p-6 rounded-xl bg-background border border-border">
+                <CheckCircle2 className="h-6 w-6 text-primary flex-shrink-0 mt-0.5" />
+                <p className="text-lg font-medium">Own companies, not tickers</p>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* Final CTA Section */}
+        <section id="cta" className="py-24 sm:py-32 px-4">
+          <div className="mx-auto max-w-2xl text-center space-y-8">
+            <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold tracking-tight">
+              Start investing sensibly
             </h2>
-            <p className="text-xl text-muted-foreground">
-              Enter any stock ticker to see what we can do.
-            </p>
+            
             <Button
               size="lg"
-              className="rounded-full px-8 py-6 text-lg"
-              onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
-              data-testid="button-cta-scroll-top"
+              className="rounded-full px-10 py-7 text-xl font-semibold gap-2"
+              data-testid="cta-button"
             >
-              Try It Free
+              <ArrowRight className="h-6 w-6" />
+              Try Restnvest
             </Button>
+            
+            <p className="text-sm text-muted-foreground pt-4">
+              No credit card required. Start understanding your investments today.
+            </p>
           </div>
         </section>
       </main>
 
-      <Footer />
+      {/* Footer */}
+      <footer className="border-t border-border bg-background">
+        <div className="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
+          <div className="text-center space-y-6">
+            <div className="text-sm font-semibold text-foreground">
+              restnvest — Sensible Investing
+            </div>
+            
+            <div className="flex flex-wrap justify-center gap-6 text-sm text-muted-foreground">
+              <a href="#" className="hover:text-foreground transition-colors">About</a>
+              <a href="#" className="hover:text-foreground transition-colors">Terms</a>
+              <a href="#" className="hover:text-foreground transition-colors">Privacy</a>
+              <a href="#" className="hover:text-foreground transition-colors">Contact</a>
+            </div>
+
+            <p className="text-xs text-muted-foreground max-w-2xl mx-auto leading-relaxed">
+              For informational purposes only. Not investment advice.
+            </p>
+          </div>
+        </div>
+      </footer>
     </div>
   );
 }
