@@ -131,7 +131,7 @@ export default function LandingPage() {
               className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold tracking-tight leading-[1.1]"
               data-testid="text-hero-headline"
             >
-              Sensible investing beats optimal — because you'll actually stick with it.
+              Sensible investing beats optimal. Because you'll actually stick with it.
             </h1>
             
             <p 
@@ -188,7 +188,7 @@ export default function LandingPage() {
               >
                 <div className="flex-shrink-0 w-2 h-2 mt-3 rounded-full bg-primary" />
                 <p className="text-lg text-muted-foreground leading-relaxed" data-testid="text-problem-2">
-                  What's "optimal" is often fragile in real life — too abstract, too volatile, too hard to stick with.
+                  What's "optimal" is often fragile in real life. It's too abstract, too volatile, too hard to stick with.
                 </p>
               </div>
               
@@ -223,7 +223,7 @@ export default function LandingPage() {
                 className="text-xl text-muted-foreground max-w-2xl mx-auto"
                 data-testid="text-approach-subheadline"
               >
-                Restnvest turns investing into a process you can actually follow — not a guessing game.
+                Restnvest turns investing into a process you can actually follow. It's no longer a guessing game.
               </p>
             </div>
             
@@ -386,7 +386,7 @@ export default function LandingPage() {
                 className="text-3xl sm:text-4xl lg:text-5xl font-bold tracking-tight"
                 data-testid="text-audience-headline"
               >
-                Built for people who want to build wealth — not chase hype.
+                Built for people who want to build wealth, not chase hype.
               </h2>
             </div>
             
