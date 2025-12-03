@@ -15,6 +15,7 @@ import {
   X
 } from "lucide-react";
 import { useState } from "react";
+import { Link } from "wouter";
 
 import businessOverviewImg from "@assets/generated_images/business_overview_app_mockup.png";
 import valuationAnalysisImg from "@assets/generated_images/valuation_analysis_app_mockup.png";
@@ -71,13 +72,14 @@ export default function LandingPage() {
 
             {/* Right side */}
             <div className="flex items-center gap-3">
-              <Button
-                onClick={() => scrollToSection('cta')}
-                className="hidden sm:flex rounded-full"
-                data-testid="nav-cta"
-              >
-                Try Restnvest
-              </Button>
+              <Link href="/app">
+                <Button
+                  className="hidden sm:flex rounded-full"
+                  data-testid="nav-cta"
+                >
+                  Try Restnvest
+                </Button>
+              </Link>
               <ThemeToggle />
               
               {/* Mobile menu button */}
@@ -106,13 +108,14 @@ export default function LandingPage() {
                     {link.label}
                   </button>
                 ))}
-                <Button
-                  onClick={() => scrollToSection('cta')}
-                  className="mt-2 rounded-full"
-                  data-testid="nav-mobile-cta"
-                >
-                  Try Restnvest
-                </Button>
+                <Link href="/app">
+                  <Button
+                    className="mt-2 rounded-full w-full"
+                    data-testid="nav-mobile-cta"
+                  >
+                    Try Restnvest
+                  </Button>
+                </Link>
               </div>
             </nav>
           )}
@@ -142,15 +145,16 @@ export default function LandingPage() {
             </p>
             
             <div className="pt-8">
-              <Button
-                size="lg"
-                onClick={() => scrollToSection('cta')}
-                className="rounded-full px-8 py-6 text-lg font-semibold gap-2"
-                data-testid="button-hero-cta"
-              >
-                <ArrowRight className="h-5 w-5" />
-                Try Restnvest
-              </Button>
+              <Link href="/app">
+                <Button
+                  size="lg"
+                  className="rounded-full px-8 py-6 text-lg font-semibold gap-2"
+                  data-testid="button-hero-cta"
+                >
+                  <ArrowRight className="h-5 w-5" />
+                  Try Restnvest
+                </Button>
+              </Link>
             </div>
           </div>
         </section>
