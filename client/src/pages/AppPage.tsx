@@ -12,7 +12,7 @@ import { StageNavigation } from "@/components/StageNavigation";
 import { StageContent } from "@/components/StageContent";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, ArrowRight } from "lucide-react";
-import { CompanySummary } from "@shared/schema";
+import { CompanySummary, FinancialMetrics, BalanceSheetMetrics } from "@shared/schema";
 
 type ViewState = "input" | "loading" | "success" | "error";
 
@@ -23,7 +23,36 @@ export default function AppPage() {
   const [currentStage, setCurrentStage] = useState(1);
   const [summaryData, setSummaryData] = useState<CompanySummary | null>(null);
   const [errorInfo, setErrorInfo] = useState({ title: "", message: "" });
+  const [financialMetrics, setFinancialMetrics] = useState<FinancialMetrics | null>(null);
+  const [balanceSheetMetrics, setBalanceSheetMetrics] = useState<BalanceSheetMetrics | null>(null);
 
+  const fetchFinancialMetrics = async (ticker: string) => {
+    const requestedTicker = ticker.toUpperCase();
+    // Clear existing data to show loading state
+    setFinancialMetrics(null);
+    setBalanceSheetMetrics(null);
+
+    try {
+      const response = await fetch(`/api/financials/${requestedTicker}`);
+      const data = await response.json();
+
+      if (!response.ok) {
+        console.warn(`Financial metrics not available for ${requestedTicker}:`, data.message);
+        return;
+      }
+
+      if (currentTicker.toUpperCase() === requestedTicker) {
+        const { balanceSheet, ...incomeMetrics } = data;
+        setFinancialMetrics(incomeMetrics);
+        if (balanceSheet) {
+          setBalanceSheetMetrics(balanceSheet);
+        }
+      }
+    } catch (error) {
+      console.warn(`Failed to fetch financial metrics for ${requestedTicker}:`, error);
+    }
+  };
+  
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const tickerParam = params.get('ticker');
@@ -102,18 +131,26 @@ export default function AppPage() {
     setViewState("input");
     setCurrentTicker("");
     setSummaryData(null);
+    setFinancialMetrics(null);       // ADD THIS LINE
+    setBalanceSheetMetrics(null);    // ADD THIS LINE
     setCurrentStage(1);
-    
+
     window.history.pushState({}, '', window.location.pathname);
   };
 
   const handleStageChange = (stage: number) => {
     setCurrentStage(stage);
-    
+
+    // Update URL with stage
     const params = new URLSearchParams();
     params.set('ticker', currentTicker);
     params.set('stage', stage.toString());
     window.history.pushState({}, '', `?${params.toString()}`);
+
+    // Fetch financial metrics when going to Stage 2
+    if (stage === 2 && currentTicker) {
+      fetchFinancialMetrics(currentTicker);
+    }
   };
 
   const handleNextStage = () => {
@@ -192,7 +229,9 @@ export default function AppPage() {
             />
             <StageContent 
               stage={currentStage} 
-              summaryData={summaryData} 
+              summaryData={summaryData}
+              financialMetrics={financialMetrics}
+              balanceSheetMetrics={balanceSheetMetrics}
             />
             
             <div className="mt-8 flex items-center justify-between gap-4">

@@ -267,5 +267,52 @@ export const users = pgTable("users", {
   updatedAt: timestamp("updated_at").defaultNow(),
 });
 
+// Financial metrics schemas
+export const incomeMetricsSchema = z.object({
+  ticker: z.string(),
+  revenueGrowth: z.enum(["growing", "declining"]),
+  earningsGrowth: z.enum(["growing", "declining"]),
+  currentRevenue: z.string(),
+  previousRevenue: z.string(),
+  revenueChangePercent: z.number(),
+  currentEarnings: z.string(),
+  previousEarnings: z.string(),
+  earningsChangePercent: z.number(),
+  fiscalYear: z.string(),
+  previousFiscalYear: z.string(),
+});
+
+export type IncomeMetrics = z.infer<typeof incomeMetricsSchema>;
+export const financialMetricsSchema = incomeMetricsSchema;
+export type FinancialMetrics = IncomeMetrics;
+
+// Balance sheet metrics
+export const balanceSheetCheckSchema = z.object({
+  status: z.enum(["strong", "caution", "weak"]),
+  title: z.string(),
+  summary: z.string(),
+  details: z.string(),
+  numbers: z.string(),
+});
+
+export const balanceSheetMetricsSchema = z.object({
+  ticker: z.string(),
+  fiscalYear: z.string(),
+  previousFiscalYear: z.string(),
+  checks: z.object({
+    liquidity: balanceSheetCheckSchema,
+    debtBurden: balanceSheetCheckSchema,
+    equityGrowth: balanceSheetCheckSchema,
+  }),
+});
+
+export type BalanceSheetCheck = z.infer<typeof balanceSheetCheckSchema>;
+export type BalanceSheetMetrics = z.infer<typeof balanceSheetMetricsSchema>;
+
+export const combinedFinancialMetricsSchema = incomeMetricsSchema.extend({
+  balanceSheet: balanceSheetMetricsSchema.optional(),
+});
+
+export type CombinedFinancialMetrics = z.infer<typeof combinedFinancialMetricsSchema>;
 export type UpsertUser = typeof users.$inferInsert;
 export type User = typeof users.$inferSelect;
