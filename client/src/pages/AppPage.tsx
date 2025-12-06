@@ -41,12 +41,11 @@ export default function AppPage() {
         return;
       }
 
-      if (currentTicker.toUpperCase() === requestedTicker) {
-        const { balanceSheet, ...incomeMetrics } = data;
-        setFinancialMetrics(incomeMetrics);
-        if (balanceSheet) {
-          setBalanceSheetMetrics(balanceSheet);
-        }
+      // Set the financial metrics from the response
+      const { balanceSheet, ...incomeMetrics } = data;
+      setFinancialMetrics(incomeMetrics);
+      if (balanceSheet) {
+        setBalanceSheetMetrics(balanceSheet);
       }
     } catch (error) {
       console.warn(`Failed to fetch financial metrics for ${requestedTicker}:`, error);
