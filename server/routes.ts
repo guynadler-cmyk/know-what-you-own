@@ -2,7 +2,8 @@ import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { secService } from "./services/sec";
 import { openaiService } from "./services/openai";
-import { companySummarySchema, finePrintAnalysisSchema } from "@shared/schema";
+import { companySummarySchema,incomeMetricsSchema, balanceSheetMetricsSchema,combinedFinancialMetricsSchema,finePrintAnalysisSchema } from "@shared/schema";
+import { alphaVantageService } from "./services/alphavantage";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Analysis endpoint - Public access, returns full data for everyone
@@ -189,7 +190,75 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
     }
   });
+  
+  // --------------------------------------------------------------------------
+  // FINANCIAL METRICS (INCOME + BALANCE SHEET)
+  // --------------------------------------------------------------------------
+  app.get("/api/financials/:ticker", async (req: any, res) => {
+    try {
+      const { ticker } = req.params;
 
+      if (!ticker || !/^[A-Z]{1,5}$/i.test(ticker)) {
+        return res.status(400).json({
+          error: "Invalid ticker format",
+          message: "Please provide 1-5 letter ticker symbol."
+        });
+      }
+
+      const [metrics, balanceSheet] = await Promise.all([
+        alphaVantageService.getFinancialMetrics(ticker.toUpperCase()),
+        alphaVantageService.getBalanceSheetMetrics(ticker.toUpperCase())
+      ]);
+
+      const validatedMetrics = incomeMetricsSchema.parse(metrics);
+      const validatedBalanceSheet = balanceSheetMetricsSchema.parse(balanceSheet);
+
+      const combinedResponse = {
+        ...validatedMetrics,
+        balanceSheet: validatedBalanceSheet
+      };
+
+      const validatedResponse = combinedFinancialMetricsSchema.parse(combinedResponse);
+
+      res.json(validatedResponse);
+    } catch (error: any) {
+      console.error("Financial metrics error:", error);
+
+      if (error.message?.includes("not found")) {
+        return res.status(404).json({
+          error: "Company Not Found",
+          message: `Could not find financial data for "${req.params.ticker.toUpperCase()}".`
+        });
+      }
+
+      if (error.message?.includes("Insufficient")) {
+        return res.status(404).json({
+          error: "Insufficient Data",
+          message: error.message
+        });
+      }
+
+      if (error.message?.includes("rate limit")) {
+        return res.status(429).json({
+          error: "Rate Limited",
+          message: error.message
+        });
+      }
+
+      if (error.message?.includes("timed out")) {
+        return res.status(503).json({
+          error: "Service Timeout",
+          message: "Financial data service timed out."
+        });
+      }
+
+      return res.status(500).json({
+        error: "Data Retrieval Failed",
+        message: "Unable to retrieve financial metrics."
+      });
+    }
+  });
+  
   const httpServer = createServer(app);
   return httpServer;
 }
