@@ -373,15 +373,25 @@ export function StageContent({ stage, summaryData, financialMetrics, balanceShee
   }
 
   if (stage === 2) {
+    const getLogoUrl = (homepage: string) => {
+      try {
+        const url = new URL(homepage);
+        return `https://logo.clearbit.com/${url.hostname}`;
+      } catch {
+        return null;
+      }
+    };
+    const logoUrl = summaryData?.metadata?.homepage ? getLogoUrl(summaryData.metadata.homepage) : null;
+
     return (
       <Card data-testid="stage-2-content">
         <CardHeader className="text-center pb-8">
           {summaryData && (
-            <>
-              <div className="flex items-center justify-center gap-4 mb-6">
-                <div className="relative">
+            <div className="flex items-center justify-center gap-4 mb-6">
+              <div className="relative">
+                {logoUrl ? (
                   <img 
-                    src={`https://logo.clearbit.com/${summaryData.ticker.toLowerCase()}.com`}
+                    src={logoUrl}
                     alt={`${summaryData.companyName} logo`}
                     className="w-16 h-16 rounded-lg object-contain bg-white p-2 shadow-sm"
                     onError={(e) => {
@@ -390,17 +400,16 @@ export function StageContent({ stage, summaryData, financialMetrics, balanceShee
                       if (fallback) fallback.style.display = 'flex';
                     }}
                   />
-                  <div className="hidden w-16 h-16 rounded-lg bg-primary/10 items-center justify-center shadow-sm">
-                    <span className="text-2xl font-bold text-primary">{summaryData.ticker.charAt(0)}</span>
-                  </div>
-                </div>
-                <div className="text-left">
-                  <h2 className="text-2xl font-bold">{summaryData.companyName}</h2>
-                  <p className="text-sm text-muted-foreground">{summaryData.ticker}</p>
+                ) : null}
+                <div className={`${logoUrl ? 'hidden' : 'flex'} w-16 h-16 rounded-lg bg-primary/10 items-center justify-center shadow-sm`}>
+                  <span className="text-2xl font-bold text-primary">{summaryData.ticker.charAt(0)}</span>
                 </div>
               </div>
-              <div className="w-16 h-1 bg-primary/20 mx-auto mb-4"></div>
-            </>
+              <div className="text-left">
+                <h2 className="text-2xl font-bold">{summaryData.companyName}</h2>
+                <p className="text-sm text-muted-foreground">{summaryData.ticker}</p>
+              </div>
+            </div>
           )}
           <CardTitle className="text-2xl">Understand Performance</CardTitle>
         </CardHeader>
@@ -426,15 +435,25 @@ export function StageContent({ stage, summaryData, financialMetrics, balanceShee
     return null;
   }
 
+  const getLogoUrlForStage = (homepage: string) => {
+    try {
+      const url = new URL(homepage);
+      return `https://logo.clearbit.com/${url.hostname}`;
+    } catch {
+      return null;
+    }
+  };
+  const stageLogoUrl = summaryData?.metadata?.homepage ? getLogoUrlForStage(summaryData.metadata.homepage) : null;
+
   return (
     <Card data-testid={`stage-${stage}-content`}>
       <CardHeader className="text-center pb-8">
         {summaryData && (
-          <>
-            <div className="flex items-center justify-center gap-4 mb-6">
-              <div className="relative">
+          <div className="flex items-center justify-center gap-4 mb-6">
+            <div className="relative">
+              {stageLogoUrl ? (
                 <img 
-                  src={`https://logo.clearbit.com/${summaryData.ticker.toLowerCase()}.com`}
+                  src={stageLogoUrl}
                   alt={`${summaryData.companyName} logo`}
                   className="w-16 h-16 rounded-lg object-contain bg-white p-2 shadow-sm"
                   onError={(e) => {
@@ -443,17 +462,16 @@ export function StageContent({ stage, summaryData, financialMetrics, balanceShee
                     if (fallback) fallback.style.display = 'flex';
                   }}
                 />
-                <div className="hidden w-16 h-16 rounded-lg bg-primary/10 items-center justify-center shadow-sm">
-                  <span className="text-2xl font-bold text-primary">{summaryData.ticker.charAt(0)}</span>
-                </div>
-              </div>
-              <div className="text-left">
-                <h2 className="text-2xl font-bold">{summaryData.companyName}</h2>
-                <p className="text-sm text-muted-foreground">{summaryData.ticker}</p>
+              ) : null}
+              <div className={`${stageLogoUrl ? 'hidden' : 'flex'} w-16 h-16 rounded-lg bg-primary/10 items-center justify-center shadow-sm`}>
+                <span className="text-2xl font-bold text-primary">{summaryData.ticker.charAt(0)}</span>
               </div>
             </div>
-            <div className="w-16 h-1 bg-primary/20 mx-auto mb-4"></div>
-          </>
+            <div className="text-left">
+              <h2 className="text-2xl font-bold">{summaryData.companyName}</h2>
+              <p className="text-sm text-muted-foreground">{summaryData.ticker}</p>
+            </div>
+          </div>
         )}
         <div className="flex justify-center mb-4">
           <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center">
