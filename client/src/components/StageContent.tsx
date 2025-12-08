@@ -376,7 +376,7 @@ export function StageContent({ stage, summaryData, financialMetrics, balanceShee
     const getLogoUrl = (homepage: string) => {
       try {
         const url = new URL(homepage);
-        return `https://logo.clearbit.com/${url.hostname}`;
+        return `/api/logo/${url.hostname}`;
       } catch {
         return null;
       }
@@ -438,7 +438,7 @@ export function StageContent({ stage, summaryData, financialMetrics, balanceShee
   const getLogoUrlForStage = (homepage: string) => {
     try {
       const url = new URL(homepage);
-      return `https://logo.clearbit.com/${url.hostname}`;
+      return `/api/logo/${url.hostname}`;
     } catch {
       return null;
     }

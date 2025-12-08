@@ -211,11 +211,11 @@ export function SummaryCard({
     retry: false,
   });
 
-  // Extract domain from homepage for logo
+  // Extract domain from homepage for logo (via backend proxy)
   const getLogoUrl = (homepage: string) => {
     try {
       const url = new URL(homepage);
-      return `https://logo.clearbit.com/${url.hostname}`;
+      return `/api/logo/${url.hostname}`;
     } catch {
       return null;
     }

@@ -258,6 +258,61 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
     }
   });
+
+  // --------------------------------------------------------------------------
+  // LOGO PROXY (Clearbit)
+  // --------------------------------------------------------------------------
+  const logoCache = new Map<string, { data: Buffer; contentType: string; timestamp: number }>();
+  const LOGO_CACHE_TTL = 24 * 60 * 60 * 1000; // 24 hours
+
+  app.get("/api/logo/:domain", async (req: any, res) => {
+    try {
+      const { domain } = req.params;
+
+      if (!domain || !/^[a-z0-9.-]+\.[a-z]{2,}$/i.test(domain)) {
+        return res.status(400).json({ error: "Invalid domain format" });
+      }
+
+      const cacheKey = domain.toLowerCase();
+      const cached = logoCache.get(cacheKey);
+      
+      // Return cached logo if fresh
+      if (cached && Date.now() - cached.timestamp < LOGO_CACHE_TTL) {
+        res.set("Content-Type", cached.contentType);
+        res.set("Cache-Control", "public, max-age=86400");
+        return res.send(cached.data);
+      }
+
+      // Fetch from Clearbit
+      const response = await fetch(`https://logo.clearbit.com/${domain}`, {
+        headers: {
+          "User-Agent": "KnowWhatYouOwn/1.0"
+        }
+      });
+
+      if (!response.ok) {
+        return res.status(404).json({ error: "Logo not found" });
+      }
+
+      const contentType = response.headers.get("content-type") || "image/png";
+      const arrayBuffer = await response.arrayBuffer();
+      const buffer = Buffer.from(arrayBuffer);
+
+      // Cache the result
+      logoCache.set(cacheKey, {
+        data: buffer,
+        contentType,
+        timestamp: Date.now()
+      });
+
+      res.set("Content-Type", contentType);
+      res.set("Cache-Control", "public, max-age=86400");
+      res.send(buffer);
+    } catch (error: any) {
+      console.error("Logo fetch error:", error.message);
+      return res.status(500).json({ error: "Failed to fetch logo" });
+    }
+  });
   
   const httpServer = createServer(app);
   return httpServer;
