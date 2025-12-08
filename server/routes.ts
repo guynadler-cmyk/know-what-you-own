@@ -267,11 +267,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.get("/api/logo/:domain", async (req: any, res) => {
     try {
-      const { domain } = req.params;
+      let { domain } = req.params;
 
       if (!domain || !/^[a-z0-9.-]+\.[a-z]{2,}$/i.test(domain)) {
         return res.status(400).json({ error: "Invalid domain format" });
       }
+
+      // Strip www. prefix - Clearbit works better with root domains
+      domain = domain.replace(/^www\./i, '');
 
       const cacheKey = domain.toLowerCase();
       const cached = logoCache.get(cacheKey);
@@ -283,11 +286,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.send(cached.data);
       }
 
-      // Fetch from Clearbit
-      const response = await fetch(`https://logo.clearbit.com/${domain}`, {
+      // Fetch from Google's favicon service (more reliable than Clearbit)
+      const response = await fetch(`https://www.google.com/s2/favicons?domain=${domain}&sz=128`, {
         headers: {
           "User-Agent": "KnowWhatYouOwn/1.0"
-        }
+        },
+        redirect: 'follow'
       });
 
       if (!response.ok) {
