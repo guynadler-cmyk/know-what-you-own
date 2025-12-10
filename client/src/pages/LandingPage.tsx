@@ -506,14 +506,16 @@ export default function LandingPage() {
               Start investing sensibly
             </h2>
             
-            <Button
-              size="lg"
-              className="rounded-full px-10 py-7 text-xl font-semibold gap-2"
-              data-testid="button-cta-main"
-            >
-              <ArrowRight className="h-6 w-6" />
-              Try Restnvest
-            </Button>
+            <Link href="/app">
+              <Button
+                size="lg"
+                className="rounded-full px-10 py-7 text-xl font-semibold gap-2"
+                data-testid="button-cta-main"
+              >
+                <ArrowRight className="h-6 w-6" />
+                Try Restnvest
+              </Button>
+            </Link>
             
             <p 
               className="text-sm text-muted-foreground pt-4"
