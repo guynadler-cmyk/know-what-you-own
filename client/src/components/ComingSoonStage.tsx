@@ -69,12 +69,14 @@ export function ComingSoonStage({ stageTitle, icon, hook, summary, cta }: Coming
       </CardHeader>
       
       <CardContent className="text-center pb-16">
-        <p className="text-muted-foreground max-w-2xl mx-auto mb-12 text-lg leading-relaxed">
-          {summary}
+        {/* Construction callout */}
+        <p className="text-sm text-center text-muted-foreground mt-2 mb-2 flex items-center justify-center gap-2">
+          <Construction className="w-4 h-4" />
+          This stage is still under construction — but you can get early access:
         </p>
         
-        {/* Waitlist Card */}
-        <div className="bg-card shadow-md rounded-xl p-6 mt-8 max-w-lg mx-auto border border-border/50">
+        {/* Waitlist Card - Positioned early for visibility */}
+        <div className="bg-card shadow-md rounded-xl p-6 max-w-lg mx-auto border border-border/50 mb-10">
           <h3 className="text-lg font-semibold text-center mb-1">
             Be first in line when this stage launches
           </h3>
@@ -145,6 +147,11 @@ export function ComingSoonStage({ stageTitle, icon, hook, summary, cta }: Coming
             </>
           )}
         </div>
+        
+        {/* Stage Description - Now below waitlist */}
+        <p className="text-muted-foreground max-w-2xl mx-auto text-lg leading-relaxed">
+          {summary}
+        </p>
       </CardContent>
     </Card>
   );
