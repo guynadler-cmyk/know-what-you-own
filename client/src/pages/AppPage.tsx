@@ -13,6 +13,7 @@ import { StageContent } from "@/components/StageContent";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, ArrowRight } from "lucide-react";
 import { CompanySummary, FinancialMetrics, BalanceSheetMetrics } from "@shared/schema";
+import { analytics } from "@/lib/analytics";
 
 type ViewState = "input" | "loading" | "success" | "error";
 
@@ -74,6 +75,9 @@ export default function AppPage() {
   const handleTickerSubmit = async (ticker: string, targetStage?: number) => {
     setCurrentTicker(ticker);
     setViewState("loading");
+    
+    analytics.trackTickerSearch(ticker);
+    analytics.trackAnalysisStarted(ticker);
 
     try {
       const response = await fetch(`/api/analyze/${ticker}`);
@@ -90,6 +94,8 @@ export default function AppPage() {
 
       setSummaryData(data);
       setViewState("success");
+      
+      analytics.trackAnalysisCompleted(ticker);
       
       const stageToUse = targetStage !== undefined ? targetStage : currentStage;
       const params = new URLSearchParams();
@@ -123,6 +129,8 @@ export default function AppPage() {
         message: errorMessage
       });
       setViewState("error");
+      
+      analytics.trackAnalysisError(ticker, errorMessage);
     }
   };
 
@@ -137,8 +145,12 @@ export default function AppPage() {
     window.history.pushState({}, '', window.location.pathname);
   };
 
+  const STAGE_NAMES = ['Business', 'Performance', 'Valuation', 'Strategy', 'Timing', 'Protection'];
+  
   const handleStageChange = (stage: number) => {
     setCurrentStage(stage);
+    
+    analytics.trackStageViewed(stage, STAGE_NAMES[stage - 1] || 'Unknown', currentTicker);
 
     // Update URL with stage
     const params = new URLSearchParams();
