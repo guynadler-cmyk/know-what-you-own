@@ -73,8 +73,17 @@ export function ComingSoonStage({ stageTitle, icon, hook, summary, cta }: Coming
           {summary}
         </p>
         
-        <div className="max-w-md mx-auto">
-          <p className="text-sm font-medium text-foreground mb-4">{cta}</p>
+        {/* Waitlist Card */}
+        <div className="bg-card shadow-md rounded-xl p-6 mt-8 max-w-lg mx-auto border border-border/50">
+          <h3 className="text-lg font-semibold text-center mb-1">
+            Be first in line when this stage launches
+          </h3>
+          <p className="text-muted-foreground text-sm text-center mb-2">
+            {cta}
+          </p>
+          <p className="text-muted-foreground/80 text-xs text-center mb-4">
+            Join the waitlist and we'll notify you the moment it goes live.
+          </p>
           
           {waitlistMutation.isSuccess ? (
             <div 
@@ -82,25 +91,26 @@ export function ComingSoonStage({ stageTitle, icon, hook, summary, cta }: Coming
               data-testid="waitlist-success"
             >
               <CheckCircle className="w-5 h-5" />
-              <span className="font-medium">You're on the list! We'll notify you when this launches.</span>
+              <span className="font-medium">You're on the list! We'll email you when this stage goes live.</span>
             </div>
           ) : (
-            <form onSubmit={handleSubmit} className="space-y-3">
-              <div className="flex gap-2">
+            <>
+              <form onSubmit={handleSubmit} className="flex flex-col sm:flex-row gap-3 justify-center items-center">
                 <Input
                   type="email"
-                  placeholder="Enter your email"
+                  placeholder="you@example.com"
                   value={email}
                   onChange={(e) => {
                     setEmail(e.target.value);
                     setEmailError("");
                   }}
-                  className="flex-1"
+                  className="w-full sm:w-64 px-4 py-2"
                   disabled={waitlistMutation.isPending}
                   data-testid="input-waitlist-email"
                 />
                 <Button 
                   type="submit" 
+                  size="lg"
                   disabled={waitlistMutation.isPending}
                   data-testid="button-join-waitlist"
                 >
@@ -110,25 +120,29 @@ export function ComingSoonStage({ stageTitle, icon, hook, summary, cta }: Coming
                       Joining...
                     </>
                   ) : (
-                    "Join"
+                    "Join the Waitlist"
                   )}
                 </Button>
-              </div>
+              </form>
               
               {emailError && (
-                <div className="flex items-center justify-center gap-1 text-sm text-red-500" data-testid="email-error">
+                <div className="flex items-center justify-center gap-1 text-sm text-red-500 mt-3" data-testid="email-error">
                   <AlertCircle className="w-4 h-4" />
                   <span>{emailError}</span>
                 </div>
               )}
               
               {waitlistMutation.isError && (
-                <div className="flex items-center justify-center gap-1 text-sm text-red-500" data-testid="submit-error">
+                <div className="flex items-center justify-center gap-1 text-sm text-red-500 mt-3" data-testid="submit-error">
                   <AlertCircle className="w-4 h-4" />
                   <span>Something went wrong. Please try again.</span>
                 </div>
               )}
-            </form>
+              
+              <p className="text-xs text-muted-foreground/70 text-center mt-3">
+                No spam — just a one-time alert when it's ready.
+              </p>
+            </>
           )}
         </div>
       </CardContent>
