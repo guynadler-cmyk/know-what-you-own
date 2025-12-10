@@ -103,7 +103,6 @@ export function TickerInput({ onSubmit, isLoading = false }: TickerInputProps) {
     setQuery(result.ticker);
     setShowDropdown(false);
     setError("");
-    onSubmit(result.ticker);
   };
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
