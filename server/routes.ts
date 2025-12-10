@@ -19,6 +19,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       const results = await secService.searchCompanies(q, 10);
+      console.log(`Search for "${q}": ${results.length} results found`);
       res.json(results);
     } catch (error: any) {
       console.error("Search error:", error);
