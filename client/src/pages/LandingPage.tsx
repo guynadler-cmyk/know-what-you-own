@@ -506,7 +506,7 @@ export default function LandingPage() {
               Start investing sensibly
             </h2>
             
-            <Link href="/app">
+            <Link href="/app" className="pt-4 inline-block">
               <Button
                 size="lg"
                 className="rounded-full px-10 py-7 text-xl font-semibold gap-2"
