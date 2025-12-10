@@ -49,51 +49,38 @@ export function ComingSoonStage({ stageTitle, icon, hook, summary, cta }: Coming
 
   return (
     <Card data-testid={`coming-soon-${stageTitle.toLowerCase().replace(/\s+/g, '-')}`}>
-      <div className="bg-muted/60 border-b border-border/50 px-6 py-3">
-        <div className="flex items-center justify-center gap-2 text-sm text-muted-foreground">
-          <Construction className="w-4 h-4" />
-          <span>Coming Soon - This stage is still under construction. Get early access by joining the waitlist.</span>
-        </div>
-      </div>
-      
-      <CardHeader className="text-center pt-12 pb-6">
-        <div className="flex justify-center mb-6">
-          <div className="w-20 h-20 rounded-full bg-primary/10 flex items-center justify-center">
-            <span className="text-4xl">{icon}</span>
+      <CardHeader className="text-center pt-8 pb-4">
+        <div className="flex justify-center mb-4">
+          <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center">
+            <span className="text-3xl">{icon}</span>
           </div>
         </div>
-        <CardTitle className="text-3xl mb-4">{stageTitle}</CardTitle>
-        <p className="text-xl font-semibold text-foreground max-w-xl mx-auto">
-          {hook}
+        <CardTitle className="text-2xl mb-2">{stageTitle}</CardTitle>
+        
+        {/* Micro-banner */}
+        <p className="text-sm text-muted-foreground flex items-center justify-center gap-1.5">
+          <Construction className="w-4 h-4" />
+          This stage is under construction.
         </p>
       </CardHeader>
       
-      <CardContent className="text-center pb-16">
-        {/* Construction callout */}
-        <p className="text-sm text-center text-muted-foreground mt-2 mb-2 flex items-center justify-center gap-2">
-          <Construction className="w-4 h-4" />
-          This stage is still under construction — but you can get early access:
-        </p>
-        
-        {/* Waitlist Card - Positioned early for visibility */}
-        <div className="bg-card shadow-md rounded-xl p-6 max-w-lg mx-auto border border-border/50 mb-10">
+      <CardContent className="text-center pb-10">
+        {/* Simplified Waitlist Box */}
+        <div className="bg-card shadow-md rounded-xl p-6 max-w-lg mx-auto border border-border/50 mb-8">
           <h3 className="text-lg font-semibold text-center mb-1">
-            Be first in line when this stage launches
+            Be first in line
           </h3>
-          <p className="text-muted-foreground text-sm text-center mb-2">
-            {cta}
-          </p>
-          <p className="text-muted-foreground/80 text-xs text-center mb-4">
-            Join the waitlist and we'll notify you the moment it goes live.
+          <p className="text-sm text-muted-foreground text-center mb-4">
+            Get early access when this stage goes live.
           </p>
           
           {waitlistMutation.isSuccess ? (
             <div 
-              className="flex items-center justify-center gap-2 text-green-600 dark:text-green-400 py-4"
+              className="flex items-center justify-center gap-2 text-green-600 dark:text-green-400 py-2"
               data-testid="waitlist-success"
             >
               <CheckCircle className="w-5 h-5" />
-              <span className="font-medium">You're on the list! We'll email you when this stage goes live.</span>
+              <span className="font-medium">You're on the list!</span>
             </div>
           ) : (
             <>
@@ -106,13 +93,12 @@ export function ComingSoonStage({ stageTitle, icon, hook, summary, cta }: Coming
                     setEmail(e.target.value);
                     setEmailError("");
                   }}
-                  className="w-full sm:w-64 px-4 py-2"
+                  className="w-full sm:w-64"
                   disabled={waitlistMutation.isPending}
                   data-testid="input-waitlist-email"
                 />
                 <Button 
-                  type="submit" 
-                  size="lg"
+                  type="submit"
                   disabled={waitlistMutation.isPending}
                   data-testid="button-join-waitlist"
                 >
@@ -141,15 +127,15 @@ export function ComingSoonStage({ stageTitle, icon, hook, summary, cta }: Coming
                 </div>
               )}
               
-              <p className="text-xs text-muted-foreground/70 text-center mt-3">
-                No spam — just a one-time alert when it's ready.
+              <p className="text-xs text-muted-foreground text-center mt-2">
+                We'll email you once. No spam.
               </p>
             </>
           )}
         </div>
         
-        {/* Stage Description - Now below waitlist */}
-        <p className="text-muted-foreground max-w-2xl mx-auto text-lg leading-relaxed">
+        {/* Stage Description */}
+        <p className="text-muted-foreground max-w-xl mx-auto leading-relaxed">
           {summary}
         </p>
       </CardContent>
