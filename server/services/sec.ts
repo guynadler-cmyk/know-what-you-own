@@ -287,10 +287,19 @@ export class SECService {
       return [];
     }
 
+    // Check if user is searching for a preferred stock (contains hyphen)
+    const searchingPreferred = query.includes('-');
+
     const results: Array<{ ticker: string; name: string; score: number }> = [];
 
     const entries = Array.from(this.tickerCache.entries());
     for (const [ticker, company] of entries) {
+      // Skip preferred stock variants (tickers with hyphens) unless user is searching for them
+      const isPreferredStock = ticker.includes('-');
+      if (isPreferredStock && !searchingPreferred) {
+        continue;
+      }
+
       const normalizedName = this.normalizeForSearch(company.title);
       const normalizedTicker = ticker.toLowerCase();
 
@@ -312,18 +321,12 @@ export class SECService {
       else if (normalizedName.startsWith(normalizedQuery)) {
         score = 300 + (100 - normalizedName.length);
       }
-      // Query is a word boundary match in company name
-      else if (normalizedName.includes(` ${normalizedQuery}`) || normalizedName.includes(`${normalizedQuery} `)) {
+      // Query matches a word in the company name (word boundary match)
+      else if (normalizedName.split(' ').some(word => word.startsWith(normalizedQuery))) {
         score = 200;
       }
-      // Name contains query anywhere
-      else if (normalizedName.includes(normalizedQuery)) {
-        score = 100;
-      }
-      // Ticker contains query
-      else if (normalizedTicker.includes(normalizedQuery)) {
-        score = 50;
-      }
+      // Skip pure substring matches (like "Ashford" matching "ford")
+      // These create too much noise and are rarely what users want
 
       if (score > 0) {
         results.push({ ticker, name: company.title, score });
