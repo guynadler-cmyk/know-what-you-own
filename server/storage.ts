@@ -1,8 +1,11 @@
 // Referenced from Replit Auth blueprint
 import {
   users,
+  waitlistSignups,
   type User,
   type UpsertUser,
+  type InsertWaitlistSignup,
+  type WaitlistSignup,
 } from "@shared/schema";
 import { db } from "./db";
 import { eq } from "drizzle-orm";
@@ -12,6 +15,10 @@ export interface IStorage {
   // User operations (required for Replit Auth)
   getUser(id: string): Promise<User | undefined>;
   upsertUser(user: UpsertUser): Promise<User>;
+  
+  // Waitlist operations
+  createWaitlistSignup(data: InsertWaitlistSignup): Promise<WaitlistSignup>;
+  getWaitlistSignups(): Promise<WaitlistSignup[]>;
 }
 
 // Database storage implementation
@@ -35,6 +42,19 @@ export class DatabaseStorage implements IStorage {
       })
       .returning();
     return user;
+  }
+
+  // Waitlist operations
+  async createWaitlistSignup(data: InsertWaitlistSignup): Promise<WaitlistSignup> {
+    const [signup] = await db
+      .insert(waitlistSignups)
+      .values(data)
+      .returning();
+    return signup;
+  }
+
+  async getWaitlistSignups(): Promise<WaitlistSignup[]> {
+    return await db.select().from(waitlistSignups);
   }
 }
 
