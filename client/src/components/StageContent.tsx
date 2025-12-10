@@ -1,4 +1,5 @@
 import { SummaryCard } from "@/components/SummaryCard";
+import { ComingSoonStage } from "@/components/ComingSoonStage";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { Rocket, Smartphone, Laptop, Tablet, Watch, Car, Zap, Battery, Server, Cloud, Gamepad2, Package, Code, Globe, Music, Video, Tv, Search, Cpu, Brain, TrendingUp, TrendingDown, Target, CheckCircle, AlertTriangle, Eye, XCircle, Shield, Circle } from "lucide-react";
@@ -23,21 +24,36 @@ const STAGE_INFO = {
     title: "Understand Performance",
     description: "Analyze financial metrics, revenue trends, and operational efficiency to gauge business health."
   },
+};
+
+const COMING_SOON_STAGES = {
   3: {
-    title: "Evaluate the Stock",
-    description: "Assess current valuation and stock price relative to business quality and growth potential."
+    stageTitle: "Evaluate the Deal",
+    icon: "📊",
+    hook: "Don't just buy stocks. Understand the deal.",
+    summary: "Buying a stock is buying a business. This step helps you figure out: is the price fair? What are you really getting? No jargon. Just practical valuation logic you can actually use.",
+    cta: "Want first access when this launches? Join the waitlist below."
   },
   4: {
-    title: "Plan Your Investment",
-    description: "Determine appropriate position sizing and develop your personalized investment strategy."
+    stageTitle: "Plan Your Investment",
+    icon: "🗺️",
+    hook: "No more winging it. Invest with a plan.",
+    summary: "What's your goal? How much should you invest — and when? This step helps you create a calm, intentional strategy that makes emotional blowups less likely.",
+    cta: "Coming soon: your personal investing playbook. Join the waitlist to be the first in."
   },
   5: {
-    title: "Time It Sensibly",
-    description: "Identify favorable entry points based on market conditions and technical signals."
+    stageTitle: "Make Your Move",
+    icon: "🎯",
+    hook: "Don't time the market. Time your move.",
+    summary: "Execution isn't about prediction — it's about structure. This step guides you through entering with clarity: when, how, and how much. No FOMO, no YOLO, just calm execution.",
+    cta: "Be the first to try smarter execution tools. Join the waitlist below."
   },
   6: {
-    title: "Protect What's Yours",
-    description: "Establish stop losses, exit rules, and risk management protocols to safeguard your capital."
+    stageTitle: "Protect What You Own",
+    icon: "🛡️",
+    hook: "Don't just buy smart. Hold smart.",
+    summary: "Every investor eventually hits doubt. This step gives you the tools to stay steady when it matters — with check-ins, exit rules, and guardrails that protect your peace and your portfolio.",
+    cta: "Build resilience into your portfolio. Join the waitlist for early access."
   }
 };
 
@@ -429,71 +445,21 @@ export function StageContent({ stage, summaryData, financialMetrics, balanceShee
     );
   }
 
-  const stageInfo = STAGE_INFO[stage as keyof typeof STAGE_INFO];
-
-  if (!stageInfo) {
-    return null;
+  // Check if this is a coming soon stage (3-6)
+  const comingSoonStage = COMING_SOON_STAGES[stage as keyof typeof COMING_SOON_STAGES];
+  
+  if (comingSoonStage) {
+    return (
+      <ComingSoonStage
+        stageTitle={comingSoonStage.stageTitle}
+        icon={comingSoonStage.icon}
+        hook={comingSoonStage.hook}
+        summary={comingSoonStage.summary}
+        cta={comingSoonStage.cta}
+      />
+    );
   }
 
-  const getLogoUrlForStage = (homepage: string) => {
-    try {
-      const url = new URL(homepage);
-      return `/api/logo/${url.hostname}`;
-    } catch {
-      return null;
-    }
-  };
-  const stageLogoUrl = summaryData?.metadata?.homepage ? getLogoUrlForStage(summaryData.metadata.homepage) : null;
-
-  return (
-    <Card data-testid={`stage-${stage}-content`}>
-      <CardHeader className="text-center pb-8">
-        {summaryData && (
-          <div className="flex items-center justify-center gap-4 mb-6">
-            <div className="relative">
-              {stageLogoUrl ? (
-                <img 
-                  src={stageLogoUrl}
-                  alt={`${summaryData.companyName} logo`}
-                  className="w-16 h-16 rounded-lg object-contain bg-white p-2 shadow-sm"
-                  onError={(e) => {
-                    e.currentTarget.style.display = 'none';
-                    const fallback = e.currentTarget.nextElementSibling as HTMLElement;
-                    if (fallback) fallback.style.display = 'flex';
-                  }}
-                />
-              ) : null}
-              <div className={`${stageLogoUrl ? 'hidden' : 'flex'} w-16 h-16 rounded-lg bg-primary/10 items-center justify-center shadow-sm`}>
-                <span className="text-2xl font-bold text-primary">{summaryData.ticker.charAt(0)}</span>
-              </div>
-            </div>
-            <div className="text-left">
-              <h2 className="text-2xl font-bold">{summaryData.companyName}</h2>
-              <p className="text-sm text-muted-foreground">{summaryData.ticker}</p>
-            </div>
-          </div>
-        )}
-        <div className="flex justify-center mb-4">
-          <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center">
-            <Rocket className="w-8 h-8 text-primary" />
-          </div>
-        </div>
-        <CardTitle className="text-2xl">{stageInfo.title}</CardTitle>
-      </CardHeader>
-      <CardContent className="text-center pb-12">
-        <p className="text-muted-foreground max-w-2xl mx-auto mb-8">
-          {stageInfo.description}
-        </p>
-        <div className="bg-muted/50 rounded-lg p-8 max-w-lg mx-auto">
-          <p className="text-sm font-medium text-foreground mb-2">
-            Coming Soon
-          </p>
-          <p className="text-xs text-muted-foreground">
-            We're building this stage to help you make better investment decisions. 
-            Check back soon for comprehensive tools and guidance.
-          </p>
-        </div>
-      </CardContent>
-    </Card>
-  );
+  // Fallback for any other stage (shouldn't happen, but just in case)
+  return null;
 }
