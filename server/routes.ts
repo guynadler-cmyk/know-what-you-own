@@ -6,6 +6,29 @@ import { companySummarySchema,incomeMetricsSchema, balanceSheetMetricsSchema,com
 import { alphaVantageService } from "./services/alphavantage";
 
 export async function registerRoutes(app: Express): Promise<Server> {
+  // Company search endpoint - search by company name or ticker
+  app.get("/api/search", async (req: any, res) => {
+    try {
+      const { q } = req.query;
+      
+      if (!q || typeof q !== "string") {
+        return res.status(400).json({ 
+          error: "Missing search query",
+          message: "Please provide a search query using the 'q' parameter."
+        });
+      }
+
+      const results = await secService.searchCompanies(q, 10);
+      res.json(results);
+    } catch (error: any) {
+      console.error("Search error:", error);
+      res.status(500).json({ 
+        error: "Search failed",
+        message: "Unable to search companies. Please try again."
+      });
+    }
+  });
+
   // Analysis endpoint - Public access, returns full data for everyone
   app.get("/api/analyze/:ticker", async (req: any, res) => {
     try {
