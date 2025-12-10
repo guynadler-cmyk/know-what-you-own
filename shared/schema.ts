@@ -316,3 +316,20 @@ export const combinedFinancialMetricsSchema = incomeMetricsSchema.extend({
 export type CombinedFinancialMetrics = z.infer<typeof combinedFinancialMetricsSchema>;
 export type UpsertUser = typeof users.$inferInsert;
 export type User = typeof users.$inferSelect;
+
+// Waitlist signups table for marketing
+export const waitlistSignups = pgTable("waitlist_signups", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  email: varchar("email", { length: 255 }).notNull(),
+  stageName: varchar("stage_name", { length: 100 }).notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+// Waitlist insert schema
+export const insertWaitlistSignupSchema = z.object({
+  email: z.string().email("Please enter a valid email address"),
+  stageName: z.string().min(1, "Stage name is required"),
+});
+
+export type InsertWaitlistSignup = z.infer<typeof insertWaitlistSignupSchema>;
+export type WaitlistSignup = typeof waitlistSignups.$inferSelect;

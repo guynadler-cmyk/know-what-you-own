@@ -2,8 +2,9 @@ import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { secService } from "./services/sec";
 import { openaiService } from "./services/openai";
-import { companySummarySchema,incomeMetricsSchema, balanceSheetMetricsSchema,combinedFinancialMetricsSchema,finePrintAnalysisSchema } from "@shared/schema";
+import { companySummarySchema, incomeMetricsSchema, balanceSheetMetricsSchema, combinedFinancialMetricsSchema, finePrintAnalysisSchema, insertWaitlistSignupSchema } from "@shared/schema";
 import { alphaVantageService } from "./services/alphavantage";
+import { storage } from "./storage";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Company search endpoint - search by company name or ticker
@@ -339,6 +340,53 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error: any) {
       console.error("Logo fetch error:", error.message);
       return res.status(500).json({ error: "Failed to fetch logo" });
+    }
+  });
+
+  // --------------------------------------------------------------------------
+  // WAITLIST SIGNUP
+  // --------------------------------------------------------------------------
+  app.post("/api/waitlist", async (req: any, res) => {
+    try {
+      const validatedData = insertWaitlistSignupSchema.parse(req.body);
+      
+      const signup = await storage.createWaitlistSignup(validatedData);
+      
+      console.log(`Waitlist signup: ${validatedData.email} for "${validatedData.stageName}"`);
+      
+      res.status(201).json({ 
+        success: true, 
+        message: "You're on the list! We'll notify you when this feature launches.",
+        id: signup.id 
+      });
+    } catch (error: any) {
+      console.error("Waitlist signup error:", error);
+      
+      if (error.name === "ZodError") {
+        return res.status(400).json({
+          error: "Invalid input",
+          message: error.errors[0]?.message || "Please check your email address."
+        });
+      }
+      
+      res.status(500).json({
+        error: "Signup failed",
+        message: "Something went wrong. Please try again."
+      });
+    }
+  });
+
+  // Get all waitlist signups (for admin/marketing use)
+  app.get("/api/waitlist", async (req: any, res) => {
+    try {
+      const signups = await storage.getWaitlistSignups();
+      res.json(signups);
+    } catch (error: any) {
+      console.error("Error fetching waitlist:", error);
+      res.status(500).json({
+        error: "Failed to fetch waitlist",
+        message: "Could not retrieve waitlist data."
+      });
     }
   });
   
