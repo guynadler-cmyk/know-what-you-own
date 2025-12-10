@@ -8,19 +8,15 @@ declare global {
   }
 }
 
+// GA4 Measurement ID - this is a public identifier (visible in browser network requests)
+const GA_MEASUREMENT_ID = 'G-6CLK9XVV2K';
+
 // Initialize Google Analytics
 export const initGA = () => {
-  const measurementId = import.meta.env.VITE_GA_MEASUREMENT_ID;
-
-  if (!measurementId) {
-    console.warn('Missing required Google Analytics key: VITE_GA_MEASUREMENT_ID');
-    return;
-  }
-
   // Add Google Analytics script to the head
   const script1 = document.createElement('script');
   script1.async = true;
-  script1.src = `https://www.googletagmanager.com/gtag/js?id=${measurementId}`;
+  script1.src = `https://www.googletagmanager.com/gtag/js?id=${GA_MEASUREMENT_ID}`;
   document.head.appendChild(script1);
 
   // Initialize gtag
@@ -29,7 +25,7 @@ export const initGA = () => {
     window.dataLayer = window.dataLayer || [];
     function gtag(){dataLayer.push(arguments);}
     gtag('js', new Date());
-    gtag('config', '${measurementId}');
+    gtag('config', '${GA_MEASUREMENT_ID}');
   `;
   document.head.appendChild(script2);
 };
@@ -38,10 +34,7 @@ export const initGA = () => {
 export const trackPageView = (url: string) => {
   if (typeof window === 'undefined' || !window.gtag) return;
   
-  const measurementId = import.meta.env.VITE_GA_MEASUREMENT_ID;
-  if (!measurementId) return;
-  
-  window.gtag('config', measurementId, {
+  window.gtag('config', GA_MEASUREMENT_ID, {
     page_path: url
   });
 };
