@@ -1,0 +1,87 @@
+Build 4 "Coming Soon" screens for the remaining stages of our investing app:
+
+Evaluate the Deal
+
+Plan Your Investment
+
+Make Your Move
+
+Protect What You Own
+
+Each screen should:
+
+💻 STRUCTURE
+
+Header Banner at the top:
+
+Icon (🛠️ or similar)
+
+Text: "Coming Soon – This stage is still under construction. Get early access by joining the waitlist."
+
+Main Section with:
+
+Stage Title (e.g., “Plan Your Investment”)
+
+1-line Hook (bold or headline style)
+
+2–3 sentence summary of why this stage matters (see content below)
+
+Call to Action: "Join the waitlist for early access"
+
+Email input field + Join button (submit to mock endpoint or placeholder for now)
+
+Optional visual indicators:
+
+Subtle “under construction” styling: gray tint, dashed border, or faded visuals
+
+✍️ CONTENT (for each screen)
+🔹 Evaluate the Deal
+
+Hook: “📊 Don’t just buy stocks. Understand the deal.”
+
+Summary: “Buying a stock is buying a business. This step helps you figure out: is the price fair? What are you really getting? No jargon. Just practical valuation logic you can actually use.”
+
+CTA: “📥 Want first access when this launches? Join the waitlist below.”
+
+🔹 Plan Your Investment
+
+Hook: “🗺️ No more winging it. Invest with a plan.”
+
+Summary: “What’s your goal? How much should you invest — and when? This step helps you create a calm, intentional strategy that makes emotional blowups less likely.”
+
+CTA: “📥 Coming soon: your personal investing playbook. Join the waitlist to be the first in.”
+
+🔹 Make Your Move
+
+Hook: “🎯 Don’t time the market. Time your move.”
+
+Summary: “Execution isn’t about prediction — it’s about structure. This step guides you through entering with clarity: when, how, and how much. No FOMO, no YOLO, just calm execution.”
+
+CTA: “📥 Be the first to try smarter execution tools. Join the waitlist below.”
+
+🔹 Protect What You Own
+
+Hook: “🛡️ Don’t just buy smart. Hold smart.”
+
+Summary: “Every investor eventually hits doubt. This step gives you the tools to stay steady when it matters — with check-ins, exit rules, and guardrails that protect your peace and your portfolio.”
+
+CTA: “📥 Build resilience into your portfolio. Join the waitlist for early access.”
+
+📦 TECH SPECS
+
+React + TailwindCSS preferred
+
+Make each screen reusable via a single ComingSoonStage component with props:
+
+<ComingSoonStage 
+  stageTitle="Plan Your Investment"
+  icon="🗺️"
+  hook="No more winging it. Invest with a plan."
+  summary="What’s your goal? How much should you invest — and when?..."
+  cta="Join the waitlist for early access"
+/>
+
+
+Include basic form validation for email
+
+For now, the waitlist button can console.log() the email or submit to a dummy endpoint
