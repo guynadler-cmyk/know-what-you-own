@@ -267,6 +267,77 @@ export class SECService {
       }
     });
   }
+
+  private normalizeForSearch(text: string): string {
+    return text
+      .toLowerCase()
+      .replace(/[''`]/g, '')
+      .replace(/[^\w\s]/g, ' ')
+      .replace(/\s+/g, ' ')
+      .trim();
+  }
+
+  async searchCompanies(query: string, limit: number = 10): Promise<Array<{ ticker: string; name: string }>> {
+    if (!this.tickerCache.size) {
+      await this.loadTickerMappings();
+    }
+
+    const normalizedQuery = this.normalizeForSearch(query);
+    if (!normalizedQuery) {
+      return [];
+    }
+
+    const results: Array<{ ticker: string; name: string; score: number }> = [];
+
+    const entries = Array.from(this.tickerCache.entries());
+    for (const [ticker, company] of entries) {
+      const normalizedName = this.normalizeForSearch(company.title);
+      const normalizedTicker = ticker.toLowerCase();
+
+      let score = 0;
+
+      // Exact ticker match gets highest priority
+      if (normalizedTicker === normalizedQuery) {
+        score = 1000;
+      }
+      // Ticker starts with query
+      else if (normalizedTicker.startsWith(normalizedQuery)) {
+        score = 500 + (100 - normalizedTicker.length);
+      }
+      // Exact name match
+      else if (normalizedName === normalizedQuery) {
+        score = 400;
+      }
+      // Name starts with query
+      else if (normalizedName.startsWith(normalizedQuery)) {
+        score = 300 + (100 - normalizedName.length);
+      }
+      // Query is a word boundary match in company name
+      else if (normalizedName.includes(` ${normalizedQuery}`) || normalizedName.includes(`${normalizedQuery} `)) {
+        score = 200;
+      }
+      // Name contains query anywhere
+      else if (normalizedName.includes(normalizedQuery)) {
+        score = 100;
+      }
+      // Ticker contains query
+      else if (normalizedTicker.includes(normalizedQuery)) {
+        score = 50;
+      }
+
+      if (score > 0) {
+        results.push({ ticker, name: company.title, score });
+      }
+    }
+
+    // Sort by score descending, then alphabetically by ticker
+    results.sort((a, b) => {
+      if (b.score !== a.score) return b.score - a.score;
+      return a.ticker.localeCompare(b.ticker);
+    });
+
+    return results.slice(0, limit).map(({ ticker, name }) => ({ ticker, name }));
+  }
 }
 
 export const secService = new SECService();
