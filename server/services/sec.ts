@@ -267,7 +267,7 @@ export class SECService {
       }
     });
   }
-
+  
   private normalizeForSearch(text: string): string {
     return text
       .toLowerCase()
