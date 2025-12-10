@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Download, Check, Smartphone } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { analytics } from "@/lib/analytics";
 import {
   Dialog,
   DialogContent,
@@ -74,6 +75,7 @@ export function InstallButton() {
 
     try {
       setIsInstalling(true);
+      analytics.trackInstallClicked();
       
       // Show the install prompt
       await deferredPrompt.prompt();

@@ -1,6 +1,7 @@
 import { Button } from "@/components/ui/button";
 import { Share2, Link as LinkIcon } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { analytics } from "@/lib/analytics";
 
 interface ShareButtonProps {
   variant?: "default" | "outline" | "ghost";
@@ -28,6 +29,7 @@ export function ShareButton({
     if (navigator.share) {
       try {
         await navigator.share(shareData);
+        analytics.trackShareClicked('native_share');
       } catch (err) {
         // User cancelled or error occurred
         if ((err as Error).name !== 'AbortError') {
@@ -44,6 +46,7 @@ export function ShareButton({
   const fallbackCopy = () => {
     navigator.clipboard.writeText(window.location.origin)
       .then(() => {
+        analytics.trackShareClicked('clipboard_copy');
         toast({
           title: "Link copied!",
           description: "Share link has been copied to clipboard",

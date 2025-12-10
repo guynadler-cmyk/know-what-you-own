@@ -16,6 +16,7 @@ import {
 } from "lucide-react";
 import { useState } from "react";
 import { Link } from "wouter";
+import { analytics } from "@/lib/analytics";
 
 import businessOverviewImg from "@assets/generated_images/business_overview_app_mockup.png";
 import valuationAnalysisImg from "@assets/generated_images/valuation_analysis_app_mockup.png";
@@ -30,6 +31,7 @@ export default function LandingPage() {
     if (element) {
       element.scrollIntoView({ behavior: 'smooth' });
       setMobileMenuOpen(false);
+      analytics.trackLandingSection(sectionId);
     }
   };
 
