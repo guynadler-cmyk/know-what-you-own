@@ -1,0 +1,85 @@
+1. Intro Section (Context Block)
+
+Add a short text explanation at the top, like this:
+
+You’ve seen what this business does. Now let’s look under the hood — is it financially strong enough to own?
+
+We’ll guide you through revenue, earnings, cash flow, debt, and reinvestment — to help you decide if this is a business worth holding long term.
+
+
+Use soft tones, a small “info” icon, and max 2 paragraphs. Keep it friendly and direct.
+
+✳️ 2. Hover Definitions for Financial Terms
+
+For every financial term shown (e.g. FCF, Debt, CAPEX), implement a hover tooltip with plain-English, non-jargon explanations.
+
+Examples:
+
+FCF (Free Cash Flow) → “The money left after the business pays its bills and reinvests. Real money it can keep or use.”
+
+Debt → “What the company owes. Some is fine, too much is risky.”
+
+CAPEX → “Spending to grow or maintain the business — like new equipment or upgrades.”
+
+Use Tailwind tooltips or custom hover boxes — mobile-friendly on long-press.
+
+✳️ 3. Quadrant Viewer Updates
+
+Use the existing quadrant design (one at a time, navigable from summary cards), but make these changes:
+
+A. Update Debt Safety Quadrant logic:
+
+Fix misleading colors and labels. Use this logic:
+
+Quadrant Label	Position	Color
+Financially Fragile	High debt, low earnings	🔴 Red
+Healthy Leverage	Moderate debt, strong earnings	🟢 Green
+Underleveraged	Low debt, low return	🟡 Yellow
+Aggressive Borrower	High debt, high return	🟠 Orange
+
+Update axis labels to:
+
+Y-axis: Debt Levels (Low to High)
+
+X-axis: Return / Earnings Strength (Low to High)
+
+Add quadrant label text inside the chart space for clarity.
+
+✳️ 4. Final Summary Block ("What This Tells Us")
+
+Add a box at the bottom of Stage 2, styled like a callout card.
+
+Content example:
+
+🧠 Financial Summary:
+
+This business is generating stable revenue, turning profit into cash, and managing debt wisely. That’s the foundation of long-term resilience.
+
+But remember: there are thousands of public companies. Sensible investing means being picky — and passing when a business doesn’t meet your bar.
+
+Would you feel confident owning this for the next decade?
+
+✅ If yes, move forward.  
+🚫 If not, pass with confidence — and keep looking.
+
+✳️ 5. Call to Action Buttons (User-Driven Decision)
+
+Below the summary, place two action buttons:
+
+✅ “Add to Plan” — moves to next phase
+
+🚫 “Pass with Confidence” — dismisses and logs this as a declined opportunity
+
+Both should be soft buttons (no pressure), styled with Tailwind (rounded-xl, soft shadows, hover states).
+
+🎨 Design Notes
+
+Use light gray or soft cream backgrounds (bg-gray-50, bg-neutral-100)
+
+Rounded edges, consistent spacing
+
+Avoid harsh reds/greens — keep tones pastel and professional
+
+Mobile-responsive grid for summary cards and quadrant navigation
+
+All elements should feel like part of a cohesive, guided flow
