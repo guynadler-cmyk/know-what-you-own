@@ -1,0 +1,75 @@
+“Add an AI-powered investing section to our existing Restnvest landing page”
+
+We have an existing landing page for Restnvest with sections like:
+
+Hero ("Sensible investing beats optimal")
+
+Problem (built-for-theory vs. built-for-humans)
+
+5-step process ("Sensible > Optimal")
+
+App screenshots
+
+Who it's for
+
+Final CTA ("Start investing sensibly")
+
+We want to add a new section (just after the 5-step process) that introduces how Restnvest uses AI agents to power the experience.
+
+🛠 Please implement the following:
+
+🔹 Section Title:
+Let AI do the hard work. You just follow the plan.
+
+🔹 Subtext:
+Restnvest uses a quiet army of AI agents to read filings, summarize earnings calls, and analyze risks — so you get clarity, not chaos.
+
+🔹 Features (4 columns/cards with icons):
+
+[
+  {
+    "title": "Business insights, simplified",
+    "description": "AI reads the filings and earnings calls so you don’t have to."
+  },
+  {
+    "title": "Fair value scoring",
+    "description": "Understand if a stock is overvalued, undervalued, or just right."
+  },
+  {
+    "title": "Risk signals",
+    "description": "AI surfaces red flags and hidden risks — automatically."
+  },
+  {
+    "title": "Plan-aware alerts",
+    "description": "Get nudges based on your goals and rules — not the market’s mood."
+  }
+]
+
+
+🔹 Optional visual:
+Include an illustration or animation of small AI “agents” working behind the scenes — reading documents, pushing insights into the user’s plan, etc. Use placeholder if no assets.
+
+🔹 Optional UI enhancement:
+If feasible, annotate the existing 5-step section with subtle "AI-supported" labels:
+
+Step 1: “(Summarized by AI)”
+
+Step 2: “(Fair value scored)”
+
+Step 5: “(Exit rules monitored)”
+
+🔹 Styling guidance:
+
+Match current font, button style, padding, etc.
+
+Maintain whitespace elegance — keep it light, not overly techy
+
+Use icons or minimal illustrations where possible
+
+💡 Output Expectations:
+
+New section HTML/CSS/JS (depending on stack)
+
+Responsive, mobile-friendly
+
+Reusable component for future tests (can easily A/B test “AI” vs “Structure” angle)
