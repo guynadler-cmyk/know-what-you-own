@@ -355,15 +355,21 @@ export default function LandingPage() {
                 </div>
               </div>
               
-              {/* Central Visual Overlay (Desktop only) */}
-              <div className="hidden lg:flex absolute inset-0 items-center justify-center pointer-events-none">
-                <div className="w-48 h-48 rounded-2xl bg-background border-2 border-primary/20 shadow-xl flex flex-col items-center justify-center gap-3 pointer-events-auto">
-                  <div className="w-16 h-16 rounded-full bg-primary/10 border-2 border-primary/30 flex items-center justify-center">
-                    <AlertTriangle className="h-7 w-7 text-primary" />
-                  </div>
-                  <span className="text-sm font-medium text-muted-foreground">Sound familiar?</span>
-                </div>
-              </div>
+            </div>
+            
+            {/* CTA Below Grid */}
+            <div className="text-center pt-8 space-y-4">
+              <p className="text-xl font-medium">Ready to act differently?</p>
+              <Link href="/app">
+                <Button
+                  size="lg"
+                  className="rounded-full px-8 py-6 text-lg font-semibold gap-2"
+                  data-testid="button-problem-cta"
+                >
+                  Start analyzing
+                  <ArrowRight className="h-5 w-5" />
+                </Button>
+              </Link>
             </div>
           </div>
         </section>
