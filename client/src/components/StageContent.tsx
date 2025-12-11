@@ -1,5 +1,6 @@
 import { SummaryCard } from "@/components/SummaryCard";
 import { ComingSoonStage } from "@/components/ComingSoonStage";
+import { QuadrantExplorer } from "@/components/QuadrantExplorer";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { Rocket, Smartphone, Laptop, Tablet, Watch, Car, Zap, Battery, Server, Cloud, Gamepad2, Package, Code, Globe, Music, Video, Tv, Search, Cpu, Brain, TrendingUp, TrendingDown, Target, CheckCircle, AlertTriangle, Eye, XCircle, Shield, Circle } from "lucide-react";
@@ -439,6 +440,16 @@ export function StageContent({ stage, summaryData, financialMetrics, balanceShee
 
           <div className="pt-8 border-t">
             <FinancialStrengthSection metrics={balanceSheetMetrics ?? null} />
+          </div>
+
+          <div className="pt-8 border-t">
+            <div className="text-center mb-6">
+              <h3 className="text-xl font-bold mb-2">Financial Health Explorer</h3>
+              <p className="text-muted-foreground text-sm max-w-xl mx-auto">
+                Click on any card below to explore different dimensions of financial health
+              </p>
+            </div>
+            <QuadrantExplorer />
           </div>
         </CardContent>
       </Card>
