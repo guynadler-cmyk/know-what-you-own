@@ -1,7 +1,7 @@
 import { Card, CardContent } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
 import { CheckCircle, AlertTriangle, XCircle, BarChart3 } from "lucide-react";
-import { QUADRANT_DATA, type SignalStrength } from "@/components/QuadrantExplorer";
+import type { SignalStrength, QuadrantData } from "@/components/QuadrantExplorer";
 
 function getStrengthStyles(strength: SignalStrength) {
   switch (strength) {
@@ -98,8 +98,12 @@ function SignalCard({ id, title, verdict, strength }: SignalCardProps) {
   );
 }
 
-export function FinancialScorecard() {
-  const strongCount = QUADRANT_DATA.filter(q => q.strength === "strong").length;
+interface FinancialScorecardProps {
+  quadrantData: QuadrantData[];
+}
+
+export function FinancialScorecard({ quadrantData }: FinancialScorecardProps) {
+  const strongCount = quadrantData.filter(q => q.strength === "strong").length;
   const verdict = getVerdict(strongCount);
 
   return (
@@ -121,7 +125,7 @@ export function FinancialScorecard() {
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            {QUADRANT_DATA.map((quadrant) => (
+            {quadrantData.map((quadrant) => (
               <SignalCard
                 key={quadrant.id}
                 id={quadrant.id}
