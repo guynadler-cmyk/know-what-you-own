@@ -1,10 +1,11 @@
+import { useMemo } from "react";
 import { SummaryCard } from "@/components/SummaryCard";
 import { ComingSoonStage } from "@/components/ComingSoonStage";
-import { QuadrantExplorer } from "@/components/QuadrantExplorer";
+import { QuadrantExplorer, generateQuadrantData } from "@/components/QuadrantExplorer";
 import { FinancialScorecard } from "@/components/FinancialScorecard";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Smartphone, Laptop, Tablet, Watch, Car, Zap, Battery, Server, Cloud, Gamepad2, Package, Code, Globe, Music, Video, Tv, Search, Cpu, Info } from "lucide-react";
-import { CompanySummary } from "@shared/schema";
+import { CompanySummary, FinancialMetrics, BalanceSheetMetrics } from "@shared/schema";
 
 const iconMap: Record<string, any> = {
   Smartphone, Laptop, Tablet, Watch, Car, Zap, Battery, Server, 
@@ -14,8 +15,8 @@ const iconMap: Record<string, any> = {
 interface StageContentProps {
   stage: number;
   summaryData: CompanySummary | null;
-  financialMetrics?: any;
-  balanceSheetMetrics?: any;
+  financialMetrics?: FinancialMetrics;
+  balanceSheetMetrics?: BalanceSheetMetrics;
 }
 
 const COMING_SOON_STAGES = {
@@ -73,7 +74,13 @@ function IntroContextBlock() {
 }
 
 
-export function StageContent({ stage, summaryData }: StageContentProps) {
+export function StageContent({ stage, summaryData, financialMetrics, balanceSheetMetrics }: StageContentProps) {
+  // Generate quadrant data based on real financial metrics
+  const quadrantData = useMemo(
+    () => generateQuadrantData(financialMetrics, balanceSheetMetrics),
+    [financialMetrics, balanceSheetMetrics]
+  );
+
   if (stage === 1 && summaryData) {
     const preparedSummary = {
       ...summaryData,
@@ -129,9 +136,12 @@ export function StageContent({ stage, summaryData }: StageContentProps) {
         <CardContent className="pb-12">
           <IntroContextBlock />
           
-          <QuadrantExplorer />
+          <QuadrantExplorer 
+            financialMetrics={financialMetrics}
+            balanceSheetMetrics={balanceSheetMetrics}
+          />
           
-          <FinancialScorecard />
+          <FinancialScorecard quadrantData={quadrantData} />
         </CardContent>
       </Card>
     );

@@ -1,8 +1,9 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { Card } from "@/components/ui/card";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
 import { TrendingUp, TrendingDown, Info } from "lucide-react";
+import type { FinancialMetrics, BalanceSheetMetrics } from "@shared/schema";
 
 const TERM_DEFINITIONS: Record<string, string> = {
   "Revenue": "The total money a company earns from selling its products or services — before any expenses.",
@@ -111,6 +112,140 @@ export const QUADRANT_DATA: QuadrantData[] = [
   },
 ];
 
+// Generate dynamic quadrant data based on real financial metrics
+export function generateQuadrantData(
+  financialMetrics?: FinancialMetrics,
+  balanceSheetMetrics?: BalanceSheetMetrics
+): QuadrantData[] {
+  // Default to static data if no metrics provided
+  if (!financialMetrics && !balanceSheetMetrics) {
+    return QUADRANT_DATA;
+  }
+
+  // Helper to map status to strength
+  const statusToStrength = (status: "strong" | "caution" | "weak"): SignalStrength => {
+    if (status === "strong") return "strong";
+    if (status === "caution") return "mixed";
+    return "weak";
+  };
+
+  // Helper to get position based on metrics (0-100 scale)
+  const getGrowthPosition = (revenueGrowth: boolean, earningsGrowth: boolean, revPct: number, earnPct: number) => {
+    // X = revenue position, Y = earnings position (inverted for SVG)
+    // Map percentage to 25-75 range for visual clarity
+    const clamp = (val: number) => Math.max(10, Math.min(90, val));
+    const x = clamp(50 + (revPct / 2)); // Center at 50, scale by half
+    const y = clamp(50 - (earnPct / 2)); // Inverted Y axis
+    return { x, y };
+  };
+
+  // 1. Growth Quality - based on revenue and earnings
+  const revenueUp = financialMetrics?.revenueGrowth === "growing";
+  const earningsUp = financialMetrics?.earningsGrowth === "growing";
+  const revPct = financialMetrics?.revenueChangePercent ?? 0;
+  const earnPct = financialMetrics?.earningsChangePercent ?? 0;
+  
+  let growthStrength: SignalStrength = "weak";
+  let growthVerdict = "Declining";
+  let growthInsight = "Both revenue and earnings are declining — a red flag for long-term investors. The business may be losing market share or facing structural challenges.";
+  
+  if (revenueUp && earningsUp) {
+    growthStrength = "strong";
+    growthVerdict = "Scalable Growth";
+    growthInsight = "The company is growing both revenue and earnings — a sign of scalable, healthy expansion. This is the hallmark of a quality compounder.";
+  } else if (revenueUp && !earningsUp) {
+    growthStrength = "mixed";
+    growthVerdict = "Scaling Up";
+    growthInsight = "Revenue is growing but earnings aren't keeping pace. The company may be investing heavily for future growth, or facing margin pressure.";
+  } else if (!revenueUp && earningsUp) {
+    growthStrength = "mixed";
+    growthVerdict = "Cost Cutting";
+    growthInsight = "Earnings are up despite flat or declining revenue. This could mean efficiency gains, but watch for sustainability if revenue doesn't recover.";
+  }
+
+  // 2. Liquidity - based on balance sheet
+  const liquidityStatus = balanceSheetMetrics?.checks?.liquidity?.status ?? "strong";
+  const liquiditySummary = balanceSheetMetrics?.checks?.liquidity?.summary ?? "";
+  
+  let liquidityStrength = statusToStrength(liquidityStatus);
+  let liquidityVerdict = liquidityStatus === "strong" ? "Financially Resilient" : 
+                         liquidityStatus === "caution" ? "Moderate Liquidity" : "Liquidity Concerns";
+  let liquidityInsight = liquidityStatus === "strong" 
+    ? "Strong cash position relative to short-term obligations. The company can weather economic downturns and seize opportunities."
+    : liquidityStatus === "caution"
+    ? "Liquidity is adequate but not exceptional. The company should manage its short-term obligations carefully."
+    : "The company may struggle to meet short-term obligations. This is a significant risk factor to monitor closely.";
+
+  // 3. Debt Burden - based on balance sheet
+  const debtStatus = balanceSheetMetrics?.checks?.debtBurden?.status ?? "strong";
+  
+  let debtStrength = statusToStrength(debtStatus);
+  let debtVerdict = debtStatus === "strong" ? "Low Debt Burden" :
+                    debtStatus === "caution" ? "Moderate Debt" : "High Debt Load";
+  let debtInsight = debtStatus === "strong"
+    ? "Low debt levels provide financial flexibility and safety margin. The company isn't overleveraged."
+    : debtStatus === "caution"
+    ? "Debt levels are manageable but worth monitoring. The company has some leverage that could amplify both gains and losses."
+    : "High debt creates financial risk. Interest payments could strain cash flow, especially if earnings decline.";
+
+  // 4. Equity Growth - based on balance sheet
+  const equityStatus = balanceSheetMetrics?.checks?.equityGrowth?.status ?? "strong";
+  
+  let equityStrength = statusToStrength(equityStatus);
+  let equityVerdict = equityStatus === "strong" ? "Growing Book Value" :
+                      equityStatus === "caution" ? "Stable Equity" : "Shrinking Equity";
+  let equityInsight = equityStatus === "strong"
+    ? "Shareholder equity is growing — the company is building long-term value and reinvesting profits effectively."
+    : equityStatus === "caution"
+    ? "Equity is relatively stable. The company is maintaining its book value but not dramatically increasing it."
+    : "Shareholder equity is declining. This could indicate losses, excessive dividends, or share buybacks at poor prices.";
+
+  // Calculate positions based on real data
+  const growthPos = getGrowthPosition(revenueUp, earningsUp, revPct, earnPct);
+  
+  // Position mapping for balance sheet metrics (status -> position)
+  const statusToPosition = (status: "strong" | "caution" | "weak", inverted: boolean = false) => {
+    if (status === "strong") return inverted ? { x: 75, y: 70 } : { x: 72, y: 25 };
+    if (status === "caution") return inverted ? { x: 50, y: 50 } : { x: 50, y: 50 };
+    return inverted ? { x: 25, y: 30 } : { x: 28, y: 75 };
+  };
+
+  return [
+    {
+      ...QUADRANT_DATA[0],
+      verdict: growthVerdict,
+      position: growthPos,
+      insight: growthInsight,
+      signalDirections: [revenueUp, earningsUp] as [boolean, boolean],
+      strength: growthStrength,
+    },
+    {
+      ...QUADRANT_DATA[1],
+      verdict: liquidityVerdict,
+      position: statusToPosition(liquidityStatus),
+      insight: liquidityInsight,
+      signalDirections: [liquidityStatus === "strong", liquidityStatus !== "weak"] as [boolean, boolean],
+      strength: liquidityStrength,
+    },
+    {
+      ...QUADRANT_DATA[2],
+      verdict: debtVerdict,
+      position: statusToPosition(debtStatus, true),
+      insight: debtInsight,
+      signalDirections: [debtStatus !== "weak", earningsUp] as [boolean, boolean],
+      strength: debtStrength,
+    },
+    {
+      ...QUADRANT_DATA[3],
+      verdict: equityVerdict,
+      position: statusToPosition(equityStatus),
+      insight: equityInsight,
+      signalDirections: [equityStatus === "strong", equityStatus !== "weak"] as [boolean, boolean],
+      strength: equityStrength,
+    },
+  ];
+}
+
 function TermWithTooltip({ term }: { term: string }) {
   const definition = TERM_DEFINITIONS[term];
   
@@ -139,14 +274,16 @@ function TermWithTooltip({ term }: { term: string }) {
 
 function SummaryCardRow({ 
   selectedId, 
-  onSelect 
+  onSelect,
+  quadrantData
 }: { 
   selectedId: string; 
   onSelect: (id: string) => void;
+  quadrantData: QuadrantData[];
 }) {
   return (
     <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-      {QUADRANT_DATA.map((quadrant) => {
+      {quadrantData.map((quadrant) => {
         const isSelected = selectedId === quadrant.id;
         return (
           <button
@@ -400,16 +537,28 @@ function QuadrantChart({ quadrant }: { quadrant: QuadrantData }) {
   );
 }
 
-export function QuadrantExplorer() {
-  const [selectedId, setSelectedId] = useState<string>(QUADRANT_DATA[0].id);
+interface QuadrantExplorerProps {
+  financialMetrics?: FinancialMetrics;
+  balanceSheetMetrics?: BalanceSheetMetrics;
+}
+
+export function QuadrantExplorer({ financialMetrics, balanceSheetMetrics }: QuadrantExplorerProps) {
+  // Generate dynamic quadrant data based on real metrics
+  const quadrantData = useMemo(
+    () => generateQuadrantData(financialMetrics, balanceSheetMetrics),
+    [financialMetrics, balanceSheetMetrics]
+  );
   
-  const selectedQuadrant = QUADRANT_DATA.find(q => q.id === selectedId) || QUADRANT_DATA[0];
+  const [selectedId, setSelectedId] = useState<string>(quadrantData[0].id);
+  
+  const selectedQuadrant = quadrantData.find(q => q.id === selectedId) || quadrantData[0];
 
   return (
     <div className="space-y-6" data-testid="quadrant-explorer">
       <SummaryCardRow 
         selectedId={selectedId} 
-        onSelect={setSelectedId} 
+        onSelect={setSelectedId}
+        quadrantData={quadrantData}
       />
       
       <Card className="overflow-hidden">
