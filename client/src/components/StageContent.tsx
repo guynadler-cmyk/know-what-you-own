@@ -2,8 +2,7 @@ import { SummaryCard } from "@/components/SummaryCard";
 import { ComingSoonStage } from "@/components/ComingSoonStage";
 import { QuadrantExplorer } from "@/components/QuadrantExplorer";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Smartphone, Laptop, Tablet, Watch, Car, Zap, Battery, Server, Cloud, Gamepad2, Package, Code, Globe, Music, Video, Tv, Search, Cpu, Brain, Info, CheckCircle, XCircle } from "lucide-react";
+import { Smartphone, Laptop, Tablet, Watch, Car, Zap, Battery, Server, Cloud, Gamepad2, Package, Code, Globe, Music, Video, Tv, Search, Cpu, Brain, Info } from "lucide-react";
 import { CompanySummary } from "@shared/schema";
 
 const iconMap: Record<string, any> = {
@@ -73,15 +72,9 @@ function IntroContextBlock() {
   );
 }
 
-function FinancialSummaryBlock({ 
-  onAddToPlan, 
-  onPass 
-}: { 
-  onAddToPlan: () => void; 
-  onPass: () => void;
-}) {
+function FinancialSummaryBlock() {
   return (
-    <div className="mt-10 space-y-6" data-testid="financial-summary-block">
+    <div className="mt-10" data-testid="financial-summary-block">
       <Card className="bg-neutral-50 dark:bg-neutral-900/50 border-border/60">
         <CardContent className="p-6">
           <div className="flex items-start gap-4">
@@ -103,30 +96,6 @@ function FinancialSummaryBlock({
           </div>
         </CardContent>
       </Card>
-      
-      <div className="flex flex-col sm:flex-row gap-3 justify-center">
-        <Button
-          onClick={onAddToPlan}
-          className="rounded-xl px-6 py-3 h-auto shadow-sm bg-green-600 hover:bg-green-700 text-white"
-          data-testid="button-add-to-plan"
-        >
-          <CheckCircle className="w-5 h-5 mr-2" />
-          Add to Plan
-        </Button>
-        <Button
-          onClick={onPass}
-          variant="outline"
-          className="rounded-xl px-6 py-3 h-auto shadow-sm"
-          data-testid="button-pass"
-        >
-          <XCircle className="w-5 h-5 mr-2" />
-          Pass with Confidence
-        </Button>
-      </div>
-      
-      <p className="text-xs text-center text-muted-foreground">
-        Both choices are valid. Sensible investing is about being intentional.
-      </p>
     </div>
   );
 }
@@ -153,14 +122,6 @@ export function StageContent({ stage, summaryData }: StageContentProps) {
       }
     };
     const logoUrl = summaryData?.metadata?.homepage ? getLogoUrl(summaryData.metadata.homepage) : null;
-
-    const handleAddToPlan = () => {
-      console.log("Added to plan");
-    };
-
-    const handlePass = () => {
-      console.log("Passed with confidence");
-    };
 
     return (
       <Card data-testid="stage-2-content">
@@ -197,10 +158,7 @@ export function StageContent({ stage, summaryData }: StageContentProps) {
           
           <QuadrantExplorer />
           
-          <FinancialSummaryBlock 
-            onAddToPlan={handleAddToPlan}
-            onPass={handlePass}
-          />
+          <FinancialSummaryBlock />
         </CardContent>
       </Card>
     );
