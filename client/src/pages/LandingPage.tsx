@@ -292,75 +292,6 @@ export default function LandingPage() {
                 </Button>
               </Link>
             </div>
-            
-            {/* Quick Ticker Input */}
-            <div className="pt-8 max-w-md mx-auto" data-testid="hero-ticker-input">
-              <p className="text-sm text-muted-foreground mb-3">Or try a stock right now:</p>
-              <form onSubmit={handleTickerSubmit} className="relative" ref={dropdownRef}>
-                <div className="flex gap-2">
-                  <div className="relative flex-1">
-                    <Input
-                      type="text"
-                      value={tickerQuery}
-                      onChange={handleTickerInputChange}
-                      onKeyDown={handleTickerKeyDown}
-                      onFocus={() => searchResults.length > 0 && !justSelectedRef.current && setShowDropdown(true)}
-                      placeholder="AAPL, MSFT, NVDA..."
-                      className={`h-12 text-center font-mono tracking-wide rounded-full pr-10 ${
-                        tickerError ? 'border-destructive focus-visible:ring-destructive' : ''
-                      }`}
-                      data-testid="input-hero-ticker"
-                      autoComplete="off"
-                    />
-                    {isSearching && (
-                      <div className="absolute right-3 top-1/2 -translate-y-1/2">
-                        <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
-                      </div>
-                    )}
-                  </div>
-                  <Button 
-                    type="submit" 
-                    className="h-12 px-6 rounded-full"
-                    data-testid="button-hero-analyze"
-                  >
-                    <Search className="h-4 w-4 mr-2" />
-                    Analyze
-                  </Button>
-                </div>
-                
-                {showDropdown && searchResults.length > 0 && (
-                  <div 
-                    className="absolute z-50 w-full mt-2 bg-background border border-border rounded-xl shadow-lg overflow-hidden"
-                    data-testid="dropdown-hero-results"
-                  >
-                    {searchResults.slice(0, 5).map((result, index) => (
-                      <button
-                        key={result.ticker}
-                        type="button"
-                        onClick={() => selectResult(result)}
-                        className={`w-full px-4 py-3 text-left flex items-center gap-3 hover-elevate ${
-                          index === selectedIndex ? 'bg-muted' : ''
-                        }`}
-                        data-testid={`dropdown-hero-item-${result.ticker.toLowerCase()}`}
-                      >
-                        <span className="font-mono font-semibold text-primary min-w-[60px]">
-                          {result.ticker}
-                        </span>
-                        <span className="text-muted-foreground truncate text-sm">
-                          {result.name}
-                        </span>
-                      </button>
-                    ))}
-                  </div>
-                )}
-                
-                {tickerError && (
-                  <p className="text-sm text-destructive text-center mt-2" data-testid="text-hero-error">
-                    {tickerError}
-                  </p>
-                )}
-              </form>
-            </div>
           </div>
         </section>
 
@@ -639,6 +570,102 @@ export default function LandingPage() {
                     <CheckCircle2 className="h-5 w-5 text-muted-foreground" />
                   </div>
                   <span className="text-xs text-muted-foreground">Your Plan</span>
+                </div>
+              </div>
+            </div>
+            
+            {/* Try It Now - Ticker Input */}
+            <div className="w-full max-w-xl mx-auto space-y-8 pt-8" data-testid="ai-section-ticker-input">
+              <div className="text-center">
+                <h3 className="text-xl font-semibold mb-2">See it in action</h3>
+                <p className="text-muted-foreground">Try analyzing any public company right now</p>
+              </div>
+              
+              <form onSubmit={handleTickerSubmit} className="space-y-6" ref={dropdownRef}>
+                <div className="space-y-3 relative">
+                  <div className="relative">
+                    <Input
+                      type="text"
+                      value={tickerQuery}
+                      onChange={handleTickerInputChange}
+                      onKeyDown={handleTickerKeyDown}
+                      onFocus={() => searchResults.length > 0 && !justSelectedRef.current && setShowDropdown(true)}
+                      placeholder="Company name or ticker..."
+                      className={`text-2xl h-16 text-center font-mono tracking-wide border-2 rounded-xl pr-12 ${
+                        tickerError ? 'border-destructive focus-visible:ring-destructive' : 'focus-visible:border-primary'
+                      }`}
+                      data-testid="input-ai-ticker"
+                      autoComplete="off"
+                    />
+                    {isSearching && (
+                      <div className="absolute right-4 top-1/2 -translate-y-1/2">
+                        <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+                      </div>
+                    )}
+                  </div>
+                  
+                  {showDropdown && searchResults.length > 0 && (
+                    <div 
+                      className="absolute z-50 w-full mt-1 bg-background border border-border rounded-xl shadow-lg overflow-hidden"
+                      data-testid="dropdown-ai-results"
+                    >
+                      {searchResults.map((result, index) => (
+                        <button
+                          key={result.ticker}
+                          type="button"
+                          onClick={() => selectResult(result)}
+                          className={`w-full px-4 py-3 text-left flex items-center gap-3 hover-elevate ${
+                            index === selectedIndex ? 'bg-muted' : ''
+                          }`}
+                          data-testid={`dropdown-ai-item-${result.ticker.toLowerCase()}`}
+                        >
+                          <span className="font-mono font-semibold text-primary min-w-[60px]">
+                            {result.ticker}
+                          </span>
+                          <span className="text-muted-foreground truncate">
+                            {result.name}
+                          </span>
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                  
+                  {tickerError && (
+                    <p className="text-sm text-destructive text-center" data-testid="text-ai-error">
+                      {tickerError}
+                    </p>
+                  )}
+                </div>
+                
+                <Button 
+                  type="submit" 
+                  className="w-full h-14 text-lg rounded-full font-semibold"
+                  data-testid="button-ai-analyze"
+                >
+                  <Search className="mr-2 h-5 w-5" />
+                  Analyze
+                </Button>
+              </form>
+              
+              <div className="text-center space-y-4">
+                <p className="text-sm text-muted-foreground">Try these hot AI stocks:</p>
+                <div className="flex flex-wrap justify-center gap-3">
+                  {['IOT', 'PATH', 'AI', 'PLTR', 'SMCI'].map((example) => (
+                    <button
+                      key={example}
+                      type="button"
+                      onClick={() => {
+                        setTickerQuery(example);
+                        setTickerError("");
+                        setShowDropdown(false);
+                        justSelectedRef.current = true;
+                      }}
+                      className="px-6 py-2 text-base font-mono text-primary bg-background border border-border rounded-full hover-elevate active-elevate-2 transition-all"
+                      data-testid={`button-example-${example.toLowerCase()}`}
+                    >
+                      {example}
+                    </button>
+                  ))}
                 </div>
               </div>
             </div>
