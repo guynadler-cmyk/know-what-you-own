@@ -1,5 +1,6 @@
 import { Button } from "@/components/ui/button";
 import { ThemeToggle } from "@/components/ThemeToggle";
+import { Input } from "@/components/ui/input";
 import { 
   Search, 
   Scale, 
@@ -12,10 +13,17 @@ import {
   ArrowRight,
   CheckCircle2,
   Menu,
-  X
+  X,
+  FileText,
+  Gauge,
+  AlertTriangle,
+  Bell,
+  Bot,
+  Sparkles,
+  Loader2
 } from "lucide-react";
-import { useState } from "react";
-import { Link } from "wouter";
+import { useState, useEffect, useRef } from "react";
+import { Link, useLocation } from "wouter";
 import { analytics } from "@/lib/analytics";
 
 import businessOverviewImg from "@assets/generated_images/business_overview_app_mockup.png";
@@ -23,8 +31,134 @@ import valuationAnalysisImg from "@assets/generated_images/valuation_analysis_ap
 import investmentPlanningImg from "@assets/generated_images/investment_planning_app_mockup.png";
 import portfolioTrackerImg from "@assets/generated_images/portfolio_tracker_app_mockup.png";
 
+interface SearchResult {
+  ticker: string;
+  name: string;
+}
+
 export default function LandingPage() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [, setLocation] = useLocation();
+  
+  // Ticker input state
+  const [tickerQuery, setTickerQuery] = useState("");
+  const [tickerError, setTickerError] = useState("");
+  const [searchResults, setSearchResults] = useState<SearchResult[]>([]);
+  const [isSearching, setIsSearching] = useState(false);
+  const [showDropdown, setShowDropdown] = useState(false);
+  const [selectedIndex, setSelectedIndex] = useState(-1);
+  const justSelectedRef = useRef(false);
+  const dropdownRef = useRef<HTMLFormElement>(null);
+
+  // Handle click outside dropdown
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setShowDropdown(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  // Search for tickers
+  useEffect(() => {
+    const trimmed = tickerQuery.trim();
+    if (trimmed.length < 1) {
+      setSearchResults([]);
+      setShowDropdown(false);
+      return;
+    }
+
+    const abortController = new AbortController();
+    const debounceTimer = setTimeout(async () => {
+      setIsSearching(true);
+      try {
+        const response = await fetch(`/api/search?q=${encodeURIComponent(trimmed)}`, {
+          signal: abortController.signal
+        });
+        if (response.ok && !abortController.signal.aborted) {
+          const results = await response.json();
+          setSearchResults(results);
+          if (!justSelectedRef.current) {
+            setShowDropdown(results.length > 0);
+          }
+          setSelectedIndex(-1);
+        }
+      } catch (err: any) {
+        if (err.name !== 'AbortError') {
+          console.error("Search failed:", err);
+        }
+      } finally {
+        if (!abortController.signal.aborted) {
+          setIsSearching(false);
+        }
+      }
+    }, 200);
+
+    return () => {
+      clearTimeout(debounceTimer);
+      abortController.abort();
+    };
+  }, [tickerQuery]);
+
+  const handleTickerSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    const trimmed = tickerQuery.trim().toUpperCase();
+    
+    if (!trimmed) {
+      setTickerError("Enter a company name or ticker");
+      return;
+    }
+
+    if (/^[A-Z]{1,5}$/.test(trimmed)) {
+      setTickerError("");
+      setShowDropdown(false);
+      analytics.trackTickerSearch(trimmed);
+      setLocation(`/app?ticker=${trimmed}`);
+      return;
+    }
+
+    if (searchResults.length > 0) {
+      const idx = selectedIndex >= 0 ? selectedIndex : 0;
+      selectResult(searchResults[idx]);
+      return;
+    }
+
+    setTickerError("Select a company from the suggestions");
+  };
+
+  const selectResult = (result: SearchResult) => {
+    setTickerQuery(result.ticker);
+    setShowDropdown(false);
+    justSelectedRef.current = true;
+    setTickerError("");
+    analytics.trackTickerSearch(result.ticker);
+    setLocation(`/app?ticker=${result.ticker}`);
+  };
+
+  const handleTickerInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setTickerQuery(e.target.value);
+    justSelectedRef.current = false;
+    if (tickerError) setTickerError("");
+  };
+
+  const handleTickerKeyDown = (e: React.KeyboardEvent) => {
+    if (!showDropdown || searchResults.length === 0) return;
+
+    if (e.key === "ArrowDown") {
+      e.preventDefault();
+      setSelectedIndex((prev) => Math.min(prev + 1, searchResults.length - 1));
+    } else if (e.key === "ArrowUp") {
+      e.preventDefault();
+      setSelectedIndex((prev) => Math.max(prev - 1, -1));
+    } else if (e.key === "Enter" && selectedIndex >= 0) {
+      e.preventDefault();
+      selectResult(searchResults[selectedIndex]);
+    } else if (e.key === "Escape") {
+      setShowDropdown(false);
+    }
+  };
 
   const scrollToSection = (sectionId: string) => {
     const element = document.getElementById(sectionId);
@@ -38,9 +172,9 @@ export default function LandingPage() {
   const navLinks = [
     { label: "Problem", id: "problem" },
     { label: "Approach", id: "approach" },
+    { label: "AI", id: "ai-section" },
     { label: "Product", id: "product" },
     { label: "For You", id: "audience" },
-    { label: "Why It Works", id: "why-it-works" },
   ];
 
   return (
@@ -158,6 +292,75 @@ export default function LandingPage() {
                 </Button>
               </Link>
             </div>
+            
+            {/* Quick Ticker Input */}
+            <div className="pt-8 max-w-md mx-auto" data-testid="hero-ticker-input">
+              <p className="text-sm text-muted-foreground mb-3">Or try a stock right now:</p>
+              <form onSubmit={handleTickerSubmit} className="relative" ref={dropdownRef}>
+                <div className="flex gap-2">
+                  <div className="relative flex-1">
+                    <Input
+                      type="text"
+                      value={tickerQuery}
+                      onChange={handleTickerInputChange}
+                      onKeyDown={handleTickerKeyDown}
+                      onFocus={() => searchResults.length > 0 && !justSelectedRef.current && setShowDropdown(true)}
+                      placeholder="AAPL, MSFT, NVDA..."
+                      className={`h-12 text-center font-mono tracking-wide rounded-full pr-10 ${
+                        tickerError ? 'border-destructive focus-visible:ring-destructive' : ''
+                      }`}
+                      data-testid="input-hero-ticker"
+                      autoComplete="off"
+                    />
+                    {isSearching && (
+                      <div className="absolute right-3 top-1/2 -translate-y-1/2">
+                        <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+                      </div>
+                    )}
+                  </div>
+                  <Button 
+                    type="submit" 
+                    className="h-12 px-6 rounded-full"
+                    data-testid="button-hero-analyze"
+                  >
+                    <Search className="h-4 w-4 mr-2" />
+                    Analyze
+                  </Button>
+                </div>
+                
+                {showDropdown && searchResults.length > 0 && (
+                  <div 
+                    className="absolute z-50 w-full mt-2 bg-background border border-border rounded-xl shadow-lg overflow-hidden"
+                    data-testid="dropdown-hero-results"
+                  >
+                    {searchResults.slice(0, 5).map((result, index) => (
+                      <button
+                        key={result.ticker}
+                        type="button"
+                        onClick={() => selectResult(result)}
+                        className={`w-full px-4 py-3 text-left flex items-center gap-3 hover-elevate ${
+                          index === selectedIndex ? 'bg-muted' : ''
+                        }`}
+                        data-testid={`dropdown-hero-item-${result.ticker.toLowerCase()}`}
+                      >
+                        <span className="font-mono font-semibold text-primary min-w-[60px]">
+                          {result.ticker}
+                        </span>
+                        <span className="text-muted-foreground truncate text-sm">
+                          {result.name}
+                        </span>
+                      </button>
+                    ))}
+                  </div>
+                )}
+                
+                {tickerError && (
+                  <p className="text-sm text-destructive text-center mt-2" data-testid="text-hero-error">
+                    {tickerError}
+                  </p>
+                )}
+              </form>
+            </div>
           </div>
         </section>
 
@@ -245,6 +448,10 @@ export default function LandingPage() {
                 <div className="space-y-2">
                   <div className="text-sm font-semibold text-primary">Step 1</div>
                   <p className="font-medium" data-testid="text-step-1">Understand the business</p>
+                  <p className="text-xs text-muted-foreground flex items-center justify-center gap-1">
+                    <Sparkles className="h-3 w-3" />
+                    Summarized by AI
+                  </p>
                 </div>
               </div>
               
@@ -258,6 +465,10 @@ export default function LandingPage() {
                 <div className="space-y-2">
                   <div className="text-sm font-semibold text-primary">Step 2</div>
                   <p className="font-medium" data-testid="text-step-2">Evaluate the deal</p>
+                  <p className="text-xs text-muted-foreground flex items-center justify-center gap-1">
+                    <Sparkles className="h-3 w-3" />
+                    Fair value scored
+                  </p>
                 </div>
               </div>
               
@@ -297,6 +508,137 @@ export default function LandingPage() {
                 <div className="space-y-2">
                   <div className="text-sm font-semibold text-primary">Step 5</div>
                   <p className="font-medium" data-testid="text-step-5">Protect what you own</p>
+                  <p className="text-xs text-muted-foreground flex items-center justify-center gap-1">
+                    <Sparkles className="h-3 w-3" />
+                    Exit rules monitored
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* AI-Powered Section */}
+        <section 
+          id="ai-section" 
+          className="py-20 sm:py-28 px-4 bg-muted/30 scroll-mt-20"
+          data-testid="section-ai"
+        >
+          <div className="mx-auto max-w-6xl space-y-16">
+            <div className="text-center space-y-4">
+              <h2 
+                className="text-3xl sm:text-4xl lg:text-5xl font-bold tracking-tight"
+                data-testid="text-ai-headline"
+              >
+                Let AI do the hard work. You just follow the plan.
+              </h2>
+              <p 
+                className="text-xl text-muted-foreground max-w-3xl mx-auto"
+                data-testid="text-ai-subheadline"
+              >
+                Restnvest uses a quiet army of AI agents to read filings, summarize earnings calls, and analyze risks — so you get clarity, not chaos.
+              </p>
+            </div>
+            
+            {/* AI Features Grid */}
+            <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6 lg:gap-8">
+              <div 
+                className="flex flex-col items-center text-center space-y-4 p-8 rounded-xl border border-border bg-background hover-elevate"
+                data-testid="card-ai-1"
+              >
+                <div className="w-14 h-14 rounded-full bg-primary/10 flex items-center justify-center">
+                  <FileText className="h-6 w-6 text-primary" />
+                </div>
+                <div className="space-y-2">
+                  <h3 className="font-semibold" data-testid="text-ai-feature-1-title">Business insights, simplified</h3>
+                  <p className="text-sm text-muted-foreground" data-testid="text-ai-feature-1-desc">
+                    AI reads the filings and earnings calls so you don't have to.
+                  </p>
+                </div>
+              </div>
+              
+              <div 
+                className="flex flex-col items-center text-center space-y-4 p-8 rounded-xl border border-border bg-background hover-elevate"
+                data-testid="card-ai-2"
+              >
+                <div className="w-14 h-14 rounded-full bg-primary/10 flex items-center justify-center">
+                  <Gauge className="h-6 w-6 text-primary" />
+                </div>
+                <div className="space-y-2">
+                  <h3 className="font-semibold" data-testid="text-ai-feature-2-title">Fair value scoring</h3>
+                  <p className="text-sm text-muted-foreground" data-testid="text-ai-feature-2-desc">
+                    Understand if a stock is overvalued, undervalued, or just right.
+                  </p>
+                </div>
+              </div>
+              
+              <div 
+                className="flex flex-col items-center text-center space-y-4 p-8 rounded-xl border border-border bg-background hover-elevate"
+                data-testid="card-ai-3"
+              >
+                <div className="w-14 h-14 rounded-full bg-primary/10 flex items-center justify-center">
+                  <AlertTriangle className="h-6 w-6 text-primary" />
+                </div>
+                <div className="space-y-2">
+                  <h3 className="font-semibold" data-testid="text-ai-feature-3-title">Risk signals</h3>
+                  <p className="text-sm text-muted-foreground" data-testid="text-ai-feature-3-desc">
+                    AI surfaces red flags and hidden risks — automatically.
+                  </p>
+                </div>
+              </div>
+              
+              <div 
+                className="flex flex-col items-center text-center space-y-4 p-8 rounded-xl border border-border bg-background hover-elevate"
+                data-testid="card-ai-4"
+              >
+                <div className="w-14 h-14 rounded-full bg-primary/10 flex items-center justify-center">
+                  <Bell className="h-6 w-6 text-primary" />
+                </div>
+                <div className="space-y-2">
+                  <h3 className="font-semibold" data-testid="text-ai-feature-4-title">Plan-aware alerts</h3>
+                  <p className="text-sm text-muted-foreground" data-testid="text-ai-feature-4-desc">
+                    Get nudges based on your goals and rules — not the market's mood.
+                  </p>
+                </div>
+              </div>
+            </div>
+            
+            {/* AI Agents Visual */}
+            <div className="relative py-12" data-testid="ai-visual">
+              <div className="flex items-center justify-center gap-8 flex-wrap">
+                {/* Document input */}
+                <div className="flex flex-col items-center gap-2 opacity-60">
+                  <div className="w-12 h-12 rounded-lg bg-muted border border-border flex items-center justify-center">
+                    <FileText className="h-5 w-5 text-muted-foreground" />
+                  </div>
+                  <span className="text-xs text-muted-foreground">10-K Filings</span>
+                </div>
+                
+                {/* Arrow */}
+                <ArrowRight className="h-5 w-5 text-muted-foreground hidden sm:block" />
+                
+                {/* AI Processing - animated */}
+                <div className="flex flex-col items-center gap-2">
+                  <div className="relative">
+                    <div className="w-20 h-20 rounded-full bg-primary/10 border-2 border-primary/30 flex items-center justify-center animate-pulse">
+                      <Bot className="h-8 w-8 text-primary" />
+                    </div>
+                    <div className="absolute -top-1 -right-1 w-6 h-6 rounded-full bg-primary flex items-center justify-center">
+                      <Sparkles className="h-3 w-3 text-primary-foreground" />
+                    </div>
+                  </div>
+                  <span className="text-sm font-medium text-primary">AI Agents</span>
+                </div>
+                
+                {/* Arrow */}
+                <ArrowRight className="h-5 w-5 text-muted-foreground hidden sm:block" />
+                
+                {/* Output - insights */}
+                <div className="flex flex-col items-center gap-2 opacity-60">
+                  <div className="w-12 h-12 rounded-lg bg-muted border border-border flex items-center justify-center">
+                    <CheckCircle2 className="h-5 w-5 text-muted-foreground" />
+                  </div>
+                  <span className="text-xs text-muted-foreground">Your Plan</span>
                 </div>
               </div>
             </div>
@@ -306,7 +648,7 @@ export default function LandingPage() {
         {/* Product Demo Section */}
         <section 
           id="product" 
-          className="py-20 sm:py-28 px-4 bg-muted/30 scroll-mt-20"
+          className="py-20 sm:py-28 px-4 scroll-mt-20"
           data-testid="section-product"
         >
           <div className="mx-auto max-w-6xl space-y-16">
