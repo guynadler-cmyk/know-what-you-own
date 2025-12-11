@@ -1,0 +1,67 @@
+Extend our Financial Strength analysis section with a summary scorecard that aggregates the results from all four quadrants into one clear view.
+
+✅ The goal: help users clearly understand how this business scored across key financial dimensions — and whether it meets their bar for moving forward.
+
+Section Requirements:
+
+Signal Score Summary (Top Row)
+
+Text: 📊 Financial Health Score: X out of 4 signals strong
+
+Dynamic — based on the number of “positive” tags selected
+
+Add a thin horizontal progress bar (4 segments) showing the count visually
+
+Signal Breakdown (Card or Table Style)
+For each of the 4 signals:
+
+Title (e.g. "Growth Quality")
+
+Tag result (e.g. ✅ Scalable Growth, ⚠️ Moderate Risk, ❌ Weak Margins)
+
+Use color-coded badges for quick readability:
+
+✅ Green = strong signal
+
+⚠️ Yellow = mixed/caution
+
+❌ Red = weak/concerning
+
+You can lay this out as a vertical list or responsive 2-column grid
+
+Verdict Block (below tags)
+
+Generate a plain-English summary based on the score:
+
+4/4 → “Financially strong. Likely a solid foundation for a long-term investment.”
+
+2–3/4 → “Mixed signals. Worth considering with caution or deeper conviction.”
+
+0–1/4 → “Financial picture is weak. Unless you have strong conviction, this may not be the right fit.”
+
+Use soft background box (Tailwind bg-neutral-50, rounded-xl, p-4)
+
+Decision Prompt + Buttons (Final CTA)
+Below the verdict, show:
+
+Would you feel confident owning this for the next decade?
+[✔️ Add to Plan]  [🚫 Pass with Confidence]
+
+
+Buttons should be soft-styled, use Tailwind (rounded-lg, hover effects)
+
+Button clicks should trigger simple console.log actions (e.g. console.log("Passed")) for now
+
+Design Requirements:
+
+Use Tailwind CSS only
+
+Style to match rest of the quadrant section — clean, calm, modern
+
+Use light neutral backgrounds, soft shadows, smooth typography
+
+Mobile-friendly: Stack signals vertically on mobile, 2-column on tablet/desktop
+
+All copy and logic should reflect sensible investing principles — high standards, no hype, calm clarity
+
+🎯 This section completes Stage 2 by helping the user make a confident call — move forward, or pass and keep exploring.
