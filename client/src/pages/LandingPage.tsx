@@ -291,7 +291,7 @@ export default function LandingPage() {
           </div>
         </section>
 
-        {/* Problem Section */}
+        {/* Problem Section - Quadrant Layout */}
         <section 
           id="problem" 
           className="py-24 sm:py-32 px-4 bg-muted/30 scroll-mt-20"
@@ -309,83 +309,59 @@ export default function LandingPage() {
               >
                 Most investing advice is built for theory. Not for humans.
               </h2>
+              <p className="text-xl text-muted-foreground max-w-3xl mx-auto">
+                Traditional advice assumes you're a spreadsheet. But real life is messy, emotional, and unpredictable.
+              </p>
             </div>
             
-            {/* Alternating Layout - Problem Cards */}
-            <div className="space-y-12">
-              {/* Row 1: Text Left */}
-              <div className="grid lg:grid-cols-2 gap-8 lg:gap-16 items-center">
-                <div className="space-y-4">
-                  <h3 className="text-2xl font-semibold" data-testid="text-problem-1-title">Built for averages, not individuals</h3>
-                  <p className="text-lg text-muted-foreground leading-relaxed" data-testid="text-problem-1">
-                    Institutions optimize for averages. But people don't live in averages. Your goals, timeline, and risk tolerance are unique.
+            {/* Quadrant Grid with Central Visual */}
+            <div className="relative">
+              {/* Grid Container */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 lg:gap-8">
+                {/* Top Left - Averages */}
+                <div className="p-8 rounded-2xl bg-background border border-border shadow-sm space-y-4" data-testid="card-problem-1">
+                  <span className="text-xs font-semibold tracking-wider uppercase text-primary">Averages</span>
+                  <h3 className="text-xl font-semibold">Built for institutions, not you</h3>
+                  <p className="text-muted-foreground leading-relaxed" data-testid="text-problem-1">
+                    Institutions optimize for averages. But people don't live in averages — your goals, timeline, and risk tolerance are unique.
                   </p>
                 </div>
-                <div className="flex justify-center lg:justify-end">
-                  <div className="w-full max-w-sm p-8 rounded-2xl bg-background border border-border shadow-sm">
-                    <div className="space-y-4">
-                      <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-full bg-destructive/10 flex items-center justify-center">
-                          <AlertTriangle className="h-5 w-5 text-destructive" />
-                        </div>
-                        <span className="font-medium">Generic advice</span>
-                      </div>
-                      <div className="h-2 bg-muted rounded-full overflow-hidden">
-                        <div className="h-full w-3/4 bg-destructive/40 rounded-full" />
-                      </div>
-                      <p className="text-sm text-muted-foreground">Doesn't account for your situation</p>
-                    </div>
-                  </div>
-                </div>
-              </div>
-              
-              {/* Row 2: Text Right */}
-              <div className="grid lg:grid-cols-2 gap-8 lg:gap-16 items-center">
-                <div className="flex justify-center lg:justify-start order-2 lg:order-1">
-                  <div className="w-full max-w-sm p-8 rounded-2xl bg-background border border-border shadow-sm">
-                    <div className="space-y-4">
-                      <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-full bg-destructive/10 flex items-center justify-center">
-                          <TrendingUp className="h-5 w-5 text-destructive" />
-                        </div>
-                        <span className="font-medium">Volatility overload</span>
-                      </div>
-                      <div className="flex gap-1">
-                        {[1, 2, 3, 4, 5].map((i) => (
-                          <div key={i} className="flex-1 h-8 bg-destructive/20 rounded" style={{ height: `${Math.random() * 40 + 20}px` }} />
-                        ))}
-                      </div>
-                      <p className="text-sm text-muted-foreground">Too much noise, too little signal</p>
-                    </div>
-                  </div>
-                </div>
-                <div className="space-y-4 order-1 lg:order-2">
-                  <h3 className="text-2xl font-semibold" data-testid="text-problem-2-title">Optimal is often fragile</h3>
-                  <p className="text-lg text-muted-foreground leading-relaxed" data-testid="text-problem-2">
+                
+                {/* Top Right - Fragile */}
+                <div className="p-8 rounded-2xl bg-background border border-border shadow-sm space-y-4" data-testid="card-problem-2">
+                  <span className="text-xs font-semibold tracking-wider uppercase text-primary">Fragile</span>
+                  <h3 className="text-xl font-semibold">Optimal doesn't survive real life</h3>
+                  <p className="text-muted-foreground leading-relaxed" data-testid="text-problem-2">
                     What's "optimal" is often fragile in real life. It's too abstract, too volatile, too hard to stick with when markets get rough.
                   </p>
                 </div>
-              </div>
-              
-              {/* Row 3: Text Left */}
-              <div className="grid lg:grid-cols-2 gap-8 lg:gap-16 items-center">
-                <div className="space-y-4">
-                  <h3 className="text-2xl font-semibold" data-testid="text-problem-3-title">The churn cycle</h3>
-                  <p className="text-lg text-muted-foreground leading-relaxed" data-testid="text-problem-3">
-                    Retail investors get stuck in churn — buying high, selling low, chasing trends. The industry keeps winning while you lose.
+                
+                {/* Bottom Left - Churn */}
+                <div className="p-8 rounded-2xl bg-background border border-border shadow-sm space-y-4" data-testid="card-problem-3">
+                  <span className="text-xs font-semibold tracking-wider uppercase text-primary">Churn</span>
+                  <h3 className="text-xl font-semibold">Buy high, sell low, repeat</h3>
+                  <p className="text-muted-foreground leading-relaxed" data-testid="text-problem-3">
+                    Retail investors get stuck in churn — chasing trends, panic selling, and missing the compounding that builds wealth.
                   </p>
                 </div>
-                <div className="flex justify-center lg:justify-end">
-                  <div className="w-full max-w-sm p-8 rounded-2xl bg-background border border-border shadow-sm">
-                    <div className="space-y-4 text-center">
-                      <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-destructive/10">
-                        <svg className="w-8 h-8 text-destructive" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                          <path d="M12 2L12 22M12 2L6 8M12 2L18 8M12 22L6 16M12 22L18 16" />
-                        </svg>
-                      </div>
-                      <p className="text-sm text-muted-foreground">Buy high, sell low, repeat</p>
-                    </div>
+                
+                {/* Bottom Right - Noise */}
+                <div className="p-8 rounded-2xl bg-background border border-border shadow-sm space-y-4" data-testid="card-problem-4">
+                  <span className="text-xs font-semibold tracking-wider uppercase text-primary">Noise</span>
+                  <h3 className="text-xl font-semibold">Information overload, clarity deficit</h3>
+                  <p className="text-muted-foreground leading-relaxed" data-testid="text-problem-4">
+                    Endless news, conflicting opinions, and complex jargon. The industry keeps winning while you drown in noise.
+                  </p>
+                </div>
+              </div>
+              
+              {/* Central Visual Overlay (Desktop only) */}
+              <div className="hidden lg:flex absolute inset-0 items-center justify-center pointer-events-none">
+                <div className="w-48 h-48 rounded-2xl bg-background border-2 border-primary/20 shadow-xl flex flex-col items-center justify-center gap-3 pointer-events-auto">
+                  <div className="w-16 h-16 rounded-full bg-primary/10 border-2 border-primary/30 flex items-center justify-center">
+                    <AlertTriangle className="h-7 w-7 text-primary" />
                   </div>
+                  <span className="text-sm font-medium text-muted-foreground">Sound familiar?</span>
                 </div>
               </div>
             </div>
@@ -395,11 +371,14 @@ export default function LandingPage() {
         {/* Restnvest Approach Section */}
         <section 
           id="approach" 
-          className="py-20 sm:py-28 px-4 scroll-mt-20"
+          className="py-24 sm:py-32 px-4 scroll-mt-20"
           data-testid="section-approach"
         >
           <div className="mx-auto max-w-6xl space-y-16">
-            <div className="text-center space-y-4">
+            <div className="text-center space-y-6">
+              <span className="inline-block px-4 py-1.5 text-xs font-semibold tracking-wider uppercase bg-primary/10 text-primary rounded-full">
+                Our Approach
+              </span>
               <h2 
                 className="text-3xl sm:text-4xl lg:text-5xl font-bold tracking-tight"
                 data-testid="text-approach-headline"
@@ -499,11 +478,14 @@ export default function LandingPage() {
         {/* AI-Powered Section */}
         <section 
           id="ai-section" 
-          className="py-20 sm:py-28 px-4 bg-muted/30 scroll-mt-20"
+          className="py-24 sm:py-32 px-4 bg-muted/30 scroll-mt-20"
           data-testid="section-ai"
         >
           <div className="mx-auto max-w-6xl space-y-16">
-            <div className="text-center space-y-4">
+            <div className="text-center space-y-6">
+              <span className="inline-block px-4 py-1.5 text-xs font-semibold tracking-wider uppercase bg-primary/10 text-primary rounded-full">
+                AI-Powered
+              </span>
               <h2 
                 className="text-3xl sm:text-4xl lg:text-5xl font-bold tracking-tight"
                 data-testid="text-ai-headline"
@@ -722,11 +704,14 @@ export default function LandingPage() {
         {/* Audience Section */}
         <section 
           id="audience" 
-          className="py-20 sm:py-28 px-4 scroll-mt-20"
+          className="py-24 sm:py-32 px-4 scroll-mt-20"
           data-testid="section-audience"
         >
           <div className="mx-auto max-w-5xl space-y-16">
-            <div className="text-center space-y-4">
+            <div className="text-center space-y-6">
+              <span className="inline-block px-4 py-1.5 text-xs font-semibold tracking-wider uppercase bg-primary/10 text-primary rounded-full">
+                For You
+              </span>
               <h2 
                 className="text-3xl sm:text-4xl lg:text-5xl font-bold tracking-tight"
                 data-testid="text-audience-headline"
