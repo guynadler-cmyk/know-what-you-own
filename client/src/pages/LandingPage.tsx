@@ -26,10 +26,6 @@ import { useState, useEffect, useRef } from "react";
 import { Link, useLocation } from "wouter";
 import { analytics } from "@/lib/analytics";
 
-import businessOverviewImg from "@assets/generated_images/business_overview_app_mockup.png";
-import valuationAnalysisImg from "@assets/generated_images/valuation_analysis_app_mockup.png";
-import investmentPlanningImg from "@assets/generated_images/investment_planning_app_mockup.png";
-import portfolioTrackerImg from "@assets/generated_images/portfolio_tracker_app_mockup.png";
 
 interface SearchResult {
   ticker: string;
@@ -173,7 +169,6 @@ export default function LandingPage() {
     { label: "Problem", id: "problem" },
     { label: "Approach", id: "approach" },
     { label: "AI", id: "ai-section" },
-    { label: "Product", id: "product" },
     { label: "For You", id: "audience" },
   ];
 
@@ -270,27 +265,28 @@ export default function LandingPage() {
               className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold tracking-tight leading-[1.1]"
               data-testid="text-hero-headline"
             >
-              Sensible investing beats optimal. Because you'll actually stick with it.
+              Investing that makes sense. Finally.
             </h1>
             
             <p 
               className="text-xl sm:text-2xl text-muted-foreground max-w-3xl mx-auto leading-relaxed"
               data-testid="text-hero-subheadline"
             >
-              Information isn't enough. Action builds wealth. Sustainable habits keep it growing.
+              AI agents do the heavy lifting — you stay in control. Restnvest turns chaotic data into clear, structured guidance — so you can invest like a pro, without acting like one.
             </p>
             
-            <div className="pt-8">
+            <div className="pt-8 space-y-3">
               <Link href="/app">
                 <Button
                   size="lg"
                   className="rounded-full px-8 py-6 text-lg font-semibold gap-2"
                   data-testid="button-hero-cta"
                 >
+                  Analyze a stock
                   <ArrowRight className="h-5 w-5" />
-                  Try Restnvest
                 </Button>
               </Link>
+              <p className="text-sm text-muted-foreground">No signup. Just type a ticker.</p>
             </div>
           </div>
         </section>
@@ -667,83 +663,6 @@ export default function LandingPage() {
                     </button>
                   ))}
                 </div>
-              </div>
-            </div>
-          </div>
-        </section>
-
-        {/* Product Demo Section */}
-        <section 
-          id="product" 
-          className="py-20 sm:py-28 px-4 scroll-mt-20"
-          data-testid="section-product"
-        >
-          <div className="mx-auto max-w-6xl space-y-16">
-            <div className="text-center space-y-4">
-              <h2 
-                className="text-3xl sm:text-4xl lg:text-5xl font-bold tracking-tight"
-                data-testid="text-product-headline"
-              >
-                What the app actually does
-              </h2>
-            </div>
-            
-            {/* Demo Screenshots Grid */}
-            <div className="grid sm:grid-cols-2 gap-8 lg:gap-12">
-              <div className="space-y-4" data-testid="card-demo-1">
-                <div className="aspect-[4/3] rounded-xl overflow-hidden border border-border">
-                  <img 
-                    src={businessOverviewImg} 
-                    alt="Business overview dashboard showing revenue breakdown and company metrics"
-                    className="w-full h-full object-cover"
-                    data-testid="img-demo-1"
-                  />
-                </div>
-                <p className="text-center text-lg text-muted-foreground font-medium" data-testid="text-demo-caption-1">
-                  See how the company makes money
-                </p>
-              </div>
-              
-              <div className="space-y-4" data-testid="card-demo-2">
-                <div className="aspect-[4/3] rounded-xl overflow-hidden border border-border">
-                  <img 
-                    src={valuationAnalysisImg} 
-                    alt="Valuation analysis screen with price vs value gauge"
-                    className="w-full h-full object-cover"
-                    data-testid="img-demo-2"
-                  />
-                </div>
-                <p className="text-center text-lg text-muted-foreground font-medium" data-testid="text-demo-caption-2">
-                  Evaluate value vs price
-                </p>
-              </div>
-              
-              <div className="space-y-4" data-testid="card-demo-3">
-                <div className="aspect-[4/3] rounded-xl overflow-hidden border border-border">
-                  <img 
-                    src={investmentPlanningImg} 
-                    alt="Investment planning interface with entry and exit rules"
-                    className="w-full h-full object-cover"
-                    data-testid="img-demo-3"
-                  />
-                </div>
-                <p className="text-center text-lg text-muted-foreground font-medium" data-testid="text-demo-caption-3">
-                  Set your entry and exit rules
-                </p>
-              </div>
-              
-              <div className="space-y-4" data-testid="card-demo-4">
-                <div className="aspect-[4/3] rounded-xl overflow-hidden border border-border">
-                  <img 
-                    src={portfolioTrackerImg} 
-                    alt="Portfolio tracker showing holdings and performance"
-                    className="w-full h-full object-cover"
-                    data-testid="img-demo-4"
-                  />
-                </div>
-                <p className="text-center text-lg text-muted-foreground font-medium" data-testid="text-demo-caption-4">
-                  Track your portfolio with logic, not emotion
-                </p>
               </div>
             </div>
           </div>
