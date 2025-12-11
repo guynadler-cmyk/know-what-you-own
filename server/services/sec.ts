@@ -169,7 +169,11 @@ export class SECService {
       return await axios.get(url, { headers: SEC_HEADERS });
     });
     
-    const text = response.data;
+    // Normalize HTML entities before regex matching (e.g., &#160; -> space)
+    // This fixes companies like AXP that use HTML entities in section headers
+    const text = response.data
+      .replace(/&#160;/g, ' ')
+      .replace(/&nbsp;/g, ' ');
 
     // Try multiple regex patterns to handle different 10-K formatting
     const patterns = [
@@ -213,7 +217,11 @@ export class SECService {
     const url = `https://www.sec.gov/Archives/edgar/data/${parseInt(cik)}/${accessionPath}/${accessionNumber}.txt`;
     
     const response = await axios.get(url, { headers: SEC_HEADERS });
-    const text = response.data;
+    
+    // Normalize HTML entities before regex matching (e.g., &#160; -> space)
+    const text = response.data
+      .replace(/&#160;/g, ' ')
+      .replace(/&nbsp;/g, ' ');
 
     // Try multiple regex patterns to extract notes/footnotes
     // Footnotes typically appear in Item 8 after the financial statements
