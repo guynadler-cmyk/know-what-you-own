@@ -380,7 +380,7 @@ export default function LandingPage() {
           className="py-24 sm:py-32 px-4 scroll-mt-20"
           data-testid="section-approach"
         >
-          <div className="mx-auto max-w-6xl space-y-16">
+          <div className="mx-auto max-w-6xl space-y-20">
             <div className="text-center space-y-6">
               <span className="inline-block px-4 py-1.5 text-xs font-semibold tracking-wider uppercase bg-primary/10 text-primary rounded-full">
                 Our Approach
@@ -399,82 +399,180 @@ export default function LandingPage() {
               </p>
             </div>
             
-            {/* 5 Steps Grid */}
-            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-6 lg:gap-8">
-              <div 
-                className="flex flex-col items-center text-center space-y-4 p-6 rounded-xl hover-elevate"
-                data-testid="card-step-1"
-              >
-                <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center">
-                  <Search className="h-7 w-7 text-primary" />
+            {/* Alternating Steps Layout */}
+            <div className="space-y-16 lg:space-y-24">
+              {/* Step 1: Understand - Text Left, Visual Right */}
+              <div className="grid lg:grid-cols-2 gap-8 lg:gap-16 items-center" data-testid="card-step-1">
+                <div className="space-y-6">
+                  <span className="text-xs font-semibold tracking-wider uppercase text-primary">Step 1</span>
+                  <h3 className="text-2xl sm:text-3xl font-semibold" data-testid="text-step-1">Understand the business</h3>
+                  <p className="text-lg text-muted-foreground leading-relaxed">
+                    Before you invest a dollar, know what you're buying. AI reads through SEC filings and earnings calls to give you a plain-English summary of how the company makes money.
+                  </p>
+                  <div className="flex items-center gap-2 text-sm text-primary">
+                    <Sparkles className="h-4 w-4" />
+                    <span>Summarized by AI</span>
+                  </div>
                 </div>
-                <div className="space-y-2">
-                  <div className="text-sm font-semibold text-primary">Step 1</div>
-                  <p className="font-medium" data-testid="text-step-1">Understand the business</p>
-                  <p className="text-xs text-muted-foreground flex items-center justify-center gap-1">
-                    <Sparkles className="h-3 w-3" />
-                    Summarized by AI
+                <div className="flex justify-center lg:justify-end">
+                  <div className="w-full max-w-sm p-6 rounded-2xl bg-muted/50 border border-border shadow-sm">
+                    <div className="space-y-4">
+                      <div className="flex items-center gap-3 pb-3 border-b border-border">
+                        <Search className="h-5 w-5 text-primary" />
+                        <span className="font-medium">Business Overview</span>
+                      </div>
+                      <div className="space-y-3">
+                        <div className="h-3 bg-primary/20 rounded-full w-full" />
+                        <div className="h-3 bg-primary/10 rounded-full w-4/5" />
+                        <div className="h-3 bg-primary/10 rounded-full w-3/4" />
+                      </div>
+                      <div className="flex gap-2 pt-2">
+                        <span className="px-3 py-1 text-xs bg-primary/10 text-primary rounded-full">Revenue</span>
+                        <span className="px-3 py-1 text-xs bg-primary/10 text-primary rounded-full">Model</span>
+                        <span className="px-3 py-1 text-xs bg-primary/10 text-primary rounded-full">Risks</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              
+              {/* Step 2: Evaluate - Visual Left, Text Right */}
+              <div className="grid lg:grid-cols-2 gap-8 lg:gap-16 items-center" data-testid="card-step-2">
+                <div className="flex justify-center lg:justify-start order-2 lg:order-1">
+                  <div className="w-full max-w-sm p-6 rounded-2xl bg-muted/50 border border-border shadow-sm">
+                    <div className="space-y-4">
+                      <div className="flex items-center gap-3 pb-3 border-b border-border">
+                        <Scale className="h-5 w-5 text-primary" />
+                        <span className="font-medium">Valuation Analysis</span>
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm text-muted-foreground">Fair Value</span>
+                        <span className="font-semibold text-primary">$142</span>
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm text-muted-foreground">Current Price</span>
+                        <span className="font-semibold">$128</span>
+                      </div>
+                      <div className="h-2 bg-muted rounded-full overflow-hidden">
+                        <div className="h-full w-3/4 bg-primary rounded-full" />
+                      </div>
+                      <p className="text-xs text-center text-primary font-medium">11% undervalued</p>
+                    </div>
+                  </div>
+                </div>
+                <div className="space-y-6 order-1 lg:order-2">
+                  <span className="text-xs font-semibold tracking-wider uppercase text-primary">Step 2</span>
+                  <h3 className="text-2xl sm:text-3xl font-semibold" data-testid="text-step-2">Evaluate the deal</h3>
+                  <p className="text-lg text-muted-foreground leading-relaxed">
+                    Is this stock worth the price? Our AI scores the valuation so you can see if you're getting a fair deal — or paying too much for hype.
+                  </p>
+                  <div className="flex items-center gap-2 text-sm text-primary">
+                    <Sparkles className="h-4 w-4" />
+                    <span>Fair value scored</span>
+                  </div>
+                </div>
+              </div>
+              
+              {/* Step 3: Plan - Text Left, Visual Right */}
+              <div className="grid lg:grid-cols-2 gap-8 lg:gap-16 items-center" data-testid="card-step-3">
+                <div className="space-y-6">
+                  <span className="text-xs font-semibold tracking-wider uppercase text-primary">Step 3</span>
+                  <h3 className="text-2xl sm:text-3xl font-semibold" data-testid="text-step-3">Plan your investment</h3>
+                  <p className="text-lg text-muted-foreground leading-relaxed">
+                    Set your own rules: how much to buy, at what price, and when to sell. A plan removes emotion from the equation and keeps you disciplined.
+                  </p>
+                </div>
+                <div className="flex justify-center lg:justify-end">
+                  <div className="w-full max-w-sm p-6 rounded-2xl bg-muted/50 border border-border shadow-sm">
+                    <div className="space-y-4">
+                      <div className="flex items-center gap-3 pb-3 border-b border-border">
+                        <Target className="h-5 w-5 text-primary" />
+                        <span className="font-medium">Investment Plan</span>
+                      </div>
+                      <div className="space-y-3 text-sm">
+                        <div className="flex justify-between">
+                          <span className="text-muted-foreground">Entry price</span>
+                          <span className="font-medium">$125 or below</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-muted-foreground">Position size</span>
+                          <span className="font-medium">5% of portfolio</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-muted-foreground">Exit trigger</span>
+                          <span className="font-medium">Thesis breaks</span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              
+              {/* Step 4: Execute - Visual Left, Text Right */}
+              <div className="grid lg:grid-cols-2 gap-8 lg:gap-16 items-center" data-testid="card-step-4">
+                <div className="flex justify-center lg:justify-start order-2 lg:order-1">
+                  <div className="w-full max-w-sm p-6 rounded-2xl bg-muted/50 border border-border shadow-sm">
+                    <div className="space-y-4">
+                      <div className="flex items-center gap-3 pb-3 border-b border-border">
+                        <TrendingUp className="h-5 w-5 text-primary" />
+                        <span className="font-medium">Trade Execution</span>
+                      </div>
+                      <div className="flex items-center gap-3 p-3 bg-primary/5 rounded-lg border border-primary/20">
+                        <CheckCircle2 className="h-5 w-5 text-primary" />
+                        <div>
+                          <p className="text-sm font-medium">Plan conditions met</p>
+                          <p className="text-xs text-muted-foreground">Price dropped to $124</p>
+                        </div>
+                      </div>
+                      <Button size="sm" className="w-full rounded-full">Execute Trade</Button>
+                    </div>
+                  </div>
+                </div>
+                <div className="space-y-6 order-1 lg:order-2">
+                  <span className="text-xs font-semibold tracking-wider uppercase text-primary">Step 4</span>
+                  <h3 className="text-2xl sm:text-3xl font-semibold" data-testid="text-step-4">Make your move</h3>
+                  <p className="text-lg text-muted-foreground leading-relaxed">
+                    When conditions align with your plan, you act with confidence. No second-guessing, no FOMO — just executing what you already decided.
                   </p>
                 </div>
               </div>
               
-              <div 
-                className="flex flex-col items-center text-center space-y-4 p-6 rounded-xl hover-elevate"
-                data-testid="card-step-2"
-              >
-                <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center">
-                  <Scale className="h-7 w-7 text-primary" />
-                </div>
-                <div className="space-y-2">
-                  <div className="text-sm font-semibold text-primary">Step 2</div>
-                  <p className="font-medium" data-testid="text-step-2">Evaluate the deal</p>
-                  <p className="text-xs text-muted-foreground flex items-center justify-center gap-1">
-                    <Sparkles className="h-3 w-3" />
-                    Fair value scored
+              {/* Step 5: Protect - Text Left, Visual Right */}
+              <div className="grid lg:grid-cols-2 gap-8 lg:gap-16 items-center" data-testid="card-step-5">
+                <div className="space-y-6">
+                  <span className="text-xs font-semibold tracking-wider uppercase text-primary">Step 5</span>
+                  <h3 className="text-2xl sm:text-3xl font-semibold" data-testid="text-step-5">Protect what you own</h3>
+                  <p className="text-lg text-muted-foreground leading-relaxed">
+                    Your investment thesis can break. AI monitors your holdings and alerts you when something changes — so you can exit on your terms, not panic.
                   </p>
+                  <div className="flex items-center gap-2 text-sm text-primary">
+                    <Sparkles className="h-4 w-4" />
+                    <span>Exit rules monitored</span>
+                  </div>
                 </div>
-              </div>
-              
-              <div 
-                className="flex flex-col items-center text-center space-y-4 p-6 rounded-xl hover-elevate"
-                data-testid="card-step-3"
-              >
-                <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center">
-                  <Target className="h-7 w-7 text-primary" />
-                </div>
-                <div className="space-y-2">
-                  <div className="text-sm font-semibold text-primary">Step 3</div>
-                  <p className="font-medium" data-testid="text-step-3">Plan your investment</p>
-                </div>
-              </div>
-              
-              <div 
-                className="flex flex-col items-center text-center space-y-4 p-6 rounded-xl hover-elevate"
-                data-testid="card-step-4"
-              >
-                <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center">
-                  <TrendingUp className="h-7 w-7 text-primary" />
-                </div>
-                <div className="space-y-2">
-                  <div className="text-sm font-semibold text-primary">Step 4</div>
-                  <p className="font-medium" data-testid="text-step-4">Make your move</p>
-                </div>
-              </div>
-              
-              <div 
-                className="flex flex-col items-center text-center space-y-4 p-6 rounded-xl hover-elevate col-span-2 sm:col-span-1"
-                data-testid="card-step-5"
-              >
-                <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center">
-                  <Shield className="h-7 w-7 text-primary" />
-                </div>
-                <div className="space-y-2">
-                  <div className="text-sm font-semibold text-primary">Step 5</div>
-                  <p className="font-medium" data-testid="text-step-5">Protect what you own</p>
-                  <p className="text-xs text-muted-foreground flex items-center justify-center gap-1">
-                    <Sparkles className="h-3 w-3" />
-                    Exit rules monitored
-                  </p>
+                <div className="flex justify-center lg:justify-end">
+                  <div className="w-full max-w-sm p-6 rounded-2xl bg-muted/50 border border-border shadow-sm">
+                    <div className="space-y-4">
+                      <div className="flex items-center gap-3 pb-3 border-b border-border">
+                        <Shield className="h-5 w-5 text-primary" />
+                        <span className="font-medium">Portfolio Watch</span>
+                      </div>
+                      <div className="space-y-3">
+                        <div className="flex items-center gap-3 p-2 rounded-lg">
+                          <div className="w-2 h-2 rounded-full bg-primary" />
+                          <span className="text-sm">AAPL - Thesis intact</span>
+                        </div>
+                        <div className="flex items-center gap-3 p-2 rounded-lg">
+                          <div className="w-2 h-2 rounded-full bg-primary" />
+                          <span className="text-sm">MSFT - Thesis intact</span>
+                        </div>
+                        <div className="flex items-center gap-3 p-2 bg-destructive/5 rounded-lg border border-destructive/20">
+                          <div className="w-2 h-2 rounded-full bg-destructive" />
+                          <span className="text-sm">XYZ - Review needed</span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>
