@@ -118,6 +118,9 @@ export default function AppPage() {
           }
         });
       }
+      
+      // Preload Stage 2 financial metrics in the background
+      fetchFinancialMetrics(ticker);
     } catch (error: any) {
       // Extract error information from thrown error or fallback to generic message
       const errorTitle = error.errorData?.error || "Analysis Failed";
@@ -158,8 +161,8 @@ export default function AppPage() {
     params.set('stage', stage.toString());
     window.history.pushState({}, '', `?${params.toString()}`);
 
-    // Fetch financial metrics when going to Stage 2
-    if (stage === 2 && currentTicker) {
+    // Fetch financial metrics when going to Stage 2 (only if not already loaded)
+    if (stage === 2 && currentTicker && !financialMetrics) {
       fetchFinancialMetrics(currentTicker);
     }
   };
