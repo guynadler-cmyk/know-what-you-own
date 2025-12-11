@@ -1,7 +1,6 @@
 import { Card, CardContent } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { CheckCircle, XCircle, AlertTriangle, BarChart3 } from "lucide-react";
+import { CheckCircle, AlertTriangle, XCircle, BarChart3 } from "lucide-react";
 import { QUADRANT_DATA, type SignalStrength } from "@/components/QuadrantExplorer";
 
 function getStrengthStyles(strength: SignalStrength) {
@@ -103,14 +102,6 @@ export function FinancialScorecard() {
   const strongCount = QUADRANT_DATA.filter(q => q.strength === "strong").length;
   const verdict = getVerdict(strongCount);
 
-  const handleAddToPlan = () => {
-    console.log("Added to plan");
-  };
-
-  const handlePass = () => {
-    console.log("Passed with confidence");
-  };
-
   return (
     <div className="mt-10 space-y-6" data-testid="financial-scorecard">
       <Card className="bg-neutral-50 dark:bg-neutral-900/50 border-border/60">
@@ -152,36 +143,6 @@ export function FinancialScorecard() {
           >
             <p className="text-foreground leading-relaxed font-medium">
               {verdict.summary}
-            </p>
-          </div>
-
-          <div className="space-y-4 pt-2">
-            <p className="text-center text-foreground font-medium">
-              Would you feel confident owning this for the next decade?
-            </p>
-            
-            <div className="flex flex-col sm:flex-row gap-3 justify-center">
-              <Button
-                onClick={handleAddToPlan}
-                className="rounded-xl px-6 bg-green-600 hover:bg-green-700 text-white"
-                data-testid="button-add-to-plan"
-              >
-                <CheckCircle className="w-4 h-4 mr-2" />
-                Add to Plan
-              </Button>
-              <Button
-                onClick={handlePass}
-                variant="outline"
-                className="rounded-xl px-6"
-                data-testid="button-pass"
-              >
-                <XCircle className="w-4 h-4 mr-2" />
-                Pass with Confidence
-              </Button>
-            </div>
-            
-            <p className="text-xs text-center text-muted-foreground">
-              Both choices are valid. Sensible investing is about being intentional.
             </p>
           </div>
         </CardContent>
