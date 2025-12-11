@@ -246,33 +246,33 @@ function QuadrantChart({ quadrant }: { quadrant: QuadrantData }) {
         
         <g className="text-[11px] font-medium">
           <text 
-            x={center + innerSize/4} 
-            y={padding + innerSize/4 + 4} 
-            textAnchor="middle"
+            x={chartSize - padding - 8} 
+            y={padding + 20} 
+            textAnchor="end"
             className="fill-green-600 dark:fill-green-400"
           >
             {quadrant.zones.topRight}
           </text>
           <text 
-            x={center - innerSize/4} 
-            y={padding + innerSize/4 + 4} 
-            textAnchor="middle"
+            x={padding + 8} 
+            y={padding + 20} 
+            textAnchor="start"
             className="fill-yellow-600 dark:fill-yellow-400"
           >
             {quadrant.zones.topLeft}
           </text>
           <text 
-            x={center + innerSize/4} 
-            y={center + innerSize/4 + 4} 
-            textAnchor="middle"
+            x={chartSize - padding - 8} 
+            y={chartSize - padding - 12} 
+            textAnchor="end"
             className="fill-blue-600 dark:fill-blue-400"
           >
             {quadrant.zones.bottomRight}
           </text>
           <text 
-            x={center - innerSize/4} 
-            y={center + innerSize/4 + 4} 
-            textAnchor="middle"
+            x={padding + 8} 
+            y={chartSize - padding - 12} 
+            textAnchor="start"
             className="fill-red-600 dark:fill-red-400"
           >
             {quadrant.zones.bottomLeft}
