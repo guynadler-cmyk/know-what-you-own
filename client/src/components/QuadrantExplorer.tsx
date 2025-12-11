@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Card } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
-import { TrendingUp, TrendingDown, ArrowUp, ArrowDown } from "lucide-react";
+import { TrendingUp, TrendingDown } from "lucide-react";
 
 interface QuadrantData {
   id: string;
@@ -18,7 +18,7 @@ interface QuadrantData {
   };
   position: { x: number; y: number };
   insight: string;
-  signalIcons: [boolean, boolean];
+  signalDirections: [boolean, boolean];
 }
 
 const QUADRANT_DATA: QuadrantData[] = [
@@ -26,8 +26,8 @@ const QUADRANT_DATA: QuadrantData[] = [
     id: "growth-quality",
     title: "Growth Quality",
     verdict: "Scalable Growth",
-    signals: ["Revenue ↑", "Earnings ↑"],
-    signalIcons: [true, true],
+    signals: ["Revenue", "Earnings"],
+    signalDirections: [true, true],
     xLabel: "Revenue Growth",
     yLabel: "Earnings Growth",
     zones: {
@@ -37,14 +37,14 @@ const QUADRANT_DATA: QuadrantData[] = [
       bottomLeft: "Declining",
     },
     position: { x: 72, y: 25 },
-    insight: "The company is growing both revenue and earnings — a sign of scalable, healthy expansion. This is the hallmark of a quality compounder.",
+    insight: "The company is growing both revenue and earnings — a sign of scalable, healthy expansion. This is the hallmark of a quality compounder that can sustain growth over time.",
   },
   {
     id: "profit-cash",
     title: "Profit vs Cash",
     verdict: "Profitable + Liquid",
-    signals: ["Margins ↑", "FCF ↑"],
-    signalIcons: [true, true],
+    signals: ["Margins", "FCF"],
+    signalDirections: [true, true],
     xLabel: "Profit Margins",
     yLabel: "Free Cash Flow",
     zones: {
@@ -54,31 +54,31 @@ const QUADRANT_DATA: QuadrantData[] = [
       bottomLeft: "Cash Burn",
     },
     position: { x: 68, y: 30 },
-    insight: "Strong profit margins paired with growing free cash flow. The business generates real cash, not just accounting profits.",
+    insight: "Strong profit margins paired with growing free cash flow. The business generates real cash, not just accounting profits. This is the sign of a healthy, sustainable operation.",
   },
   {
     id: "debt-safety",
     title: "Debt Safety",
     verdict: "Financially Resilient",
-    signals: ["Debt ↓", "Cash ↑"],
-    signalIcons: [false, true],
+    signals: ["Debt", "Cash"],
+    signalDirections: [false, true],
     xLabel: "Cash Position",
     yLabel: "Debt Level",
     zones: {
-      topRight: "Fortress",
-      topLeft: "Overleveraged",
-      bottomRight: "Cash Rich",
-      bottomLeft: "At Risk",
+      topRight: "Overleveraged",
+      topLeft: "At Risk",
+      bottomRight: "Fortress",
+      bottomLeft: "Cash Poor",
     },
     position: { x: 75, y: 70 },
-    insight: "Low debt and strong cash reserves create a safety cushion. The company can weather downturns and seize opportunities.",
+    insight: "Low debt and strong cash reserves create a financial fortress. The company can weather economic downturns and seize opportunities when competitors struggle.",
   },
   {
     id: "reinvestment",
     title: "Reinvestment Return",
     verdict: "Smart Allocation",
-    signals: ["CapEx ↑", "ROIC ↑"],
-    signalIcons: [true, true],
+    signals: ["CapEx", "ROIC"],
+    signalDirections: [true, true],
     xLabel: "Capital Expenditure",
     yLabel: "Return on Capital",
     zones: {
@@ -88,7 +88,7 @@ const QUADRANT_DATA: QuadrantData[] = [
       bottomLeft: "Destroying Value",
     },
     position: { x: 65, y: 28 },
-    insight: "High capital investment paired with strong returns. The company is reinvesting wisely and generating value from its investments.",
+    insight: "High capital investment paired with strong returns. The company is reinvesting wisely and generating value from every dollar invested back into the business.",
   },
 ];
 
@@ -100,7 +100,7 @@ function SummaryCardRow({
   onSelect: (id: string) => void;
 }) {
   return (
-    <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4">
+    <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
       {QUADRANT_DATA.map((quadrant) => {
         const isSelected = selectedId === quadrant.id;
         return (
@@ -108,36 +108,40 @@ function SummaryCardRow({
             key={quadrant.id}
             onClick={() => onSelect(quadrant.id)}
             className={cn(
-              "text-left p-4 md:p-5 rounded-xl border-2 transition-all duration-200",
+              "text-left p-4 rounded-xl border-2 transition-all duration-200",
               "bg-card hover-elevate active-elevate-2",
               isSelected 
-                ? "border-primary shadow-md" 
-                : "border-border/50"
+                ? "border-primary shadow-lg ring-1 ring-primary/20" 
+                : "border-border/40 hover:border-border"
             )}
             data-testid={`quadrant-card-${quadrant.id}`}
           >
-            <h3 className="font-semibold text-sm md:text-base mb-1 line-clamp-1">
+            <h3 className="font-semibold text-sm mb-1">
               {quadrant.title}
             </h3>
             <p className={cn(
-              "text-xs md:text-sm font-medium mb-2",
+              "text-xs font-medium mb-2",
               isSelected ? "text-primary" : "text-muted-foreground"
             )}>
               {quadrant.verdict}
             </p>
-            <div className="flex flex-wrap gap-1 md:gap-2">
+            <div className="flex flex-wrap gap-1.5">
               {quadrant.signals.map((signal, idx) => (
                 <span 
                   key={idx} 
-                  className="inline-flex items-center gap-0.5 text-xs text-muted-foreground bg-muted/50 px-2 py-0.5 rounded-full"
-                >
-                  {quadrant.signalIcons[idx] ? (
-                    <ArrowUp className="w-3 h-3 text-green-500" />
-                  ) : (
-                    <ArrowDown className="w-3 h-3 text-red-500" />
+                  className={cn(
+                    "inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full",
+                    quadrant.signalDirections[idx] 
+                      ? "bg-green-500/10 text-green-700 dark:text-green-400" 
+                      : "bg-red-500/10 text-red-700 dark:text-red-400"
                   )}
-                  <span className="hidden sm:inline">{signal.replace(" ↑", "").replace(" ↓", "")}</span>
-                  <span className="sm:hidden">{signal.replace(" ↑", "").replace(" ↓", "").slice(0, 3)}</span>
+                >
+                  {quadrant.signalDirections[idx] ? (
+                    <TrendingUp className="w-3 h-3" />
+                  ) : (
+                    <TrendingDown className="w-3 h-3" />
+                  )}
+                  {signal}
                 </span>
               ))}
             </div>
@@ -149,8 +153,8 @@ function SummaryCardRow({
 }
 
 function QuadrantChart({ quadrant }: { quadrant: QuadrantData }) {
-  const chartSize = 320;
-  const padding = 48;
+  const chartSize = 400;
+  const padding = 56;
   const innerSize = chartSize - padding * 2;
   const center = chartSize / 2;
   
@@ -158,117 +162,164 @@ function QuadrantChart({ quadrant }: { quadrant: QuadrantData }) {
   const dotY = padding + (quadrant.position.y / 100) * innerSize;
 
   return (
-    <div className="flex flex-col items-center">
-      <div className="relative w-full max-w-[320px] aspect-square">
-        <svg 
-          viewBox={`0 0 ${chartSize} ${chartSize}`} 
-          className="w-full h-full"
-          data-testid={`quadrant-chart-${quadrant.id}`}
-        >
-          <rect 
-            x={padding} 
-            y={padding} 
-            width={innerSize} 
-            height={innerSize} 
-            className="fill-muted/30"
-            rx="8"
-          />
-          
-          <line 
-            x1={center} 
-            y1={padding} 
-            x2={center} 
-            y2={chartSize - padding}
-            className="stroke-border"
-            strokeWidth="1"
-            strokeDasharray="4 4"
-          />
-          <line 
-            x1={padding} 
-            y1={center} 
-            x2={chartSize - padding} 
-            y2={center}
-            className="stroke-border"
-            strokeWidth="1"
-            strokeDasharray="4 4"
-          />
-          
-          <g className="text-[9px] fill-muted-foreground font-medium">
-            <text 
-              x={center + innerSize/4} 
-              y={padding + innerSize/4} 
-              textAnchor="middle"
-              className="fill-green-600/70 dark:fill-green-400/70"
-            >
-              {quadrant.zones.topRight}
-            </text>
-            <text 
-              x={center - innerSize/4} 
-              y={padding + innerSize/4} 
-              textAnchor="middle"
-              className="fill-yellow-600/70 dark:fill-yellow-400/70"
-            >
-              {quadrant.zones.topLeft}
-            </text>
-            <text 
-              x={center + innerSize/4} 
-              y={center + innerSize/4} 
-              textAnchor="middle"
-              className="fill-blue-600/70 dark:fill-blue-400/70"
-            >
-              {quadrant.zones.bottomRight}
-            </text>
-            <text 
-              x={center - innerSize/4} 
-              y={center + innerSize/4} 
-              textAnchor="middle"
-              className="fill-red-600/70 dark:fill-red-400/70"
-            >
-              {quadrant.zones.bottomLeft}
-            </text>
-          </g>
-          
-          <circle
-            cx={dotX}
-            cy={dotY}
-            r="10"
-            className="fill-primary"
-          />
-          <circle
-            cx={dotX}
-            cy={dotY}
-            r="16"
-            className="fill-primary/20"
-          />
-          
+    <div className="relative w-full max-w-[400px] mx-auto">
+      <svg 
+        viewBox={`0 0 ${chartSize} ${chartSize}`} 
+        className="w-full h-auto"
+        data-testid={`quadrant-chart-${quadrant.id}`}
+      >
+        <defs>
+          <linearGradient id="topRightGradient" x1="0%" y1="100%" x2="100%" y2="0%">
+            <stop offset="0%" stopColor="hsl(142, 76%, 36%)" stopOpacity="0.08" />
+            <stop offset="100%" stopColor="hsl(142, 76%, 36%)" stopOpacity="0.15" />
+          </linearGradient>
+          <linearGradient id="topLeftGradient" x1="100%" y1="100%" x2="0%" y2="0%">
+            <stop offset="0%" stopColor="hsl(48, 96%, 53%)" stopOpacity="0.08" />
+            <stop offset="100%" stopColor="hsl(48, 96%, 53%)" stopOpacity="0.12" />
+          </linearGradient>
+          <linearGradient id="bottomRightGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stopColor="hsl(217, 91%, 60%)" stopOpacity="0.08" />
+            <stop offset="100%" stopColor="hsl(217, 91%, 60%)" stopOpacity="0.12" />
+          </linearGradient>
+          <linearGradient id="bottomLeftGradient" x1="100%" y1="0%" x2="0%" y2="100%">
+            <stop offset="0%" stopColor="hsl(0, 72%, 51%)" stopOpacity="0.08" />
+            <stop offset="100%" stopColor="hsl(0, 72%, 51%)" stopOpacity="0.12" />
+          </linearGradient>
+        </defs>
+
+        <rect 
+          x={padding} 
+          y={padding} 
+          width={innerSize / 2} 
+          height={innerSize / 2} 
+          fill="url(#topLeftGradient)"
+        />
+        <rect 
+          x={center} 
+          y={padding} 
+          width={innerSize / 2} 
+          height={innerSize / 2} 
+          fill="url(#topRightGradient)"
+        />
+        <rect 
+          x={padding} 
+          y={center} 
+          width={innerSize / 2} 
+          height={innerSize / 2} 
+          fill="url(#bottomLeftGradient)"
+        />
+        <rect 
+          x={center} 
+          y={center} 
+          width={innerSize / 2} 
+          height={innerSize / 2} 
+          fill="url(#bottomRightGradient)"
+        />
+        
+        <rect 
+          x={padding} 
+          y={padding} 
+          width={innerSize} 
+          height={innerSize} 
+          fill="none"
+          className="stroke-border"
+          strokeWidth="1"
+          rx="12"
+        />
+        
+        <line 
+          x1={center} 
+          y1={padding + 8} 
+          x2={center} 
+          y2={chartSize - padding - 8}
+          className="stroke-border/60"
+          strokeWidth="1"
+        />
+        <line 
+          x1={padding + 8} 
+          y1={center} 
+          x2={chartSize - padding - 8} 
+          y2={center}
+          className="stroke-border/60"
+          strokeWidth="1"
+        />
+        
+        <g className="text-[11px] font-medium">
           <text 
-            x={padding - 8} 
-            y={center} 
-            textAnchor="end"
-            dominantBaseline="middle"
-            className="fill-muted-foreground text-[10px]"
-            transform={`rotate(-90, ${padding - 8}, ${center})`}
-          >
-            {quadrant.yLabel}
-          </text>
-          
-          <text 
-            x={center} 
-            y={chartSize - padding + 24} 
+            x={center + innerSize/4} 
+            y={padding + innerSize/4 + 4} 
             textAnchor="middle"
-            className="fill-muted-foreground text-[10px]"
+            className="fill-green-600 dark:fill-green-400"
           >
-            {quadrant.xLabel}
+            {quadrant.zones.topRight}
           </text>
-          
-          <g className="text-[8px] fill-muted-foreground/60">
-            <text x={padding} y={chartSize - padding + 12} textAnchor="start">Low</text>
-            <text x={chartSize - padding} y={chartSize - padding + 12} textAnchor="end">High</text>
-            <text x={padding - 6} y={chartSize - padding} textAnchor="end">Low</text>
-            <text x={padding - 6} y={padding + 4} textAnchor="end">High</text>
-          </g>
-        </svg>
-      </div>
+          <text 
+            x={center - innerSize/4} 
+            y={padding + innerSize/4 + 4} 
+            textAnchor="middle"
+            className="fill-yellow-600 dark:fill-yellow-400"
+          >
+            {quadrant.zones.topLeft}
+          </text>
+          <text 
+            x={center + innerSize/4} 
+            y={center + innerSize/4 + 4} 
+            textAnchor="middle"
+            className="fill-blue-600 dark:fill-blue-400"
+          >
+            {quadrant.zones.bottomRight}
+          </text>
+          <text 
+            x={center - innerSize/4} 
+            y={center + innerSize/4 + 4} 
+            textAnchor="middle"
+            className="fill-red-600 dark:fill-red-400"
+          >
+            {quadrant.zones.bottomLeft}
+          </text>
+        </g>
+        
+        <circle
+          cx={dotX}
+          cy={dotY}
+          r="20"
+          className="fill-primary/15"
+        />
+        <circle
+          cx={dotX}
+          cy={dotY}
+          r="12"
+          className="fill-primary stroke-white dark:stroke-background"
+          strokeWidth="3"
+        />
+        
+        <text 
+          x={12} 
+          y={center} 
+          textAnchor="middle"
+          dominantBaseline="middle"
+          className="fill-muted-foreground text-[11px] font-medium"
+          transform={`rotate(-90, 12, ${center})`}
+        >
+          {quadrant.yLabel}
+        </text>
+        
+        <text 
+          x={center} 
+          y={chartSize - 16} 
+          textAnchor="middle"
+          className="fill-muted-foreground text-[11px] font-medium"
+        >
+          {quadrant.xLabel}
+        </text>
+        
+        <g className="text-[9px] fill-muted-foreground/70 font-medium">
+          <text x={padding + 4} y={chartSize - padding + 14} textAnchor="start">Low</text>
+          <text x={chartSize - padding - 4} y={chartSize - padding + 14} textAnchor="end">High</text>
+          <text x={padding - 8} y={chartSize - padding - 4} textAnchor="end">Low</text>
+          <text x={padding - 8} y={padding + 8} textAnchor="end">High</text>
+        </g>
+      </svg>
     </div>
   );
 }
@@ -279,55 +330,55 @@ export function QuadrantExplorer() {
   const selectedQuadrant = QUADRANT_DATA.find(q => q.id === selectedId) || QUADRANT_DATA[0];
 
   return (
-    <div className="space-y-6 md:space-y-8" data-testid="quadrant-explorer">
+    <div className="space-y-6" data-testid="quadrant-explorer">
       <SummaryCardRow 
         selectedId={selectedId} 
         onSelect={setSelectedId} 
       />
       
-      <Card className="p-6 md:p-8">
-        <div className="flex flex-col md:flex-row md:items-start gap-6 md:gap-8">
-          <div className="flex-shrink-0 mx-auto md:mx-0">
+      <Card className="overflow-hidden">
+        <div className="grid lg:grid-cols-2 gap-0">
+          <div className="p-6 lg:p-8 flex items-center justify-center bg-muted/30">
             <QuadrantChart quadrant={selectedQuadrant} />
           </div>
           
-          <div className="flex-1 space-y-4">
+          <div className="p-6 lg:p-8 flex flex-col justify-center space-y-5 border-t lg:border-t-0 lg:border-l border-border">
             <div>
-              <h3 className="text-xl font-bold mb-1" data-testid="quadrant-title">
+              <h3 className="text-2xl font-bold mb-2" data-testid="quadrant-title">
                 {selectedQuadrant.title}
               </h3>
-              <div className="inline-flex items-center gap-2 px-3 py-1.5 bg-primary/10 rounded-full">
-                <span className="w-2 h-2 rounded-full bg-primary" />
-                <span className="text-sm font-medium text-primary" data-testid="quadrant-verdict">
+              <div className="inline-flex items-center gap-2 px-4 py-2 bg-primary/10 rounded-full">
+                <span className="w-2.5 h-2.5 rounded-full bg-primary animate-pulse" />
+                <span className="text-sm font-semibold text-primary" data-testid="quadrant-verdict">
                   {selectedQuadrant.verdict}
                 </span>
               </div>
             </div>
             
-            <div className="flex gap-3">
+            <div className="flex flex-wrap gap-3">
               {selectedQuadrant.signals.map((signal, idx) => (
                 <div 
                   key={idx}
                   className={cn(
-                    "flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium",
-                    selectedQuadrant.signalIcons[idx] 
+                    "flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium",
+                    selectedQuadrant.signalDirections[idx] 
                       ? "bg-green-500/10 text-green-700 dark:text-green-400" 
                       : "bg-red-500/10 text-red-700 dark:text-red-400"
                   )}
                   data-testid={`signal-${idx}`}
                 >
-                  {selectedQuadrant.signalIcons[idx] ? (
+                  {selectedQuadrant.signalDirections[idx] ? (
                     <TrendingUp className="w-4 h-4" />
                   ) : (
                     <TrendingDown className="w-4 h-4" />
                   )}
-                  {signal}
+                  {signal} {selectedQuadrant.signalDirections[idx] ? "↑" : "↓"}
                 </div>
               ))}
             </div>
             
             <p 
-              className="text-muted-foreground leading-relaxed"
+              className="text-muted-foreground leading-relaxed text-base"
               data-testid="quadrant-insight"
             >
               {selectedQuadrant.insight}
