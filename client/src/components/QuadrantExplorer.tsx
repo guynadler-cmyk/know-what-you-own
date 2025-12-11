@@ -1,7 +1,19 @@
 import { useState } from "react";
 import { Card } from "@/components/ui/card";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
-import { TrendingUp, TrendingDown } from "lucide-react";
+import { TrendingUp, TrendingDown, Info } from "lucide-react";
+
+const TERM_DEFINITIONS: Record<string, string> = {
+  "Revenue": "The total money a company earns from selling its products or services — before any expenses.",
+  "Earnings": "What's left after all costs are paid. Also called 'net income' or 'profit.'",
+  "Margins": "How much profit the company keeps from each dollar of sales. Higher is usually better.",
+  "FCF": "The money left after the business pays its bills and reinvests. Real money it can keep or use.",
+  "Debt": "What the company owes. Some is fine, too much is risky.",
+  "Cash": "Money the company has on hand. A safety cushion for tough times.",
+  "CapEx": "Spending to grow or maintain the business — like new equipment or upgrades.",
+  "ROIC": "Return on invested capital — how well the company turns invested money into profits.",
+};
 
 interface QuadrantData {
   id: string;
@@ -11,10 +23,10 @@ interface QuadrantData {
   xLabel: string;
   yLabel: string;
   zones: {
-    topRight: string;
-    topLeft: string;
-    bottomRight: string;
-    bottomLeft: string;
+    topRight: { label: string; color: string };
+    topLeft: { label: string; color: string };
+    bottomRight: { label: string; color: string };
+    bottomLeft: { label: string; color: string };
   };
   position: { x: number; y: number };
   insight: string;
@@ -31,10 +43,10 @@ const QUADRANT_DATA: QuadrantData[] = [
     xLabel: "Revenue Growth",
     yLabel: "Earnings Growth",
     zones: {
-      topRight: "Efficient Growth",
-      topLeft: "Cost Cutting",
-      bottomRight: "Scaling Up",
-      bottomLeft: "Declining",
+      topRight: { label: "Efficient Growth", color: "green" },
+      topLeft: { label: "Cost Cutting", color: "yellow" },
+      bottomRight: { label: "Scaling Up", color: "blue" },
+      bottomLeft: { label: "Declining", color: "red" },
     },
     position: { x: 72, y: 25 },
     insight: "The company is growing both revenue and earnings — a sign of scalable, healthy expansion. This is the hallmark of a quality compounder that can sustain growth over time.",
@@ -48,10 +60,10 @@ const QUADRANT_DATA: QuadrantData[] = [
     xLabel: "Profit Margins",
     yLabel: "Free Cash Flow",
     zones: {
-      topRight: "Cash Machine",
-      topLeft: "Paper Profits",
-      bottomRight: "Reinvesting",
-      bottomLeft: "Cash Burn",
+      topRight: { label: "Cash Machine", color: "green" },
+      topLeft: { label: "Paper Profits", color: "yellow" },
+      bottomRight: { label: "Reinvesting", color: "blue" },
+      bottomLeft: { label: "Cash Burn", color: "red" },
     },
     position: { x: 68, y: 30 },
     insight: "Strong profit margins paired with growing free cash flow. The business generates real cash, not just accounting profits. This is the sign of a healthy, sustainable operation.",
@@ -60,18 +72,18 @@ const QUADRANT_DATA: QuadrantData[] = [
     id: "debt-safety",
     title: "Debt Safety",
     verdict: "Financially Resilient",
-    signals: ["Debt", "Cash"],
+    signals: ["Debt", "Earnings"],
     signalDirections: [false, true],
-    xLabel: "Cash Position",
-    yLabel: "Debt Level",
+    xLabel: "Return / Earnings Strength",
+    yLabel: "Debt Levels",
     zones: {
-      topRight: "Overleveraged",
-      topLeft: "At Risk",
-      bottomRight: "Fortress",
-      bottomLeft: "Cash Poor",
+      topRight: { label: "Aggressive Borrower", color: "orange" },
+      topLeft: { label: "Financially Fragile", color: "red" },
+      bottomRight: { label: "Healthy Leverage", color: "green" },
+      bottomLeft: { label: "Underleveraged", color: "yellow" },
     },
     position: { x: 75, y: 70 },
-    insight: "Low debt and strong cash reserves create a financial fortress. The company can weather economic downturns and seize opportunities when competitors struggle.",
+    insight: "Low debt and strong earnings create financial resilience. The company can weather economic downturns and seize opportunities when competitors struggle.",
   },
   {
     id: "reinvestment",
@@ -82,15 +94,41 @@ const QUADRANT_DATA: QuadrantData[] = [
     xLabel: "Capital Expenditure",
     yLabel: "Return on Capital",
     zones: {
-      topRight: "Value Creator",
-      topLeft: "Efficient",
-      bottomRight: "Investing",
-      bottomLeft: "Destroying Value",
+      topRight: { label: "Value Creator", color: "green" },
+      topLeft: { label: "Efficient", color: "yellow" },
+      bottomRight: { label: "Investing", color: "blue" },
+      bottomLeft: { label: "Destroying Value", color: "red" },
     },
     position: { x: 65, y: 28 },
     insight: "High capital investment paired with strong returns. The company is reinvesting wisely and generating value from every dollar invested back into the business.",
   },
 ];
+
+function TermWithTooltip({ term }: { term: string }) {
+  const definition = TERM_DEFINITIONS[term];
+  
+  if (!definition) {
+    return <span>{term}</span>;
+  }
+  
+  return (
+    <Tooltip delayDuration={100}>
+      <TooltipTrigger asChild>
+        <span className="inline-flex items-center gap-1 cursor-help border-b border-dotted border-current">
+          {term}
+          <Info className="w-3 h-3 opacity-60" />
+        </span>
+      </TooltipTrigger>
+      <TooltipContent 
+        side="top" 
+        className="max-w-[280px] text-sm leading-relaxed"
+        data-testid={`tooltip-${term}`}
+      >
+        <p><strong>{term}:</strong> {definition}</p>
+      </TooltipContent>
+    </Tooltip>
+  );
+}
 
 function SummaryCardRow({ 
   selectedId, 
@@ -152,6 +190,32 @@ function SummaryCardRow({
   );
 }
 
+function getZoneColors(color: string) {
+  const colorMap: Record<string, { gradient: string; text: string }> = {
+    green: {
+      gradient: "hsl(142, 76%, 36%)",
+      text: "fill-green-600 dark:fill-green-400",
+    },
+    yellow: {
+      gradient: "hsl(48, 96%, 53%)",
+      text: "fill-yellow-600 dark:fill-yellow-400",
+    },
+    blue: {
+      gradient: "hsl(217, 91%, 60%)",
+      text: "fill-blue-600 dark:fill-blue-400",
+    },
+    red: {
+      gradient: "hsl(0, 72%, 51%)",
+      text: "fill-red-600 dark:fill-red-400",
+    },
+    orange: {
+      gradient: "hsl(25, 95%, 53%)",
+      text: "fill-orange-600 dark:fill-orange-400",
+    },
+  };
+  return colorMap[color] || colorMap.blue;
+}
+
 function QuadrantChart({ quadrant }: { quadrant: QuadrantData }) {
   const chartSize = 400;
   const padding = 56;
@@ -161,6 +225,11 @@ function QuadrantChart({ quadrant }: { quadrant: QuadrantData }) {
   const dotX = padding + (quadrant.position.x / 100) * innerSize;
   const dotY = padding + (quadrant.position.y / 100) * innerSize;
 
+  const topRightColors = getZoneColors(quadrant.zones.topRight.color);
+  const topLeftColors = getZoneColors(quadrant.zones.topLeft.color);
+  const bottomRightColors = getZoneColors(quadrant.zones.bottomRight.color);
+  const bottomLeftColors = getZoneColors(quadrant.zones.bottomLeft.color);
+
   return (
     <div className="relative w-full max-w-[400px] mx-auto">
       <svg 
@@ -169,21 +238,21 @@ function QuadrantChart({ quadrant }: { quadrant: QuadrantData }) {
         data-testid={`quadrant-chart-${quadrant.id}`}
       >
         <defs>
-          <linearGradient id="topRightGradient" x1="0%" y1="100%" x2="100%" y2="0%">
-            <stop offset="0%" stopColor="hsl(142, 76%, 36%)" stopOpacity="0.08" />
-            <stop offset="100%" stopColor="hsl(142, 76%, 36%)" stopOpacity="0.15" />
+          <linearGradient id={`topRightGradient-${quadrant.id}`} x1="0%" y1="100%" x2="100%" y2="0%">
+            <stop offset="0%" stopColor={topRightColors.gradient} stopOpacity="0.08" />
+            <stop offset="100%" stopColor={topRightColors.gradient} stopOpacity="0.15" />
           </linearGradient>
-          <linearGradient id="topLeftGradient" x1="100%" y1="100%" x2="0%" y2="0%">
-            <stop offset="0%" stopColor="hsl(48, 96%, 53%)" stopOpacity="0.08" />
-            <stop offset="100%" stopColor="hsl(48, 96%, 53%)" stopOpacity="0.12" />
+          <linearGradient id={`topLeftGradient-${quadrant.id}`} x1="100%" y1="100%" x2="0%" y2="0%">
+            <stop offset="0%" stopColor={topLeftColors.gradient} stopOpacity="0.08" />
+            <stop offset="100%" stopColor={topLeftColors.gradient} stopOpacity="0.12" />
           </linearGradient>
-          <linearGradient id="bottomRightGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-            <stop offset="0%" stopColor="hsl(217, 91%, 60%)" stopOpacity="0.08" />
-            <stop offset="100%" stopColor="hsl(217, 91%, 60%)" stopOpacity="0.12" />
+          <linearGradient id={`bottomRightGradient-${quadrant.id}`} x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stopColor={bottomRightColors.gradient} stopOpacity="0.08" />
+            <stop offset="100%" stopColor={bottomRightColors.gradient} stopOpacity="0.12" />
           </linearGradient>
-          <linearGradient id="bottomLeftGradient" x1="100%" y1="0%" x2="0%" y2="100%">
-            <stop offset="0%" stopColor="hsl(0, 72%, 51%)" stopOpacity="0.08" />
-            <stop offset="100%" stopColor="hsl(0, 72%, 51%)" stopOpacity="0.12" />
+          <linearGradient id={`bottomLeftGradient-${quadrant.id}`} x1="100%" y1="0%" x2="0%" y2="100%">
+            <stop offset="0%" stopColor={bottomLeftColors.gradient} stopOpacity="0.08" />
+            <stop offset="100%" stopColor={bottomLeftColors.gradient} stopOpacity="0.12" />
           </linearGradient>
         </defs>
 
@@ -192,28 +261,28 @@ function QuadrantChart({ quadrant }: { quadrant: QuadrantData }) {
           y={padding} 
           width={innerSize / 2} 
           height={innerSize / 2} 
-          fill="url(#topLeftGradient)"
+          fill={`url(#topLeftGradient-${quadrant.id})`}
         />
         <rect 
           x={center} 
           y={padding} 
           width={innerSize / 2} 
           height={innerSize / 2} 
-          fill="url(#topRightGradient)"
+          fill={`url(#topRightGradient-${quadrant.id})`}
         />
         <rect 
           x={padding} 
           y={center} 
           width={innerSize / 2} 
           height={innerSize / 2} 
-          fill="url(#bottomLeftGradient)"
+          fill={`url(#bottomLeftGradient-${quadrant.id})`}
         />
         <rect 
           x={center} 
           y={center} 
           width={innerSize / 2} 
           height={innerSize / 2} 
-          fill="url(#bottomRightGradient)"
+          fill={`url(#bottomRightGradient-${quadrant.id})`}
         />
         
         <rect 
@@ -249,33 +318,33 @@ function QuadrantChart({ quadrant }: { quadrant: QuadrantData }) {
             x={chartSize - padding - 8} 
             y={padding + 20} 
             textAnchor="end"
-            className="fill-green-600 dark:fill-green-400"
+            className={topRightColors.text}
           >
-            {quadrant.zones.topRight}
+            {quadrant.zones.topRight.label}
           </text>
           <text 
             x={padding + 8} 
             y={padding + 20} 
             textAnchor="start"
-            className="fill-yellow-600 dark:fill-yellow-400"
+            className={topLeftColors.text}
           >
-            {quadrant.zones.topLeft}
+            {quadrant.zones.topLeft.label}
           </text>
           <text 
             x={chartSize - padding - 8} 
             y={chartSize - padding - 12} 
             textAnchor="end"
-            className="fill-blue-600 dark:fill-blue-400"
+            className={bottomRightColors.text}
           >
-            {quadrant.zones.bottomRight}
+            {quadrant.zones.bottomRight.label}
           </text>
           <text 
             x={padding + 8} 
             y={chartSize - padding - 12} 
             textAnchor="start"
-            className="fill-red-600 dark:fill-red-400"
+            className={bottomLeftColors.text}
           >
-            {quadrant.zones.bottomLeft}
+            {quadrant.zones.bottomLeft.label}
           </text>
         </g>
         
@@ -372,7 +441,8 @@ export function QuadrantExplorer() {
                   ) : (
                     <TrendingDown className="w-4 h-4" />
                   )}
-                  {signal} {selectedQuadrant.signalDirections[idx] ? "↑" : "↓"}
+                  <TermWithTooltip term={signal} />
+                  {selectedQuadrant.signalDirections[idx] ? "↑" : "↓"}
                 </div>
               ))}
             </div>
