@@ -210,6 +210,9 @@ export function generateQuadrantData(
     return inverted ? { x: 25, y: 30 } : { x: 28, y: 75 };
   };
 
+  // Helper to convert status to signal direction (true = positive, false = negative)
+  const statusToSignal = (status: "strong" | "caution" | "weak"): boolean => status === "strong";
+
   return [
     {
       ...QUADRANT_DATA[0],
@@ -224,7 +227,7 @@ export function generateQuadrantData(
       verdict: liquidityVerdict,
       position: statusToPosition(liquidityStatus),
       insight: liquidityInsight,
-      signalDirections: [liquidityStatus === "strong", liquidityStatus !== "weak"] as [boolean, boolean],
+      signalDirections: [statusToSignal(liquidityStatus), statusToSignal(liquidityStatus)] as [boolean, boolean],
       strength: liquidityStrength,
     },
     {
@@ -232,7 +235,7 @@ export function generateQuadrantData(
       verdict: debtVerdict,
       position: statusToPosition(debtStatus, true),
       insight: debtInsight,
-      signalDirections: [debtStatus !== "weak", earningsUp] as [boolean, boolean],
+      signalDirections: [statusToSignal(debtStatus), earningsUp] as [boolean, boolean],
       strength: debtStrength,
     },
     {
@@ -240,7 +243,7 @@ export function generateQuadrantData(
       verdict: equityVerdict,
       position: statusToPosition(equityStatus),
       insight: equityInsight,
-      signalDirections: [equityStatus === "strong", equityStatus !== "weak"] as [boolean, boolean],
+      signalDirections: [statusToSignal(equityStatus), statusToSignal(equityStatus)] as [boolean, boolean],
       strength: equityStrength,
     },
   ];
