@@ -125,8 +125,10 @@ export class AlphaVantageService {
       const revenueGrowth = revenueChangePercent > 0 ? 'growing' : 'declining';
       const earningsGrowth = earningsChangePercent > 0 ? 'growing' : 'declining';
 
-      // Format currency values
+      // Format currency values with NaN protection
       const formatCurrency = (value: number): string => {
+        if (isNaN(value) || value === 0) return '$0';
+        
         const billion = value / 1_000_000_000;
         const million = value / 1_000_000;
 
@@ -211,18 +213,26 @@ export class AlphaVantageService {
       const currentReport = reports[0];
       const previousReport = reports[1];
 
-      // Parse values
-      const currentAssets = parseFloat(currentReport.totalCurrentAssets);
-      const currentLiabilities = parseFloat(currentReport.totalCurrentLiabilities);
-      const cash = parseFloat(currentReport.cashAndCashEquivalentsAtCarryingValue);
-      const longTermDebt = parseFloat(currentReport.longTermDebt || '0');
-      const shortTermDebt = parseFloat(currentReport.shortTermDebt || '0');
-      const totalDebt = longTermDebt + shortTermDebt;
-      const currentEquity = parseFloat(currentReport.totalShareholderEquity);
-      const previousEquity = parseFloat(previousReport.totalShareholderEquity);
+      // Parse values with NaN protection
+      const safeParseFloat = (value: string | undefined | null): number => {
+        if (!value || value === 'None' || value === '') return 0;
+        const parsed = parseFloat(value);
+        return isNaN(parsed) ? 0 : parsed;
+      };
 
-      // Format currency values
+      const currentAssets = safeParseFloat(currentReport.totalCurrentAssets);
+      const currentLiabilities = safeParseFloat(currentReport.totalCurrentLiabilities);
+      const cash = safeParseFloat(currentReport.cashAndCashEquivalentsAtCarryingValue);
+      const longTermDebt = safeParseFloat(currentReport.longTermDebt);
+      const shortTermDebt = safeParseFloat(currentReport.shortTermDebt);
+      const totalDebt = longTermDebt + shortTermDebt;
+      const currentEquity = safeParseFloat(currentReport.totalShareholderEquity);
+      const previousEquity = safeParseFloat(previousReport.totalShareholderEquity);
+
+      // Format currency values with NaN protection
       const formatCurrency = (value: number): string => {
+        if (isNaN(value) || value === 0) return '$0';
+        
         const billion = value / 1_000_000_000;
         const million = value / 1_000_000;
 
