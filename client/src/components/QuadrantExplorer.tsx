@@ -15,7 +15,9 @@ const TERM_DEFINITIONS: Record<string, string> = {
   "ROIC": "Return on invested capital — how well the company turns invested money into profits.",
 };
 
-interface QuadrantData {
+export type SignalStrength = "strong" | "mixed" | "weak";
+
+export interface QuadrantData {
   id: string;
   title: string;
   verdict: string;
@@ -31,9 +33,10 @@ interface QuadrantData {
   position: { x: number; y: number };
   insight: string;
   signalDirections: [boolean, boolean];
+  strength: SignalStrength;
 }
 
-const QUADRANT_DATA: QuadrantData[] = [
+export const QUADRANT_DATA: QuadrantData[] = [
   {
     id: "growth-quality",
     title: "Growth Quality",
@@ -50,6 +53,7 @@ const QUADRANT_DATA: QuadrantData[] = [
     },
     position: { x: 72, y: 25 },
     insight: "The company is growing both revenue and earnings — a sign of scalable, healthy expansion. This is the hallmark of a quality compounder that can sustain growth over time.",
+    strength: "strong",
   },
   {
     id: "profit-cash",
@@ -67,6 +71,7 @@ const QUADRANT_DATA: QuadrantData[] = [
     },
     position: { x: 68, y: 30 },
     insight: "Strong profit margins paired with growing free cash flow. The business generates real cash, not just accounting profits. This is the sign of a healthy, sustainable operation.",
+    strength: "strong",
   },
   {
     id: "debt-safety",
@@ -84,6 +89,7 @@ const QUADRANT_DATA: QuadrantData[] = [
     },
     position: { x: 75, y: 70 },
     insight: "Low debt and strong earnings create financial resilience. The company can weather economic downturns and seize opportunities when competitors struggle.",
+    strength: "strong",
   },
   {
     id: "reinvestment",
@@ -101,6 +107,7 @@ const QUADRANT_DATA: QuadrantData[] = [
     },
     position: { x: 65, y: 28 },
     insight: "High capital investment paired with strong returns. The company is reinvesting wisely and generating value from every dollar invested back into the business.",
+    strength: "strong",
   },
 ];
 

@@ -1,14 +1,14 @@
 import { SummaryCard } from "@/components/SummaryCard";
 import { ComingSoonStage } from "@/components/ComingSoonStage";
 import { QuadrantExplorer } from "@/components/QuadrantExplorer";
+import { FinancialScorecard } from "@/components/FinancialScorecard";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Smartphone, Laptop, Tablet, Watch, Car, Zap, Battery, Server, Cloud, Gamepad2, Package, Code, Globe, Music, Video, Tv, Search, Cpu, Brain, Info } from "lucide-react";
+import { Smartphone, Laptop, Tablet, Watch, Car, Zap, Battery, Server, Cloud, Gamepad2, Package, Code, Globe, Music, Video, Tv, Search, Cpu, Info } from "lucide-react";
 import { CompanySummary } from "@shared/schema";
 
 const iconMap: Record<string, any> = {
   Smartphone, Laptop, Tablet, Watch, Car, Zap, Battery, Server, 
-  Cloud, Gamepad2, Package, Code, Globe, Music, Video, Tv, Search, 
-  Brain, Cpu
+  Cloud, Gamepad2, Package, Code, Globe, Music, Video, Tv, Search, Cpu
 };
 
 interface StageContentProps {
@@ -72,33 +72,6 @@ function IntroContextBlock() {
   );
 }
 
-function FinancialSummaryBlock() {
-  return (
-    <div className="mt-10" data-testid="financial-summary-block">
-      <Card className="bg-neutral-50 dark:bg-neutral-900/50 border-border/60">
-        <CardContent className="p-6">
-          <div className="flex items-start gap-4">
-            <div className="flex-shrink-0 w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
-              <Brain className="w-5 h-5 text-primary" />
-            </div>
-            <div className="space-y-4">
-              <h3 className="font-semibold text-lg">What This Tells Us</h3>
-              <p className="text-muted-foreground leading-relaxed">
-                This business is generating stable revenue, turning profit into cash, and managing debt wisely. That's the foundation of long-term resilience.
-              </p>
-              <p className="text-muted-foreground leading-relaxed">
-                But remember: there are thousands of public companies. Sensible investing means being picky — and passing when a business doesn't meet your bar.
-              </p>
-              <p className="font-medium text-foreground">
-                Would you feel confident owning this for the next decade?
-              </p>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-    </div>
-  );
-}
 
 export function StageContent({ stage, summaryData }: StageContentProps) {
   if (stage === 1 && summaryData) {
@@ -158,7 +131,7 @@ export function StageContent({ stage, summaryData }: StageContentProps) {
           
           <QuadrantExplorer />
           
-          <FinancialSummaryBlock />
+          <FinancialScorecard />
         </CardContent>
       </Card>
     );
