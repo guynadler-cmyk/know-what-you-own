@@ -2,7 +2,8 @@ import { SummaryCard } from "@/components/SummaryCard";
 import { ComingSoonStage } from "@/components/ComingSoonStage";
 import { QuadrantExplorer } from "@/components/QuadrantExplorer";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Smartphone, Laptop, Tablet, Watch, Car, Zap, Battery, Server, Cloud, Gamepad2, Package, Code, Globe, Music, Video, Tv, Search, Cpu, Brain } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Smartphone, Laptop, Tablet, Watch, Car, Zap, Battery, Server, Cloud, Gamepad2, Package, Code, Globe, Music, Video, Tv, Search, Cpu, Brain, Info, CheckCircle, XCircle } from "lucide-react";
 import { CompanySummary } from "@shared/schema";
 
 const iconMap: Record<string, any> = {
@@ -49,6 +50,87 @@ const COMING_SOON_STAGES = {
   }
 };
 
+function IntroContextBlock() {
+  return (
+    <div 
+      className="bg-neutral-50 dark:bg-neutral-900/50 rounded-xl p-5 mb-8 border border-border/40"
+      data-testid="intro-context-block"
+    >
+      <div className="flex gap-4">
+        <div className="flex-shrink-0 w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
+          <Info className="w-5 h-5 text-primary" />
+        </div>
+        <div className="space-y-2">
+          <p className="text-foreground leading-relaxed">
+            You've seen what this business does. Now let's look under the hood — is it financially strong enough to own?
+          </p>
+          <p className="text-muted-foreground leading-relaxed">
+            We'll guide you through revenue, earnings, cash flow, debt, and reinvestment — to help you decide if this is a business worth holding long term.
+          </p>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function FinancialSummaryBlock({ 
+  onAddToPlan, 
+  onPass 
+}: { 
+  onAddToPlan: () => void; 
+  onPass: () => void;
+}) {
+  return (
+    <div className="mt-10 space-y-6" data-testid="financial-summary-block">
+      <Card className="bg-neutral-50 dark:bg-neutral-900/50 border-border/60">
+        <CardContent className="p-6">
+          <div className="flex items-start gap-4">
+            <div className="flex-shrink-0 w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
+              <Brain className="w-5 h-5 text-primary" />
+            </div>
+            <div className="space-y-4">
+              <h3 className="font-semibold text-lg">What This Tells Us</h3>
+              <p className="text-muted-foreground leading-relaxed">
+                This business is generating stable revenue, turning profit into cash, and managing debt wisely. That's the foundation of long-term resilience.
+              </p>
+              <p className="text-muted-foreground leading-relaxed">
+                But remember: there are thousands of public companies. Sensible investing means being picky — and passing when a business doesn't meet your bar.
+              </p>
+              <p className="font-medium text-foreground">
+                Would you feel confident owning this for the next decade?
+              </p>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+      
+      <div className="flex flex-col sm:flex-row gap-3 justify-center">
+        <Button
+          onClick={onAddToPlan}
+          className="rounded-xl px-6 py-3 h-auto shadow-sm bg-green-600 hover:bg-green-700 text-white"
+          data-testid="button-add-to-plan"
+        >
+          <CheckCircle className="w-5 h-5 mr-2" />
+          Add to Plan
+        </Button>
+        <Button
+          onClick={onPass}
+          variant="outline"
+          className="rounded-xl px-6 py-3 h-auto shadow-sm"
+          data-testid="button-pass"
+        >
+          <XCircle className="w-5 h-5 mr-2" />
+          Pass with Confidence
+        </Button>
+      </div>
+      
+      <p className="text-xs text-center text-muted-foreground">
+        Both choices are valid. Sensible investing is about being intentional.
+      </p>
+    </div>
+  );
+}
+
 export function StageContent({ stage, summaryData }: StageContentProps) {
   if (stage === 1 && summaryData) {
     const preparedSummary = {
@@ -72,9 +154,17 @@ export function StageContent({ stage, summaryData }: StageContentProps) {
     };
     const logoUrl = summaryData?.metadata?.homepage ? getLogoUrl(summaryData.metadata.homepage) : null;
 
+    const handleAddToPlan = () => {
+      console.log("Added to plan");
+    };
+
+    const handlePass = () => {
+      console.log("Passed with confidence");
+    };
+
     return (
       <Card data-testid="stage-2-content">
-        <CardHeader className="text-center pb-8">
+        <CardHeader className="text-center pb-6">
           {summaryData && (
             <div className="flex items-center justify-center gap-4 mb-6">
               <div className="relative">
@@ -103,10 +193,14 @@ export function StageContent({ stage, summaryData }: StageContentProps) {
           <CardTitle className="text-2xl">Understand Performance</CardTitle>
         </CardHeader>
         <CardContent className="pb-12">
-          <p className="text-muted-foreground text-center max-w-2xl mx-auto mb-8">
-            Explore different dimensions of financial health. Click on any card to dive deeper.
-          </p>
+          <IntroContextBlock />
+          
           <QuadrantExplorer />
+          
+          <FinancialSummaryBlock 
+            onAddToPlan={handleAddToPlan}
+            onPass={handlePass}
+          />
         </CardContent>
       </Card>
     );
