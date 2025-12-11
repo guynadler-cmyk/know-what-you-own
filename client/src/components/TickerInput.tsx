@@ -20,6 +20,7 @@ export function TickerInput({ onSubmit, isLoading = false }: TickerInputProps) {
   const [isSearching, setIsSearching] = useState(false);
   const [showDropdown, setShowDropdown] = useState(false);
   const [selectedIndex, setSelectedIndex] = useState(-1);
+  const [justSelected, setJustSelected] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -102,11 +103,13 @@ export function TickerInput({ onSubmit, isLoading = false }: TickerInputProps) {
   const selectResult = (result: SearchResult) => {
     setQuery(result.ticker);
     setShowDropdown(false);
+    setJustSelected(true);
     setError("");
   };
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setQuery(e.target.value);
+    setJustSelected(false);
     if (error) setError("");
   };
 
@@ -131,6 +134,7 @@ export function TickerInput({ onSubmit, isLoading = false }: TickerInputProps) {
     setQuery(ticker);
     setError("");
     setShowDropdown(false);
+    setJustSelected(true);
   };
 
   return (
@@ -144,7 +148,7 @@ export function TickerInput({ onSubmit, isLoading = false }: TickerInputProps) {
               value={query}
               onChange={handleInputChange}
               onKeyDown={handleKeyDown}
-              onFocus={() => searchResults.length > 0 && setShowDropdown(true)}
+              onFocus={() => searchResults.length > 0 && !justSelected && setShowDropdown(true)}
               placeholder="Company name or ticker..."
               className={`text-2xl h-16 text-center font-mono tracking-wide border-2 rounded-xl pr-12 ${
                 error ? 'border-destructive focus-visible:ring-destructive' : 'focus-visible:border-primary'
