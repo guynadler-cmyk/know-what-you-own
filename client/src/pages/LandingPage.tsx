@@ -358,7 +358,7 @@ export default function LandingPage() {
             </div>
             
             {/* CTA Below Grid */}
-            <div className="text-center pt-8 space-y-4">
+            <div className="flex flex-col items-center pt-12 space-y-4">
               <p className="text-xl font-medium">Ready to act differently?</p>
               <Link href="/app">
                 <Button
