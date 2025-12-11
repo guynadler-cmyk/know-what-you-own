@@ -76,6 +76,13 @@ export default function AppPage() {
     setCurrentTicker(ticker);
     setViewState("loading");
     
+    // Update URL immediately so GA4 captures the ticker in page path
+    const stageToUse = targetStage !== undefined ? targetStage : currentStage;
+    const params = new URLSearchParams();
+    params.set('ticker', ticker);
+    params.set('stage', stageToUse.toString());
+    window.history.pushState({}, '', `?${params.toString()}`);
+    
     analytics.trackTickerSearch(ticker);
     analytics.trackAnalysisStarted(ticker);
 
@@ -96,12 +103,6 @@ export default function AppPage() {
       setViewState("success");
       
       analytics.trackAnalysisCompleted(ticker);
-      
-      const stageToUse = targetStage !== undefined ? targetStage : currentStage;
-      const params = new URLSearchParams();
-      params.set('ticker', ticker);
-      params.set('stage', stageToUse.toString());
-      window.history.pushState({}, '', `?${params.toString()}`);
 
       if (data.competitors && Array.isArray(data.competitors)) {
         data.competitors.forEach((competitor: any) => {
