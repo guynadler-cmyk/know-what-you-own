@@ -1,5 +1,8 @@
-// Google Analytics 4 Integration
+// Google Analytics 4 + Firebase Analytics Integration
 // See: blueprint:javascript_google_analytics
+
+import { initializeApp, getApps } from 'firebase/app';
+import { getAnalytics, logEvent, Analytics } from 'firebase/analytics';
 
 declare global {
   interface Window {
@@ -11,7 +14,41 @@ declare global {
 // GA4 Measurement ID - this is a public identifier (visible in browser network requests)
 const GA_MEASUREMENT_ID = 'G-6CLK9XVV2K';
 
-// Initialize Google Analytics
+// Firebase configuration from environment variables
+const firebaseConfig = {
+  apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
+  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
+  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
+  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET,
+  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
+  appId: import.meta.env.VITE_FIREBASE_APP_ID,
+  measurementId: import.meta.env.VITE_FIREBASE_MEASUREMENT_ID,
+};
+
+// Firebase Analytics instance
+let firebaseAnalytics: Analytics | null = null;
+
+// Initialize Firebase
+const initFirebase = () => {
+  try {
+    // Check if Firebase config is available
+    if (!firebaseConfig.apiKey || !firebaseConfig.projectId) {
+      console.warn('Firebase config not available, skipping Firebase initialization');
+      return null;
+    }
+
+    // Only initialize if not already initialized
+    const app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApps()[0];
+    firebaseAnalytics = getAnalytics(app);
+    console.log('Firebase Analytics initialized successfully');
+    return firebaseAnalytics;
+  } catch (error) {
+    console.warn('Failed to initialize Firebase Analytics:', error);
+    return null;
+  }
+};
+
+// Initialize Google Analytics (legacy gtag)
 export const initGA = () => {
   // Add Google Analytics script to the head
   const script1 = document.createElement('script');
@@ -28,31 +65,52 @@ export const initGA = () => {
     gtag('config', '${GA_MEASUREMENT_ID}');
   `;
   document.head.appendChild(script2);
+  
+  // Initialize Firebase Analytics
+  initFirebase();
 };
 
 // Track page views - useful for single-page applications
 export const trackPageView = (url: string) => {
-  if (typeof window === 'undefined' || !window.gtag) return;
+  // GA4 gtag
+  if (typeof window !== 'undefined' && window.gtag) {
+    window.gtag('config', GA_MEASUREMENT_ID, {
+      page_path: url
+    });
+  }
   
-  window.gtag('config', GA_MEASUREMENT_ID, {
-    page_path: url
-  });
+  // Firebase Analytics
+  if (firebaseAnalytics) {
+    logEvent(firebaseAnalytics, 'page_view', {
+      page_path: url
+    });
+  }
 };
 
-// Track custom events
+// Track custom events - sends to both GA4 and Firebase
 export const trackEvent = (
   action: string, 
   category?: string, 
   label?: string, 
   value?: number
 ) => {
-  if (typeof window === 'undefined' || !window.gtag) return;
+  // GA4 gtag
+  if (typeof window !== 'undefined' && window.gtag) {
+    window.gtag('event', action, {
+      event_category: category,
+      event_label: label,
+      value: value,
+    });
+  }
   
-  window.gtag('event', action, {
-    event_category: category,
-    event_label: label,
-    value: value,
-  });
+  // Firebase Analytics
+  if (firebaseAnalytics) {
+    logEvent(firebaseAnalytics, action, {
+      event_category: category,
+      event_label: label,
+      value: value,
+    });
+  }
 };
 
 // Custom event helpers for restnvest-specific tracking
