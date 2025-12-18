@@ -25,7 +25,6 @@ import {
 import { useState, useEffect, useRef } from "react";
 import { Link, useLocation } from "wouter";
 import { analytics } from "@/lib/analytics";
-import { TeaserPreview } from "./TeaserPreview";
 
 
 interface SearchResult {
@@ -45,16 +44,16 @@ export default function LandingPage() {
   const [showDropdown, setShowDropdown] = useState(false);
   const [selectedIndex, setSelectedIndex] = useState(-1);
   const justSelectedRef = useRef(false);
-  const dropdownRef = useRef<HTMLFormElement>(null);
-  const heroDropdownRef = useRef<HTMLFormElement>(null);
+  const formDropdownRef = useRef<HTMLFormElement>(null);
+  const aiSectionFormRef = useRef<HTMLFormElement>(null);
 
   // Handle click outside dropdown
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       const target = event.target as Node;
-      const isOutsideHeroForm = heroDropdownRef.current && !heroDropdownRef.current.contains(target);
-      const isOutsideLowerForm = dropdownRef.current && !dropdownRef.current.contains(target);
-      if (isOutsideHeroForm && isOutsideLowerForm) {
+      const isOutsideMainForm = formDropdownRef.current && !formDropdownRef.current.contains(target);
+      const isOutsideAiForm = aiSectionFormRef.current && !aiSectionFormRef.current.contains(target);
+      if (isOutsideMainForm && isOutsideAiForm) {
         setShowDropdown(false);
       }
     };
@@ -301,33 +300,42 @@ export default function LandingPage() {
           </div>
         </section>
 
-        {/* Teaser Preview Section */}
-        <section className="px-4 pb-6 sm:pb-8">
-          <div className="mx-auto max-w-xl">
-            <TeaserPreview 
-              onScrollToForm={() => {
-                const el = document.getElementById('analysis-input');
-                if (el) el.scrollIntoView({ behavior: 'smooth' });
-              }}
-            />
-          </div>
-        </section>
-
-        {/* Analysis Input Section - Above the Fold */}
+        {/* Unified Discovery & Analysis Section */}
         <section 
           id="analysis-input" 
-          className="py-12 sm:py-16 px-4 scroll-mt-20"
+          className="mt-16 mb-16 py-12 sm:py-16 px-4 bg-muted/30 scroll-mt-20"
           data-testid="section-analysis-input"
         >
-          <div className="mx-auto max-w-xl">
-            <div className="rounded-2xl bg-muted/40 border border-border shadow-sm p-6 sm:p-8 space-y-6">
-              <div className="text-center space-y-2">
-                <h2 className="text-lg sm:text-xl font-semibold" data-testid="text-analysis-heading">
-                  See how it works in seconds — no sign up needed
+          <div className="mx-auto max-w-xl space-y-8">
+            {/* What You'll Discover Heading */}
+            <div className="text-center space-y-4">
+              <div className="flex items-center justify-center gap-2">
+                <Search className="h-5 w-5 text-primary" />
+                <h2 className="text-xl sm:text-2xl font-semibold" data-testid="text-analysis-heading">
+                  What You'll Discover Instantly
                 </h2>
               </div>
-              
-              <form onSubmit={handleTickerSubmit} className="space-y-4" ref={heroDropdownRef}>
+              <p className="text-muted-foreground text-base sm:text-lg leading-relaxed max-w-md mx-auto">
+                Get instant insight on any company — no jargon, no guesswork. Just enter a ticker to discover themes, moats, and market shifts in seconds.
+              </p>
+            </div>
+            
+            {/* Discovery Badges */}
+            <div className="flex flex-wrap justify-center gap-2 sm:gap-3">
+              {['Strategic Themes', 'Market Size', 'Competitive Moats', 'Value Creation', 'Recent Shifts', 'Competitors', 'Leadership'].map((item) => (
+                <div
+                  key={item}
+                  className="bg-background border border-border px-3 py-1.5 text-sm rounded-full shadow-sm text-center"
+                  data-testid={`badge-discovery-${item.toLowerCase().replace(/\s+/g, '-')}`}
+                >
+                  {item}
+                </div>
+              ))}
+            </div>
+            
+            {/* Analysis Form */}
+            <div className="rounded-2xl bg-background border border-border shadow-sm p-6 sm:p-8 space-y-6">
+              <form onSubmit={handleTickerSubmit} className="space-y-4" ref={formDropdownRef}>
                 <div className="space-y-3 relative">
                   <div className="relative">
                     <Input
@@ -842,7 +850,7 @@ export default function LandingPage() {
                 <p className="text-muted-foreground">Try analyzing any public company right now</p>
               </div>
               
-              <form onSubmit={handleTickerSubmit} className="space-y-6" ref={dropdownRef}>
+              <form onSubmit={handleTickerSubmit} className="space-y-6" ref={aiSectionFormRef}>
                 <div className="space-y-3 relative">
                   <div className="relative">
                     <Input
