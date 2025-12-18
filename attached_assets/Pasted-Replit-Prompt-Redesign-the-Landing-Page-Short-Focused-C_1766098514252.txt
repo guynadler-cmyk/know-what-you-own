@@ -1,0 +1,83 @@
+Replit Prompt: Redesign the Landing Page (Short, Focused, Conversion-Oriented)
+
+Redesign our landing page as a clean, modern, one-screen experience focused on encouraging users to run their first company analysis.
+
+🎯 GOAL:
+
+Help users understand why restnvest exists, how it helps, and make it easy to trigger their first analysis — without getting lost in explanation or visual noise.
+
+🧱 STRUCTURE & CONTENT:
+1. Hero Section
+
+Headline:
+Most tools give you charts. We give you clarity.
+
+Subheadline:
+Restnvest turns investing into a simple, structured workflow — so you know what you own, why you own it, and what to do next.
+
+CTA Button:
+Try it instantly →
+(scrolls or jumps to the ticker input)
+
+2. Ticker Input Section (Primary Action Block)
+
+A visually prominent input form:
+
+Label or prompt: Enter a ticker (e.g., AAPL, TSLA)
+
+Input field + Analyze button
+
+Subtext below input:
+No sign-up needed. Just instant insight.
+
+3. What You’ll Get (Preview Block)
+
+Use a card-style section that previews the output of the analysis.
+
+Heading: What you’ll get in seconds
+
+Bullet-style or pill-style list:
+
+Strategic themes
+
+Market size
+
+Competitive edge
+
+Risks & red flags
+
+Business model
+
+Key metrics
+
+Competitors
+
+Recent changes
+
+You can also show a mock “AI Analysis Card” (placeholder style) if visual space allows.
+
+4. Why It Matters (Philosophy Block)
+
+Headline:
+Information isn’t insight. Clarity builds conviction.
+
+Text:
+Most investors give up not because they’re wrong — but because they never understood what they owned in the first place.
+Restnvest helps you invest in businesses, not tickers — with a clear process you can actually stick with.
+
+5. Final Call to Action
+
+Repeat the input form or CTA at the bottom:
+
+Start your first analysis now →
+Same form, or scroll link.
+
+🎨 DESIGN NOTES
+
+Keep the layout minimal and focused. Use generous spacing, max-w-3xl, centered text, and clean sans-serif typography.
+
+Use soft background accents (bg-gray-50, bg-white, shadow-sm, rounded-xl) to organize sections.
+
+Use Tailwind classes and responsive layout (flex, grid, md: breakpoints).
+
+Avoid carousels or nav bars — one-screen experience.
