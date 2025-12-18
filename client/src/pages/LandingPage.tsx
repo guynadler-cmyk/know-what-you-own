@@ -25,6 +25,7 @@ import {
 import { useState, useEffect, useRef } from "react";
 import { Link, useLocation } from "wouter";
 import { analytics } from "@/lib/analytics";
+import { TeaserPreview } from "./TeaserPreview";
 
 
 interface SearchResult {
@@ -297,6 +298,18 @@ export default function LandingPage() {
                 <ArrowRight className="h-5 w-5" />
               </Button>
             </div>
+          </div>
+        </section>
+
+        {/* Teaser Preview Section */}
+        <section className="px-4 pb-6 sm:pb-8">
+          <div className="mx-auto max-w-xl">
+            <TeaserPreview 
+              onScrollToForm={() => {
+                const el = document.getElementById('analysis-input');
+                if (el) el.scrollIntoView({ behavior: 'smooth' });
+              }}
+            />
           </div>
         </section>
 
