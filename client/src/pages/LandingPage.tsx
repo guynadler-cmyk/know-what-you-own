@@ -45,11 +45,15 @@ export default function LandingPage() {
   const [selectedIndex, setSelectedIndex] = useState(-1);
   const justSelectedRef = useRef(false);
   const dropdownRef = useRef<HTMLFormElement>(null);
+  const heroDropdownRef = useRef<HTMLFormElement>(null);
 
   // Handle click outside dropdown
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+      const target = event.target as Node;
+      const isOutsideHeroForm = heroDropdownRef.current && !heroDropdownRef.current.contains(target);
+      const isOutsideLowerForm = dropdownRef.current && !dropdownRef.current.contains(target);
+      if (isOutsideHeroForm && isOutsideLowerForm) {
         setShowDropdown(false);
       }
     };
@@ -102,8 +106,12 @@ export default function LandingPage() {
     e.preventDefault();
     const trimmed = tickerQuery.trim().toUpperCase();
     
+    // Default demo behavior: if empty, use AAPL
     if (!trimmed) {
-      setTickerError("Enter a company name or ticker");
+      setTickerError("");
+      setShowDropdown(false);
+      analytics.trackTickerSearch("AAPL");
+      setLocation(`/app?ticker=AAPL`);
       return;
     }
 
@@ -257,10 +265,10 @@ export default function LandingPage() {
         {/* Hero Section */}
         <section 
           id="hero" 
-          className="relative py-24 sm:py-32 lg:py-40 px-4 scroll-mt-20"
+          className="relative py-16 sm:py-20 lg:py-24 px-4 scroll-mt-20"
           data-testid="section-hero"
         >
-          <div className="mx-auto max-w-4xl text-center space-y-8">
+          <div className="mx-auto max-w-4xl text-center space-y-6">
             <h1 
               className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold tracking-tight leading-[1.1]"
               data-testid="text-hero-headline"
@@ -275,18 +283,125 @@ export default function LandingPage() {
               AI agents do the heavy lifting — you stay in control. Restnvest turns chaotic data into clear, structured guidance — so you can invest like a pro, without acting like one.
             </p>
             
-            <div className="pt-8 space-y-3">
-              <Link href="/app">
-                <Button
-                  size="lg"
-                  className="rounded-full px-8 py-6 text-lg font-semibold gap-2"
-                  data-testid="button-hero-cta"
+            <div className="pt-4 space-y-3">
+              <Button
+                size="lg"
+                className="rounded-full px-8 py-6 text-lg font-semibold gap-2"
+                data-testid="button-hero-cta"
+                onClick={() => {
+                  const el = document.getElementById('analysis-input');
+                  if (el) el.scrollIntoView({ behavior: 'smooth' });
+                }}
+              >
+                Try it instantly
+                <ArrowRight className="h-5 w-5" />
+              </Button>
+            </div>
+          </div>
+        </section>
+
+        {/* Analysis Input Section - Above the Fold */}
+        <section 
+          id="analysis-input" 
+          className="py-12 sm:py-16 px-4 scroll-mt-20"
+          data-testid="section-analysis-input"
+        >
+          <div className="mx-auto max-w-xl">
+            <div className="rounded-2xl bg-muted/40 border border-border shadow-sm p-6 sm:p-8 space-y-6">
+              <div className="text-center space-y-2">
+                <h2 className="text-lg sm:text-xl font-semibold" data-testid="text-analysis-heading">
+                  See how it works in seconds — no sign up needed
+                </h2>
+              </div>
+              
+              <form onSubmit={handleTickerSubmit} className="space-y-4" ref={heroDropdownRef}>
+                <div className="space-y-3 relative">
+                  <div className="relative">
+                    <Input
+                      type="text"
+                      value={tickerQuery}
+                      onChange={handleTickerInputChange}
+                      onKeyDown={handleTickerKeyDown}
+                      onFocus={() => searchResults.length > 0 && !justSelectedRef.current && setShowDropdown(true)}
+                      placeholder="Company name or ticker..."
+                      className={`text-lg sm:text-xl h-14 sm:h-16 text-center font-mono tracking-wide border-2 rounded-xl pr-12 ${
+                        tickerError ? 'border-destructive focus-visible:ring-destructive' : 'focus-visible:border-primary'
+                      }`}
+                      data-testid="input-hero-ticker"
+                      autoComplete="off"
+                    />
+                    {isSearching && (
+                      <div className="absolute right-4 top-1/2 -translate-y-1/2">
+                        <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+                      </div>
+                    )}
+                  </div>
+                  
+                  {showDropdown && searchResults.length > 0 && (
+                    <div 
+                      className="absolute z-50 w-full mt-1 bg-background border border-border rounded-xl shadow-lg overflow-hidden"
+                      data-testid="dropdown-hero-results"
+                    >
+                      {searchResults.map((result, index) => (
+                        <button
+                          key={result.ticker}
+                          type="button"
+                          onClick={() => selectResult(result)}
+                          className={`w-full px-4 py-3 text-left flex items-center gap-3 hover-elevate ${
+                            index === selectedIndex ? 'bg-muted' : ''
+                          }`}
+                          data-testid={`dropdown-hero-item-${result.ticker.toLowerCase()}`}
+                        >
+                          <span className="font-mono font-semibold text-primary min-w-[60px]">
+                            {result.ticker}
+                          </span>
+                          <span className="text-muted-foreground truncate">
+                            {result.name}
+                          </span>
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                  
+                  {tickerError && (
+                    <p className="text-sm text-destructive text-center" data-testid="text-hero-error">
+                      {tickerError}
+                    </p>
+                  )}
+                </div>
+                
+                <Button 
+                  type="submit" 
+                  className="w-full h-12 sm:h-14 text-base sm:text-lg rounded-full font-semibold gap-2"
+                  data-testid="button-hero-analyze"
                 >
-                  Analyze a stock
+                  Analyze
                   <ArrowRight className="h-5 w-5" />
                 </Button>
-              </Link>
-              <p className="text-sm text-muted-foreground">No signup. Just type a ticker.</p>
+              </form>
+              
+              <div className="text-center space-y-3">
+                <p className="text-sm text-muted-foreground">Hot stocks:</p>
+                <div className="flex flex-wrap justify-center gap-2 sm:gap-3">
+                  {['IOT', 'PATH', 'AI', 'PLTR', 'SMCI'].map((example) => (
+                    <button
+                      key={example}
+                      type="button"
+                      onClick={() => {
+                        setTickerQuery(example);
+                        setTickerError("");
+                        setShowDropdown(false);
+                        justSelectedRef.current = true;
+                      }}
+                      className="px-4 sm:px-5 py-1.5 sm:py-2 text-sm sm:text-base font-mono text-primary bg-background border border-border rounded-full hover-elevate active-elevate-2 transition-all"
+                      data-testid={`button-hero-example-${example.toLowerCase()}`}
+                    >
+                      {example}
+                    </button>
+                  ))}
+                </div>
+                <p className="text-xs text-muted-foreground pt-1">No signup. Just type a ticker and go.</p>
+              </div>
             </div>
           </div>
         </section>
