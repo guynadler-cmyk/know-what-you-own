@@ -5,18 +5,14 @@ import {
   Search, 
   ArrowRight,
   Loader2,
-  TrendingUp,
-  Shield,
   Target,
-  AlertTriangle,
-  BarChart3,
-  Users,
-  Clock,
-  Briefcase
+  TrendingUp,
+  MessageSquare
 } from "lucide-react";
 import { useState, useEffect, useRef } from "react";
-import { useLocation } from "wouter";
+import { useLocation, Link } from "wouter";
 import { analytics } from "@/lib/analytics";
+import { motion } from "framer-motion";
 
 
 interface SearchResult {
@@ -158,16 +154,20 @@ export default function LandingPage() {
     }
   };
 
-  // Preview items for "What you'll get"
-  const previewItems = [
-    { label: "Strategic themes", icon: Target },
-    { label: "Market size", icon: TrendingUp },
-    { label: "Competitive edge", icon: Shield },
-    { label: "Risks & red flags", icon: AlertTriangle },
-    { label: "Business model", icon: Briefcase },
-    { label: "Key metrics", icon: BarChart3 },
-    { label: "Competitors", icon: Users },
-    { label: "Recent changes", icon: Clock },
+  // Benefit cards for "Key Outcomes"
+  const benefitCards = [
+    { 
+      icon: Target, 
+      text: "Strategic themes that actually matter" 
+    },
+    { 
+      icon: TrendingUp, 
+      text: "Market size and competitive moats" 
+    },
+    { 
+      icon: MessageSquare, 
+      text: "Clear, human-readable guidance — no noise" 
+    },
   ];
 
   return (
@@ -188,7 +188,7 @@ export default function LandingPage() {
       </header>
 
       <main className="flex-1 pt-14">
-        {/* Hero Section */}
+        {/* Hero Section — Emotional contrast */}
         <section 
           id="hero" 
           className="py-16 sm:py-24 lg:py-32 px-4"
@@ -199,14 +199,14 @@ export default function LandingPage() {
               className="text-4xl sm:text-5xl md:text-6xl font-bold tracking-tight leading-[1.1]"
               data-testid="text-hero-headline"
             >
-              Most tools give you charts. We give you clarity.
+              Investing should build wealth — not wear you down.
             </h1>
             
             <p 
               className="text-xl sm:text-2xl text-muted-foreground max-w-2xl mx-auto leading-relaxed"
               data-testid="text-hero-subheadline"
             >
-              Restnvest turns investing into a simple, structured workflow — so you know what you own, why you own it, and what to do next.
+              If you've ever felt like you're just winging it while everyone else seems to have a plan — you're not alone. Most people aren't short on information. They're stuck without a system.
             </p>
             
             <div className="pt-4">
@@ -216,25 +216,52 @@ export default function LandingPage() {
                 data-testid="button-hero-cta"
                 onClick={scrollToInput}
               >
-                Try it instantly
+                Try Restnvest (no signup)
                 <ArrowRight className="h-5 w-5" />
               </Button>
             </div>
           </div>
         </section>
 
-        {/* Ticker Input Section */}
+        {/* The New Way — Personal validation */}
+        <section 
+          id="new-way" 
+          className="py-16 sm:py-20 px-4 bg-muted/30"
+          data-testid="section-new-way"
+        >
+          <div className="mx-auto max-w-3xl text-center space-y-6">
+            <h2 
+              className="text-2xl sm:text-3xl lg:text-4xl font-bold tracking-tight"
+              data-testid="text-new-way-headline"
+            >
+              It's not your fault.
+            </h2>
+            
+            <p 
+              className="text-lg text-muted-foreground max-w-2xl mx-auto leading-relaxed"
+              data-testid="text-new-way-body"
+            >
+              Retail investors are expected to act like pros — but given no tools to think like them. Restnvest changes that. Our AI agents work like a team of analysts, turning chaotic filings and market noise into clear, structured insights you can actually act on.
+            </p>
+          </div>
+        </section>
+
+        {/* Try It Instantly — Interactive preview */}
         <section 
           id="ticker-input" 
-          className="py-12 sm:py-16 px-4 bg-muted/30 scroll-mt-20"
+          className="py-12 sm:py-16 px-4 scroll-mt-20"
           data-testid="section-ticker-input"
         >
           <div className="mx-auto max-w-xl space-y-6">
+            <p 
+              className="text-center text-lg text-muted-foreground"
+              data-testid="text-ticker-intro"
+            >
+              See what Restnvest's research agents uncover — just type a ticker.
+            </p>
+            
             <div className="rounded-2xl bg-background border border-border shadow-sm p-6 sm:p-8 space-y-6">
               <form onSubmit={handleTickerSubmit} className="space-y-4" ref={formDropdownRef}>
-                <label className="block text-center text-lg font-medium mb-4">
-                  Enter a ticker (e.g., AAPL, TSLA)
-                </label>
                 <div className="space-y-3 relative">
                   <div className="relative">
                     <Input
@@ -299,91 +326,78 @@ export default function LandingPage() {
                   Analyze
                 </Button>
               </form>
-              
-              <p className="text-center text-sm text-muted-foreground" data-testid="text-no-signup">
-                No sign-up needed. Just instant insight.
-              </p>
             </div>
           </div>
         </section>
 
-        {/* What You'll Get Section */}
+        {/* Key Outcomes — Visual clarity */}
         <section 
-          id="preview" 
-          className="py-16 sm:py-20 px-4"
-          data-testid="section-preview"
+          id="outcomes" 
+          className="py-16 sm:py-20 px-4 bg-muted/30"
+          data-testid="section-outcomes"
         >
           <div className="mx-auto max-w-3xl space-y-10">
             <h2 
               className="text-2xl sm:text-3xl font-bold text-center"
-              data-testid="text-preview-headline"
+              data-testid="text-outcomes-headline"
             >
-              What you'll get in seconds
+              What you'll get — instantly.
             </h2>
             
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-              {previewItems.map((item) => (
-                <div 
-                  key={item.label}
-                  className="flex flex-col items-center gap-3 p-4 rounded-xl bg-muted/50 border border-border"
-                  data-testid={`preview-${item.label.toLowerCase().replace(/\s+/g, '-')}`}
+            <div className="grid sm:grid-cols-3 gap-6">
+              {benefitCards.map((card, index) => (
+                <motion.div 
+                  key={card.text}
+                  initial={{ opacity: 0, y: 20 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.5, delay: index * 0.15 }}
+                  viewport={{ once: true }}
+                  className="flex flex-col items-center gap-4 p-6 rounded-xl bg-background border border-border text-center"
+                  data-testid={`card-outcome-${index + 1}`}
                 >
-                  <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
-                    <item.icon className="h-5 w-5 text-primary" />
+                  <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center">
+                    <card.icon className="h-6 w-6 text-primary" />
                   </div>
-                  <span className="text-sm font-medium text-center">{item.label}</span>
-                </div>
+                  <p className="text-base font-medium">{card.text}</p>
+                </motion.div>
               ))}
             </div>
           </div>
         </section>
 
-        {/* Why It Matters Section */}
-        <section 
-          id="philosophy" 
-          className="py-16 sm:py-20 px-4 bg-muted/30"
-          data-testid="section-philosophy"
-        >
-          <div className="mx-auto max-w-3xl text-center space-y-6">
-            <h2 
-              className="text-2xl sm:text-3xl lg:text-4xl font-bold tracking-tight"
-              data-testid="text-philosophy-headline"
-            >
-              Information isn't insight. Clarity builds conviction.
-            </h2>
-            
-            <p 
-              className="text-lg text-muted-foreground max-w-2xl mx-auto leading-relaxed"
-              data-testid="text-philosophy-body"
-            >
-              Most investors give up not because they're wrong — but because they never understood what they owned in the first place. Restnvest helps you invest in businesses, not tickers — with a clear process you can actually stick with.
-            </p>
-          </div>
-        </section>
-
-        {/* Final CTA Section */}
+        {/* Closing CTA — Invitation to go deeper */}
         <section 
           id="cta" 
           className="py-16 sm:py-24 px-4"
           data-testid="section-cta"
         >
-          <div className="mx-auto max-w-xl text-center space-y-8">
+          <div className="mx-auto max-w-2xl text-center space-y-6">
             <h2 
-              className="text-2xl sm:text-3xl font-bold"
+              className="text-2xl sm:text-3xl lg:text-4xl font-bold tracking-tight"
               data-testid="text-cta-headline"
             >
-              Start your first analysis now
+              You've tried doing it all on your own.
             </h2>
             
-            <Button
-              size="lg"
-              className="rounded-full px-8 py-6 text-lg font-semibold gap-2"
-              data-testid="button-cta-main"
-              onClick={scrollToInput}
+            <p 
+              className="text-lg text-muted-foreground max-w-xl mx-auto leading-relaxed"
+              data-testid="text-cta-body"
             >
-              Try it instantly
-              <ArrowRight className="h-5 w-5" />
-            </Button>
+              It's time to invest with structure, confidence, and clarity. Let Restnvest's AI team do the heavy lifting — so you can focus on the decisions that count.
+            </p>
+            
+            <div className="pt-4">
+              <Link href="/app">
+                <Button
+                  size="lg"
+                  className="rounded-full px-8 py-6 text-lg font-semibold gap-2"
+                  data-testid="button-cta-main"
+                >
+                  Try Restnvest — it's free
+                  <ArrowRight className="h-5 w-5" />
+                </Button>
+              </Link>
+            </div>
           </div>
         </section>
       </main>
