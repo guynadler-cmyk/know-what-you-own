@@ -55,6 +55,9 @@ const sections: FeatureSection[] = [
   },
 ];
 
+const SECTION_PADDING = "py-20 sm:py-24 lg:py-28";
+const BRIDGE_PADDING = "py-12 sm:py-16";
+
 export default function LandingPage() {
   return (
     <div className="flex min-h-screen flex-col bg-background">
@@ -77,10 +80,10 @@ export default function LandingPage() {
         {/* Hero Section */}
         <section 
           id="hero" 
-          className="py-20 sm:py-28 lg:py-36 px-4 sm:px-6 lg:px-8"
+          className={`${SECTION_PADDING} px-4 sm:px-6 lg:px-8`}
           data-testid="section-hero"
         >
-          <div className="mx-auto max-w-3xl text-center space-y-8">
+          <div className="mx-auto max-w-3xl text-center space-y-6">
             <h1 
               className="text-4xl sm:text-5xl lg:text-6xl font-bold tracking-tight leading-[1.1]"
               data-testid="text-hero-headline"
@@ -95,11 +98,11 @@ export default function LandingPage() {
               Restnvest turns complex business performance and market signals into a clear, structured view — so you can understand what you own, why you own it, and when to act.
             </p>
             
-            <div className="pt-4 space-y-4">
+            <div className="space-y-3">
               <Link href="/app">
                 <Button
                   size="lg"
-                  className="rounded-full px-8 py-6 text-lg font-semibold gap-2"
+                  className="rounded-full gap-2"
                   data-testid="button-hero-cta"
                 >
                   <Search className="h-5 w-5" />
@@ -110,7 +113,7 @@ export default function LandingPage() {
                 className="text-sm text-muted-foreground"
                 data-testid="text-hero-microcopy"
               >
-                No signup required • Takes seconds
+                No signup required · Takes seconds
               </p>
             </div>
           </div>
@@ -119,7 +122,7 @@ export default function LandingPage() {
         {/* Narrative Bridge */}
         <section 
           id="bridge" 
-          className="py-12 sm:py-16 px-4 sm:px-6 lg:px-8 bg-muted/30"
+          className={`${BRIDGE_PADDING} px-4 sm:px-6 lg:px-8 bg-muted/30`}
           data-testid="section-bridge"
         >
           <div className="mx-auto max-w-3xl text-center">
@@ -136,8 +139,8 @@ export default function LandingPage() {
         {sections.map((section, index) => (
           <div key={index}>
             <section
-              className={`py-16 sm:py-20 lg:py-24 px-4 sm:px-6 lg:px-8 ${
-                index % 2 === 0 ? "bg-muted/30" : ""
+              className={`${SECTION_PADDING} px-4 sm:px-6 lg:px-8 ${
+                index % 2 === 0 ? "" : "bg-muted/30"
               }`}
               data-testid={`section-feature-${index + 1}`}
             >
@@ -186,7 +189,7 @@ export default function LandingPage() {
             {index === 2 && (
               <section 
                 id="mid-cta" 
-                className="py-16 sm:py-20 px-4 sm:px-6 lg:px-8"
+                className={`${SECTION_PADDING} px-4 sm:px-6 lg:px-8 bg-muted/30`}
                 data-testid="section-mid-cta"
               >
                 <div className="mx-auto max-w-2xl text-center space-y-6">
@@ -205,7 +208,7 @@ export default function LandingPage() {
                   <Link href="/app">
                     <Button
                       size="lg"
-                      className="rounded-full px-8 py-6 text-lg font-semibold gap-2"
+                      className="rounded-full gap-2"
                       data-testid="button-mid-cta"
                     >
                       <Search className="h-5 w-5" />
@@ -221,7 +224,7 @@ export default function LandingPage() {
         {/* Final CTA Section */}
         <section
           id="cta"
-          className="py-20 sm:py-28 px-4 sm:px-6 lg:px-8 bg-muted/30"
+          className={`${SECTION_PADDING} px-4 sm:px-6 lg:px-8 bg-muted/30`}
           data-testid="section-final-cta"
         >
           <div className="mx-auto max-w-2xl text-center space-y-6">
@@ -237,11 +240,11 @@ export default function LandingPage() {
             >
               See the full picture behind any stock — business fundamentals, financial strength, and technical signals — all in one place.
             </p>
-            <div className="pt-4 space-y-4">
+            <div className="space-y-3">
               <Link href="/app">
                 <Button
                   size="lg"
-                  className="rounded-full px-8 py-6 text-lg font-semibold gap-2"
+                  className="rounded-full gap-2"
                   data-testid="button-final-cta"
                 >
                   <Search className="h-5 w-5" />
