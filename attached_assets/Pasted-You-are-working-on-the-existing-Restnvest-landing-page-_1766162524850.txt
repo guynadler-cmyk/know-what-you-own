@@ -1,0 +1,171 @@
+You are working on the existing Restnvest landing page. The core content sections already exist and must remain unchanged in wording and meaning. Your task is to add structure, hierarchy, and calls to action to make the page feel complete, polished, and conversion-ready — similar in spirit to monarch.com.
+
+🔹 1. Add a Hero Section (NEW)
+
+Add a hero section above all existing content.
+
+Hero requirements:
+
+Centered layout
+
+Calm, professional, confidence-driven tone
+
+No jargon
+
+Restnvest teal as the primary accent color
+
+Hero content (exact copy):
+
+Headline:
+
+Invest with clarity and conviction
+
+Subheadline:
+
+Restnvest turns complex business performance and market signals into a clear, structured view — so you can understand what you own, why you own it, and when to act.
+
+Primary CTA button:
+
+🔍 Research a stock
+
+Secondary microcopy (under CTA):
+
+No signup required • Takes seconds
+
+🔹 2. Add a Short Narrative Bridge (NEW)
+
+Directly below the hero, add a short, single-paragraph bridge that introduces the flow of the page.
+
+Copy (exact):
+
+Restnvest guides you through an investment the same way a professional would — from understanding the business, to tracking how it evolves, to evaluating strength, and finally acting with confidence.
+
+Keep this visually lightweight. No icons. No bullets.
+
+🔹 3. Keep All Existing Sections UNCHANGED (IMPORTANT)
+
+Do not modify:
+
+Section titles
+
+Descriptions
+
+Ordering
+
+Meaning
+
+Data presentation
+
+The existing sections are:
+
+Know what you're actually investing in
+→ Uses Investment Thesis / product overview image
+
+See how the story changes over time
+→ Uses Changes Over Time image
+
+Understand the competitive landscape
+→ Uses Competition image
+
+Is this business financially strong?
+→ This section is called Understand Performance
+→ Combines fundamentals + financial health score
+→ Uses the combined performance image
+
+Turn understanding into confident action
+→ This section represents Technical Analysis
+→ Uses the technical analysis / signals image
+
+🔹 4. Enforce Alternating Layout (Monarch-style)
+
+For all five sections:
+
+Alternate text left / image right, then image left / text right
+
+Use consistent spacing between sections
+
+Images should be presented as:
+
+Clean card-style frames
+
+Soft shadow
+
+Rounded corners
+
+No browser chrome
+
+Desktop-first, mobile-friendly scaling
+
+Do not mix text inside images.
+
+🔹 5. Insert a Mid-Page CTA (NEW)
+
+After section 3 (Understand the competitive landscape), insert a subtle CTA block.
+
+Copy:
+
+Ready to see this on a stock you care about?
+Research any public company in seconds — no signup required.
+
+Button:
+
+🔍 Research a stock
+
+This CTA should feel supportive, not pushy.
+
+🔹 6. Add a Final CTA Section (NEW)
+
+At the very bottom of the page, add a calm, confidence-driven closing section.
+
+Content (exact copy):
+
+Headline:
+
+Invest with clarity. Act with confidence.
+
+Supporting line:
+
+See the full picture behind any stock — business fundamentals, financial strength, and technical signals — all in one place.
+
+Primary CTA:
+
+🔍 Research a stock
+
+Optional small text below:
+
+Built for long-term thinkers
+
+🔹 7. CTA Consistency Rules (IMPORTANT)
+
+Use only one primary CTA label everywhere:
+“Research a stock”
+
+No competing CTAs
+
+No popups
+
+No aggressive language
+
+🔹 8. Design Principles to Follow
+
+Color palette: Restnvest teal + neutrals
+
+Tone: calm, analytical, confident
+
+Avoid jargon
+
+Avoid hype
+
+Let structure and visuals do the persuasion
+
+✅ End Goal
+
+The final landing page should:
+
+Feel complete and intentional
+
+Clearly explain what Restnvest is within 5 seconds
+
+Guide users naturally toward researching a stock
+
+Match the confidence and clarity of Monarch — without copying it
