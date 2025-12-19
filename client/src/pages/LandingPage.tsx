@@ -1,12 +1,19 @@
 import { Button } from "@/components/ui/button";
 import { ThemeToggle } from "@/components/ThemeToggle";
-import { ArrowRight, Package, TrendingUp, Users, BarChart3, Target } from "lucide-react";
+import { ArrowRight } from "lucide-react";
 import { Link } from "wouter";
+
+import businessOverviewImg from "@assets/Business_Overview_1766161245319.png";
+import changesImg from "@assets/Changes_Over_Time_1766161245320.png";
+import competitionImg from "@assets/Competition_1766161245321.png";
+import performanceImg from "@assets/Understand_Performance_1766161245322.png";
+import technicalImg from "@assets/technical_analysis_1766161245321.png";
 
 interface FeatureSection {
   headline: string;
   body: string;
-  icon: typeof Package;
+  image: string;
+  imageAlt: string;
   imageFirst: boolean;
 }
 
@@ -14,31 +21,36 @@ const sections: FeatureSection[] = [
   {
     headline: "Know what you're actually investing in",
     body: "Restnvest breaks companies down into what they build, who they serve, and how they operate — so you understand the business behind the ticker.",
-    icon: Package,
+    image: businessOverviewImg,
+    imageAlt: "Business overview showing investment thesis and strategic themes",
     imageFirst: false,
   },
   {
     headline: "See how the story changes over time",
     body: "Companies evolve. Restnvest tracks what's new, what's sustained, and what's fading — so you can follow the business narrative without reading filings.",
-    icon: TrendingUp,
+    image: changesImg,
+    imageAlt: "Changes over time tracking business evolution",
     imageFirst: true,
   },
   {
     headline: "Understand the competitive landscape",
     body: "Every business operates in a market. Restnvest shows who the real competitors are, helping you understand positioning and differentiation.",
-    icon: Users,
+    image: competitionImg,
+    imageAlt: "Competition analysis showing market competitors",
     imageFirst: false,
   },
   {
     headline: "Is this business financially strong?",
     body: "Restnvest summarizes revenue growth, profitability, cash flow, debt, and reinvestment into clear signals — helping you decide if a business is worth holding.",
-    icon: BarChart3,
+    image: performanceImg,
+    imageAlt: "Financial performance metrics and health score",
     imageFirst: true,
   },
   {
     headline: "Turn understanding into confident action",
     body: "Restnvest pairs business fundamentals with technical analysis to help you think clearly about timing, risk, and potential entry or exit — without noise.",
-    icon: Target,
+    image: technicalImg,
+    imageAlt: "Technical analysis with aligned signals",
     imageFirst: false,
   },
 ];
@@ -97,16 +109,16 @@ export default function LandingPage() {
                   </p>
                 </div>
 
-                {/* Image Placeholder Column */}
+                {/* Image Column */}
                 <div
                   className={`${section.imageFirst ? "lg:col-start-1" : ""}`}
                 >
-                  <div 
-                    className="w-full aspect-[4/3] rounded-lg border border-border bg-muted/50 flex items-center justify-center"
-                    data-testid={`img-placeholder-${index + 1}`}
-                  >
-                    <section.icon className="h-16 w-16 text-muted-foreground/50" />
-                  </div>
+                  <img
+                    src={section.image}
+                    alt={section.imageAlt}
+                    className="w-full rounded-lg shadow-sm border border-border"
+                    data-testid={`img-feature-${index + 1}`}
+                  />
                 </div>
               </div>
             </div>
