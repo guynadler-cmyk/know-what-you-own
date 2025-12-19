@@ -1,0 +1,58 @@
+Please update the Restnvest landing page to reflect the following structure and tone. The goal is to immediately connect with the user's emotional experience around investing, build trust, and clearly explain how Restnvest helps — all in a concise, modern format.
+
+🔁 Replace all content on the current landing page with the following structure and copy:
+1. Hero Section — Emotional contrast
+Headline:
+Investing should build wealth — not wear you down.
+
+Subheadline:
+If you've ever felt like you're just winging it while everyone else seems to have a plan — you're not alone. Most people aren't short on information. They're stuck without a system.
+
+CTA button:
+Try Restnvest (no signup)
+
+2. The New Way — Personal validation
+Section title:
+It's not your fault.
+
+Body:
+Retail investors are expected to act like pros — but given no tools to think like them. Restnvest changes that. Our AI agents work like a team of analysts, turning chaotic filings and market noise into clear, structured insights you can actually act on.
+
+3. Try It Instantly — Interactive preview
+
+This is the only interactive element on the page. Retain the existing search form and layout from the current landing page, but add a short line above it.
+
+Line above the form:
+See what Restnvest's research agents uncover — just type a ticker.
+
+4. Key Outcomes — Visual clarity
+
+Display three short benefit cards side by side (responsive). Keep it minimal and visual.
+
+Headline:
+What you’ll get — instantly.
+
+Cards:
+• Strategic themes that actually matter  
+• Market size and competitive moats  
+• Clear, human-readable guidance — no noise  
+
+5. Closing CTA — Invitation to go deeper
+Headline:
+You’ve tried doing it all on your own.
+
+Body:
+It’s time to invest with structure, confidence, and clarity. Let Restnvest’s AI team do the heavy lifting — so you can focus on the decisions that count.
+
+CTA button:
+Try Restnvest — it’s free
+
+🎨 Design & Style Guidelines:
+
+Keep the current minimalist design and branding (fonts, colors, layout grid).
+
+Use no more than two CTA buttons total on the page.
+
+Use soft animation or fade-in for the benefit cards if feasible.
+
+Avoid overwhelming with illustrations or stock imagery — let the copy lead.
