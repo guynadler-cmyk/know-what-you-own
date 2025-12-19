@@ -83,22 +83,22 @@ export default function LandingPage() {
           className={`${SECTION_PADDING} px-4 sm:px-6 lg:px-8`}
           data-testid="section-hero"
         >
-          <div className="mx-auto max-w-3xl text-center space-y-6">
-            <h1 
-              className="text-4xl sm:text-5xl lg:text-6xl font-bold tracking-tight leading-[1.1]"
-              data-testid="text-hero-headline"
-            >
-              Invest with clarity and conviction
-            </h1>
-            
-            <p 
-              className="text-xl sm:text-2xl text-muted-foreground max-w-2xl mx-auto leading-relaxed"
-              data-testid="text-hero-subheadline"
-            >
-              Restnvest turns complex business performance and market signals into a clear, structured view — so you can understand what you own, why you own it, and when to act.
-            </p>
-            
-            <div className="space-y-3">
+          <div className="mx-auto max-w-3xl text-center">
+            <div className="space-y-4">
+              <h1 
+                className="text-4xl sm:text-5xl lg:text-6xl font-bold tracking-tight leading-[1.1]"
+                data-testid="text-hero-headline"
+              >
+                Invest with clarity and conviction
+              </h1>
+              <p 
+                className="text-xl sm:text-2xl text-muted-foreground max-w-2xl mx-auto leading-relaxed"
+                data-testid="text-hero-subheadline"
+              >
+                Restnvest turns complex business performance and market signals into a clear, structured view — so you can understand what you own, why you own it, and when to act.
+              </p>
+            </div>
+            <div className="mt-8 space-y-3">
               <Link href="/app">
                 <Button
                   size="lg"
@@ -192,29 +192,33 @@ export default function LandingPage() {
                 className={`${SECTION_PADDING} px-4 sm:px-6 lg:px-8 bg-muted/30`}
                 data-testid="section-mid-cta"
               >
-                <div className="mx-auto max-w-2xl text-center space-y-6">
-                  <h3 
-                    className="text-xl sm:text-2xl font-semibold"
-                    data-testid="text-mid-cta-headline"
-                  >
-                    Ready to see this on a stock you care about?
-                  </h3>
-                  <p 
-                    className="text-muted-foreground"
-                    data-testid="text-mid-cta-body"
-                  >
-                    Research any public company in seconds — no signup required.
-                  </p>
-                  <Link href="/app">
-                    <Button
-                      size="lg"
-                      className="rounded-full gap-2"
-                      data-testid="button-mid-cta"
+                <div className="mx-auto max-w-2xl text-center">
+                  <div className="space-y-2">
+                    <h3 
+                      className="text-xl sm:text-2xl font-semibold"
+                      data-testid="text-mid-cta-headline"
                     >
-                      <Search className="h-5 w-5" />
-                      Research a stock
-                    </Button>
-                  </Link>
+                      Ready to see this on a stock you care about?
+                    </h3>
+                    <p 
+                      className="text-muted-foreground"
+                      data-testid="text-mid-cta-body"
+                    >
+                      Research any public company in seconds — no signup required.
+                    </p>
+                  </div>
+                  <div className="mt-6">
+                    <Link href="/app">
+                      <Button
+                        size="lg"
+                        className="rounded-full gap-2"
+                        data-testid="button-mid-cta"
+                      >
+                        <Search className="h-5 w-5" />
+                        Research a stock
+                      </Button>
+                    </Link>
+                  </div>
                 </div>
               </section>
             )}
@@ -227,20 +231,22 @@ export default function LandingPage() {
           className={`${SECTION_PADDING} px-4 sm:px-6 lg:px-8 bg-muted/30`}
           data-testid="section-final-cta"
         >
-          <div className="mx-auto max-w-2xl text-center space-y-6">
-            <h2 
-              className="text-2xl sm:text-3xl lg:text-4xl font-bold tracking-tight"
-              data-testid="text-final-cta-headline"
-            >
-              Invest with clarity. Act with confidence.
-            </h2>
-            <p 
-              className="text-lg text-muted-foreground leading-relaxed"
-              data-testid="text-final-cta-body"
-            >
-              See the full picture behind any stock — business fundamentals, financial strength, and technical signals — all in one place.
-            </p>
+          <div className="mx-auto max-w-2xl text-center">
             <div className="space-y-3">
+              <h2 
+                className="text-2xl sm:text-3xl lg:text-4xl font-bold tracking-tight"
+                data-testid="text-final-cta-headline"
+              >
+                Invest with clarity. Act with confidence.
+              </h2>
+              <p 
+                className="text-lg text-muted-foreground leading-relaxed"
+                data-testid="text-final-cta-body"
+              >
+                See the full picture behind any stock — business fundamentals, financial strength, and technical signals — all in one place.
+              </p>
+            </div>
+            <div className="mt-8 space-y-3">
               <Link href="/app">
                 <Button
                   size="lg"
