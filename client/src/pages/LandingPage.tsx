@@ -199,14 +199,14 @@ export default function LandingPage() {
               className="text-4xl sm:text-5xl md:text-6xl font-bold tracking-tight leading-[1.1]"
               data-testid="text-hero-headline"
             >
-              Investing should build wealth — not wear you down.
+              The smarter way to invest with clarity
             </h1>
             
             <p 
               className="text-xl sm:text-2xl text-muted-foreground max-w-2xl mx-auto leading-relaxed"
               data-testid="text-hero-subheadline"
             >
-              If you've ever felt like you're just winging it while everyone else seems to have a plan — you're not alone. Most people aren't short on information. They're stuck without a system.
+              Restnvest helps you cut through the noise and uncover what really matters in a stock. Now you can invest with structure, conviction, and confidence.
             </p>
             
             <div className="pt-4">
