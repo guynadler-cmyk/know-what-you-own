@@ -1,0 +1,194 @@
+This stage comes after users have already evaluated the business fundamentals (revenue, earnings, debt, cash, ROIC, etc.).
+Now we want to help users decide whether the stock itself is sensibly priced right now.
+
+This is not about predicting returns or optimizing — it’s about avoiding obvious valuation mistakes and setting realistic expectations.
+
+🎯 Goal
+
+Build a Sensible Stock Valuation screen that mirrors the structure and visual language of our existing “Understand Performance” stage.
+
+The screen should:
+
+Use 4 valuation lenses
+
+Present each lens with a quadrant-style visual
+
+Give a clear, human explanation
+
+End with a Valuation Score Summary
+
+No market benchmarking is required yet (no S&P 500 comparisons).
+
+🧱 Page Structure
+Header
+
+Title: Evaluate the Stock
+Subtitle / Context copy:
+
+You’ve seen what the business is. Now let’s look at what you’re paying for.
+Sensible investing isn’t about finding the cheapest stock — it’s about knowing whether the price, expectations, and potential returns make sense together.
+
+📊 Valuation Modules (Match Stage 2 Layout)
+
+Each module should have:
+
+A selectable tab/card
+
+A simple 2×2 quadrant visual
+
+Status label (e.g. Sensible, Caution, Risky)
+
+Short explanation in plain language
+
+1️⃣ Price Discipline
+
+Purpose: Avoid buying at extremes without conviction
+
+Key ideas to visualize:
+
+Current price relative to recent highs (52‑week or all‑time)
+
+Entry risk awareness
+
+Quadrant labels (example):
+
+Euphoric High
+
+Conviction Buy
+
+Discounted Entry
+
+Falling Knife
+
+Example explanation text:
+
+The stock is trading near its highs. That’s not automatically bad — but it requires strong conviction and a long-term mindset.
+
+2️⃣ Valuation Context
+
+Purpose: Think twice about historically high multiples
+
+Key ideas:
+
+Current valuation vs its own historical range
+
+No peer or market comparisons required yet
+
+Metrics (placeholders OK):
+
+P/E, EV/EBIT, EV/Sales, or FCF Yield
+
+Historical percentile (e.g. “High vs past norms”)
+
+Quadrant labels:
+
+Priced for Perfection
+
+Fair Value
+
+Cheap for a Reason
+
+Undervalued Opportunity
+
+Example explanation:
+
+The stock is trading at elevated multiples compared to its own history. Future growth needs to justify today’s price.
+
+3️⃣ Capital Discipline (Reinvestment + Shareholder Treatment)
+
+Purpose: Reward companies that compound value per share
+
+Key ideas:
+
+ROIC (or ROE if needed)
+
+Share dilution vs buybacks
+
+Capital efficiency
+
+Axes suggestion:
+
+Y‑axis: Return on Invested Capital
+
+X‑axis: Share count trend (dilution → buybacks)
+
+Quadrant labels:
+
+Value Creator
+
+Stable Operator
+
+Growth at All Costs
+
+Value Destroyer
+
+Example explanation:
+
+The company has diluted shareholders over time. Make sure capital raised has translated into durable growth.
+
+4️⃣ Doubling Potential
+
+Purpose: Focus on realistic compounding
+
+Key ideas:
+
+Can this stock plausibly double within ~7 years?
+
+Based on market cap and growth assumptions
+
+Use Rule of 72 logic (no forecasting engine required)
+
+Quadrant labels:
+
+Realistic Compounder
+
+Breakout Potential
+
+Too Slow to Matter
+
+Pipe Dream
+
+Example explanation:
+
+At current growth rates, this business could double in roughly 6–7 years — a reasonable compounding profile if execution holds.
+
+🧮 Valuation Summary Section (Bottom)
+
+Mirror the Financial Health Score pattern from Stage 2.
+
+Example:
+
+Valuation Score: 3 of 4 signals sensible
+
+Show each module with:
+
+Status badge (Sensible / Caution / Risky)
+
+Short label
+
+Final summary message example:
+
+Mixed signals. The valuation looks reasonable, but expectations matter. Worth considering with patience and conviction.
+
+🎨 Design & UX Notes
+
+Match typography, spacing, and card styles from Understand Performance
+
+Keep explanations short, human, and non-technical
+
+Avoid numeric precision — this is about judgment, not optimization
+
+No buy/sell recommendations
+
+🧪 Scope Notes
+
+Placeholder or mocked data is fine
+
+Focus on structure, clarity, and flow
+
+Logic can be static or simplified for now
+
+This is a foundation for deeper valuation tooling later
+
+If anything is unclear, prioritize clarity over complexity.
+This screen should help users say: “I understand what I’m paying for — and whether I’m comfortable with it.”
