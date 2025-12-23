@@ -247,6 +247,7 @@ export default function AppPage() {
               summaryData={summaryData}
               financialMetrics={financialMetrics}
               balanceSheetMetrics={balanceSheetMetrics}
+              ticker={currentTicker}
             />
             
             <div className="mt-8 flex items-center justify-between gap-4">
