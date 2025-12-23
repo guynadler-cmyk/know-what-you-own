@@ -43,6 +43,13 @@ interface AlphaVantageBalanceSheet {
 interface AlphaVantageBalanceSheetResponse {
   symbol: string;
   annualReports: AlphaVantageBalanceSheet[];
+  quarterlyReports?: AlphaVantageBalanceSheet[];
+}
+
+interface AlphaVantageIncomeResponseFull {
+  symbol: string;
+  annualReports: AlphaVantageIncomeStatement[];
+  quarterlyReports?: AlphaVantageIncomeStatement[];
 }
 
 // Simple in-memory cache to avoid hitting rate limits
@@ -85,30 +92,34 @@ export class AlphaVantageService {
         throw new Error('Alpha Vantage API rate limit reached. Please try again in a minute.');
       }
 
-      if (!data.annualReports || data.annualReports.length < 2) {
-        throw new Error(`Insufficient financial data for ${upperTicker}. Need at least 2 years of annual reports.`);
+      // Use all available annual reports (at least 1 required)
+      const reports = data.annualReports || [];
+      if (reports.length < 1) {
+        throw new Error(`No financial data available for ${upperTicker}.`);
       }
 
-      // Get the two most recent annual reports
-      const reports = data.annualReports.slice(0, 2);
-      const currentReport = reports[0];
-      const previousReport = reports[1];
+      console.log(`[Financial] ${upperTicker}: Using ${reports.length} annual reports`);
 
-      // Parse revenue values
-      const currentRevenue = parseFloat(currentReport.totalRevenue);
-      const previousRevenue = parseFloat(previousReport.totalRevenue);
+      const currentReport = reports[0];
+      const previousReport = reports.length > 1 ? reports[1] : null;
+
+      // Parse revenue values with safe fallback
+      const safeParseFloat = (value: string | undefined | null): number => {
+        if (!value || value === 'None' || value === '') return 0;
+        const parsed = parseFloat(value);
+        return isNaN(parsed) ? 0 : parsed;
+      };
+
+      const currentRevenue = safeParseFloat(currentReport.totalRevenue);
+      const previousRevenue = previousReport ? safeParseFloat(previousReport.totalRevenue) : 0;
 
       // Parse earnings (net income) values
-      const currentEarnings = parseFloat(currentReport.netIncome);
-      const previousEarnings = parseFloat(previousReport.netIncome);
+      const currentEarnings = safeParseFloat(currentReport.netIncome);
+      const previousEarnings = previousReport ? safeParseFloat(previousReport.netIncome) : 0;
 
-      // Validate parsed values
-      if (isNaN(currentRevenue) || isNaN(previousRevenue)) {
-        throw new Error(`Invalid revenue data for ${upperTicker}. Revenue values are not numeric.`);
-      }
-
-      if (isNaN(currentEarnings) || isNaN(previousEarnings)) {
-        throw new Error(`Invalid earnings data for ${upperTicker}. Earnings values are not numeric.`);
+      // Validate current values (previous can be 0 if only one period available)
+      if (currentRevenue === 0 && currentEarnings === 0) {
+        throw new Error(`Invalid financial data for ${upperTicker}. No revenue or earnings data found.`);
       }
 
       // Calculate percentage changes (guard against division by zero)
@@ -163,7 +174,7 @@ export class AlphaVantageService {
         previousEarnings: formatCurrency(previousEarnings),
         earningsChangePercent: parseFloat(earningsChangePercent.toFixed(2)),
         fiscalYear: currentReport.fiscalDateEnding.substring(0, 4),
-        previousFiscalYear: previousReport.fiscalDateEnding.substring(0, 4),
+        previousFiscalYear: previousReport ? previousReport.fiscalDateEnding.substring(0, 4) : currentReport.fiscalDateEnding.substring(0, 4),
       };
 
       // Cache the result
@@ -171,7 +182,7 @@ export class AlphaVantageService {
 
       return metrics;
     } catch (error: any) {
-      if (error.message?.includes('Alpha Vantage') || error.message?.includes('Insufficient financial data')) {
+      if (error.message?.includes('Alpha Vantage') || error.message?.includes('No financial data')) {
         throw error;
       }
 
@@ -217,14 +228,16 @@ export class AlphaVantageService {
         throw new Error('Alpha Vantage API rate limit reached. Please try again in a minute.');
       }
 
-      if (!data.annualReports || data.annualReports.length < 2) {
-        throw new Error(`Insufficient balance sheet data for ${upperTicker}. Need at least 2 years of annual reports.`);
+      // Use all available annual reports (at least 1 required)
+      const reports = data.annualReports || [];
+      if (reports.length < 1) {
+        throw new Error(`No balance sheet data available for ${upperTicker}.`);
       }
 
-      // Get the two most recent annual reports
-      const reports = data.annualReports.slice(0, 2);
+      console.log(`[Balance Sheet] ${upperTicker}: Using ${reports.length} annual reports`);
+
       const currentReport = reports[0];
-      const previousReport = reports[1];
+      const previousReport = reports.length > 1 ? reports[1] : null;
 
       // Parse values with NaN protection
       const safeParseFloat = (value: string | undefined | null): number => {
@@ -240,7 +253,7 @@ export class AlphaVantageService {
       const shortTermDebt = safeParseFloat(currentReport.shortTermDebt);
       const totalDebt = longTermDebt + shortTermDebt;
       const currentEquity = safeParseFloat(currentReport.totalShareholderEquity);
-      const previousEquity = safeParseFloat(previousReport.totalShareholderEquity);
+      const previousEquity = previousReport ? safeParseFloat(previousReport.totalShareholderEquity) : currentEquity;
 
       // Format currency values with NaN protection
       const formatCurrency = (value: number): string => {
@@ -292,14 +305,29 @@ export class AlphaVantageService {
       let equitySummary: string;
       let equityDetails: string;
 
-      if (currentEquity > previousEquity) {
+      // Handle case where we only have one period of data
+      if (!previousReport || currentEquity === previousEquity) {
+        if (currentEquity > 0) {
+          equityStatus = 'strong';
+          equitySummary = "The company has positive shareholder equity.";
+          equityDetails = `Current shareholder equity is <strong>${formatCurrency(currentEquity)}</strong>.<br>Historical comparison not available with current data.`;
+        } else if (currentEquity < 0) {
+          equityStatus = 'weak';
+          equitySummary = "The company has negative shareholder equity — a warning sign.";
+          equityDetails = `Current shareholder equity is <strong>${formatCurrency(currentEquity)}</strong>.<br>Negative equity means liabilities exceed assets, which can indicate financial distress.`;
+        } else {
+          equityStatus = 'caution';
+          equitySummary = "The company has no shareholder equity — worth investigating.";
+          equityDetails = `Current shareholder equity is <strong>$0</strong>.<br>Zero equity means assets equal liabilities, which warrants further investigation.`;
+        }
+      } else if (currentEquity > previousEquity) {
         equityStatus = 'strong';
-        const equityGrowth = ((currentEquity - previousEquity) / previousEquity * 100).toFixed(1);
+        const equityGrowth = previousEquity !== 0 ? ((currentEquity - previousEquity) / Math.abs(previousEquity) * 100).toFixed(1) : '100+';
         equitySummary = "The company's net worth is growing — a positive sign.";
         equityDetails = `Shareholder equity grew from <strong>${formatCurrency(previousEquity)}</strong> to <strong>${formatCurrency(currentEquity)}</strong> (up ${equityGrowth}%).<br>This shows the company is building owner value over time.`;
       } else {
         equityStatus = 'caution';
-        const equityDecline = ((previousEquity - currentEquity) / previousEquity * 100).toFixed(1);
+        const equityDecline = previousEquity !== 0 ? ((previousEquity - currentEquity) / Math.abs(previousEquity) * 100).toFixed(1) : '100+';
         equitySummary = "Owner value is declining. Look deeper into what's causing it.";
         equityDetails = `Shareholder equity declined from <strong>${formatCurrency(previousEquity)}</strong> to <strong>${formatCurrency(currentEquity)}</strong> (down ${equityDecline}%).<br>This decline warrants further investigation into the underlying causes.`;
       }
@@ -307,7 +335,7 @@ export class AlphaVantageService {
       const metrics: BalanceSheetMetrics = {
         ticker: upperTicker,
         fiscalYear: currentReport.fiscalDateEnding.substring(0, 4),
-        previousFiscalYear: previousReport.fiscalDateEnding.substring(0, 4),
+        previousFiscalYear: previousReport ? previousReport.fiscalDateEnding.substring(0, 4) : currentReport.fiscalDateEnding.substring(0, 4),
         checks: {
           liquidity: {
             status: liquidityStatus,
@@ -338,7 +366,7 @@ export class AlphaVantageService {
 
       return metrics;
     } catch (error: any) {
-      if (error.message?.includes('Alpha Vantage') || error.message?.includes('Insufficient')) {
+      if (error.message?.includes('Alpha Vantage') || error.message?.includes('No balance sheet data')) {
         throw error;
       }
 
@@ -381,8 +409,8 @@ export class AlphaVantageService {
       ]);
 
       const overview = overviewRes.data as AlphaVantageCompanyOverview;
-      const incomeData = incomeRes.data;
-      const balanceData = balanceRes.data;
+      const incomeData = incomeRes.data as AlphaVantageIncomeResponseFull;
+      const balanceData = balanceRes.data as AlphaVantageBalanceSheetResponse;
 
       // Check for API errors
       if ('Error Message' in overview || !overview.Symbol) {
@@ -391,12 +419,25 @@ export class AlphaVantageService {
       if ('Note' in overview) {
         throw new Error('Alpha Vantage API rate limit reached. Please try again in a minute.');
       }
-      if (!incomeData.annualReports || incomeData.annualReports.length < 1) {
-        throw new Error(`Insufficient income data for ${upperTicker}.`);
+
+      // Use annual reports if available, otherwise fall back to quarterly
+      const incomeReports = (incomeData.annualReports && incomeData.annualReports.length > 0) 
+        ? incomeData.annualReports 
+        : (incomeData.quarterlyReports || []);
+      
+      const balanceReports = (balanceData.annualReports && balanceData.annualReports.length > 0)
+        ? balanceData.annualReports
+        : (balanceData.quarterlyReports || []);
+
+      if (incomeReports.length < 1) {
+        throw new Error(`No income statement data available for ${upperTicker}.`);
       }
-      if (!balanceData.annualReports || balanceData.annualReports.length < 1) {
-        throw new Error(`Insufficient balance sheet data for ${upperTicker}.`);
+      if (balanceReports.length < 1) {
+        throw new Error(`No balance sheet data available for ${upperTicker}.`);
       }
+
+      // Log how much data we're working with
+      console.log(`[Valuation] ${upperTicker}: Using ${incomeReports.length} income reports and ${balanceReports.length} balance sheet reports`);
 
       const safeParseFloat = (value: string | undefined | null): number => {
         if (!value || value === 'None' || value === '') return 0;
@@ -427,14 +468,14 @@ export class AlphaVantageService {
       const sharesOutstanding = safeParseFloat(overview.SharesOutstanding);
       const week52High = safeParseFloat(overview['52WeekHigh']);
 
-      // Parse income statement (most recent annual)
-      const currentIncome = incomeData.annualReports[0];
-      const previousIncome = incomeData.annualReports.length > 1 ? incomeData.annualReports[1] : null;
+      // Parse income statement (use all available periods, starting with most recent)
+      const currentIncome = incomeReports[0];
+      const previousIncome = incomeReports.length > 1 ? incomeReports[1] : null;
       const ebit = safeParseFloat(currentIncome.operatingIncome);
 
-      // Parse balance sheet (most recent annual)
-      const currentBalance = balanceData.annualReports[0];
-      const previousBalance = balanceData.annualReports.length > 1 ? balanceData.annualReports[1] : null;
+      // Parse balance sheet (use all available periods, starting with most recent)
+      const currentBalance = balanceReports[0];
+      const previousBalance = balanceReports.length > 1 ? balanceReports[1] : null;
       const cash = safeParseFloat(currentBalance.cashAndCashEquivalentsAtCarryingValue);
       const shortTermDebt = safeParseFloat(currentBalance.shortTermDebt);
       const longTermDebt = safeParseFloat(currentBalance.longTermDebt);
