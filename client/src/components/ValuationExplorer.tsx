@@ -1,23 +1,61 @@
 import { useState, useMemo } from "react";
 import { Card } from "@/components/ui/card";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
-import { TrendingUp, TrendingDown, HelpCircle, CheckCircle, AlertTriangle, XCircle, BarChart3 } from "lucide-react";
+import { TrendingUp, TrendingDown, HelpCircle, CheckCircle, AlertTriangle, XCircle, Minus } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 export type ValuationSignalStrength = "sensible" | "caution" | "risky";
+export type SignalColor = "green" | "red" | "yellow" | "neutral";
 
 const VALUATION_TERM_DEFINITIONS: Record<string, string> = {
-  "ROIC": "Return on Invested Capital — how much return the company earns on the money it reinvests. Higher is better.",
-  "Rule of 72": "Divide 72 by a growth rate to estimate how long it'll take to double. For example, 10% growth = ~7 years to double.",
+  "Distance from Recent High": "How far the current price is from the stock's recent peak. Useful context, but not a buy or sell signal on its own.",
+  "Company Size": "The total value of the company in the stock market. Larger companies are often more stable, but size alone doesn't determine value.",
+  "Valuation Rising": "The stock is getting more expensive relative to earnings. This could mean the market expects more growth — or it's getting overpriced.",
+  "Cheaper vs History": "The stock is trading cheaper than usual based on past metrics. This could signal opportunity — or a reason for concern.",
+  "ROIC": "How much return the company earns on the money it reinvests. Higher is better — it means the business is using capital wisely.",
+  "Share Buybacks": "When a company repurchases its own shares, your ownership stake grows. This can boost your returns over time.",
+  "Share Dilution": "When a company issues new shares, your ownership stake shrinks. This can reduce your returns unless the capital is used well.",
+  "Time to Double": "A rough estimate of how long it might take for the company to double in size, based on current growth rates.",
   "P/E": "Price-to-Earnings — how much you pay for each dollar of profit. Lower can mean cheaper, but context matters.",
   "EV/EBIT": "Enterprise Value to Operating Earnings — a measure of what you're paying relative to the company's core profits.",
   "FCF Yield": "Free Cash Flow Yield — how much real cash the company generates relative to its price. Higher is often better.",
-  "Share Dilution": "When a company issues new shares, existing owners' stake shrinks. This can reduce your returns.",
-  "Buybacks": "When a company repurchases its own shares, remaining owners' stakes grow. This can boost your returns.",
-  "Market Cap": "The total market value of all outstanding shares. Bigger companies have larger market caps.",
-  "52-Week High": "The highest price the stock has traded at over the past year.",
   "Historical Multiples": "Past valuation ratios for this stock. Useful for context, but not a crystal ball.",
 };
+
+interface SignalInfo {
+  label: string;
+  color: SignalColor;
+  direction: "up" | "down" | "neutral";
+}
+
+function getSignalStyles(color: SignalColor) {
+  switch (color) {
+    case "green":
+      return {
+        bg: "bg-green-500/10",
+        text: "text-green-700 dark:text-green-400",
+        icon: TrendingUp,
+      };
+    case "red":
+      return {
+        bg: "bg-red-500/10",
+        text: "text-red-700 dark:text-red-400",
+        icon: TrendingDown,
+      };
+    case "yellow":
+      return {
+        bg: "bg-yellow-500/10",
+        text: "text-yellow-700 dark:text-yellow-400",
+        icon: AlertTriangle,
+      };
+    case "neutral":
+      return {
+        bg: "bg-neutral-500/10",
+        text: "text-neutral-600 dark:text-neutral-400",
+        icon: Minus,
+      };
+  }
+}
 
 function TermWithTooltip({ term }: { term: string }) {
   const definition = VALUATION_TERM_DEFINITIONS[term];
@@ -48,7 +86,7 @@ export interface ValuationQuadrantData {
   id: string;
   title: string;
   verdict: string;
-  signals: [string, string];
+  signals: [SignalInfo, SignalInfo];
   xLabel: string;
   yLabel: string;
   zones: {
@@ -59,7 +97,7 @@ export interface ValuationQuadrantData {
   };
   position: { x: number; y: number };
   insight: string;
-  signalDirections: [boolean, boolean];
+  insightHighlight: string;
   strength: ValuationSignalStrength;
 }
 
@@ -68,8 +106,10 @@ const VALUATION_QUADRANT_DATA: ValuationQuadrantData[] = [
     id: "price-discipline",
     title: "Price Discipline",
     verdict: "Reasonable Entry",
-    signals: ["52-Week High", "Market Cap"],
-    signalDirections: [true, true],
+    signals: [
+      { label: "Distance from Recent High", color: "neutral", direction: "neutral" },
+      { label: "Company Size", color: "neutral", direction: "neutral" }
+    ],
     xLabel: "Distance from Highs",
     yLabel: "Entry Risk",
     zones: {
@@ -80,14 +120,17 @@ const VALUATION_QUADRANT_DATA: ValuationQuadrantData[] = [
     },
     position: { x: 35, y: 65 },
     insight: "The stock is trading below its recent highs. This could be a reasonable entry point — but make sure the fundamentals still support the story.",
+    insightHighlight: "This could be a reasonable entry point.",
     strength: "sensible",
   },
   {
-    id: "valuation-context",
-    title: "Valuation Context",
+    id: "valuation-check",
+    title: "Valuation Check",
     verdict: "Fairly Valued",
-    signals: ["P/E", "Historical Multiples"],
-    signalDirections: [true, false],
+    signals: [
+      { label: "Valuation Rising", color: "red", direction: "up" },
+      { label: "Cheaper vs History", color: "green", direction: "down" }
+    ],
     xLabel: "Current Valuation",
     yLabel: "Historical Percentile",
     zones: {
@@ -98,14 +141,17 @@ const VALUATION_QUADRANT_DATA: ValuationQuadrantData[] = [
     },
     position: { x: 55, y: 45 },
     insight: "The stock is trading at reasonable multiples compared to its own history. Future growth needs to justify today's price, but expectations aren't stretched.",
+    insightHighlight: "Expectations aren't stretched.",
     strength: "sensible",
   },
   {
     id: "capital-discipline",
     title: "Capital Discipline",
     verdict: "Value Creator",
-    signals: ["ROIC", "Buybacks"],
-    signalDirections: [true, true],
+    signals: [
+      { label: "ROIC", color: "green", direction: "up" },
+      { label: "Share Buybacks", color: "green", direction: "up" }
+    ],
     xLabel: "Share Count Trend",
     yLabel: "Return on Capital",
     zones: {
@@ -116,14 +162,17 @@ const VALUATION_QUADRANT_DATA: ValuationQuadrantData[] = [
     },
     position: { x: 72, y: 28 },
     insight: "The company earns strong returns on invested capital and has been reducing share count through buybacks. This is a sign of disciplined capital allocation.",
+    insightHighlight: "A sign of disciplined capital allocation.",
     strength: "sensible",
   },
   {
     id: "doubling-potential",
     title: "Doubling Potential",
     verdict: "Realistic Compounder",
-    signals: ["Rule of 72", "Market Cap"],
-    signalDirections: [true, true],
+    signals: [
+      { label: "Time to Double", color: "neutral", direction: "neutral" },
+      { label: "Company Size", color: "neutral", direction: "neutral" }
+    ],
     xLabel: "Growth Rate",
     yLabel: "Time to Double",
     zones: {
@@ -134,6 +183,7 @@ const VALUATION_QUADRANT_DATA: ValuationQuadrantData[] = [
     },
     position: { x: 30, y: 35 },
     insight: "At current growth rates, this business could double in roughly 6-7 years — a reasonable compounding profile if execution holds.",
+    insightHighlight: "A reasonable compounding profile.",
     strength: "sensible",
   },
 ];
@@ -357,6 +407,32 @@ function ValuationQuadrantChart({ quadrant }: { quadrant: ValuationQuadrantData 
   );
 }
 
+function SignalTag({ signal }: { signal: SignalInfo }) {
+  const styles = getSignalStyles(signal.color);
+  const Icon = styles.icon;
+  
+  const getDirectionSymbol = () => {
+    if (signal.direction === "up") return "↑";
+    if (signal.direction === "down") return "↓";
+    return "";
+  };
+
+  return (
+    <div 
+      className={cn(
+        "flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium",
+        styles.bg,
+        styles.text
+      )}
+      data-testid={`valuation-signal-tag`}
+    >
+      <Icon className="w-4 h-4" />
+      <TermWithTooltip term={signal.label} />
+      {getDirectionSymbol()}
+    </div>
+  );
+}
+
 interface SummaryCardProps {
   id: string;
   title: string;
@@ -465,33 +541,28 @@ export function ValuationExplorer() {
             
             <div className="flex flex-wrap gap-3">
               {selectedQuadrant.signals.map((signal, idx) => (
-                <div 
-                  key={idx}
-                  className={cn(
-                    "flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium",
-                    selectedQuadrant.signalDirections[idx] 
-                      ? "bg-green-500/10 text-green-700 dark:text-green-400" 
-                      : "bg-red-500/10 text-red-700 dark:text-red-400"
-                  )}
-                  data-testid={`valuation-signal-${idx}`}
-                >
-                  {selectedQuadrant.signalDirections[idx] ? (
-                    <TrendingUp className="w-4 h-4" />
-                  ) : (
-                    <TrendingDown className="w-4 h-4" />
-                  )}
-                  <TermWithTooltip term={signal} />
-                  {selectedQuadrant.signalDirections[idx] ? "↑" : "↓"}
-                </div>
+                <SignalTag key={idx} signal={signal} />
               ))}
             </div>
             
-            <p 
-              className="text-muted-foreground leading-relaxed text-base"
+            <div 
+              className="bg-primary/5 rounded-lg p-4 border border-primary/10"
               data-testid="valuation-quadrant-insight"
             >
-              {selectedQuadrant.insight}
-            </p>
+              <p className="text-foreground leading-relaxed text-base">
+                {selectedQuadrant.insightHighlight && selectedQuadrant.insight.includes(selectedQuadrant.insightHighlight) ? (
+                  <>
+                    {selectedQuadrant.insight.split(selectedQuadrant.insightHighlight)[0]}
+                    <span className="font-semibold text-primary">
+                      {selectedQuadrant.insightHighlight}
+                    </span>
+                    {selectedQuadrant.insight.split(selectedQuadrant.insightHighlight)[1] || ''}
+                  </>
+                ) : (
+                  selectedQuadrant.insight
+                )}
+              </p>
+            </div>
           </div>
         </div>
       </Card>
