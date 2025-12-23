@@ -6,9 +6,11 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
-import { Shield, Calendar, Download, ExternalLink, Clock, ChevronDown, TrendingUp, BarChart3, Lightbulb, Bell, Mail, AlertCircle } from "lucide-react";
+import { Shield, Calendar, Download, ExternalLink, Clock, ChevronDown, TrendingUp, BarChart3, Lightbulb, Bell, Mail, AlertCircle, Loader2 } from "lucide-react";
 import { format, addDays, addWeeks, addMonths, addHours, parseISO, setHours, setMinutes } from "date-fns";
 import { useToast } from "@/hooks/use-toast";
+import { useMutation } from "@tanstack/react-query";
+import { apiRequest } from "@/lib/queryClient";
 
 interface ProtectStageProps {
   ticker?: string;
@@ -210,6 +212,10 @@ function downloadIcsFile(events: CalendarEvent[], ticker: string): void {
   URL.revokeObjectURL(url);
 }
 
+function isValidEmail(email: string): boolean {
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+}
+
 export function ProtectStage({ ticker: initialTicker }: ProtectStageProps) {
   const { toast } = useToast();
   const [ticker, setTicker] = useState(initialTicker || "");
@@ -218,6 +224,19 @@ export function ProtectStage({ ticker: initialTicker }: ProtectStageProps) {
   const [expandedTypes, setExpandedTypes] = useState<string[]>([]);
   const [customDates, setCustomDates] = useState<Record<string, string>>({});
   const [email, setEmail] = useState("");
+
+  const saveCheckupMutation = useMutation({
+    mutationFn: async (data: {
+      email: string;
+      ticker: string;
+      selectedCheckins: string[];
+      customMessage?: string;
+      reminderDates: { type: string; date: string }[];
+    }) => {
+      const response = await apiRequest("POST", "/api/scheduled-checkups", data);
+      return response.json();
+    },
+  });
 
   const toggleType = (id: string) => {
     const checkIn = CHECK_IN_TYPES.find((t) => t.id === id);
@@ -270,33 +289,57 @@ export function ProtectStage({ ticker: initialTicker }: ProtectStageProps) {
     });
   };
 
-  const handleGoogleCalendar = () => {
-    const events = generateEvents();
-    events.forEach((event) => {
-      const url = generateGoogleCalendarUrl(event);
-      window.open(url, "_blank");
-    });
-    
-    toast({
-      title: "Calendar events created!",
-      description: email ? `We'll also send a copy to ${email}` : "Your check-in reminders are ready.",
-    });
-  };
-
-  const handleDownloadIcs = () => {
-    const events = generateEvents();
-    if (events.length > 0) {
-      downloadIcsFile(events, ticker.trim());
-      
+  const handleGenerateReminders = async (action: "google" | "ics") => {
+    if (!isValidEmail(email)) {
       toast({
-        title: "Download started!",
-        description: email ? `We'll also send a copy to ${email}` : "Your .ics file is ready.",
+        title: "Email required",
+        description: "Please enter a valid email address to receive your reminder.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const scheduledDates = getScheduledDates();
+    const reminderDates = scheduledDates.map(({ checkIn, date }) => ({
+      type: checkIn.id,
+      date: date.toISOString(),
+    }));
+
+    try {
+      await saveCheckupMutation.mutateAsync({
+        email,
+        ticker: ticker.trim().toUpperCase(),
+        selectedCheckins: selectedTypes.filter((id) => !CHECK_IN_TYPES.find((t) => t.id === id)?.disabled),
+        customMessage: userMessage || undefined,
+        reminderDates,
+      });
+
+      const events = generateEvents();
+      
+      if (action === "google") {
+        events.forEach((event) => {
+          const url = generateGoogleCalendarUrl(event);
+          window.open(url, "_blank");
+        });
+      } else {
+        downloadIcsFile(events, ticker.trim());
+      }
+
+      toast({
+        title: "Reminders created!",
+        description: `We'll send your check-in plan to ${email}.`,
+      });
+    } catch (error) {
+      toast({
+        title: "Something went wrong",
+        description: "Could not save your reminder. Please try again.",
+        variant: "destructive",
       });
     }
   };
 
   const scheduledDates = getScheduledDates();
-  const isValid = ticker.trim().length > 0 && scheduledDates.length > 0;
+  const isValid = ticker.trim().length > 0 && scheduledDates.length > 0 && isValidEmail(email);
 
   return (
     <Card data-testid="protect-stage">
@@ -311,14 +354,14 @@ export function ProtectStage({ ticker: initialTicker }: ProtectStageProps) {
 
       <CardContent className="pb-10">
         <div className="max-w-2xl mx-auto space-y-8">
-          <div className="text-center text-muted-foreground leading-relaxed max-w-lg mx-auto">
-            <p>
-              Every investor eventually hits doubt. These reminders help you stay grounded 
-              when it matters most — with scheduled moments to revisit your exit plan, 
-              investment thesis, and peace of mind.
+          <div className="text-center leading-relaxed max-w-lg mx-auto space-y-3">
+            <p className="text-xl font-semibold text-foreground">
+              Know when to stay in. Know when to step out.
             </p>
-            <p className="mt-2 font-medium text-foreground">
-              Set them once. Review when it counts. Stay sensible.
+            <p className="text-muted-foreground">
+              Most investors don't plan their exits — they react emotionally or lose track entirely.
+              This tool lets you create structured reminders to revisit your investment plan. 
+              Build accountability, avoid regret, and protect your peace of mind.
             </p>
           </div>
 
@@ -492,7 +535,7 @@ export function ProtectStage({ ticker: initialTicker }: ProtectStageProps) {
               <div className="flex items-center gap-2">
                 <Mail className="w-4 h-4 text-muted-foreground" />
                 <Label className="text-sm font-medium">
-                  Send this reminder to my email (Optional)
+                  Enter your email to get your reminder and calendar invite
                 </Label>
               </div>
               <Input
@@ -503,26 +546,34 @@ export function ProtectStage({ ticker: initialTicker }: ProtectStageProps) {
                 data-testid="input-email"
               />
               <p className="text-xs text-muted-foreground">
-                We'll send your check-in plan so you have it when it matters.
+                We'll email you a copy of your check-in plan and track scheduled reminders privately.
               </p>
             </div>
 
             <div className="mt-8 flex flex-col sm:flex-row gap-3 justify-center">
               <Button
-                onClick={handleGoogleCalendar}
-                disabled={!isValid}
+                onClick={() => handleGenerateReminders("google")}
+                disabled={!isValid || saveCheckupMutation.isPending}
                 data-testid="button-google-calendar"
               >
-                <ExternalLink className="w-4 h-4 mr-2" />
+                {saveCheckupMutation.isPending ? (
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                ) : (
+                  <ExternalLink className="w-4 h-4 mr-2" />
+                )}
                 Add to Google Calendar
               </Button>
               <Button
                 variant="outline"
-                onClick={handleDownloadIcs}
-                disabled={!isValid}
+                onClick={() => handleGenerateReminders("ics")}
+                disabled={!isValid || saveCheckupMutation.isPending}
                 data-testid="button-download-ics"
               >
-                <Download className="w-4 h-4 mr-2" />
+                {saveCheckupMutation.isPending ? (
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                ) : (
+                  <Download className="w-4 h-4 mr-2" />
+                )}
                 Download .ics File
               </Button>
             </div>

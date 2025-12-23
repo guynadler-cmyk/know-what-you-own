@@ -2,10 +2,13 @@
 import {
   users,
   waitlistSignups,
+  scheduledCheckupEmails,
   type User,
   type UpsertUser,
   type InsertWaitlistSignup,
   type WaitlistSignup,
+  type InsertScheduledCheckup,
+  type ScheduledCheckupEmail,
 } from "@shared/schema";
 import { db } from "./db";
 import { eq } from "drizzle-orm";
@@ -19,6 +22,10 @@ export interface IStorage {
   // Waitlist operations
   createWaitlistSignup(data: InsertWaitlistSignup): Promise<WaitlistSignup>;
   getWaitlistSignups(): Promise<WaitlistSignup[]>;
+  
+  // Scheduled checkup operations
+  createScheduledCheckup(data: InsertScheduledCheckup): Promise<ScheduledCheckupEmail>;
+  getScheduledCheckups(): Promise<ScheduledCheckupEmail[]>;
 }
 
 // Database storage implementation
@@ -55,6 +62,19 @@ export class DatabaseStorage implements IStorage {
 
   async getWaitlistSignups(): Promise<WaitlistSignup[]> {
     return await db.select().from(waitlistSignups);
+  }
+
+  // Scheduled checkup operations
+  async createScheduledCheckup(data: InsertScheduledCheckup): Promise<ScheduledCheckupEmail> {
+    const [checkup] = await db
+      .insert(scheduledCheckupEmails)
+      .values(data)
+      .returning();
+    return checkup;
+  }
+
+  async getScheduledCheckups(): Promise<ScheduledCheckupEmail[]> {
+    return await db.select().from(scheduledCheckupEmails);
   }
 }
 

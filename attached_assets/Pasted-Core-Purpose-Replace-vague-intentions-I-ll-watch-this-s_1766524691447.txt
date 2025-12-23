@@ -1,0 +1,100 @@
+Core Purpose
+
+Replace vague intentions (“I’ll watch this stock”) with real, timed checkpoints to:
+
+Know when to exit or re-evaluate
+
+Stay accountable to their thesis and risk tolerance
+
+Avoid losing track of their investments over time
+
+✅ What to Build
+1. 📌 Top-of-Page Context Copy
+
+Replace current intro with this:
+
+Know when to stay in. Know when to step out.
+Most investors don’t plan their exits — they react emotionally or lose track entirely.
+This tool lets you create structured reminders to revisit your investment plan. Build accountability, avoid regret, and protect your peace of mind.
+
+2. 🔐 Require Email to Generate Reminders
+
+Before generating a calendar invite (Google link or .ics file), require email input.
+
+Make email mandatory
+
+Add brief supporting text:
+
+📬 Enter your email to get your reminder and calendar invite:
+We’ll email you a copy of your check-in plan and track scheduled reminders privately.
+
+Validate and store all emails and associated check-ins in a new database.
+
+3. 💾 Create scheduled_checkup_email Database
+
+Add a backend table or collection named:
+scheduled_checkup_email
+
+Store:
+
+email
+
+ticker
+
+selected_checkins: (array of selected check-in types)
+
+custom_message: user’s message to future self
+
+reminder_dates: generated based on selection
+
+created_at
+
+This allows us to:
+
+Monitor usage
+
+Send follow-ups
+
+Build toward a logged-in experience later
+
+4. 🛠 Reminder Builder (UI)
+
+Keep the existing UI structure:
+
+Ticker input
+
+Choose from check-in types:
+
+Technical Trend
+
+Market Comparison
+
+Investment Thesis Review
+
+Earnings Risk Alert (disabled for now)
+
+Optional custom date/time
+
+Message to future self (textarea)
+
+Display summary of reminder schedule below.
+
+5. 📅 Generate Calendar Events (Post-email)
+
+Once email is entered:
+
+Enable:
+
+📅 Add to Google Calendar
+
+📥 Download .ics file
+
+Both should include:
+
+Ticker
+
+Selected check-in categories + checklist prompts
+
+User’s message to future self
+
+Link to research page (e.g. https://restnvest.com/stocks/AAPL)
