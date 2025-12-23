@@ -1,29 +1,16 @@
-import { useState, useEffect } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
-import { Shield, Calendar, Download, ExternalLink, Clock, FileText, AlertCircle, Loader2, CalendarDays } from "lucide-react";
-import { format, addDays, addHours, subHours, parseISO, setHours, setMinutes } from "date-fns";
+import { Textarea } from "@/components/ui/textarea";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import { Shield, Calendar, Download, ExternalLink, Clock, FileText } from "lucide-react";
+import { format, addDays, addHours, parseISO, setHours, setMinutes } from "date-fns";
 
 interface ProtectStageProps {
   ticker?: string;
-}
-
-interface EarningsData {
-  ticker: string;
-  nextEarningsDate: string | null;
-  hour: string | null;
-  message?: string;
-}
-
-interface AlertType {
-  id: string;
-  label: string;
-  description: string;
-  enabled: boolean;
 }
 
 interface CalendarEvent {
@@ -31,6 +18,35 @@ interface CalendarEvent {
   description: string;
   startTime: Date;
   endTime: Date;
+}
+
+function buildEventDescription(ticker: string, userMessage: string): string {
+  const tickerUpper = ticker.toUpperCase();
+  const researchLink = `https://restnvest.com/stocks/${tickerUpper}`;
+  
+  let description = `You created this reminder to revisit your exit plan for ${tickerUpper}.
+
+At this check-in, consider:
+- Has the stock dropped significantly (e.g. >20%)?
+- Has it underperformed the S&P 500?
+- Has your original investment thesis changed?
+- Would you still buy this stock today?`;
+
+  if (userMessage.trim()) {
+    description += `
+
+Your note to future you:
+"${userMessage.trim()}"`;
+  }
+
+  description += `
+
+Review your research on restnvest:
+${researchLink}
+
+restnvest - Sensible Investing > Optimal Theories`;
+
+  return description;
 }
 
 function generateGoogleCalendarUrl(event: CalendarEvent): string {
@@ -53,6 +69,10 @@ function generateIcsContent(events: CalendarEvent[]): string {
     return date.toISOString().replace(/[-:]/g, "").replace(/\.\d{3}/, "").replace("Z", "");
   };
 
+  const escapeIcsText = (text: string): string => {
+    return text.replace(/\\/g, "\\\\").replace(/;/g, "\\;").replace(/,/g, "\\,").replace(/\n/g, "\\n");
+  };
+
   const now = new Date();
   
   const eventBlocks = events.map((event, index) => {
@@ -63,8 +83,8 @@ function generateIcsContent(events: CalendarEvent[]): string {
       `DTSTAMP:${formatIcsDate(now)}Z`,
       `DTSTART:${formatIcsDate(event.startTime)}Z`,
       `DTEND:${formatIcsDate(event.endTime)}Z`,
-      `SUMMARY:${event.title}`,
-      `DESCRIPTION:${event.description}`,
+      `SUMMARY:${escapeIcsText(event.title)}`,
+      `DESCRIPTION:${escapeIcsText(event.description)}`,
       "STATUS:CONFIRMED",
       "END:VEVENT"
     ].join("\r\n");
@@ -97,104 +117,44 @@ function downloadIcsFile(events: CalendarEvent[], ticker: string): void {
   URL.revokeObjectURL(url);
 }
 
-function getEarningsTime(earningsDate: string, hour: string | null): Date {
-  const date = parseISO(earningsDate);
-  if (hour === "bmo") {
-    return setMinutes(setHours(date, 8), 0);
-  } else if (hour === "amc") {
-    return setMinutes(setHours(date, 16), 30);
-  }
-  return setMinutes(setHours(date, 12), 0);
-}
-
 export function ProtectStage({ ticker: initialTicker }: ProtectStageProps) {
   const [ticker, setTicker] = useState(initialTicker || "");
   const [showPreview, setShowPreview] = useState(false);
-  const [alertTypes, setAlertTypes] = useState<AlertType[]>([
-    { id: "exit-plan", label: "Exit Plan Check-in", description: "1 week from today", enabled: true },
-    { id: "earnings-before", label: "Earnings Call Alert - Before", description: "24 hours before earnings", enabled: false },
-    { id: "earnings-after", label: "Earnings Call Alert - After", description: "48 hours after earnings", enabled: false },
-    { id: "custom", label: "Custom Reminder", description: "Choose your own date", enabled: false },
-  ]);
+  const [userMessage, setUserMessage] = useState("");
+  
+  const [exitPlanEnabled, setExitPlanEnabled] = useState(true);
+  const [customEnabled, setCustomEnabled] = useState(false);
   const [customDate, setCustomDate] = useState("");
   const [customTime, setCustomTime] = useState("12:00");
-
-  const { data: earningsData, isLoading: earningsLoading, refetch: refetchEarnings } = useQuery<EarningsData>({
-    queryKey: ['/api/earnings', ticker],
-    enabled: false,
-  });
-
-  useEffect(() => {
-    if (ticker.trim().length >= 1) {
-      refetchEarnings();
-    }
-  }, [ticker, refetchEarnings]);
-
-  const toggleAlertType = (id: string) => {
-    setAlertTypes(prev => prev.map(alert => 
-      alert.id === id ? { ...alert, enabled: !alert.enabled } : alert
-    ));
-  };
-
-  const hasEarningsAlerts = alertTypes.some(a => (a.id === "earnings-before" || a.id === "earnings-after") && a.enabled);
-  const hasCustomAlert = alertTypes.find(a => a.id === "custom")?.enabled;
-  const hasAnyAlertEnabled = alertTypes.some(a => a.enabled);
 
   const generateEvents = (): CalendarEvent[] => {
     const events: CalendarEvent[] = [];
     const tickerUpper = ticker.trim().toUpperCase();
+    const description = buildEventDescription(tickerUpper, userMessage);
 
-    alertTypes.forEach(alert => {
-      if (!alert.enabled) return;
+    if (exitPlanEnabled) {
+      const startTime = addHours(addDays(new Date(), 7), 12 - new Date().getHours());
+      startTime.setMinutes(0, 0, 0);
+      const endTime = addHours(startTime, 0.5);
+      events.push({
+        title: `restnvest: Exit Plan Check-In for ${tickerUpper}`,
+        description,
+        startTime,
+        endTime,
+      });
+    }
 
-      if (alert.id === "exit-plan") {
-        const startTime = addHours(addDays(new Date(), 7), 12 - new Date().getHours());
-        startTime.setMinutes(0, 0, 0);
-        const endTime = addHours(startTime, 0.5);
-        events.push({
-          title: `restnvest: Exit Plan Check-In for ${tickerUpper}`,
-          description: `You set this reminder from restnvest research on ${tickerUpper}. Time to review your exit rules and investment thesis.`,
-          startTime,
-          endTime,
-        });
-      }
-
-      if (alert.id === "earnings-before" && earningsData?.nextEarningsDate) {
-        const earningsTime = getEarningsTime(earningsData.nextEarningsDate, earningsData.hour);
-        const startTime = subHours(earningsTime, 24);
-        const endTime = addHours(startTime, 0.5);
-        events.push({
-          title: `restnvest: Pre-Earnings Alert for ${tickerUpper}`,
-          description: `${tickerUpper} reports earnings tomorrow. Review your position and exit plan before the announcement.`,
-          startTime,
-          endTime,
-        });
-      }
-
-      if (alert.id === "earnings-after" && earningsData?.nextEarningsDate) {
-        const earningsTime = getEarningsTime(earningsData.nextEarningsDate, earningsData.hour);
-        const startTime = addHours(earningsTime, 48);
-        const endTime = addHours(startTime, 0.5);
-        events.push({
-          title: `restnvest: Post-Earnings Review for ${tickerUpper}`,
-          description: `${tickerUpper} reported earnings recently. Time to review the results and update your investment thesis.`,
-          startTime,
-          endTime,
-        });
-      }
-
-      if (alert.id === "custom" && customDate) {
-        const [hours, minutes] = customTime.split(":").map(Number);
-        const startTime = setMinutes(setHours(parseISO(customDate), hours), minutes);
-        const endTime = addHours(startTime, 0.5);
-        events.push({
-          title: `restnvest: Custom Reminder for ${tickerUpper}`,
-          description: `You set this custom reminder from restnvest research on ${tickerUpper}.`,
-          startTime,
-          endTime,
-        });
-      }
-    });
+    if (customEnabled && customDate) {
+      const [hours, minutes] = customTime.split(":").map(Number);
+      const startTime = setMinutes(setHours(parseISO(customDate), hours), minutes);
+      const endTime = addHours(startTime, 0.5);
+      events.push({
+        title: `restnvest: Exit Plan Check-In for ${tickerUpper}`,
+        description,
+        startTime,
+        endTime,
+      });
+    }
 
     return events;
   };
@@ -216,11 +176,8 @@ export function ProtectStage({ ticker: initialTicker }: ProtectStageProps) {
     }
   };
 
-  const isValid = ticker.trim().length > 0 && hasAnyAlertEnabled;
-  const customAlertValid = !hasCustomAlert || (hasCustomAlert && customDate);
-  const earningsAlertsValid = !hasEarningsAlerts || (hasEarningsAlerts && earningsData?.nextEarningsDate);
-  const canSubmit = isValid && customAlertValid;
-
+  const hasAnyEnabled = exitPlanEnabled || (customEnabled && customDate);
+  const isValid = ticker.trim().length > 0 && hasAnyEnabled;
   const events = generateEvents();
 
   return (
@@ -233,83 +190,105 @@ export function ProtectStage({ ticker: initialTicker }: ProtectStageProps) {
         </div>
         <CardTitle className="text-2xl mb-2">Protect What You Own</CardTitle>
         <p className="text-muted-foreground max-w-md mx-auto">
-          Set smart reminders to revisit your exit plan and stay ahead of key events.
+          Create personalized reminders to revisit your exit plan and stick with sensible investing strategies.
         </p>
       </CardHeader>
       
       <CardContent className="pb-10">
         <div className="bg-card shadow-md rounded-xl p-6 max-w-lg mx-auto border border-border/50 mb-6">
           <h3 className="text-lg font-semibold text-center mb-1">
-            Schedule Your Reminders
+            Schedule Your Reminder
           </h3>
           <p className="text-sm text-muted-foreground text-center mb-6">
-            Enter a ticker and choose which alerts you want.
+            Set a check-in to review your investment thesis.
           </p>
           
           <div className="space-y-6">
             <div className="flex flex-col items-center">
+              <Label className="text-sm font-medium mb-2">Stock Ticker</Label>
               <Input
                 type="text"
-                placeholder="Enter ticker (e.g., AAPL)"
+                placeholder="e.g., PLTR"
                 value={ticker}
                 onChange={(e) => {
                   setTicker(e.target.value.toUpperCase());
                   setShowPreview(false);
                 }}
-                className="w-full sm:w-64 uppercase text-center"
+                className="w-full sm:w-48 uppercase text-center"
                 maxLength={10}
                 data-testid="input-ticker"
               />
-              {earningsLoading && ticker.trim() && (
-                <div className="flex items-center gap-2 mt-2 text-sm text-muted-foreground">
-                  <Loader2 className="w-3 h-3 animate-spin" />
-                  Fetching earnings date...
-                </div>
-              )}
-              {earningsData?.nextEarningsDate && (
-                <div className="flex items-center gap-2 mt-2 text-sm text-primary">
-                  <CalendarDays className="w-4 h-4" />
-                  Next earnings: {format(parseISO(earningsData.nextEarningsDate), "MMM d, yyyy")}
-                  {earningsData.hour === "bmo" && " (Before Market)"}
-                  {earningsData.hour === "amc" && " (After Market)"}
-                </div>
-              )}
-              {hasEarningsAlerts && !earningsData?.nextEarningsDate && !earningsLoading && ticker.trim() && (
-                <div className="flex items-center gap-2 mt-2 text-sm text-amber-600 dark:text-amber-400">
-                  <AlertCircle className="w-4 h-4" />
-                  No upcoming earnings date found for {ticker}
-                </div>
-              )}
             </div>
 
             <div className="space-y-3">
-              <Label className="text-sm font-medium">Choose Your Alerts</Label>
-              {alertTypes.map(alert => (
-                <div key={alert.id} className="flex items-start space-x-3">
-                  <Checkbox
-                    id={alert.id}
-                    checked={alert.enabled}
-                    onCheckedChange={() => toggleAlertType(alert.id)}
-                    data-testid={`checkbox-${alert.id}`}
-                  />
-                  <div className="grid gap-0.5 leading-none">
-                    <Label 
-                      htmlFor={alert.id} 
-                      className="text-sm font-medium cursor-pointer"
-                    >
-                      {alert.label}
-                    </Label>
-                    <p className="text-xs text-muted-foreground">
-                      {alert.description}
-                    </p>
-                  </div>
+              <Label className="text-sm font-medium">Reminder Type</Label>
+              
+              <div className="flex items-start space-x-3">
+                <Checkbox
+                  id="exit-plan"
+                  checked={exitPlanEnabled}
+                  onCheckedChange={(checked) => setExitPlanEnabled(checked === true)}
+                  data-testid="checkbox-exit-plan"
+                />
+                <div className="grid gap-0.5 leading-none">
+                  <Label htmlFor="exit-plan" className="text-sm font-medium cursor-pointer">
+                    Exit Plan Check-In
+                  </Label>
+                  <p className="text-xs text-muted-foreground">1 week from today at 12:00 PM</p>
                 </div>
-              ))}
-            </div>
+              </div>
 
-            {hasCustomAlert && (
-              <div className="space-y-3 pl-6 border-l-2 border-primary/20">
-                <div className="grid grid-cols-2 gap-3">
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <div className="flex items-start space-x-3 opacity-50 cursor-not-allowed">
+                    <Checkbox id="earnings-before" disabled data-testid="checkbox-earnings-before" />
+                    <div className="grid gap-0.5 leading-none">
+                      <Label htmlFor="earnings-before" className="text-sm font-medium">
+                        Earnings Call Alert - Before
+                      </Label>
+                      <p className="text-xs text-muted-foreground">24 hours before earnings</p>
+                    </div>
+                  </div>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>Coming soon — earnings data integration</p>
+                </TooltipContent>
+              </Tooltip>
+
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <div className="flex items-start space-x-3 opacity-50 cursor-not-allowed">
+                    <Checkbox id="earnings-after" disabled data-testid="checkbox-earnings-after" />
+                    <div className="grid gap-0.5 leading-none">
+                      <Label htmlFor="earnings-after" className="text-sm font-medium">
+                        Earnings Call Alert - After
+                      </Label>
+                      <p className="text-xs text-muted-foreground">48 hours after earnings</p>
+                    </div>
+                  </div>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>Coming soon — earnings data integration</p>
+                </TooltipContent>
+              </Tooltip>
+
+              <div className="flex items-start space-x-3">
+                <Checkbox
+                  id="custom"
+                  checked={customEnabled}
+                  onCheckedChange={(checked) => setCustomEnabled(checked === true)}
+                  data-testid="checkbox-custom"
+                />
+                <div className="grid gap-0.5 leading-none">
+                  <Label htmlFor="custom" className="text-sm font-medium cursor-pointer">
+                    Custom Reminder
+                  </Label>
+                  <p className="text-xs text-muted-foreground">Choose your own date and time</p>
+                </div>
+              </div>
+
+              {customEnabled && (
+                <div className="grid grid-cols-2 gap-3 pl-6 border-l-2 border-primary/20">
                   <div>
                     <Label className="text-xs text-muted-foreground">Date</Label>
                     <Input
@@ -332,18 +311,32 @@ export function ProtectStage({ ticker: initialTicker }: ProtectStageProps) {
                     />
                   </div>
                 </div>
-              </div>
-            )}
+              )}
+            </div>
+
+            <div className="space-y-2">
+              <Label className="text-sm font-medium">Message to Your Future Self (Optional)</Label>
+              <Textarea
+                placeholder="e.g., Remember why you bought this stock. Don't panic sell..."
+                value={userMessage}
+                onChange={(e) => setUserMessage(e.target.value)}
+                className="resize-none"
+                rows={3}
+                maxLength={200}
+                data-testid="input-user-message"
+              />
+              <p className="text-xs text-muted-foreground text-right">{userMessage.length}/200</p>
+            </div>
 
             <div className="flex justify-center">
               <Button
                 variant="outline"
                 onClick={() => setShowPreview(!showPreview)}
-                disabled={!canSubmit || events.length === 0}
+                disabled={!isValid || events.length === 0}
                 data-testid="button-preview"
               >
                 <FileText className="w-4 h-4 mr-2" />
-                {showPreview ? "Hide Preview" : `Preview ${events.length} Event${events.length !== 1 ? 's' : ''}`}
+                {showPreview ? "Hide Preview" : "Preview Reminder"}
               </Button>
             </div>
 
@@ -364,9 +357,9 @@ export function ProtectStage({ ticker: initialTicker }: ProtectStageProps) {
                         {format(event.startTime, "EEEE, MMMM d, yyyy")} at {format(event.startTime, "h:mm a")}
                       </div>
                     </div>
-                    <p className="text-xs text-muted-foreground pl-6">
+                    <div className="text-xs text-muted-foreground pl-6 whitespace-pre-line">
                       {event.description}
-                    </p>
+                    </div>
                   </div>
                 ))}
               </div>
@@ -375,7 +368,7 @@ export function ProtectStage({ ticker: initialTicker }: ProtectStageProps) {
             <div className="flex flex-col sm:flex-row gap-3 justify-center pt-2">
               <Button
                 onClick={handleGoogleCalendar}
-                disabled={!canSubmit || events.length === 0}
+                disabled={!isValid || events.length === 0}
                 data-testid="button-google-calendar"
               >
                 <ExternalLink className="w-4 h-4 mr-2" />
@@ -384,7 +377,7 @@ export function ProtectStage({ ticker: initialTicker }: ProtectStageProps) {
               <Button
                 variant="outline"
                 onClick={handleDownloadIcs}
-                disabled={!canSubmit || events.length === 0}
+                disabled={!isValid || events.length === 0}
                 data-testid="button-download-ics"
               >
                 <Download className="w-4 h-4 mr-2" />
