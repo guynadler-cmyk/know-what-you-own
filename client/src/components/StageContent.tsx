@@ -1,6 +1,7 @@
 import { useMemo } from "react";
 import { SummaryCard } from "@/components/SummaryCard";
 import { ComingSoonStage } from "@/components/ComingSoonStage";
+import { ProtectStage } from "@/components/ProtectStage";
 import { QuadrantExplorer, generateQuadrantData } from "@/components/QuadrantExplorer";
 import { FinancialScorecard } from "@/components/FinancialScorecard";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -17,6 +18,7 @@ interface StageContentProps {
   summaryData: CompanySummary | null;
   financialMetrics?: FinancialMetrics;
   balanceSheetMetrics?: BalanceSheetMetrics;
+  ticker?: string;
 }
 
 const COMING_SOON_STAGES = {
@@ -74,12 +76,16 @@ function IntroContextBlock() {
 }
 
 
-export function StageContent({ stage, summaryData, financialMetrics, balanceSheetMetrics }: StageContentProps) {
+export function StageContent({ stage, summaryData, financialMetrics, balanceSheetMetrics, ticker }: StageContentProps) {
   // Generate quadrant data based on real financial metrics
   const quadrantData = useMemo(
     () => generateQuadrantData(financialMetrics, balanceSheetMetrics),
     [financialMetrics, balanceSheetMetrics]
   );
+
+  if (stage === 6) {
+    return <ProtectStage ticker={ticker} />;
+  }
 
   if (stage === 1 && summaryData) {
     const preparedSummary = {
