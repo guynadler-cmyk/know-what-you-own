@@ -312,17 +312,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
 
-      if (error.message?.includes("Insufficient")) {
+      if (error.message?.includes("Insufficient") || error.message?.includes("No income") || error.message?.includes("No balance")) {
         return res.status(404).json({
           error: "Insufficient Data",
           message: error.message
         });
       }
 
-      if (error.message?.includes("rate limit")) {
+      if (error.message?.includes("rate limit") || error.message?.includes("Try again")) {
         return res.status(429).json({
           error: "Rate Limited",
-          message: "Too many requests. Please try again in a minute."
+          message: "Too many requests. Please wait a minute and try again."
+        });
+      }
+
+      if (error.message?.includes("temporarily unavailable") || error.message?.includes("Unable to retrieve")) {
+        return res.status(503).json({
+          error: "Service Unavailable",
+          message: "The data service is temporarily unavailable. Please try again shortly."
         });
       }
 

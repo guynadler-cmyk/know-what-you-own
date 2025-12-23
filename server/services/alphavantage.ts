@@ -412,12 +412,34 @@ export class AlphaVantageService {
       const incomeData = incomeRes.data as AlphaVantageIncomeResponseFull;
       const balanceData = balanceRes.data as AlphaVantageBalanceSheetResponse;
 
-      // Check for API errors
-      if ('Error Message' in overview || !overview.Symbol) {
+      // Helper to check for rate limiting in any response
+      const isRateLimited = (data: any): boolean => {
+        return data && ('Note' in data || 'Information' in data);
+      };
+
+      // Check for rate limiting on any of the three responses
+      if (isRateLimited(overview) || isRateLimited(incomeData) || isRateLimited(balanceData)) {
+        console.log(`[Valuation] ${upperTicker}: Rate limited by Alpha Vantage`);
+        throw new Error('Alpha Vantage API rate limit reached. Please try again in a minute.');
+      }
+
+      // Check for API errors or empty overview
+      if ('Error Message' in overview) {
         throw new Error(`Ticker ${upperTicker} not found in Alpha Vantage`);
       }
-      if ('Note' in overview) {
-        throw new Error('Alpha Vantage API rate limit reached. Please try again in a minute.');
+      
+      // Check if overview is empty or missing critical data
+      if (!overview || Object.keys(overview).length === 0 || !overview.Symbol) {
+        console.log(`[Valuation] ${upperTicker}: Empty or invalid overview response`);
+        throw new Error(`Unable to retrieve company data for ${upperTicker}. The API may be temporarily unavailable.`);
+      }
+
+      // Check for errors in income/balance responses
+      if ('Error Message' in incomeData) {
+        throw new Error(`Unable to retrieve income data for ${upperTicker}.`);
+      }
+      if ('Error Message' in balanceData) {
+        throw new Error(`Unable to retrieve balance sheet data for ${upperTicker}.`);
       }
 
       // Use annual reports if available, otherwise fall back to quarterly
@@ -430,10 +452,12 @@ export class AlphaVantageService {
         : (balanceData.quarterlyReports || []);
 
       if (incomeReports.length < 1) {
-        throw new Error(`No income statement data available for ${upperTicker}.`);
+        console.log(`[Valuation] ${upperTicker}: No income reports found. Response:`, JSON.stringify(incomeData).substring(0, 200));
+        throw new Error(`No income statement data available for ${upperTicker}. Try again shortly.`);
       }
       if (balanceReports.length < 1) {
-        throw new Error(`No balance sheet data available for ${upperTicker}.`);
+        console.log(`[Valuation] ${upperTicker}: No balance reports found. Response:`, JSON.stringify(balanceData).substring(0, 200));
+        throw new Error(`No balance sheet data available for ${upperTicker}. Try again shortly.`);
       }
 
       // Log how much data we're working with
