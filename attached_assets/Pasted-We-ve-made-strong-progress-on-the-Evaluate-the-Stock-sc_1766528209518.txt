@@ -1,0 +1,57 @@
+We’ve made strong progress on the Evaluate the Stock screen — now it’s time to clean up some critical UX details to match restnvest’s core philosophy: Sensible, Human, Understandable.
+
+Please implement the following refinements:
+
+1. 🟢🟡🔴 Tag Colors = Clear Value Judgments Only
+
+Right now, tags like 52-Week High or Market Cap are shown in green, which implies “good” — even though they’re just context.
+
+Update logic so:
+
+Green = desirable investor signal (e.g., high earnings yield, reasonable valuation)
+
+Red = fragile or expensive
+
+Yellow = caution / mixed
+
+Neutral (gray or light blue) = context-only (no inherent judgment)
+
+2. 🏷 Tag Label Updates
+
+Here’s a table of specific replacements:
+
+Current Tag	Change To	Color	Tooltip Text
+52-Week High	Distance from Recent High	Neutral	“How far the current price is from the stock’s recent peak”
+Market Cap	Company Size	Neutral	“The total value of the company in the stock market”
+P/E ↑ (green)	Valuation Rising	Red	“The stock is getting more expensive relative to earnings”
+Historical Multiples ↓	Cheaper vs History	Green	“The stock is trading cheaper than usual based on past metrics”
+Rule of 72	Replace with → Time to Double: Xy	Neutral	“Rough estimate of how long the company might take to double in size”
+ROIC	Keep, but add hover:	Green/Red/Yell	“How much return the company earns on reinvested money”
+Share Dilution	Keep, add hover:	Red	“If the company is issuing more shares, your ownership gets diluted”
+
+You can add others based on logic already present — just follow the rule:
+
+If it’s neutral data → neutral color.
+If it’s positive/negative for investors → color accordingly.
+
+3. 🧠 Tooltip Standard
+
+All financial terms must include a hover tooltip in plain English.
+Avoid formulas or jargon. A user should never wonder “what does this mean?”
+
+4. 🧪 Additional Optional Tweaks (if time)
+
+Consider renaming Valuation Context to Valuation Reality or Valuation Check — to feel more actionable
+
+Highlight one-liner summary text with mild bolding or tint, e.g.,
+“This price seems reasonable given the company’s recent performance.”
+
+🧭 Overall Goal
+
+By fixing these labels and signals, we’re making the app:
+
+Less confusing
+
+More trustworthy
+
+More aligned with restnvest’s core promise: making investing understandable, not abstract
