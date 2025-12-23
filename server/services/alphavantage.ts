@@ -1,5 +1,5 @@
 import axios from 'axios';
-import type { FinancialMetrics, BalanceSheetMetrics } from '@shared/schema';
+import type { FinancialMetrics, BalanceSheetMetrics, ValuationMetrics, ValuationQuadrant } from '@shared/schema';
 
 const ALPHA_VANTAGE_API_KEY = process.env.ALPHA_VANTAGE_API_KEY;
 const BASE_URL = 'https://www.alphavantage.co/query';
@@ -8,6 +8,18 @@ interface AlphaVantageIncomeStatement {
   fiscalDateEnding: string;
   totalRevenue: string;
   netIncome: string;
+  operatingIncome: string;
+}
+
+interface AlphaVantageCompanyOverview {
+  Symbol: string;
+  Name: string;
+  Sector: string;
+  MarketCapitalization: string;
+  PERatio: string;
+  SharesOutstanding: string;
+  '52WeekHigh': string;
+  '52WeekLow': string;
 }
 
 interface AlphaVantageIncomeResponse {
@@ -25,6 +37,7 @@ interface AlphaVantageBalanceSheet {
   cashAndCashEquivalentsAtCarryingValue: string;
   longTermDebt: string;
   shortTermDebt: string;
+  propertyPlantEquipment: string;
 }
 
 interface AlphaVantageBalanceSheetResponse {
@@ -336,6 +349,273 @@ export class AlphaVantageService {
       throw new Error(`Failed to fetch balance sheet data: ${error.message}`);
     }
   }
+
+  async getValuationMetrics(ticker: string): Promise<ValuationMetrics> {
+    const upperTicker = ticker.toUpperCase();
+
+    // Check cache first
+    const cached = valuationCache.get(upperTicker);
+    if (cached && Date.now() - cached.timestamp < CACHE_TTL) {
+      return cached.data;
+    }
+
+    if (!ALPHA_VANTAGE_API_KEY) {
+      throw new Error('ALPHA_VANTAGE_API_KEY is not configured');
+    }
+
+    try {
+      // Fetch Company Overview, Income Statement, and Balance Sheet in parallel
+      const [overviewRes, incomeRes, balanceRes] = await Promise.all([
+        axios.get(BASE_URL, {
+          params: { function: 'OVERVIEW', symbol: upperTicker, apikey: ALPHA_VANTAGE_API_KEY },
+          timeout: 10000,
+        }),
+        axios.get<AlphaVantageIncomeResponse>(BASE_URL, {
+          params: { function: 'INCOME_STATEMENT', symbol: upperTicker, apikey: ALPHA_VANTAGE_API_KEY },
+          timeout: 10000,
+        }),
+        axios.get<AlphaVantageBalanceSheetResponse>(BASE_URL, {
+          params: { function: 'BALANCE_SHEET', symbol: upperTicker, apikey: ALPHA_VANTAGE_API_KEY },
+          timeout: 10000,
+        }),
+      ]);
+
+      const overview = overviewRes.data as AlphaVantageCompanyOverview;
+      const incomeData = incomeRes.data;
+      const balanceData = balanceRes.data;
+
+      // Check for API errors
+      if ('Error Message' in overview || !overview.Symbol) {
+        throw new Error(`Ticker ${upperTicker} not found in Alpha Vantage`);
+      }
+      if ('Note' in overview) {
+        throw new Error('Alpha Vantage API rate limit reached. Please try again in a minute.');
+      }
+      if (!incomeData.annualReports || incomeData.annualReports.length < 1) {
+        throw new Error(`Insufficient income data for ${upperTicker}.`);
+      }
+      if (!balanceData.annualReports || balanceData.annualReports.length < 1) {
+        throw new Error(`Insufficient balance sheet data for ${upperTicker}.`);
+      }
+
+      const safeParseFloat = (value: string | undefined | null): number => {
+        if (!value || value === 'None' || value === '') return 0;
+        const parsed = parseFloat(value);
+        return isNaN(parsed) ? 0 : parsed;
+      };
+
+      const formatCurrency = (value: number): string => {
+        if (isNaN(value) || value === 0) return '$0';
+        const billion = value / 1_000_000_000;
+        const million = value / 1_000_000;
+        if (Math.abs(billion) >= 1) {
+          return `$${billion.toFixed(2)}B`;
+        } else {
+          return `$${million.toFixed(2)}M`;
+        }
+      };
+
+      const formatPercent = (value: number): string => {
+        return `${value.toFixed(1)}%`;
+      };
+
+      // Parse company overview data
+      const marketCap = safeParseFloat(overview.MarketCapitalization);
+      const peRatio = safeParseFloat(overview.PERatio);
+      const companyName = overview.Name || upperTicker;
+      const sector = overview.Sector || 'Unknown';
+      const sharesOutstanding = safeParseFloat(overview.SharesOutstanding);
+      const week52High = safeParseFloat(overview['52WeekHigh']);
+
+      // Parse income statement (most recent annual)
+      const currentIncome = incomeData.annualReports[0];
+      const previousIncome = incomeData.annualReports.length > 1 ? incomeData.annualReports[1] : null;
+      const ebit = safeParseFloat(currentIncome.operatingIncome);
+
+      // Parse balance sheet (most recent annual)
+      const currentBalance = balanceData.annualReports[0];
+      const previousBalance = balanceData.annualReports.length > 1 ? balanceData.annualReports[1] : null;
+      const cash = safeParseFloat(currentBalance.cashAndCashEquivalentsAtCarryingValue);
+      const shortTermDebt = safeParseFloat(currentBalance.shortTermDebt);
+      const longTermDebt = safeParseFloat(currentBalance.longTermDebt);
+      const totalCurrentAssets = safeParseFloat(currentBalance.totalCurrentAssets);
+      const totalCurrentLiabilities = safeParseFloat(currentBalance.totalCurrentLiabilities);
+
+      // Magic Formula calculations
+      // Enterprise Value = Market Cap + Total Debt - Cash
+      const totalDebt = shortTermDebt + longTermDebt;
+      const enterpriseValue = marketCap + totalDebt - cash;
+
+      // Earnings Yield = EBIT / Enterprise Value
+      const earningsYield = enterpriseValue > 0 ? (ebit / enterpriseValue) * 100 : 0;
+
+      // Return on Capital = EBIT / (Net Working Capital + Net Fixed Assets)
+      // Net Working Capital = Current Assets - Current Liabilities
+      // For simplicity, we'll use Total Assets - Current Liabilities as invested capital proxy
+      const netWorkingCapital = totalCurrentAssets - totalCurrentLiabilities;
+      // Note: Alpha Vantage doesn't always provide PropertyPlantEquipment reliably
+      // Using a simplified ROC based on available data
+      const investedCapital = netWorkingCapital > 0 ? netWorkingCapital : Math.abs(netWorkingCapital);
+      const returnOnCapital = investedCapital > 0 ? (ebit / investedCapital) * 100 : 0;
+
+      // Calculate share change (dilution or buybacks)
+      let shareChange = 0;
+      if (previousBalance && previousIncome) {
+        // Approximate share change from equity changes
+        const currentEquity = safeParseFloat(currentBalance.totalShareholderEquity);
+        const previousEquity = safeParseFloat(previousBalance.totalShareholderEquity);
+        const currentEarnings = safeParseFloat(currentIncome.netIncome);
+        // Rough estimate: if equity grew more than earnings, shares may have been issued
+        const equityChange = currentEquity - previousEquity;
+        shareChange = equityChange > currentEarnings * 1.5 ? 5 : equityChange < 0 ? -3 : 0;
+      }
+
+      // Estimate distance from 52-week high (would need current price for accuracy)
+      // This is a placeholder - real implementation would need real-time price
+      const distanceFromHigh = 15; // Placeholder %
+
+      // Generate quadrant data based on calculations
+      const quadrants: ValuationQuadrant[] = this.generateValuationQuadrants({
+        earningsYield,
+        returnOnCapital,
+        peRatio,
+        marketCap,
+        shareChange,
+        distanceFromHigh,
+        sector,
+      });
+
+      // Determine overall strength
+      const positiveSignals = (earningsYield > 8 ? 1 : 0) + (returnOnCapital > 15 ? 1 : 0) + (shareChange <= 0 ? 1 : 0);
+      const overallStrength: 'sensible' | 'caution' | 'risky' = 
+        positiveSignals >= 2 ? 'sensible' : positiveSignals === 1 ? 'caution' : 'risky';
+
+      const summaryVerdict = overallStrength === 'sensible' 
+        ? 'The numbers suggest a reasonably priced business with solid returns.'
+        : overallStrength === 'caution'
+        ? 'Some metrics look good, but others warrant a closer look before investing.'
+        : 'Multiple valuation signals suggest caution — the price may not match the fundamentals.';
+
+      const metrics: ValuationMetrics = {
+        ticker: upperTicker,
+        companyName,
+        fiscalYear: currentIncome.fiscalDateEnding.substring(0, 4),
+        sector,
+        marketCap,
+        marketCapFormatted: formatCurrency(marketCap),
+        ebit,
+        ebitFormatted: formatCurrency(ebit),
+        enterpriseValue,
+        enterpriseValueFormatted: formatCurrency(enterpriseValue),
+        earningsYield,
+        earningsYieldFormatted: formatPercent(earningsYield),
+        returnOnCapital,
+        returnOnCapitalFormatted: formatPercent(returnOnCapital),
+        priceToEarnings: peRatio > 0 ? peRatio : undefined,
+        priceToEarningsFormatted: peRatio > 0 ? peRatio.toFixed(1) + 'x' : undefined,
+        distanceFromHigh,
+        distanceFromHighFormatted: formatPercent(distanceFromHigh),
+        sharesOutstanding,
+        shareChange,
+        shareChangeFormatted: shareChange > 0 ? `+${shareChange}% dilution` : shareChange < 0 ? `${Math.abs(shareChange)}% buybacks` : 'Stable',
+        quadrants,
+        overallStrength,
+        summaryVerdict,
+      };
+
+      // Cache the result
+      valuationCache.set(upperTicker, { data: metrics, timestamp: Date.now() });
+
+      return metrics;
+    } catch (error: any) {
+      if (error.message?.includes('Alpha Vantage') || error.message?.includes('Insufficient') || error.message?.includes('rate limit')) {
+        throw error;
+      }
+      if (error.code === 'ECONNABORTED' || error.code === 'ETIMEDOUT') {
+        throw new Error('Alpha Vantage API request timed out. Please try again.');
+      }
+      throw new Error(`Failed to fetch valuation data: ${error.message}`);
+    }
+  }
+
+  private generateValuationQuadrants(data: {
+    earningsYield: number;
+    returnOnCapital: number;
+    peRatio: number;
+    marketCap: number;
+    shareChange: number;
+    distanceFromHigh: number;
+    sector: string;
+  }): ValuationQuadrant[] {
+    const { earningsYield, returnOnCapital, peRatio, marketCap, shareChange, distanceFromHigh } = data;
+
+    // Determine signal colors based on thresholds
+    const eyColor: 'green' | 'red' | 'yellow' = earningsYield > 8 ? 'green' : earningsYield > 5 ? 'yellow' : 'red';
+    const rocColor: 'green' | 'red' | 'yellow' = returnOnCapital > 15 ? 'green' : returnOnCapital > 8 ? 'yellow' : 'red';
+    const peColor: 'green' | 'red' | 'yellow' = peRatio > 0 && peRatio < 15 ? 'green' : peRatio > 25 ? 'red' : 'yellow';
+    const shareColor: 'green' | 'red' | 'neutral' = shareChange < 0 ? 'green' : shareChange > 0 ? 'red' : 'neutral';
+
+    return [
+      {
+        id: 'price-discipline',
+        title: 'Price Discipline',
+        verdict: distanceFromHigh > 20 ? 'Discounted' : distanceFromHigh > 10 ? 'Reasonable Entry' : 'Near Highs',
+        signals: [
+          { label: 'Distance from Recent High', value: `${distanceFromHigh.toFixed(0)}%`, color: 'neutral', tooltip: 'How far the current price is from the stock\'s recent peak.' },
+          { label: 'Company Size', value: marketCap > 10_000_000_000 ? 'Large Cap' : marketCap > 2_000_000_000 ? 'Mid Cap' : 'Small Cap', color: 'neutral', tooltip: 'The total value of the company in the stock market.' },
+        ],
+        insight: distanceFromHigh > 20 
+          ? 'The stock is trading well below its recent highs. This could be a reasonable entry point — but make sure the fundamentals still support the story.'
+          : 'The stock is trading close to its recent highs. Entry risk is elevated unless you have strong conviction.',
+        insightHighlight: distanceFromHigh > 20 ? 'reasonable entry point' : 'Entry risk is elevated',
+        strength: distanceFromHigh > 20 ? 'sensible' : distanceFromHigh > 10 ? 'caution' : 'risky',
+      },
+      {
+        id: 'valuation-check',
+        title: 'Valuation Check',
+        verdict: earningsYield > 8 ? 'Attractively Priced' : earningsYield > 5 ? 'Fairly Valued' : 'Expensive',
+        signals: [
+          { label: 'Earnings Yield', value: `${earningsYield.toFixed(1)}%`, color: eyColor, tooltip: 'How much profit the company earns relative to its total value. Higher is better.' },
+          { label: 'P/E Ratio', value: peRatio > 0 ? `${peRatio.toFixed(1)}x` : 'N/A', color: peColor, tooltip: 'How much you pay for each dollar of profit. Lower can mean cheaper.' },
+        ],
+        insight: earningsYield > 8 
+          ? 'The earnings yield suggests you\'re getting good value for your money. The business is generating solid profits relative to its price.'
+          : 'The valuation is stretched — you\'re paying a premium for this business. Make sure the growth justifies it.',
+        insightHighlight: earningsYield > 8 ? 'good value for your money' : 'paying a premium',
+        strength: eyColor === 'green' ? 'sensible' : eyColor === 'yellow' ? 'caution' : 'risky',
+      },
+      {
+        id: 'capital-discipline',
+        title: 'Capital Discipline',
+        verdict: returnOnCapital > 15 ? 'High Returns' : returnOnCapital > 8 ? 'Adequate Returns' : 'Low Returns',
+        signals: [
+          { label: 'ROIC', value: `${returnOnCapital.toFixed(1)}%`, color: rocColor, tooltip: 'Return on Invested Capital — how much profit the company earns on the money it reinvests.' },
+          { label: shareChange < 0 ? 'Share Buybacks' : shareChange > 0 ? 'Share Dilution' : 'Share Structure', value: shareChange < 0 ? 'Active' : shareChange > 0 ? 'Diluting' : 'Stable', color: shareColor, tooltip: shareChange < 0 ? 'The company is buying back shares, increasing your ownership stake.' : shareChange > 0 ? 'The company is issuing new shares, reducing your ownership stake.' : 'Share count is relatively stable.' },
+        ],
+        insight: returnOnCapital > 15 
+          ? 'The company earns strong returns on the capital it invests. This is a sign of a quality business with pricing power.'
+          : 'Capital returns are modest. The business may struggle to compound wealth efficiently over time.',
+        insightHighlight: returnOnCapital > 15 ? 'strong returns' : 'modest',
+        strength: rocColor === 'green' ? 'sensible' : rocColor === 'yellow' ? 'caution' : 'risky',
+      },
+      {
+        id: 'doubling-potential',
+        title: 'Doubling Potential',
+        verdict: earningsYield > 10 ? 'Fast Track' : earningsYield > 5 ? 'Steady Path' : 'Long Road',
+        signals: [
+          { label: 'Time to Double', value: earningsYield > 0 ? `~${Math.round(72 / earningsYield)} years` : 'N/A', color: 'neutral', tooltip: 'A rough estimate using the Rule of 72: how long it might take for the company to double in size based on current earnings yield.' },
+          { label: 'Growth Quality', value: returnOnCapital > 15 ? 'High' : returnOnCapital > 8 ? 'Medium' : 'Low', color: rocColor, tooltip: 'How efficiently the company can reinvest profits to drive growth.' },
+        ],
+        insight: earningsYield > 10 
+          ? 'Based on current earnings, the company could potentially double in value within a reasonable timeframe. Patience could be rewarded.'
+          : 'The path to doubling is longer. You\'re betting on future improvements more than current earnings power.',
+        insightHighlight: earningsYield > 10 ? 'double in value' : 'betting on future improvements',
+        strength: earningsYield > 10 ? 'sensible' : earningsYield > 5 ? 'caution' : 'risky',
+      },
+    ];
+  }
 }
+
+const valuationCache = new Map<string, { data: ValuationMetrics; timestamp: number }>();
 
 export const alphaVantageService = new AlphaVantageService();

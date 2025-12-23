@@ -2,7 +2,7 @@ import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { secService } from "./services/sec";
 import { openaiService } from "./services/openai";
-import { companySummarySchema, incomeMetricsSchema, balanceSheetMetricsSchema, combinedFinancialMetricsSchema, finePrintAnalysisSchema, insertWaitlistSignupSchema, insertScheduledCheckupSchema } from "@shared/schema";
+import { companySummarySchema, incomeMetricsSchema, balanceSheetMetricsSchema, combinedFinancialMetricsSchema, finePrintAnalysisSchema, insertWaitlistSignupSchema, insertScheduledCheckupSchema, valuationMetricsSchema } from "@shared/schema";
 import { alphaVantageService } from "./services/alphavantage";
 import { storage } from "./storage";
 
@@ -280,6 +280,62 @@ export async function registerRoutes(app: Express): Promise<Server> {
       return res.status(500).json({
         error: "Data Retrieval Failed",
         message: "Unable to retrieve financial metrics."
+      });
+    }
+  });
+
+  // --------------------------------------------------------------------------
+  // VALUATION METRICS (Magic Formula)
+  // --------------------------------------------------------------------------
+  app.get("/api/valuation/:ticker", async (req: any, res) => {
+    try {
+      const { ticker } = req.params;
+
+      if (!ticker || !/^[A-Z]{1,5}$/i.test(ticker)) {
+        return res.status(400).json({
+          error: "Invalid ticker format",
+          message: "Please provide 1-5 letter ticker symbol."
+        });
+      }
+
+      const metrics = await alphaVantageService.getValuationMetrics(ticker.toUpperCase());
+      const validatedMetrics = valuationMetricsSchema.parse(metrics);
+
+      res.json(validatedMetrics);
+    } catch (error: any) {
+      console.error("Valuation metrics error:", error);
+
+      if (error.message?.includes("not found")) {
+        return res.status(404).json({
+          error: "Company Not Found",
+          message: `Could not find valuation data for "${req.params.ticker.toUpperCase()}".`
+        });
+      }
+
+      if (error.message?.includes("Insufficient")) {
+        return res.status(404).json({
+          error: "Insufficient Data",
+          message: error.message
+        });
+      }
+
+      if (error.message?.includes("rate limit")) {
+        return res.status(429).json({
+          error: "Rate Limited",
+          message: "Too many requests. Please try again in a minute."
+        });
+      }
+
+      if (error.message?.includes("timed out")) {
+        return res.status(503).json({
+          error: "Service Timeout",
+          message: "Valuation data service timed out."
+        });
+      }
+
+      return res.status(500).json({
+        error: "Data Retrieval Failed",
+        message: "Unable to retrieve valuation metrics."
       });
     }
   });

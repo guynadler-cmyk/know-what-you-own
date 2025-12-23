@@ -1,0 +1,166 @@
+Goal:
+Build a Python program that implements Joel Greenblatt’s Magic Formula using real financial data from the Alpha Vantage API.
+
+🔧 Requirements
+
+Language: Python
+Data Source: Alpha Vantage (API key already available as an environment variable: ALPHAVANTAGE_API_KEY)
+Scope: U.S. equities
+Output: Ranked list of top 20–30 stocks based on Magic Formula score
+
+📊 Financial Definitions (Must Match Exactly)
+
+Use annual financial statements only.
+
+EBIT
+
+Use Operating Income from the Income Statement
+
+Enterprise Value (EV)
+EV = MarketCapitalization
+     + ShortTermDebt
+     + LongTermDebt
+     − CashAndCashEquivalents
+
+Earnings Yield
+EarningsYield = EBIT / EV
+
+Return on Capital (ROC)
+ROC = EBIT / (NetWorkingCapital + NetFixedAssets)
+
+
+Where:
+
+NetWorkingCapital = TotalCurrentAssets − TotalCurrentLiabilities
+NetFixedAssets = PropertyPlantEquipment
+
+🧹 Universe Filters (Mandatory)
+
+Exclude any stock that fails any of the following:
+
+Market capitalization < $500,000,000
+
+EBIT ≤ 0
+
+EV ≤ 0
+
+Sector is Financials or Utilities
+
+Missing required financial fields
+
+🌐 Alpha Vantage Endpoints to Use
+
+For each stock symbol:
+
+Company Overview
+
+Function: OVERVIEW
+
+Fields:
+
+MarketCapitalization
+
+Sector
+
+Income Statement (Annual)
+
+Function: INCOME_STATEMENT
+
+Field:
+
+OperatingIncome (most recent annual value)
+
+Balance Sheet (Annual)
+
+Function: BALANCE_SHEET
+
+Fields:
+
+TotalCurrentAssets
+
+TotalCurrentLiabilities
+
+PropertyPlantEquipment
+
+ShortTermDebt
+
+LongTermDebt
+
+CashAndCashEquivalents
+
+🧮 Ranking Logic
+
+Rank all valid stocks by:
+
+Earnings Yield (highest = rank 1)
+
+Return on Capital (highest = rank 1)
+
+Compute:
+
+MagicFormulaScore = EarningsYieldRank + ROCRank
+
+
+Sort stocks by lowest MagicFormulaScore
+
+📤 Output Requirements
+
+Output a table (or JSON) containing:
+
+Symbol
+
+Earnings Yield
+
+Return on Capital
+
+Earnings Yield Rank
+
+ROC Rank
+
+Magic Formula Score
+
+Return the top 20–30 stocks only.
+
+⚠️ Technical Constraints
+
+Alpha Vantage rate limit: 5 calls per minute
+
+Implement:
+
+Request throttling
+
+Local caching (file-based or in-memory)
+
+Gracefully handle:
+
+Missing data
+
+API errors
+
+Null or malformed fields
+
+🧠 Code Quality Expectations
+
+Modular functions
+
+Clear variable names
+
+Defensive programming (no crashes)
+
+Inline comments explaining financial logic
+
+Easy to extend later (e.g., add dividend yield or options data)
+
+🚫 Explicit Non-Goals
+
+Do NOT place trades
+
+Do NOT use technical indicators
+
+Do NOT optimize or backtest
+
+Do NOT use quarterly data
+
+✅ Success Criteria
+
+The script should reliably produce a repeatable, rules-based Magic Formula ranking using live Alpha Vantage data, suitable for later extension into an income-oriented options workflow.

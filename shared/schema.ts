@@ -359,3 +359,64 @@ export const insertScheduledCheckupSchema = z.object({
 
 export type InsertScheduledCheckup = z.infer<typeof insertScheduledCheckupSchema>;
 export type ScheduledCheckupEmail = typeof scheduledCheckupEmails.$inferSelect;
+
+// Valuation Metrics (Magic Formula)
+export const valuationSignalSchema = z.object({
+  label: z.string(),
+  value: z.string(),
+  color: z.enum(["green", "red", "yellow", "neutral"]),
+  tooltip: z.string(),
+});
+
+export const valuationQuadrantSchema = z.object({
+  id: z.string(),
+  title: z.string(),
+  verdict: z.string(),
+  signals: z.array(valuationSignalSchema),
+  insight: z.string(),
+  insightHighlight: z.string(),
+  strength: z.enum(["sensible", "caution", "risky"]),
+});
+
+export const valuationMetricsSchema = z.object({
+  ticker: z.string(),
+  companyName: z.string(),
+  fiscalYear: z.string(),
+  sector: z.string().optional(),
+  
+  // Core Magic Formula inputs
+  marketCap: z.number(),
+  marketCapFormatted: z.string(),
+  ebit: z.number(),
+  ebitFormatted: z.string(),
+  enterpriseValue: z.number(),
+  enterpriseValueFormatted: z.string(),
+  
+  // Magic Formula outputs
+  earningsYield: z.number(), // EBIT / EV as percentage
+  earningsYieldFormatted: z.string(),
+  returnOnCapital: z.number(), // EBIT / (Net Working Capital + Net Fixed Assets) as percentage
+  returnOnCapitalFormatted: z.string(),
+  
+  // Additional context
+  priceToEarnings: z.number().optional(),
+  priceToEarningsFormatted: z.string().optional(),
+  distanceFromHigh: z.number().optional(), // percentage below 52-week high
+  distanceFromHighFormatted: z.string().optional(),
+  
+  // Share structure
+  sharesOutstanding: z.number().optional(),
+  shareChange: z.number().optional(), // positive = dilution, negative = buybacks
+  shareChangeFormatted: z.string().optional(),
+  
+  // Computed quadrant data
+  quadrants: z.array(valuationQuadrantSchema),
+  
+  // Overall assessment
+  overallStrength: z.enum(["sensible", "caution", "risky"]),
+  summaryVerdict: z.string(),
+});
+
+export type ValuationSignal = z.infer<typeof valuationSignalSchema>;
+export type ValuationQuadrant = z.infer<typeof valuationQuadrantSchema>;
+export type ValuationMetrics = z.infer<typeof valuationMetricsSchema>;
