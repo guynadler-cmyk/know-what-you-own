@@ -1,8 +1,11 @@
 import { useState, useMemo } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { Card } from "@/components/ui/card";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
-import { TrendingUp, TrendingDown, HelpCircle, CheckCircle, AlertTriangle, XCircle, Minus } from "lucide-react";
+import { Skeleton } from "@/components/ui/skeleton";
+import { TrendingUp, TrendingDown, HelpCircle, CheckCircle, AlertTriangle, XCircle, Minus, AlertOctagon } from "lucide-react";
 import { cn } from "@/lib/utils";
+import type { ValuationMetrics, ValuationQuadrant as APIValuationQuadrant } from "@shared/schema";
 
 export type ValuationSignalStrength = "sensible" | "caution" | "risky";
 export type SignalColor = "green" | "red" | "yellow" | "neutral";
@@ -26,6 +29,8 @@ interface SignalInfo {
   label: string;
   color: SignalColor;
   direction: "up" | "down" | "neutral";
+  value?: string;
+  tooltip?: string;
 }
 
 function getSignalStyles(color: SignalColor) {
@@ -411,13 +416,9 @@ function SignalTag({ signal }: { signal: SignalInfo }) {
   const styles = getSignalStyles(signal.color);
   const Icon = styles.icon;
   
-  const getDirectionSymbol = () => {
-    if (signal.direction === "up") return "↑";
-    if (signal.direction === "down") return "↓";
-    return "";
-  };
+  const tooltipText = signal.tooltip || VALUATION_TERM_DEFINITIONS[signal.label];
 
-  return (
+  const content = (
     <div 
       className={cn(
         "flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium",
@@ -427,10 +428,30 @@ function SignalTag({ signal }: { signal: SignalInfo }) {
       data-testid={`valuation-signal-tag`}
     >
       <Icon className="w-4 h-4" />
-      <TermWithTooltip term={signal.label} />
-      {getDirectionSymbol()}
+      <span className="inline-flex items-center gap-1">
+        {signal.label}
+        {signal.value && (
+          <span className="font-bold ml-1">{signal.value}</span>
+        )}
+        {tooltipText && <HelpCircle className="w-3 h-3 opacity-60" />}
+      </span>
     </div>
   );
+
+  if (tooltipText) {
+    return (
+      <Tooltip delayDuration={100}>
+        <TooltipTrigger asChild>
+          <span className="cursor-help">{content}</span>
+        </TooltipTrigger>
+        <TooltipContent side="top" className="max-w-xs text-sm">
+          {tooltipText}
+        </TooltipContent>
+      </Tooltip>
+    );
+  }
+
+  return content;
 }
 
 interface SummaryCardProps {
@@ -495,11 +516,142 @@ function ValuationSummaryCardRow({
   );
 }
 
-export function ValuationExplorer() {
-  const quadrantData = useMemo(() => VALUATION_QUADRANT_DATA, []);
-  const [selectedId, setSelectedId] = useState<string>(quadrantData[0].id);
+function convertAPIQuadrantToLocal(apiQuadrant: APIValuationQuadrant): ValuationQuadrantData {
+  const colorToDirection: Record<SignalColor, "up" | "down" | "neutral"> = {
+    green: "up",
+    red: "down",
+    yellow: "neutral",
+    neutral: "neutral",
+  };
+
+  const getDefaultZones = (id: string) => {
+    const zoneMap: Record<string, ValuationQuadrantData['zones']> = {
+      'price-discipline': {
+        topRight: { label: "Euphoric High", color: "red" },
+        topLeft: { label: "Conviction Buy", color: "yellow" },
+        bottomRight: { label: "Discounted Entry", color: "green" },
+        bottomLeft: { label: "Falling Knife", color: "orange" },
+      },
+      'valuation-check': {
+        topRight: { label: "Priced for Perfection", color: "red" },
+        topLeft: { label: "Cheap for a Reason", color: "orange" },
+        bottomRight: { label: "Fair Value", color: "green" },
+        bottomLeft: { label: "Undervalued Opportunity", color: "blue" },
+      },
+      'capital-discipline': {
+        topRight: { label: "Value Creator", color: "green" },
+        topLeft: { label: "Stable Operator", color: "blue" },
+        bottomRight: { label: "Growth at All Costs", color: "yellow" },
+        bottomLeft: { label: "Value Destroyer", color: "red" },
+      },
+      'doubling-potential': {
+        topRight: { label: "Pipe Dream", color: "red" },
+        topLeft: { label: "Too Slow to Matter", color: "orange" },
+        bottomRight: { label: "Breakout Potential", color: "blue" },
+        bottomLeft: { label: "Realistic Compounder", color: "green" },
+      },
+    };
+    return zoneMap[id] || zoneMap['price-discipline'];
+  };
+
+  const getAxisLabels = (id: string) => {
+    const labelMap: Record<string, { xLabel: string; yLabel: string }> = {
+      'price-discipline': { xLabel: "Distance from Highs", yLabel: "Entry Risk" },
+      'valuation-check': { xLabel: "Current Valuation", yLabel: "Historical Percentile" },
+      'capital-discipline': { xLabel: "Share Count Trend", yLabel: "Return on Capital" },
+      'doubling-potential': { xLabel: "Growth Rate", yLabel: "Time to Double" },
+    };
+    return labelMap[id] || { xLabel: "X Axis", yLabel: "Y Axis" };
+  };
+
+  const getPosition = (strength: 'sensible' | 'caution' | 'risky') => {
+    switch (strength) {
+      case 'sensible': return { x: 35, y: 35 };
+      case 'caution': return { x: 55, y: 55 };
+      case 'risky': return { x: 72, y: 72 };
+    }
+  };
+
+  const mappedSignals = apiQuadrant.signals.slice(0, 2).map(s => ({
+    label: s.label,
+    color: s.color as SignalColor,
+    direction: colorToDirection[s.color as SignalColor] || "neutral",
+    value: s.value,
+    tooltip: s.tooltip,
+  }));
+
+  const defaultSignal: SignalInfo = { label: "N/A", color: "neutral", direction: "neutral" };
+  const signals: [SignalInfo, SignalInfo] = [
+    mappedSignals[0] || defaultSignal,
+    mappedSignals[1] || defaultSignal,
+  ];
+
+  const axisLabels = getAxisLabels(apiQuadrant.id);
+
+  return {
+    id: apiQuadrant.id,
+    title: apiQuadrant.title,
+    verdict: apiQuadrant.verdict,
+    signals,
+    xLabel: axisLabels.xLabel,
+    yLabel: axisLabels.yLabel,
+    zones: getDefaultZones(apiQuadrant.id),
+    position: getPosition(apiQuadrant.strength),
+    insight: apiQuadrant.insight,
+    insightHighlight: apiQuadrant.insightHighlight,
+    strength: apiQuadrant.strength,
+  };
+}
+
+interface ValuationExplorerProps {
+  ticker?: string;
+}
+
+export function ValuationExplorer({ ticker }: ValuationExplorerProps) {
+  const { data: valuationData, isLoading, isError, error } = useQuery<ValuationMetrics>({
+    queryKey: ['/api/valuation', ticker],
+    enabled: !!ticker,
+  });
+
+  const quadrantData = useMemo(() => {
+    if (valuationData?.quadrants) {
+      return valuationData.quadrants.map(convertAPIQuadrantToLocal);
+    }
+    return VALUATION_QUADRANT_DATA;
+  }, [valuationData]);
+
+  const [selectedId, setSelectedId] = useState<string>(quadrantData[0]?.id || 'price-discipline');
   
   const selectedQuadrant = quadrantData.find(q => q.id === selectedId) || quadrantData[0];
+
+  if (isLoading && ticker) {
+    return (
+      <div className="space-y-6" data-testid="valuation-explorer-loading">
+        <div className="flex flex-wrap gap-3">
+          {[1, 2, 3, 4].map((i) => (
+            <Skeleton key={i} className="h-24 w-40 rounded-xl" />
+          ))}
+        </div>
+        <Skeleton className="h-96 w-full rounded-xl" />
+      </div>
+    );
+  }
+
+  if (isError && ticker) {
+    return (
+      <Card className="p-8" data-testid="valuation-explorer-error">
+        <div className="flex flex-col items-center justify-center text-center space-y-4">
+          <AlertOctagon className="w-12 h-12 text-muted-foreground" />
+          <div>
+            <h3 className="text-lg font-semibold mb-2">Unable to Load Valuation Data</h3>
+            <p className="text-muted-foreground text-sm max-w-md">
+              {(error as Error)?.message || 'We couldn\'t retrieve the valuation metrics for this company. Please try again later.'}
+            </p>
+          </div>
+        </div>
+      </Card>
+    );
+  }
 
   return (
     <div className="space-y-6" data-testid="valuation-explorer">
