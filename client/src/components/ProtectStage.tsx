@@ -5,9 +5,8 @@ import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
-import { Shield, Calendar, Download, ExternalLink, Clock, FileText, ChevronDown, TrendingUp, BarChart3, Lightbulb, Bell, Mail } from "lucide-react";
+import { Shield, Calendar, Download, ExternalLink, Clock, ChevronDown, TrendingUp, BarChart3, Lightbulb, Bell, Mail, AlertCircle } from "lucide-react";
 import { format, addDays, addWeeks, addMonths, addHours, parseISO, setHours, setMinutes } from "date-fns";
 import { useToast } from "@/hooks/use-toast";
 
@@ -30,6 +29,7 @@ interface CheckInType {
   timeframe: string;
   defaultOffset: { weeks?: number; months?: number; days?: number };
   checklist: string[];
+  disabled?: boolean;
 }
 
 const CHECK_IN_TYPES: CheckInType[] = [
@@ -85,10 +85,20 @@ const CHECK_IN_TYPES: CheckInType[] = [
       "Do you expect good/bad news?",
       "What will change your mind about this company?",
     ],
+    disabled: true,
   },
 ];
 
-const MAX_DESCRIPTION_LENGTH = 700;
+function getCheckInDate(offset: CheckInType["defaultOffset"]): Date {
+  let date = new Date();
+  if (offset.weeks) date = addWeeks(date, offset.weeks);
+  if (offset.months) date = addMonths(date, offset.months);
+  if (offset.days) date = addDays(date, offset.days);
+  date = setHours(date, 12);
+  date = setMinutes(date, 0);
+  date.setSeconds(0, 0);
+  return date;
+}
 
 function buildEventDescription(
   ticker: string,
@@ -97,38 +107,29 @@ function buildEventDescription(
 ): string {
   const tickerUpper = ticker.toUpperCase();
   const researchLink = `https://restnvest.com/stocks/${tickerUpper}`;
-  const footer = `\n\nReview: ${researchLink}\nrestnvest - Sensible Investing`;
 
-  const selectedCheckIns = CHECK_IN_TYPES.filter((t) =>
-    selectedTypes.includes(t.id)
+  const selectedCheckIns = CHECK_IN_TYPES.filter(
+    (t) => selectedTypes.includes(t.id) && !t.disabled
   );
 
-  let description = `Check-In for ${tickerUpper}\n\n`;
+  let description = `You created this reminder to revisit your exit strategy for $${tickerUpper}.\n\n`;
 
-  const checklistBudget = MAX_DESCRIPTION_LENGTH - description.length - footer.length - (userMessage.trim() ? userMessage.trim().length + 30 : 0);
-  
-  let checklistContent = "";
-  for (const checkIn of selectedCheckIns) {
-    const sectionHeader = `${checkIn.title.split(" ")[0]}:\n`;
-    const items = checkIn.checklist.slice(0, 2).map((item) => `- ${item}`).join("\n");
-    const section = sectionHeader + items + "\n\n";
-    
-    if (checklistContent.length + section.length <= checklistBudget) {
-      checklistContent += section;
-    }
-  }
-  
-  description += checklistContent;
+  selectedCheckIns.forEach((checkIn) => {
+    const emoji = checkIn.id === "technical" ? "📈" : 
+                  checkIn.id === "market" ? "📊" : 
+                  checkIn.id === "thesis" ? "🧠" : "🛎️";
+    description += `${emoji} ${checkIn.title}\n`;
+    checkIn.checklist.slice(0, 2).forEach((item) => {
+      description += `– ${item}\n`;
+    });
+    description += "\n";
+  });
 
   if (userMessage.trim()) {
-    description += `Your note: "${userMessage.trim()}"\n`;
+    description += `📌 Message to your future self:\n"${userMessage.trim()}"\n\n`;
   }
 
-  description += footer;
-
-  if (description.length > MAX_DESCRIPTION_LENGTH) {
-    description = description.substring(0, MAX_DESCRIPTION_LENGTH - 3) + "...";
-  }
+  description += `🔗 Return to your research: ${researchLink}\n\nrestnvest — Sensible Investing > Optimal Theories`;
 
   return description;
 }
@@ -209,36 +210,22 @@ function downloadIcsFile(events: CalendarEvent[], ticker: string): void {
   URL.revokeObjectURL(url);
 }
 
-function getDefaultDateTime(offset: CheckInType["defaultOffset"]): Date {
-  let date = new Date();
-  if (offset.weeks) date = addWeeks(date, offset.weeks);
-  if (offset.months) date = addMonths(date, offset.months);
-  if (offset.days) date = addDays(date, offset.days);
-  date = setHours(date, 12);
-  date = setMinutes(date, 0);
-  date.setSeconds(0, 0);
-  return date;
-}
-
 export function ProtectStage({ ticker: initialTicker }: ProtectStageProps) {
   const { toast } = useToast();
   const [ticker, setTicker] = useState(initialTicker || "");
-  const [showPreview, setShowPreview] = useState(false);
   const [userMessage, setUserMessage] = useState("");
   const [selectedTypes, setSelectedTypes] = useState<string[]>(["thesis"]);
   const [expandedTypes, setExpandedTypes] = useState<string[]>([]);
-  const [useCustomDateTime, setUseCustomDateTime] = useState(false);
-  const [customDate, setCustomDate] = useState("");
-  const [customTime, setCustomTime] = useState("12:00");
-  const [showEmailModal, setShowEmailModal] = useState(false);
+  const [customDates, setCustomDates] = useState<Record<string, string>>({});
   const [email, setEmail] = useState("");
-  const [calendarAction, setCalendarAction] = useState<"google" | "ics">("google");
 
   const toggleType = (id: string) => {
+    const checkIn = CHECK_IN_TYPES.find((t) => t.id === id);
+    if (checkIn?.disabled) return;
+    
     setSelectedTypes((prev) =>
       prev.includes(id) ? prev.filter((t) => t !== id) : [...prev, id]
     );
-    setShowPreview(false);
   };
 
   const toggleExpanded = (id: string) => {
@@ -247,78 +234,69 @@ export function ProtectStage({ ticker: initialTicker }: ProtectStageProps) {
     );
   };
 
-  const generateEvent = (): CalendarEvent | null => {
-    if (!ticker.trim() || selectedTypes.length === 0) return null;
+  const getScheduledDates = () => {
+    return selectedTypes
+      .map((id) => {
+        const checkIn = CHECK_IN_TYPES.find((t) => t.id === id);
+        if (!checkIn || checkIn.disabled) return null;
+        
+        const customDate = customDates[id];
+        const date = customDate 
+          ? parseISO(customDate)
+          : getCheckInDate(checkIn.defaultOffset);
+        
+        return { checkIn, date };
+      })
+      .filter(Boolean) as { checkIn: CheckInType; date: Date }[];
+  };
 
+  const generateEvents = (): CalendarEvent[] => {
+    if (!ticker.trim()) return [];
+    
     const tickerUpper = ticker.trim().toUpperCase();
-    const description = buildEventDescription(tickerUpper, selectedTypes, userMessage);
-
-    let startTime: Date;
-    if (useCustomDateTime && customDate) {
-      const [hours, minutes] = customTime.split(":").map(Number);
-      startTime = setMinutes(setHours(parseISO(customDate), hours), minutes);
-    } else {
-      const primaryType = CHECK_IN_TYPES.find((t) => t.id === selectedTypes[0]);
-      startTime = primaryType
-        ? getDefaultDateTime(primaryType.defaultOffset)
-        : addWeeks(new Date(), 1);
-    }
-
-    const endTime = addHours(startTime, 0.5);
-    const typeNames = selectedTypes
-      .map((id) => CHECK_IN_TYPES.find((t) => t.id === id)?.title.split(" ")[0])
-      .filter(Boolean)
-      .join(" + ");
-
-    return {
-      title: `restnvest: ${typeNames} Check-In for ${tickerUpper}`,
-      description,
-      startTime,
-      endTime,
-    };
-  };
-
-  const handleCalendarAction = (action: "google" | "ics") => {
-    setCalendarAction(action);
-    setShowEmailModal(true);
-  };
-
-  const handleEmailSubmit = () => {
-    const event = generateEvent();
-    if (!event) return;
-
-    if (calendarAction === "google") {
-      const url = generateGoogleCalendarUrl(event);
-      window.open(url, "_blank");
-    } else {
-      downloadIcsFile([event], ticker.trim());
-    }
-
-    toast({
-      title: "Reminder created!",
-      description: email ? `We'll also send a copy to ${email}` : "Your calendar event is ready.",
+    const scheduledDates = getScheduledDates();
+    
+    return scheduledDates.map(({ checkIn, date }) => {
+      const description = buildEventDescription(tickerUpper, [checkIn.id], userMessage);
+      const startTime = setMinutes(setHours(date, 12), 0);
+      const endTime = addHours(startTime, 0.5);
+      
+      return {
+        title: `restnvest: Exit Plan Check-In for ${tickerUpper}`,
+        description,
+        startTime,
+        endTime,
+      };
     });
-
-    setShowEmailModal(false);
-    setEmail("");
   };
 
-  const handleSkipEmail = () => {
-    const event = generateEvent();
-    if (!event) return;
-
-    if (calendarAction === "google") {
+  const handleGoogleCalendar = () => {
+    const events = generateEvents();
+    events.forEach((event) => {
       const url = generateGoogleCalendarUrl(event);
       window.open(url, "_blank");
-    } else {
-      downloadIcsFile([event], ticker.trim());
-    }
-
-    setShowEmailModal(false);
+    });
+    
+    toast({
+      title: "Calendar events created!",
+      description: email ? `We'll also send a copy to ${email}` : "Your check-in reminders are ready.",
+    });
   };
 
-  const isValid = ticker.trim().length > 0 && selectedTypes.length > 0;
-  const event = generateEvent();
+  const handleDownloadIcs = () => {
+    const events = generateEvents();
+    if (events.length > 0) {
+      downloadIcsFile(events, ticker.trim());
+      
+      toast({
+        title: "Download started!",
+        description: email ? `We'll also send a copy to ${email}` : "Your .ics file is ready.",
+      });
+    }
+  };
+
+  const scheduledDates = getScheduledDates();
+  const isValid = ticker.trim().length > 0 && scheduledDates.length > 0;
 
   return (
     <Card data-testid="protect-stage">
@@ -329,24 +307,29 @@ export function ProtectStage({ ticker: initialTicker }: ProtectStageProps) {
           </div>
         </div>
         <CardTitle className="text-2xl mb-2">Protect What You Own</CardTitle>
-        <p className="text-muted-foreground max-w-md mx-auto">
-          Create personalized check-in reminders to stay grounded in your investment strategy.
-        </p>
       </CardHeader>
 
       <CardContent className="pb-10">
         <div className="max-w-2xl mx-auto space-y-8">
+          <div className="text-center text-muted-foreground leading-relaxed max-w-lg mx-auto">
+            <p>
+              Every investor eventually hits doubt. These reminders help you stay grounded 
+              when it matters most — with scheduled moments to revisit your exit plan, 
+              investment thesis, and peace of mind.
+            </p>
+            <p className="mt-2 font-medium text-foreground">
+              Set them once. Review when it counts. Stay sensible.
+            </p>
+          </div>
+
           <div className="bg-card shadow-md rounded-xl p-6 border border-border/50">
             <div className="flex flex-col items-center mb-6">
               <Label className="text-sm font-medium mb-2">Stock Ticker</Label>
               <Input
                 type="text"
-                placeholder="e.g., PLTR"
+                placeholder="e.g., AAPL"
                 value={ticker}
-                onChange={(e) => {
-                  setTicker(e.target.value.toUpperCase());
-                  setShowPreview(false);
-                }}
+                onChange={(e) => setTicker(e.target.value.toUpperCase())}
                 className="w-full sm:w-48 uppercase text-center"
                 maxLength={10}
                 data-testid="input-ticker"
@@ -355,9 +338,9 @@ export function ProtectStage({ ticker: initialTicker }: ProtectStageProps) {
 
             <div className="space-y-4">
               <div>
-                <h3 className="text-lg font-semibold mb-1">Choose Your Check-In Type</h3>
+                <h3 className="text-lg font-semibold mb-1">Choose Your Check-In Types</h3>
                 <p className="text-sm text-muted-foreground mb-4">
-                  Select one or more to include in your reminder.
+                  Select which flags you want to monitor for this position.
                 </p>
               </div>
 
@@ -366,12 +349,19 @@ export function ProtectStage({ ticker: initialTicker }: ProtectStageProps) {
                   const Icon = checkIn.icon;
                   const isSelected = selectedTypes.includes(checkIn.id);
                   const isExpanded = expandedTypes.includes(checkIn.id);
+                  const isDisabled = checkIn.disabled;
+                  const customDate = customDates[checkIn.id];
+                  const scheduledDate = customDate 
+                    ? parseISO(customDate)
+                    : getCheckInDate(checkIn.defaultOffset);
 
                   return (
                     <div
                       key={checkIn.id}
                       className={`rounded-lg border transition-colors ${
-                        isSelected
+                        isDisabled
+                          ? "opacity-60 bg-muted/30"
+                          : isSelected
                           ? "border-primary/50 bg-primary/5"
                           : "border-border"
                       }`}
@@ -379,8 +369,9 @@ export function ProtectStage({ ticker: initialTicker }: ProtectStageProps) {
                       <div className="flex items-start gap-3 p-4">
                         <Checkbox
                           id={`type-${checkIn.id}`}
-                          checked={isSelected}
+                          checked={isSelected && !isDisabled}
                           onCheckedChange={() => toggleType(checkIn.id)}
+                          disabled={isDisabled}
                           className="mt-1"
                           data-testid={`checkbox-type-${checkIn.id}`}
                         />
@@ -389,7 +380,7 @@ export function ProtectStage({ ticker: initialTicker }: ProtectStageProps) {
                             <Icon className="w-4 h-4 text-primary flex-shrink-0" />
                             <Label
                               htmlFor={`type-${checkIn.id}`}
-                              className="font-medium cursor-pointer"
+                              className={`font-medium ${isDisabled ? "cursor-not-allowed" : "cursor-pointer"}`}
                             >
                               {checkIn.title}
                             </Label>
@@ -400,34 +391,60 @@ export function ProtectStage({ ticker: initialTicker }: ProtectStageProps) {
                           <p className="text-sm text-muted-foreground mt-1">
                             {checkIn.description}
                           </p>
+                          
+                          {isDisabled && (
+                            <div className="flex items-center gap-1.5 mt-2 text-xs text-amber-600 dark:text-amber-500">
+                              <AlertCircle className="w-3 h-3" />
+                              <span>Earnings alerts coming soon — once we integrate earnings data.</span>
+                            </div>
+                          )}
 
-                          <Collapsible open={isExpanded} onOpenChange={() => toggleExpanded(checkIn.id)}>
-                            <CollapsibleTrigger asChild>
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                className="mt-2 h-auto p-0 text-xs text-muted-foreground hover:text-foreground"
-                                data-testid={`button-expand-${checkIn.id}`}
-                              >
-                                <ChevronDown
-                                  className={`w-3 h-3 mr-1 transition-transform ${
-                                    isExpanded ? "rotate-180" : ""
-                                  }`}
-                                />
-                                {isExpanded ? "Hide" : "What you'll review"}
-                              </Button>
-                            </CollapsibleTrigger>
-                            <CollapsibleContent>
-                              <ul className="mt-2 space-y-1 text-sm text-muted-foreground pl-4">
-                                {checkIn.checklist.map((item, i) => (
-                                  <li key={i} className="flex items-start gap-2">
-                                    <span className="text-primary mt-1.5 flex-shrink-0">-</span>
-                                    <span>{item}</span>
-                                  </li>
-                                ))}
-                              </ul>
-                            </CollapsibleContent>
-                          </Collapsible>
+                          {!isDisabled && (
+                            <>
+                              <Collapsible open={isExpanded} onOpenChange={() => toggleExpanded(checkIn.id)}>
+                                <CollapsibleTrigger asChild>
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    className="mt-2 h-auto p-0 text-xs text-muted-foreground hover:text-foreground"
+                                    data-testid={`button-expand-${checkIn.id}`}
+                                  >
+                                    <ChevronDown
+                                      className={`w-3 h-3 mr-1 transition-transform ${
+                                        isExpanded ? "rotate-180" : ""
+                                      }`}
+                                    />
+                                    {isExpanded ? "Hide checklist" : "What you'll review"}
+                                  </Button>
+                                </CollapsibleTrigger>
+                                <CollapsibleContent>
+                                  <ul className="mt-2 space-y-1 text-sm text-muted-foreground pl-1">
+                                    {checkIn.checklist.map((item, i) => (
+                                      <li key={i} className="flex items-start gap-2">
+                                        <span className="text-primary mt-0.5 flex-shrink-0">–</span>
+                                        <span>{item}</span>
+                                      </li>
+                                    ))}
+                                  </ul>
+                                </CollapsibleContent>
+                              </Collapsible>
+
+                              {isSelected && (
+                                <div className="mt-3 flex items-center gap-2 text-sm">
+                                  <Clock className="w-3.5 h-3.5 text-muted-foreground" />
+                                  <span className="text-muted-foreground">Scheduled:</span>
+                                  <Input
+                                    type="date"
+                                    value={customDate || scheduledDate.toISOString().split("T")[0]}
+                                    onChange={(e) => setCustomDates((prev) => ({ ...prev, [checkIn.id]: e.target.value }))}
+                                    min={new Date().toISOString().split("T")[0]}
+                                    className="h-7 w-36 text-xs"
+                                    data-testid={`input-date-${checkIn.id}`}
+                                  />
+                                </div>
+                              )}
+                            </>
+                          )}
                         </div>
                       </div>
                     </div>
@@ -436,57 +453,29 @@ export function ProtectStage({ ticker: initialTicker }: ProtectStageProps) {
               </div>
             </div>
 
-            <div className="mt-6 space-y-4">
-              <div className="flex items-start gap-3">
-                <Checkbox
-                  id="custom-datetime"
-                  checked={useCustomDateTime}
-                  onCheckedChange={(checked) => setUseCustomDateTime(checked === true)}
-                  data-testid="checkbox-custom-datetime"
-                />
-                <div className="flex-1">
-                  <Label htmlFor="custom-datetime" className="font-medium cursor-pointer">
-                    Custom date & time
-                  </Label>
-                  <p className="text-sm text-muted-foreground">
-                    Override the default schedule with your own timing
-                  </p>
-                </div>
+            {ticker.trim() && scheduledDates.length > 0 && (
+              <div className="mt-6 p-4 bg-muted/50 rounded-lg" data-testid="summary-panel">
+                <p className="text-sm font-medium mb-2">
+                  You'll receive check-ins for <span className="text-primary">{ticker.toUpperCase()}</span> on:
+                </p>
+                <ul className="space-y-1 text-sm text-muted-foreground">
+                  {scheduledDates.map(({ checkIn, date }) => (
+                    <li key={checkIn.id} className="flex items-center gap-2">
+                      <Calendar className="w-3.5 h-3.5" />
+                      <span>{checkIn.title}</span>
+                      <span className="text-foreground font-medium">→ {format(date, "MMM d, yyyy")}</span>
+                    </li>
+                  ))}
+                </ul>
               </div>
-
-              {useCustomDateTime && (
-                <div className="grid grid-cols-2 gap-3 pl-6 border-l-2 border-primary/20">
-                  <div>
-                    <Label className="text-xs text-muted-foreground">Date</Label>
-                    <Input
-                      type="date"
-                      value={customDate}
-                      onChange={(e) => setCustomDate(e.target.value)}
-                      min={new Date().toISOString().split("T")[0]}
-                      className="mt-1"
-                      data-testid="input-custom-date"
-                    />
-                  </div>
-                  <div>
-                    <Label className="text-xs text-muted-foreground">Time</Label>
-                    <Input
-                      type="time"
-                      value={customTime}
-                      onChange={(e) => setCustomTime(e.target.value)}
-                      className="mt-1"
-                      data-testid="input-custom-time"
-                    />
-                  </div>
-                </div>
-              )}
-            </div>
+            )}
 
             <div className="mt-6 space-y-2">
               <Label className="text-sm font-medium">
                 Message to Your Future Self (Optional)
               </Label>
               <Textarea
-                placeholder="e.g., Remember why you bought this stock. Don't panic sell..."
+                placeholder="e.g., Don't sell just because it's down — check margins and story first."
                 value={userMessage}
                 onChange={(e) => setUserMessage(e.target.value)}
                 className="resize-none"
@@ -499,40 +488,28 @@ export function ProtectStage({ ticker: initialTicker }: ProtectStageProps) {
               </p>
             </div>
 
-            <div className="mt-6 flex justify-center">
-              <Button
-                variant="outline"
-                onClick={() => setShowPreview(!showPreview)}
-                disabled={!isValid}
-                data-testid="button-preview"
-              >
-                <FileText className="w-4 h-4 mr-2" />
-                {showPreview ? "Hide Preview" : "Preview Reminder"}
-              </Button>
+            <div className="mt-6 space-y-2">
+              <div className="flex items-center gap-2">
+                <Mail className="w-4 h-4 text-muted-foreground" />
+                <Label className="text-sm font-medium">
+                  Send this reminder to my email (Optional)
+                </Label>
+              </div>
+              <Input
+                type="email"
+                placeholder="your@email.com"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                data-testid="input-email"
+              />
+              <p className="text-xs text-muted-foreground">
+                We'll send your check-in plan so you have it when it matters.
+              </p>
             </div>
 
-            {showPreview && event && (
-              <div className="mt-4 bg-muted/50 rounded-lg p-4 text-left space-y-3" data-testid="event-preview">
-                <div className="flex items-start gap-2">
-                  <Calendar className="w-4 h-4 mt-0.5 text-muted-foreground flex-shrink-0" />
-                  <p className="font-medium text-sm">{event.title}</p>
-                </div>
-                <div className="flex items-start gap-2">
-                  <Clock className="w-4 h-4 mt-0.5 text-muted-foreground flex-shrink-0" />
-                  <div className="text-sm text-muted-foreground">
-                    {format(event.startTime, "EEEE, MMMM d, yyyy")} at{" "}
-                    {format(event.startTime, "h:mm a")}
-                  </div>
-                </div>
-                <div className="text-xs text-muted-foreground pl-6 whitespace-pre-line border-t border-border/50 pt-3 mt-3">
-                  {event.description}
-                </div>
-              </div>
-            )}
-
-            <div className="mt-6 flex flex-col sm:flex-row gap-3 justify-center">
+            <div className="mt-8 flex flex-col sm:flex-row gap-3 justify-center">
               <Button
-                onClick={() => handleCalendarAction("google")}
+                onClick={handleGoogleCalendar}
                 disabled={!isValid}
                 data-testid="button-google-calendar"
               >
@@ -541,7 +518,7 @@ export function ProtectStage({ ticker: initialTicker }: ProtectStageProps) {
               </Button>
               <Button
                 variant="outline"
-                onClick={() => handleCalendarAction("ics")}
+                onClick={handleDownloadIcs}
                 disabled={!isValid}
                 data-testid="button-download-ics"
               >
@@ -550,45 +527,8 @@ export function ProtectStage({ ticker: initialTicker }: ProtectStageProps) {
               </Button>
             </div>
           </div>
-
-          <p className="text-muted-foreground text-center max-w-xl mx-auto leading-relaxed">
-            Every investor eventually hits doubt. These reminders help you stay steady
-            when it matters — with scheduled moments to review your strategy and protect
-            your peace and your portfolio.
-          </p>
         </div>
       </CardContent>
-
-      <Dialog open={showEmailModal} onOpenChange={setShowEmailModal}>
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <Mail className="w-5 h-5" />
-              Where should we send your check-up guide?
-            </DialogTitle>
-            <DialogDescription>
-              Optionally enter your email to receive a copy of your reminder checklist.
-            </DialogDescription>
-          </DialogHeader>
-          <div className="space-y-4 py-4">
-            <Input
-              type="email"
-              placeholder="your@email.com"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              data-testid="input-email"
-            />
-          </div>
-          <DialogFooter className="flex flex-col sm:flex-row gap-2">
-            <Button variant="outline" onClick={handleSkipEmail} data-testid="button-skip-email">
-              Skip
-            </Button>
-            <Button onClick={handleEmailSubmit} data-testid="button-submit-email">
-              {calendarAction === "google" ? "Open Google Calendar" : "Download .ics"}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
     </Card>
   );
 }
