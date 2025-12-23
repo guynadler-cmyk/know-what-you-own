@@ -389,6 +389,84 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
     }
   });
+
+  // --------------------------------------------------------------------------
+  // EARNINGS CALENDAR (Finnhub)
+  // --------------------------------------------------------------------------
+  app.get("/api/earnings/:ticker", async (req: any, res) => {
+    try {
+      const { ticker } = req.params;
+      
+      if (!ticker || !/^[A-Z]{1,5}$/i.test(ticker)) {
+        return res.status(400).json({ 
+          error: "Invalid ticker format",
+          message: "Please provide 1-5 letter ticker symbol." 
+        });
+      }
+
+      const apiKey = process.env.FINNHUB_API_KEY;
+      if (!apiKey) {
+        return res.status(503).json({
+          error: "Earnings data unavailable",
+          message: "Earnings calendar service is not configured."
+        });
+      }
+
+      const today = new Date();
+      const futureDate = new Date(today);
+      futureDate.setMonth(futureDate.getMonth() + 6);
+
+      const fromDate = today.toISOString().split('T')[0];
+      const toDate = futureDate.toISOString().split('T')[0];
+
+      const url = `https://finnhub.io/api/v1/calendar/earnings?symbol=${ticker.toUpperCase()}&from=${fromDate}&to=${toDate}&token=${apiKey}`;
+      
+      const response = await fetch(url, {
+        headers: { "User-Agent": "KnowWhatYouOwn/1.0" }
+      });
+
+      if (!response.ok) {
+        if (response.status === 429) {
+          return res.status(429).json({
+            error: "Rate limited",
+            message: "Too many requests to earnings API. Please try again later."
+          });
+        }
+        throw new Error(`Finnhub API error: ${response.status}`);
+      }
+
+      const data = await response.json();
+      
+      const earningsCalendar = data.earningsCalendar || [];
+      const upcomingEarnings = earningsCalendar
+        .filter((e: any) => new Date(e.date) >= today)
+        .sort((a: any, b: any) => new Date(a.date).getTime() - new Date(b.date).getTime());
+
+      if (upcomingEarnings.length === 0) {
+        return res.json({
+          ticker: ticker.toUpperCase(),
+          nextEarningsDate: null,
+          hour: null,
+          message: "No upcoming earnings date found"
+        });
+      }
+
+      const next = upcomingEarnings[0];
+      res.json({
+        ticker: ticker.toUpperCase(),
+        nextEarningsDate: next.date,
+        hour: next.hour || null,
+        epsEstimate: next.epsEstimate,
+        revenueEstimate: next.revenueEstimate
+      });
+    } catch (error: any) {
+      console.error("Earnings fetch error:", error);
+      res.status(500).json({
+        error: "Earnings lookup failed",
+        message: "Unable to fetch earnings date. Please try again later."
+      });
+    }
+  });
   
   const httpServer = createServer(app);
   return httpServer;
