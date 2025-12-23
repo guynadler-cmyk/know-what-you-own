@@ -1,0 +1,111 @@
+We’ve already built a basic version of “Protect What You Own” in Stage 6 — it lets users schedule a calendar reminder for a check-in on their stock. Now we want to upgrade that into a flexible, educational, and customizable exit plan assistant.
+
+✅ GOAL:
+
+Allow users to choose a check-in type, preview what it includes, configure the reminder time/date, and receive a calendar invite with a detailed checklist based on their selection.
+
+🔧 Functional Requirements:
+1. Add a Section: “Choose Your Check-In Type”
+
+Users can select from predefined reminder categories. Each should have:
+
+A title
+
+A short description
+
+A collapsible preview of checklist items (“What you’ll review”)
+
+A checkbox to select the type
+
+📘 Categories (Starter Set):
+
+📈 Technical Trend Check (Short-Term)
+Is the trend your friend?
+Preview:
+
+Are you seeing higher highs or lower lows?
+
+Has the trend reversed or is it intact?
+
+Are moving averages aligned?
+
+Is volume increasing or fading?
+
+📊 Market Comparison (Mid-Term)
+Compare how your stock performs against the broader market.
+Preview:
+
+Has it outperformed or underperformed the S&P 500?
+
+Are there reasons for the divergence?
+
+Is this underperformance a risk or an opportunity?
+
+💡 Investment Thesis Review (Long-Term)
+Revisit why you bought the stock in the first place.
+Preview:
+
+Is your original reason for investing still valid?
+
+Has company leadership changed direction?
+
+Has valuation become stretched or more compelling?
+
+🛎️ Earnings Risk Alert
+Check in before or after earnings to prepare or reflect.
+Preview:
+
+Is the stock volatile around earnings?
+
+Do you expect good/bad news?
+
+What will change your mind about this company?
+
+2. Let users configure:
+
+⏰ Custom date & time for the reminder
+
+✅ Multiple types can be selected (e.g., Technical + Thesis Review)
+
+3. Include a text area: “Message to Your Future Self” (Optional)
+📅 Reminder Creation Flow
+
+When the user is done configuring:
+
+“Preview Reminder” → shows the checklist for selected type(s)
+
+“Send to Calendar”:
+
+Opens email capture modal (“Where should we send your check-up guide?”)
+
+Once submitted, send user:
+
+A calendar invite (.ics or Google Calendar)
+
+Checklist items for their selected type(s)
+
+Their note to future self
+
+📤 Tech Notes:
+
+No new page — this must extend the existing Stage 6 Protect What You Own screen
+
+Checklist logic can live in a config file or local JSON object
+
+Keep styles consistent with the existing UI (Tailwind)
+
+Use React hooks for managing selected types and email capture
+
+For email, use Resend, EmailJS, or similar
+
+🧠 Optional Enhancements (nice to have):
+
+Save user email + reminder config to a lightweight backend or Google Sheet
+
+Include a smart suggested date/time based on:
+
+Earnings calendar (if ticker + earnings data is available via API)
+
+1-week or 1-month timeframes by default
+
+Let users “test” reminder: open a sample .ics or Google invite in preview mode
