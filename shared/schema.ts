@@ -333,3 +333,29 @@ export const insertWaitlistSignupSchema = z.object({
 
 export type InsertWaitlistSignup = z.infer<typeof insertWaitlistSignupSchema>;
 export type WaitlistSignup = typeof waitlistSignups.$inferSelect;
+
+// Scheduled checkup emails table for reminder tracking
+export const scheduledCheckupEmails = pgTable("scheduled_checkup_emails", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  email: varchar("email", { length: 255 }).notNull(),
+  ticker: varchar("ticker", { length: 10 }).notNull(),
+  selectedCheckins: jsonb("selected_checkins").notNull().$type<string[]>(),
+  customMessage: varchar("custom_message", { length: 500 }),
+  reminderDates: jsonb("reminder_dates").notNull().$type<{ type: string; date: string }[]>(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+// Scheduled checkup insert schema
+export const insertScheduledCheckupSchema = z.object({
+  email: z.string().email("Please enter a valid email address"),
+  ticker: z.string().min(1, "Ticker is required").max(10),
+  selectedCheckins: z.array(z.string()).min(1, "Select at least one check-in type"),
+  customMessage: z.string().max(500).optional(),
+  reminderDates: z.array(z.object({
+    type: z.string(),
+    date: z.string(),
+  })),
+});
+
+export type InsertScheduledCheckup = z.infer<typeof insertScheduledCheckupSchema>;
+export type ScheduledCheckupEmail = typeof scheduledCheckupEmails.$inferSelect;

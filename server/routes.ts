@@ -2,7 +2,7 @@ import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { secService } from "./services/sec";
 import { openaiService } from "./services/openai";
-import { companySummarySchema, incomeMetricsSchema, balanceSheetMetricsSchema, combinedFinancialMetricsSchema, finePrintAnalysisSchema, insertWaitlistSignupSchema } from "@shared/schema";
+import { companySummarySchema, incomeMetricsSchema, balanceSheetMetricsSchema, combinedFinancialMetricsSchema, finePrintAnalysisSchema, insertWaitlistSignupSchema, insertScheduledCheckupSchema } from "@shared/schema";
 import { alphaVantageService } from "./services/alphavantage";
 import { storage } from "./storage";
 
@@ -386,6 +386,43 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({
         error: "Failed to fetch waitlist",
         message: "Could not retrieve waitlist data."
+      });
+    }
+  });
+
+  // --------------------------------------------------------------------------
+  // SCHEDULED CHECKUP EMAILS
+  // --------------------------------------------------------------------------
+  app.post("/api/scheduled-checkups", async (req: any, res) => {
+    try {
+      const validated = insertScheduledCheckupSchema.parse(req.body);
+      const checkup = await storage.createScheduledCheckup(validated);
+      console.log(`Scheduled checkup created for ${validated.ticker} (${validated.email})`);
+      res.status(201).json(checkup);
+    } catch (error: any) {
+      console.error("Scheduled checkup error:", error);
+      if (error.name === "ZodError") {
+        return res.status(400).json({
+          error: "Validation Error",
+          message: error.errors?.[0]?.message || "Invalid request data."
+        });
+      }
+      res.status(500).json({
+        error: "Failed to create checkup",
+        message: "Could not save your reminder. Please try again."
+      });
+    }
+  });
+
+  app.get("/api/scheduled-checkups", async (req: any, res) => {
+    try {
+      const checkups = await storage.getScheduledCheckups();
+      res.json(checkups);
+    } catch (error: any) {
+      console.error("Error fetching scheduled checkups:", error);
+      res.status(500).json({
+        error: "Failed to fetch checkups",
+        message: "Could not retrieve scheduled checkups."
       });
     }
   });
