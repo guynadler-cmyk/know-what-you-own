@@ -1,0 +1,114 @@
+Objective
+
+Help users stay committed to their investment strategy by letting them set up personalized calendar check-ins to revisit their exit plan. These reminders reduce emotional selling and reinforce long-term discipline.
+
+This feature should:
+
+Let users choose which flags they want to monitor
+
+Let them define when to revisit the position
+
+Let them write a message to their future self
+
+Let them add the check-in to their calendar and/or email it to themselves
+
+🔧 What to Build
+1. 📌 Contextual Explanation (Top of UI)
+
+Add a short paragraph that frames the purpose and value of this stage:
+
+Every investor eventually hits doubt.
+These reminders help you stay grounded when it matters most — with scheduled moments to revisit your exit plan, investment thesis, and peace of mind.
+Set them once. Review when it counts. Stay sensible.
+
+2. ✅ Check-In Builder
+
+A stock ticker input (e.g. AAPL)
+
+4 check-in types, each with:
+
+Title + description
+
+Checklist of questions (already provided in current version)
+
+Default time setting (e.g. 1 week from today, 48h post-earnings)
+
+Optional: inline date picker for custom date/time
+
+Check-in types:
+
+Technical Trend Check (Short-Term)
+
+Market Comparison (Mid-Term)
+
+Investment Thesis Review (Long-Term)
+
+Earnings Risk Alert (Event-Based) — placeholder only (no real data yet)
+
+Include a summary panel:
+
+“You’ll receive check-ins for [TICKER] on the following dates:
+• Market Comparison → Jan 4
+• Investment Thesis → Jan 31
+• ...”
+
+3. 💌 Optional Email Field (for Reminder Delivery)
+
+Let users optionally receive the check-in by email.
+
+📬 Send this reminder to my email:
+[ email input field ]
+We’ll send your check-in plan so you have it when it matters.
+
+4. 💬 Message to Future Self
+
+Message to Future You (optional)
+Textarea — limit 200 characters
+
+5. 📅 Output Options
+
+Generate a calendar event using:
+
+Google Calendar Link
+
+Downloadable .ics file
+
+Both should include:
+
+Title: restnvest: Exit Plan Check-In for [TICKER]
+
+Date/time: Based on selected check-in
+
+Description: Should include:
+
+Ticker
+
+Selected check-in categories
+
+Associated checklist questions
+
+User’s message to future self
+
+Link back to research (placeholder URL like restnvest.com/stocks/AAPL)
+
+📝 Example Event Description (Output Template)
+You created this reminder to revisit your exit strategy for $AAPL.
+
+🧠 Investment Thesis Review
+– Is your original reason for investing still valid?
+– Has leadership or valuation changed?
+
+📊 Market Comparison
+– Has AAPL underperformed the S&P 500?
+– Is the divergence meaningful?
+
+📌 Message to your future self:
+“Don't sell just because it's down — check margins and story first.”
+
+🔗 Return to your research: https://restnvest.com/stocks/AAPL
+
+restnvest — Sensible Investing > Optimal Theories
+
+6. ⚠️ (Optional): If earnings alert selected, show a disabled state
+
+“Earnings alerts coming soon — once we integrate earnings data.”
