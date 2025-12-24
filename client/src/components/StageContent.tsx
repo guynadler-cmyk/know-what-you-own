@@ -1,10 +1,10 @@
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { SummaryCard } from "@/components/SummaryCard";
 import { ComingSoonStage } from "@/components/ComingSoonStage";
 import { ProtectStage } from "@/components/ProtectStage";
 import { QuadrantExplorer, generateQuadrantData } from "@/components/QuadrantExplorer";
 import { FinancialScorecard } from "@/components/FinancialScorecard";
-import { ValuationExplorer, VALUATION_QUADRANT_DATA } from "@/components/ValuationExplorer";
+import { ValuationExplorer, VALUATION_QUADRANT_DATA, type ValuationQuadrantData } from "@/components/ValuationExplorer";
 import { ValuationScorecard } from "@/components/ValuationScorecard";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Smartphone, Laptop, Tablet, Watch, Car, Zap, Battery, Server, Cloud, Gamepad2, Package, Code, Globe, Music, Video, Tv, Search, Cpu, Info } from "lucide-react";
@@ -100,6 +100,9 @@ export function StageContent({ stage, summaryData, financialMetrics, balanceShee
     () => generateQuadrantData(financialMetrics, balanceSheetMetrics),
     [financialMetrics, balanceSheetMetrics]
   );
+
+  // State for valuation quadrant data from API
+  const [valuationQuadrantData, setValuationQuadrantData] = useState<ValuationQuadrantData[]>(VALUATION_QUADRANT_DATA);
 
   if (stage === 6) {
     return <ProtectStage ticker={ticker} />;
@@ -215,9 +218,9 @@ export function StageContent({ stage, summaryData, financialMetrics, balanceShee
         <CardContent className="pb-12">
           <ValuationIntroBlock />
           
-          <ValuationExplorer ticker={ticker} />
+          <ValuationExplorer ticker={ticker} onQuadrantDataChange={setValuationQuadrantData} />
           
-          <ValuationScorecard quadrantData={VALUATION_QUADRANT_DATA} />
+          <ValuationScorecard quadrantData={valuationQuadrantData} />
         </CardContent>
       </Card>
     );
