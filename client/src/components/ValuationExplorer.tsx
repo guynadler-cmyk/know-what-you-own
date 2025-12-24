@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Card } from "@/components/ui/card";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
@@ -605,9 +605,10 @@ function convertAPIQuadrantToLocal(apiQuadrant: APIValuationQuadrant): Valuation
 
 interface ValuationExplorerProps {
   ticker?: string;
+  onQuadrantDataChange?: (data: ValuationQuadrantData[]) => void;
 }
 
-export function ValuationExplorer({ ticker }: ValuationExplorerProps) {
+export function ValuationExplorer({ ticker, onQuadrantDataChange }: ValuationExplorerProps) {
   const { data: valuationData, isLoading, isError, error } = useQuery<ValuationMetrics>({
     queryKey: ['/api/valuation', ticker],
     enabled: !!ticker,
@@ -619,6 +620,12 @@ export function ValuationExplorer({ ticker }: ValuationExplorerProps) {
     }
     return VALUATION_QUADRANT_DATA;
   }, [valuationData]);
+
+  useEffect(() => {
+    if (onQuadrantDataChange && quadrantData) {
+      onQuadrantDataChange(quadrantData);
+    }
+  }, [quadrantData, onQuadrantDataChange]);
 
   const [selectedId, setSelectedId] = useState<string>(quadrantData[0]?.id || 'price-discipline');
   
