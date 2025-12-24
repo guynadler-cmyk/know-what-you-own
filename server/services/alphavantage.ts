@@ -52,9 +52,30 @@ interface AlphaVantageIncomeResponseFull {
   quarterlyReports?: AlphaVantageIncomeStatement[];
 }
 
+interface AlphaVantageMonthlyPrices {
+  'Meta Data': {
+    '1. Information': string;
+    '2. Symbol': string;
+    '3. Last Refreshed': string;
+    '4. Time Zone': string;
+  };
+  'Monthly Adjusted Time Series': {
+    [date: string]: {
+      '1. open': string;
+      '2. high': string;
+      '3. low': string;
+      '4. close': string;
+      '5. adjusted close': string;
+      '6. volume': string;
+      '7. dividend amount': string;
+    };
+  };
+}
+
 // Simple in-memory cache to avoid hitting rate limits
 const cache = new Map<string, { data: FinancialMetrics; timestamp: number }>();
 const balanceSheetCache = new Map<string, { data: BalanceSheetMetrics; timestamp: number }>();
+const priceCache = new Map<string, { cagr: number; yearsOfData: number; timestamp: number }>();
 const CACHE_TTL = 1000 * 60 * 60; // 1 hour
 
 export class AlphaVantageService {
@@ -378,6 +399,106 @@ export class AlphaVantageService {
     }
   }
 
+  async getStockPriceCAGR(ticker: string): Promise<{ cagr: number; yearsOfData: number }> {
+    const upperTicker = ticker.toUpperCase();
+
+    // Check cache first
+    const cached = priceCache.get(upperTicker);
+    if (cached && Date.now() - cached.timestamp < CACHE_TTL) {
+      return { cagr: cached.cagr, yearsOfData: cached.yearsOfData };
+    }
+
+    if (!ALPHA_VANTAGE_API_KEY) {
+      throw new Error('ALPHA_VANTAGE_API_KEY is not configured');
+    }
+
+    try {
+      const response = await axios.get<AlphaVantageMonthlyPrices>(BASE_URL, {
+        params: {
+          function: 'TIME_SERIES_MONTHLY_ADJUSTED',
+          symbol: upperTicker,
+          apikey: ALPHA_VANTAGE_API_KEY,
+        },
+        timeout: 15000,
+      });
+
+      const data = response.data;
+
+      // Check for rate limiting
+      if ('Note' in data || 'Information' in data) {
+        console.log(`[Price CAGR] ${upperTicker}: Rate limited`);
+        throw new Error('Alpha Vantage API rate limit reached.');
+      }
+
+      if ('Error Message' in data) {
+        throw new Error(`Ticker ${upperTicker} not found`);
+      }
+
+      const timeSeries = data['Monthly Adjusted Time Series'];
+      if (!timeSeries || Object.keys(timeSeries).length === 0) {
+        console.log(`[Price CAGR] ${upperTicker}: No price data available`);
+        return { cagr: 0, yearsOfData: 0 };
+      }
+
+      // Sort dates in descending order (most recent first)
+      const dates = Object.keys(timeSeries).sort((a, b) => new Date(b).getTime() - new Date(a).getTime());
+      
+      // Get most recent adjusted close price
+      const currentPrice = parseFloat(timeSeries[dates[0]]['5. adjusted close']);
+      
+      // Try to get price from 5 years ago, fall back to 3 years, then 1 year
+      const now = new Date(dates[0]);
+      let targetYears = 5;
+      let pastPrice = 0;
+      let actualYears = 0;
+
+      for (const years of [5, 3, 1]) {
+        const targetDate = new Date(now);
+        targetDate.setFullYear(targetDate.getFullYear() - years);
+        
+        // Find the closest date to our target
+        let closestDate = dates[dates.length - 1]; // Default to oldest
+        for (const date of dates) {
+          const dateObj = new Date(date);
+          if (dateObj <= targetDate) {
+            closestDate = date;
+            break;
+          }
+        }
+
+        const closestDateObj = new Date(closestDate);
+        const diffYears = (now.getTime() - closestDateObj.getTime()) / (1000 * 60 * 60 * 24 * 365);
+        
+        if (diffYears >= 0.5) { // At least 6 months of data
+          pastPrice = parseFloat(timeSeries[closestDate]['5. adjusted close']);
+          actualYears = diffYears;
+          break;
+        }
+      }
+
+      if (pastPrice <= 0 || actualYears < 0.5) {
+        console.log(`[Price CAGR] ${upperTicker}: Insufficient historical data`);
+        return { cagr: 0, yearsOfData: 0 };
+      }
+
+      // Calculate CAGR: (EndValue / StartValue)^(1/Years) - 1
+      const cagr = (Math.pow(currentPrice / pastPrice, 1 / actualYears) - 1) * 100;
+      
+      console.log(`[Price CAGR] ${upperTicker}: ${cagr.toFixed(1)}% over ${actualYears.toFixed(1)} years (${pastPrice.toFixed(2)} -> ${currentPrice.toFixed(2)})`);
+
+      // Cache the result
+      priceCache.set(upperTicker, { cagr, yearsOfData: actualYears, timestamp: Date.now() });
+
+      return { cagr, yearsOfData: actualYears };
+    } catch (error: any) {
+      if (error.message?.includes('rate limit')) {
+        throw error;
+      }
+      console.log(`[Price CAGR] ${upperTicker}: Error - ${error.message}`);
+      return { cagr: 0, yearsOfData: 0 }; // Graceful fallback
+    }
+  }
+
   async getValuationMetrics(ticker: string): Promise<ValuationMetrics> {
     const upperTicker = ticker.toUpperCase();
 
@@ -392,8 +513,8 @@ export class AlphaVantageService {
     }
 
     try {
-      // Fetch Company Overview, Income Statement, and Balance Sheet in parallel
-      const [overviewRes, incomeRes, balanceRes] = await Promise.all([
+      // Fetch Company Overview, Income Statement, Balance Sheet, and Historical Prices in parallel
+      const [overviewRes, incomeRes, balanceRes, priceData] = await Promise.all([
         axios.get(BASE_URL, {
           params: { function: 'OVERVIEW', symbol: upperTicker, apikey: ALPHA_VANTAGE_API_KEY },
           timeout: 10000,
@@ -406,11 +527,13 @@ export class AlphaVantageService {
           params: { function: 'BALANCE_SHEET', symbol: upperTicker, apikey: ALPHA_VANTAGE_API_KEY },
           timeout: 10000,
         }),
+        this.getStockPriceCAGR(upperTicker).catch(() => ({ cagr: 0, yearsOfData: 0 })),
       ]);
 
       const overview = overviewRes.data as AlphaVantageCompanyOverview;
       const incomeData = incomeRes.data as AlphaVantageIncomeResponseFull;
       const balanceData = balanceRes.data as AlphaVantageBalanceSheetResponse;
+      const { cagr: stockCAGR, yearsOfData: cagrYears } = priceData;
 
       // Helper to check for rate limiting in any response
       const isRateLimited = (data: any): boolean => {
@@ -548,6 +671,8 @@ export class AlphaVantageService {
         shareChange,
         distanceFromHigh,
         sector,
+        stockCAGR,
+        cagrYears,
       });
 
       // Determine overall strength
@@ -611,8 +736,10 @@ export class AlphaVantageService {
     shareChange: number;
     distanceFromHigh: number;
     sector: string;
+    stockCAGR: number;
+    cagrYears: number;
   }): ValuationQuadrant[] {
-    const { earningsYield, returnOnCapital, peRatio, marketCap, shareChange, distanceFromHigh } = data;
+    const { earningsYield, returnOnCapital, peRatio, marketCap, shareChange, distanceFromHigh, stockCAGR, cagrYears } = data;
 
     // Determine signal colors based on thresholds
     const eyColor: 'green' | 'red' | 'yellow' = earningsYield > 8 ? 'green' : earningsYield > 5 ? 'yellow' : 'red';
@@ -666,16 +793,28 @@ export class AlphaVantageService {
       {
         id: 'doubling-potential',
         title: 'Doubling Potential',
-        verdict: earningsYield > 10 ? 'Fast Track' : earningsYield > 5 ? 'Steady Path' : 'Long Road',
+        verdict: stockCAGR > 15 ? 'Fast Track' : stockCAGR > 7 ? 'Steady Path' : 'Long Road',
         signals: [
-          { label: 'Time to Double', value: earningsYield > 0 ? `~${Math.round(72 / earningsYield)} years` : 'N/A', color: 'neutral', tooltip: 'A rough estimate using the Rule of 72: how long it might take for the company to double in size based on current earnings yield.' },
-          { label: 'Growth Quality', value: returnOnCapital > 15 ? 'High' : returnOnCapital > 8 ? 'Medium' : 'Low', color: rocColor, tooltip: 'How efficiently the company can reinvest profits to drive growth.' },
+          { 
+            label: 'Time to Double', 
+            value: stockCAGR > 0 ? `~${Math.round(72 / stockCAGR)} years` : 'N/A', 
+            color: stockCAGR > 15 ? 'green' : stockCAGR > 7 ? 'yellow' : 'red', 
+            tooltip: `Based on the stock's historical return of ${stockCAGR.toFixed(1)}% per year over ${cagrYears.toFixed(1)} years. Past performance doesn't guarantee future results.` 
+          },
+          { 
+            label: 'Growth Quality', 
+            value: returnOnCapital > 15 ? 'High' : returnOnCapital > 8 ? 'Medium' : 'Low', 
+            color: rocColor, 
+            tooltip: 'How efficiently the company can reinvest profits to drive growth.' 
+          },
         ],
-        insight: earningsYield > 10 
-          ? 'Based on current earnings, the company could potentially double in value within a reasonable timeframe. Patience could be rewarded.'
-          : 'The path to doubling is longer. You\'re betting on future improvements more than current earnings power.',
-        insightHighlight: earningsYield > 10 ? 'double in value' : 'betting on future improvements',
-        strength: earningsYield > 10 ? 'sensible' : earningsYield > 5 ? 'caution' : 'risky',
+        insight: stockCAGR > 15 
+          ? `Based on historical returns (${stockCAGR.toFixed(1)}% annually), the stock has doubled roughly every ${Math.round(72 / stockCAGR)} years. Past performance is not a guarantee, but this shows strong momentum.`
+          : stockCAGR > 0 
+          ? `The stock has grown ${stockCAGR.toFixed(1)}% annually over ${Math.round(cagrYears)} years. The path to doubling is longer. You're betting on future improvements more than current earnings power.`
+          : 'Not enough historical data to estimate doubling time. Proceed with caution.',
+        insightHighlight: stockCAGR > 15 ? 'strong momentum' : 'betting on future improvements',
+        strength: stockCAGR > 15 ? 'sensible' : stockCAGR > 7 ? 'caution' : 'risky',
       },
     ];
   }
