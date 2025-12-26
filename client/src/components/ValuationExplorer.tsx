@@ -1,9 +1,10 @@
 import { useState, useMemo, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Card } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { Skeleton } from "@/components/ui/skeleton";
-import { TrendingUp, TrendingDown, HelpCircle, CheckCircle, AlertTriangle, XCircle, Minus, AlertOctagon } from "lucide-react";
+import { TrendingUp, TrendingDown, HelpCircle, CheckCircle, AlertTriangle, XCircle, Minus, AlertOctagon, RefreshCw } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { ValuationMetrics, ValuationQuadrant as APIValuationQuadrant } from "@shared/schema";
 
@@ -609,9 +610,10 @@ interface ValuationExplorerProps {
 }
 
 export function ValuationExplorer({ ticker, onQuadrantDataChange }: ValuationExplorerProps) {
-  const { data: valuationData, isLoading, isError, error } = useQuery<ValuationMetrics>({
+  const { data: valuationData, isLoading, isError, error, refetch, isFetching } = useQuery<ValuationMetrics>({
     queryKey: ['/api/valuation', ticker],
     enabled: !!ticker,
+    retry: false,
   });
 
   const quadrantData = useMemo(() => {
@@ -645,15 +647,30 @@ export function ValuationExplorer({ ticker, onQuadrantDataChange }: ValuationExp
   }
 
   if (isError && ticker) {
+    const isRateLimitError = (error as Error)?.message?.toLowerCase().includes('rate limit');
+    
     return (
       <Card className="p-8" data-testid="valuation-explorer-error">
         <div className="flex flex-col items-center justify-center text-center space-y-4">
           <AlertOctagon className="w-12 h-12 text-muted-foreground" />
           <div>
-            <h3 className="text-lg font-semibold mb-2">Unable to Load Valuation Data</h3>
-            <p className="text-muted-foreground text-sm max-w-md">
-              {(error as Error)?.message || 'We couldn\'t retrieve the valuation metrics for this company. Please try again later.'}
+            <h3 className="text-lg font-semibold mb-2">
+              {isRateLimitError ? 'Temporarily Unavailable' : 'Unable to Load Valuation Data'}
+            </h3>
+            <p className="text-muted-foreground text-sm max-w-md mb-4">
+              {isRateLimitError 
+                ? 'The market data service is busy. Wait a moment and try again.'
+                : (error as Error)?.message || 'We couldn\'t retrieve the valuation metrics for this company.'}
             </p>
+            <Button
+              onClick={() => refetch()}
+              disabled={isFetching}
+              data-testid="button-retry-valuation"
+              className="gap-2"
+            >
+              <RefreshCw className={cn("w-4 h-4", isFetching && "animate-spin")} />
+              {isFetching ? 'Retrying...' : 'Retry'}
+            </Button>
           </div>
         </div>
       </Card>

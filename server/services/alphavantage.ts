@@ -608,28 +608,30 @@ export class AlphaVantageService {
     }
 
     try {
-      // Fetch SMA and current price in parallel
-      const [smaRes, quoteRes] = await Promise.all([
-        axios.get<AlphaVantageSMAResponse>(BASE_URL, {
-          params: {
-            function: 'SMA',
-            symbol: upperTicker,
-            interval: 'daily',
-            time_period: 200,
-            series_type: 'close',
-            apikey: ALPHA_VANTAGE_API_KEY,
-          },
-          timeout: 15000,
-        }),
-        axios.get<AlphaVantageGlobalQuote>(BASE_URL, {
-          params: {
-            function: 'GLOBAL_QUOTE',
-            symbol: upperTicker,
-            apikey: ALPHA_VANTAGE_API_KEY,
-          },
-          timeout: 10000,
-        }),
-      ]);
+      // Stagger SMA and quote calls to avoid 5 RPS burst limit
+      const smaRes = await axios.get<AlphaVantageSMAResponse>(BASE_URL, {
+        params: {
+          function: 'SMA',
+          symbol: upperTicker,
+          interval: 'daily',
+          time_period: 200,
+          series_type: 'close',
+          apikey: ALPHA_VANTAGE_API_KEY,
+        },
+        timeout: 15000,
+      });
+      
+      // Delay before quote call to ensure we stay under 5 RPS limit
+      await new Promise(resolve => setTimeout(resolve, 500));
+      
+      const quoteRes = await axios.get<AlphaVantageGlobalQuote>(BASE_URL, {
+        params: {
+          function: 'GLOBAL_QUOTE',
+          symbol: upperTicker,
+          apikey: ALPHA_VANTAGE_API_KEY,
+        },
+        timeout: 10000,
+      });
 
       const smaData = smaRes.data;
       const quoteData = quoteRes.data;
@@ -724,23 +726,43 @@ export class AlphaVantageService {
     }
 
     try {
-      // Fetch Company Overview, Income Statement, Balance Sheet, Historical Prices, and SMA data in parallel
-      const [overviewRes, incomeRes, balanceRes, priceData, smaData] = await Promise.all([
-        axios.get(BASE_URL, {
-          params: { function: 'OVERVIEW', symbol: upperTicker, apikey: ALPHA_VANTAGE_API_KEY },
-          timeout: 10000,
-        }),
-        axios.get<AlphaVantageIncomeResponse>(BASE_URL, {
-          params: { function: 'INCOME_STATEMENT', symbol: upperTicker, apikey: ALPHA_VANTAGE_API_KEY },
-          timeout: 10000,
-        }),
-        axios.get<AlphaVantageBalanceSheetResponse>(BASE_URL, {
-          params: { function: 'BALANCE_SHEET', symbol: upperTicker, apikey: ALPHA_VANTAGE_API_KEY },
-          timeout: 10000,
-        }),
-        this.getStockPriceCAGR(upperTicker).catch(() => ({ cagr: 0, yearsOfData: 0 })),
-        this.getSMAData(upperTicker).catch(() => ({ sma200: 0, priceVsSma: 'below' as const, trajectory: 'stable' as const, currentPrice: 0 })),
-      ]);
+      // Helper to add delay between API calls to stay under 5 requests/second limit
+      const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
+      
+      // Stagger API calls to avoid exceeding Alpha Vantage's 5 requests/second burst limit
+      // We serialize more aggressively: max 2 calls per 500ms window
+      
+      // Call 1: Overview
+      const overviewRes = await axios.get(BASE_URL, {
+        params: { function: 'OVERVIEW', symbol: upperTicker, apikey: ALPHA_VANTAGE_API_KEY },
+        timeout: 10000,
+      });
+      
+      await delay(300);
+      
+      // Call 2: Income Statement
+      const incomeRes = await axios.get<AlphaVantageIncomeResponse>(BASE_URL, {
+        params: { function: 'INCOME_STATEMENT', symbol: upperTicker, apikey: ALPHA_VANTAGE_API_KEY },
+        timeout: 10000,
+      });
+      
+      await delay(300);
+      
+      // Call 3: Balance Sheet
+      const balanceRes = await axios.get<AlphaVantageBalanceSheetResponse>(BASE_URL, {
+        params: { function: 'BALANCE_SHEET', symbol: upperTicker, apikey: ALPHA_VANTAGE_API_KEY },
+        timeout: 10000,
+      });
+      
+      await delay(300);
+      
+      // Call 4: Price CAGR (makes 1 internal call to TIME_SERIES_MONTHLY_ADJUSTED)
+      const priceData = await this.getStockPriceCAGR(upperTicker).catch(() => ({ cagr: 0, yearsOfData: 0 }));
+      
+      await delay(300);
+      
+      // Call 5-6: SMA data (makes 2 internal calls: SMA + GLOBAL_QUOTE, already staggered internally)
+      const smaData = await this.getSMAData(upperTicker).catch(() => ({ sma200: 0, priceVsSma: 'below' as const, trajectory: 'stable' as const, currentPrice: 0 }));
 
       const overview = overviewRes.data as AlphaVantageCompanyOverview;
       const incomeData = incomeRes.data as AlphaVantageIncomeResponseFull;
