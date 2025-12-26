@@ -32,95 +32,95 @@ function generatePriceTag(quadrant: ValuationQuadrantData): TagData {
 
   if (isFarFromHigh && isRising) {
     return {
-      tag: "Discounted & Recovering",
-      explanation: "Price is well below recent highs and starting to climb back — could be a good entry if the business is solid.",
+      tag: "Sunny Discount",
+      explanation: "The price is down and the trend is steady — conditions look favorable.",
       tone: "green",
     };
   }
   
   if (isFarFromHigh && isFlat) {
     return {
-      tag: "On Sale",
-      explanation: "The price has dropped significantly and is holding steady — might be worth a look if you like the story.",
+      tag: "Sunny Discount",
+      explanation: "The price is down and holding steady — conditions look favorable for buyers.",
       tone: "green",
     };
   }
   
   if (isFarFromHigh && isDrifting) {
     return {
-      tag: "Falling Knife",
-      explanation: "Price is down a lot and still dropping — might get cheaper before it gets better.",
+      tag: "Bargain in the Rain",
+      explanation: "The price has dropped, but conditions are still unstable — could get cheaper or bounce back.",
       tone: "yellow",
     };
   }
   
   if (isMidDistance && isRising) {
     return {
-      tag: "Building Momentum",
-      explanation: "The stock is off its highs but trending upward — not a steal, but not overheated either.",
+      tag: "Clearing Skies",
+      explanation: "The stock is recovering from lower levels — not a steal, but conditions are improving.",
       tone: "yellow",
     };
   }
   
   if (isMidDistance && isFlat) {
     return {
-      tag: "Waiting Game",
-      explanation: "Price is in the middle range and holding flat — no urgency to buy or sell.",
+      tag: "Partly Cloudy",
+      explanation: "Price is in the middle range and holding flat — no strong signal either way.",
       tone: "yellow",
     };
   }
   
   if (isMidDistance && isDrifting) {
     return {
-      tag: "Softening",
-      explanation: "Price is drifting lower from a moderate level — patience might get you a better deal.",
+      tag: "Clouds Gathering",
+      explanation: "Price is drifting lower — patience might get you a better deal.",
       tone: "yellow",
     };
   }
   
   if (isNearHigh && isRising) {
     return {
-      tag: "Near the Peak",
-      explanation: "Price is close to recent highs and still climbing — expectations are high, be cautious.",
+      tag: "Stormy Peak",
+      explanation: "Prices are high and the trend is shaky — not the best time to jump in.",
       tone: "red",
     };
   }
   
   if (isNearHigh && isFlat) {
     return {
-      tag: "Fully Priced",
-      explanation: "The stock is trading near its high and holding steady — not much margin for error here.",
+      tag: "Clear but Pricey",
+      explanation: "Conditions are stable, but you're paying full price — no discount here.",
       tone: "red",
     };
   }
   
   if (isNearHigh && isDrifting) {
     return {
-      tag: "Starting to Slip",
-      explanation: "Price is near the top but starting to fade — could be early signs of cooling off.",
+      tag: "Storm Warning",
+      explanation: "Price is near the top but starting to fade — could be early signs of trouble.",
       tone: "yellow",
     };
   }
 
   if (strength === "sensible") {
     return {
-      tag: "Reasonable Entry",
-      explanation: "The price looks fair based on where it's been — not a screaming deal, but not overpriced.",
+      tag: "Fair Weather",
+      explanation: "The price looks fair based on where it's been — conditions are reasonable.",
       tone: "green",
     };
   }
   
   if (strength === "risky") {
     return {
-      tag: "Looks Expensive",
-      explanation: "The stock is priced near recent highs — you'd be buying when everyone else is excited.",
+      tag: "Clear but Pricey",
+      explanation: "The stock is priced near recent highs — you'd be paying full price.",
       tone: "red",
     };
   }
 
   return {
-    tag: "Mixed Signals",
-    explanation: "Price signals are unclear — dig deeper before deciding.",
+    tag: "Partly Cloudy",
+    explanation: "Price signals are mixed — no clear forecast, watch and wait.",
     tone: "yellow",
   };
 }
