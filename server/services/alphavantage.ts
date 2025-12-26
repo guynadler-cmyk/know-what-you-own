@@ -72,10 +72,44 @@ interface AlphaVantageMonthlyPrices {
   };
 }
 
+interface AlphaVantageGlobalQuote {
+  'Global Quote': {
+    '01. symbol': string;
+    '02. open': string;
+    '03. high': string;
+    '04. low': string;
+    '05. price': string;
+    '06. volume': string;
+    '07. latest trading day': string;
+    '08. previous close': string;
+    '09. change': string;
+    '10. change percent': string;
+  };
+}
+
+interface AlphaVantageSMAResponse {
+  'Meta Data': {
+    '1: Symbol': string;
+    '2: Indicator': string;
+    '3: Last Refreshed': string;
+    '4: Interval': string;
+    '5: Time Period': number;
+    '6: Series Type': string;
+    '7: Time Zone': string;
+  };
+  'Technical Analysis: SMA': {
+    [date: string]: {
+      SMA: string;
+    };
+  };
+}
+
 // Simple in-memory cache to avoid hitting rate limits
 const cache = new Map<string, { data: FinancialMetrics; timestamp: number }>();
 const balanceSheetCache = new Map<string, { data: BalanceSheetMetrics; timestamp: number }>();
 const priceCache = new Map<string, { cagr: number; yearsOfData: number; timestamp: number }>();
+const quoteCache = new Map<string, { currentPrice: number; weekHigh52: number; timestamp: number }>();
+const smaCache = new Map<string, { sma200: number; priceVsSma: 'above' | 'below'; trajectory: 'recovering' | 'drifting' | 'stable'; timestamp: number }>();
 const CACHE_TTL = 1000 * 60 * 60; // 1 hour
 
 export class AlphaVantageService {
@@ -499,6 +533,183 @@ export class AlphaVantageService {
     }
   }
 
+  async getCurrentQuote(ticker: string): Promise<{ currentPrice: number; weekHigh52: number }> {
+    const upperTicker = ticker.toUpperCase();
+
+    // Check cache first
+    const cached = quoteCache.get(upperTicker);
+    if (cached && Date.now() - cached.timestamp < CACHE_TTL) {
+      return { currentPrice: cached.currentPrice, weekHigh52: cached.weekHigh52 };
+    }
+
+    if (!ALPHA_VANTAGE_API_KEY) {
+      throw new Error('ALPHA_VANTAGE_API_KEY is not configured');
+    }
+
+    try {
+      const response = await axios.get<AlphaVantageGlobalQuote>(BASE_URL, {
+        params: {
+          function: 'GLOBAL_QUOTE',
+          symbol: upperTicker,
+          apikey: ALPHA_VANTAGE_API_KEY,
+        },
+        timeout: 10000,
+      });
+
+      const data = response.data;
+
+      // Check for rate limiting
+      if ('Note' in data || 'Information' in data) {
+        console.log(`[Quote] ${upperTicker}: Rate limited`);
+        throw new Error('Alpha Vantage API rate limit reached.');
+      }
+
+      if ('Error Message' in data) {
+        throw new Error(`Ticker ${upperTicker} not found`);
+      }
+
+      const quote = data['Global Quote'];
+      if (!quote || !quote['05. price']) {
+        console.log(`[Quote] ${upperTicker}: No quote data available`);
+        return { currentPrice: 0, weekHigh52: 0 };
+      }
+
+      const currentPrice = parseFloat(quote['05. price']);
+      
+      // Get 52-week high from OVERVIEW endpoint (we'll need to fetch it separately or use cached overview)
+      // For now, we'll get it from overview in the parallel fetch
+      console.log(`[Quote] ${upperTicker}: Current price $${currentPrice.toFixed(2)}`);
+
+      // Cache the result (weekHigh52 will be updated from overview)
+      quoteCache.set(upperTicker, { currentPrice, weekHigh52: 0, timestamp: Date.now() });
+
+      return { currentPrice, weekHigh52: 0 };
+    } catch (error: any) {
+      if (error.message?.includes('rate limit')) {
+        throw error;
+      }
+      console.log(`[Quote] ${upperTicker}: Error - ${error.message}`);
+      return { currentPrice: 0, weekHigh52: 0 };
+    }
+  }
+
+  async getSMAData(ticker: string): Promise<{ sma200: number; priceVsSma: 'above' | 'below'; trajectory: 'recovering' | 'drifting' | 'stable'; currentPrice: number }> {
+    const upperTicker = ticker.toUpperCase();
+
+    // Check cache first
+    const cached = smaCache.get(upperTicker);
+    const cachedQuote = quoteCache.get(upperTicker);
+    if (cached && cachedQuote && Date.now() - cached.timestamp < CACHE_TTL) {
+      return { sma200: cached.sma200, priceVsSma: cached.priceVsSma, trajectory: cached.trajectory, currentPrice: cachedQuote.currentPrice };
+    }
+
+    if (!ALPHA_VANTAGE_API_KEY) {
+      throw new Error('ALPHA_VANTAGE_API_KEY is not configured');
+    }
+
+    try {
+      // Fetch SMA and current price in parallel
+      const [smaRes, quoteRes] = await Promise.all([
+        axios.get<AlphaVantageSMAResponse>(BASE_URL, {
+          params: {
+            function: 'SMA',
+            symbol: upperTicker,
+            interval: 'daily',
+            time_period: 200,
+            series_type: 'close',
+            apikey: ALPHA_VANTAGE_API_KEY,
+          },
+          timeout: 15000,
+        }),
+        axios.get<AlphaVantageGlobalQuote>(BASE_URL, {
+          params: {
+            function: 'GLOBAL_QUOTE',
+            symbol: upperTicker,
+            apikey: ALPHA_VANTAGE_API_KEY,
+          },
+          timeout: 10000,
+        }),
+      ]);
+
+      const smaData = smaRes.data;
+      const quoteData = quoteRes.data;
+
+      // Check for rate limiting
+      if ('Note' in smaData || 'Information' in smaData || 'Note' in quoteData || 'Information' in quoteData) {
+        console.log(`[SMA] ${upperTicker}: Rate limited`);
+        throw new Error('Alpha Vantage API rate limit reached.');
+      }
+
+      const technicalData = smaData['Technical Analysis: SMA'];
+      const quote = quoteData['Global Quote'];
+
+      if (!technicalData || Object.keys(technicalData).length === 0 || !quote) {
+        console.log(`[SMA] ${upperTicker}: No SMA or quote data available`);
+        return { sma200: 0, priceVsSma: 'below', trajectory: 'stable', currentPrice: 0 };
+      }
+
+      // Get the most recent SMA values to determine trajectory
+      const smaDates = Object.keys(technicalData).sort((a, b) => new Date(b).getTime() - new Date(a).getTime());
+      const currentSma = parseFloat(technicalData[smaDates[0]].SMA);
+      const previousSma = smaDates.length > 5 ? parseFloat(technicalData[smaDates[5]].SMA) : currentSma; // SMA from ~1 week ago
+      const olderSma = smaDates.length > 20 ? parseFloat(technicalData[smaDates[20]].SMA) : currentSma; // SMA from ~1 month ago
+
+      const currentPrice = parseFloat(quote['05. price']);
+      
+      // Cache the current price in quoteCache so other methods can use it
+      const cachedQuote = quoteCache.get(upperTicker);
+      quoteCache.set(upperTicker, { 
+        currentPrice, 
+        weekHigh52: cachedQuote?.weekHigh52 || 0, 
+        timestamp: Date.now() 
+      });
+      
+      // Determine if price is above or below SMA
+      const priceVsSma: 'above' | 'below' = currentPrice >= currentSma ? 'above' : 'below';
+      
+      // Calculate price distance from SMA as a percentage
+      const distanceFromSma = ((currentPrice - currentSma) / currentSma) * 100;
+      
+      // Determine trajectory: is price moving toward or away from SMA?
+      // We compare recent price-to-SMA ratio vs older price-to-SMA ratio
+      // If we're below SMA and the gap is closing, we're recovering
+      // If we're below SMA and the gap is widening, we're drifting
+      let trajectory: 'recovering' | 'drifting' | 'stable' = 'stable';
+      
+      if (priceVsSma === 'below') {
+        // Compare current distance vs distance from a few days ago
+        // Using SMA trend as proxy: if SMA is falling faster than price, we're recovering
+        const smaChange = ((currentSma - olderSma) / olderSma) * 100;
+        
+        // If distance from SMA is shrinking (getting less negative), we're recovering
+        // We'll use the SMA slope and price momentum as indicators
+        if (distanceFromSma > -5) {
+          trajectory = 'recovering'; // Very close to SMA
+        } else if (smaChange < distanceFromSma) {
+          trajectory = 'recovering'; // Price is catching up to SMA
+        } else {
+          trajectory = 'drifting'; // Price is falling away from SMA
+        }
+      } else {
+        // Above SMA
+        trajectory = 'stable';
+      }
+
+      console.log(`[SMA] ${upperTicker}: Price $${currentPrice.toFixed(2)}, SMA200 $${currentSma.toFixed(2)}, ${priceVsSma} SMA, ${trajectory} (${distanceFromSma.toFixed(1)}%)`);
+
+      // Cache the result
+      smaCache.set(upperTicker, { sma200: currentSma, priceVsSma, trajectory, timestamp: Date.now() });
+
+      return { sma200: currentSma, priceVsSma, trajectory, currentPrice };
+    } catch (error: any) {
+      if (error.message?.includes('rate limit')) {
+        throw error;
+      }
+      console.log(`[SMA] ${upperTicker}: Error - ${error.message}`);
+      return { sma200: 0, priceVsSma: 'below', trajectory: 'stable', currentPrice: 0 };
+    }
+  }
+
   async getValuationMetrics(ticker: string): Promise<ValuationMetrics> {
     const upperTicker = ticker.toUpperCase();
 
@@ -513,8 +724,8 @@ export class AlphaVantageService {
     }
 
     try {
-      // Fetch Company Overview, Income Statement, Balance Sheet, and Historical Prices in parallel
-      const [overviewRes, incomeRes, balanceRes, priceData] = await Promise.all([
+      // Fetch Company Overview, Income Statement, Balance Sheet, Historical Prices, and SMA data in parallel
+      const [overviewRes, incomeRes, balanceRes, priceData, smaData] = await Promise.all([
         axios.get(BASE_URL, {
           params: { function: 'OVERVIEW', symbol: upperTicker, apikey: ALPHA_VANTAGE_API_KEY },
           timeout: 10000,
@@ -528,12 +739,14 @@ export class AlphaVantageService {
           timeout: 10000,
         }),
         this.getStockPriceCAGR(upperTicker).catch(() => ({ cagr: 0, yearsOfData: 0 })),
+        this.getSMAData(upperTicker).catch(() => ({ sma200: 0, priceVsSma: 'below' as const, trajectory: 'stable' as const, currentPrice: 0 })),
       ]);
 
       const overview = overviewRes.data as AlphaVantageCompanyOverview;
       const incomeData = incomeRes.data as AlphaVantageIncomeResponseFull;
       const balanceData = balanceRes.data as AlphaVantageBalanceSheetResponse;
       const { cagr: stockCAGR, yearsOfData: cagrYears } = priceData;
+      const { sma200, priceVsSma, trajectory, currentPrice: smaCurrentPrice } = smaData;
 
       // Helper to check for rate limiting in any response
       const isRateLimited = (data: any): boolean => {
@@ -658,9 +871,17 @@ export class AlphaVantageService {
         shareChange = equityChange > currentEarnings * 1.5 ? 5 : equityChange < 0 ? -3 : 0;
       }
 
-      // Estimate distance from 52-week high (would need current price for accuracy)
-      // This is a placeholder - real implementation would need real-time price
-      const distanceFromHigh = 15; // Placeholder %
+      // Calculate real distance from 52-week high using overview data and current price from SMA data
+      const weekHigh52 = safeParseFloat(overview['52WeekHigh']);
+      const currentPrice = smaCurrentPrice; // Use the current price returned from getSMAData
+      
+      // Calculate distance from 52-week high: ((high - current) / high) * 100
+      // Positive values mean price is below the high (a discount)
+      const distanceFromHigh = (weekHigh52 > 0 && currentPrice > 0) 
+        ? ((weekHigh52 - currentPrice) / weekHigh52) * 100 
+        : 0;
+      
+      console.log(`[Valuation] ${upperTicker}: 52wk high $${weekHigh52.toFixed(2)}, current $${currentPrice.toFixed(2)}, distance ${distanceFromHigh.toFixed(1)}%`);
 
       // Generate quadrant data based on calculations
       const quadrants: ValuationQuadrant[] = this.generateValuationQuadrants({
@@ -673,6 +894,10 @@ export class AlphaVantageService {
         sector,
         stockCAGR,
         cagrYears,
+        sma200,
+        priceVsSma,
+        trajectory,
+        currentPrice,
       });
 
       // Determine overall strength
@@ -738,8 +963,12 @@ export class AlphaVantageService {
     sector: string;
     stockCAGR: number;
     cagrYears: number;
+    sma200: number;
+    priceVsSma: 'above' | 'below';
+    trajectory: 'recovering' | 'drifting' | 'stable';
+    currentPrice: number;
   }): ValuationQuadrant[] {
-    const { earningsYield, returnOnCapital, peRatio, marketCap, shareChange, distanceFromHigh, stockCAGR, cagrYears } = data;
+    const { earningsYield, returnOnCapital, peRatio, marketCap, shareChange, distanceFromHigh, stockCAGR, cagrYears, sma200, priceVsSma, trajectory, currentPrice } = data;
 
     // Determine signal colors based on thresholds
     const eyColor: 'green' | 'red' | 'yellow' = earningsYield > 8 ? 'green' : earningsYield > 5 ? 'yellow' : 'red';
@@ -747,20 +976,90 @@ export class AlphaVantageService {
     const peColor: 'green' | 'red' | 'yellow' = peRatio > 0 && peRatio < 15 ? 'green' : peRatio > 25 ? 'red' : 'yellow';
     const shareColor: 'green' | 'red' | 'neutral' = shareChange < 0 ? 'green' : shareChange > 0 ? 'red' : 'neutral';
 
+    // Distance from high color logic (user requested):
+    // > 25% from high → Green (could be a discount if trend supports)
+    // 10-25% from high → Yellow (neutral zone)
+    // < 10% from high → Red (euphoric entry or strong upward trend — needs conviction)
+    const distanceColor: 'green' | 'red' | 'yellow' = distanceFromHigh > 25 ? 'green' : distanceFromHigh > 10 ? 'yellow' : 'red';
+
+    // SMA trend color logic:
+    // Below SMA + recovering → Green (sensible entry)
+    // Below SMA + drifting → Red (risky, price still falling)
+    // Above SMA → Yellow/neutral (price trending above long-term average)
+    let smaColor: 'green' | 'red' | 'yellow' = 'yellow';
+    let smaLabel = '';
+    let smaValue = '';
+    
+    if (priceVsSma === 'below') {
+      if (trajectory === 'recovering') {
+        smaColor = 'green';
+        smaLabel = 'Trend vs 200-day';
+        smaValue = 'Recovering';
+      } else {
+        smaColor = 'red';
+        smaLabel = 'Trend vs 200-day';
+        smaValue = 'Drifting Lower';
+      }
+    } else {
+      smaColor = 'yellow';
+      smaLabel = 'Trend vs 200-day';
+      smaValue = 'Above Trend';
+    }
+
+    // Determine overall price discipline verdict based on combination of signals
+    let priceDisciplineVerdict = '';
+    let priceDisciplineInsight = '';
+    let priceDisciplineHighlight = '';
+    let priceDisciplineStrength: 'sensible' | 'caution' | 'risky' = 'caution';
+
+    if (priceVsSma === 'below' && trajectory === 'recovering') {
+      // Best case: below SMA and recovering
+      priceDisciplineVerdict = 'Sensible Entry';
+      priceDisciplineInsight = 'The stock is trading below recent highs and showing signs of stabilizing. If the fundamentals hold, this could be a reasonable entry point.';
+      priceDisciplineHighlight = 'reasonable entry point';
+      priceDisciplineStrength = 'sensible';
+    } else if (priceVsSma === 'below' && trajectory === 'drifting') {
+      // Below SMA but still falling
+      priceDisciplineVerdict = 'Risky Entry';
+      priceDisciplineInsight = 'The stock is well below its highs, but the price trend is still drifting lower. This could signal ongoing weakness — check the story before buying the dip.';
+      priceDisciplineHighlight = 'ongoing weakness';
+      priceDisciplineStrength = 'risky';
+    } else if (distanceFromHigh < 10) {
+      // Near highs
+      priceDisciplineVerdict = 'Euphoric Entry';
+      priceDisciplineInsight = 'The stock is trading near recent highs. Consider waiting for a pullback unless conviction is high.';
+      priceDisciplineHighlight = 'waiting for a pullback';
+      priceDisciplineStrength = 'risky';
+    } else {
+      // Moderate case
+      priceDisciplineVerdict = 'Neutral Entry';
+      priceDisciplineInsight = 'The stock is at a moderate distance from its highs and trending above its long-term average. Entry timing is neither ideal nor risky.';
+      priceDisciplineHighlight = 'moderate distance';
+      priceDisciplineStrength = 'caution';
+    }
+
     return [
       {
         id: 'price-discipline',
         title: 'Price Discipline',
-        verdict: distanceFromHigh > 20 ? 'Discounted' : distanceFromHigh > 10 ? 'Reasonable Entry' : 'Near Highs',
+        verdict: priceDisciplineVerdict,
         signals: [
-          { label: 'Distance from Recent High', value: `${distanceFromHigh.toFixed(0)}%`, color: 'neutral', tooltip: 'How far the current price is from the stock\'s recent peak.' },
-          { label: 'Company Size', value: marketCap > 10_000_000_000 ? 'Large Cap' : marketCap > 2_000_000_000 ? 'Mid Cap' : 'Small Cap', color: 'neutral', tooltip: 'The total value of the company in the stock market.' },
+          { 
+            label: 'Distance from 52-Week High', 
+            value: distanceFromHigh > 0 ? `${distanceFromHigh.toFixed(0)}% below` : 'At High', 
+            color: distanceColor, 
+            tooltip: 'How far the current price is from the stock\'s 52-week peak. Larger discounts may offer better entry points.' 
+          },
+          { 
+            label: smaLabel, 
+            value: smaValue, 
+            color: smaColor, 
+            tooltip: 'The 200-day moving average helps track long-term trends. Buying below this line can offer value — but only if price is recovering, not falling away.' 
+          },
         ],
-        insight: distanceFromHigh > 20 
-          ? 'The stock is trading well below its recent highs. This could be a reasonable entry point — but make sure the fundamentals still support the story.'
-          : 'The stock is trading close to its recent highs. Entry risk is elevated unless you have strong conviction.',
-        insightHighlight: distanceFromHigh > 20 ? 'reasonable entry point' : 'Entry risk is elevated',
-        strength: distanceFromHigh > 20 ? 'sensible' : distanceFromHigh > 10 ? 'caution' : 'risky',
+        insight: priceDisciplineInsight,
+        insightHighlight: priceDisciplineHighlight,
+        strength: priceDisciplineStrength,
       },
       {
         id: 'valuation-check',
