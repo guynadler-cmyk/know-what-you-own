@@ -7,6 +7,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { TrendingUp, TrendingDown, HelpCircle, CheckCircle, AlertTriangle, XCircle, Minus, AlertOctagon, RefreshCw } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { ValuationMetrics, ValuationQuadrant as APIValuationQuadrant } from "@shared/schema";
+import { CoachingSummary } from "./CoachingSummary";
 
 export type ValuationSignalStrength = "sensible" | "caution" | "risky";
 export type SignalColor = "green" | "red" | "yellow" | "neutral";
@@ -606,10 +607,11 @@ function convertAPIQuadrantToLocal(apiQuadrant: APIValuationQuadrant): Valuation
 
 interface ValuationExplorerProps {
   ticker?: string;
+  companyName?: string;
   onQuadrantDataChange?: (data: ValuationQuadrantData[]) => void;
 }
 
-export function ValuationExplorer({ ticker, onQuadrantDataChange }: ValuationExplorerProps) {
+export function ValuationExplorer({ ticker, companyName, onQuadrantDataChange }: ValuationExplorerProps) {
   const { data: valuationData, isLoading, isError, error, refetch, isFetching } = useQuery<ValuationMetrics>({
     queryKey: ['/api/valuation', ticker],
     enabled: !!ticker,
@@ -679,6 +681,14 @@ export function ValuationExplorer({ ticker, onQuadrantDataChange }: ValuationExp
 
   return (
     <div className="space-y-6" data-testid="valuation-explorer">
+      {ticker && (
+        <CoachingSummary 
+          quadrantData={quadrantData}
+          ticker={ticker}
+          companyName={companyName}
+        />
+      )}
+      
       <ValuationSummaryCardRow 
         selectedId={selectedId} 
         onSelect={setSelectedId}

@@ -218,7 +218,7 @@ export function StageContent({ stage, summaryData, financialMetrics, balanceShee
         <CardContent className="pb-12">
           <ValuationIntroBlock />
           
-          <ValuationExplorer ticker={ticker} onQuadrantDataChange={setValuationQuadrantData} />
+          <ValuationExplorer ticker={ticker} companyName={summaryData?.companyName} onQuadrantDataChange={setValuationQuadrantData} />
           
           <ValuationScorecard quadrantData={valuationQuadrantData} />
         </CardContent>
