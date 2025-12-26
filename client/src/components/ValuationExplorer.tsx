@@ -7,7 +7,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { TrendingUp, TrendingDown, HelpCircle, CheckCircle, AlertTriangle, XCircle, Minus, AlertOctagon, RefreshCw } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { ValuationMetrics, ValuationQuadrant as APIValuationQuadrant } from "@shared/schema";
-import { CoachingSummary } from "./CoachingSummary";
+import { PriceDisciplineTag } from "./PriceDisciplineTag";
 
 export type ValuationSignalStrength = "sensible" | "caution" | "risky";
 export type SignalColor = "green" | "red" | "yellow" | "neutral";
@@ -607,11 +607,10 @@ function convertAPIQuadrantToLocal(apiQuadrant: APIValuationQuadrant): Valuation
 
 interface ValuationExplorerProps {
   ticker?: string;
-  companyName?: string;
   onQuadrantDataChange?: (data: ValuationQuadrantData[]) => void;
 }
 
-export function ValuationExplorer({ ticker, companyName, onQuadrantDataChange }: ValuationExplorerProps) {
+export function ValuationExplorer({ ticker, onQuadrantDataChange }: ValuationExplorerProps) {
   const { data: valuationData, isLoading, isError, error, refetch, isFetching } = useQuery<ValuationMetrics>({
     queryKey: ['/api/valuation', ticker],
     enabled: !!ticker,
@@ -679,16 +678,10 @@ export function ValuationExplorer({ ticker, companyName, onQuadrantDataChange }:
     );
   }
 
+  const priceDisciplineQuadrant = quadrantData.find(q => q.id === "price-discipline");
+
   return (
     <div className="space-y-6" data-testid="valuation-explorer">
-      {ticker && (
-        <CoachingSummary 
-          quadrantData={quadrantData}
-          ticker={ticker}
-          companyName={companyName}
-        />
-      )}
-      
       <ValuationSummaryCardRow 
         selectedId={selectedId} 
         onSelect={setSelectedId}
@@ -731,24 +724,28 @@ export function ValuationExplorer({ ticker, companyName, onQuadrantDataChange }:
               ))}
             </div>
             
-            <div 
-              className="bg-primary/5 rounded-lg p-4 border border-primary/10"
-              data-testid="valuation-quadrant-insight"
-            >
-              <p className="text-foreground leading-relaxed text-base">
-                {selectedQuadrant.insightHighlight && selectedQuadrant.insight.includes(selectedQuadrant.insightHighlight) ? (
-                  <>
-                    {selectedQuadrant.insight.split(selectedQuadrant.insightHighlight)[0]}
-                    <span className="font-semibold text-primary">
-                      {selectedQuadrant.insightHighlight}
-                    </span>
-                    {selectedQuadrant.insight.split(selectedQuadrant.insightHighlight)[1] || ''}
-                  </>
-                ) : (
-                  selectedQuadrant.insight
-                )}
-              </p>
-            </div>
+            {selectedQuadrant.id === "price-discipline" && priceDisciplineQuadrant ? (
+              <PriceDisciplineTag quadrant={priceDisciplineQuadrant} />
+            ) : (
+              <div 
+                className="bg-primary/5 rounded-lg p-4 border border-primary/10"
+                data-testid="valuation-quadrant-insight"
+              >
+                <p className="text-foreground leading-relaxed text-base">
+                  {selectedQuadrant.insightHighlight && selectedQuadrant.insight.includes(selectedQuadrant.insightHighlight) ? (
+                    <>
+                      {selectedQuadrant.insight.split(selectedQuadrant.insightHighlight)[0]}
+                      <span className="font-semibold text-primary">
+                        {selectedQuadrant.insightHighlight}
+                      </span>
+                      {selectedQuadrant.insight.split(selectedQuadrant.insightHighlight)[1] || ''}
+                    </>
+                  ) : (
+                    selectedQuadrant.insight
+                  )}
+                </p>
+              </div>
+            )}
           </div>
         </div>
       </Card>
