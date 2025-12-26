@@ -97,10 +97,10 @@ export interface ValuationQuadrantData {
   xLabel: string;
   yLabel: string;
   zones: {
-    topRight: { label: string; color: string };
-    topLeft: { label: string; color: string };
-    bottomRight: { label: string; color: string };
-    bottomLeft: { label: string; color: string };
+    topRight: { label: string; color: string; tooltip?: string };
+    topLeft: { label: string; color: string; tooltip?: string };
+    bottomRight: { label: string; color: string; tooltip?: string };
+    bottomLeft: { label: string; color: string; tooltip?: string };
   };
   position: { x: number; y: number };
   insight: string;
@@ -120,10 +120,10 @@ const VALUATION_QUADRANT_DATA: ValuationQuadrantData[] = [
     xLabel: "Distance from Highs",
     yLabel: "Entry Risk",
     zones: {
-      topRight: { label: "Euphoric High", color: "red" },
-      topLeft: { label: "Conviction Buy", color: "yellow" },
-      bottomRight: { label: "Discounted Entry", color: "green" },
-      bottomLeft: { label: "Falling Knife", color: "orange" },
+      topLeft: { label: "Stormy Peak", color: "red", tooltip: "Prices are high and the trend is shaky — not the best time to jump in." },
+      topRight: { label: "Bargain in the Rain", color: "yellow", tooltip: "The price has dropped, but conditions are still unstable — could get cheaper or bounce back." },
+      bottomLeft: { label: "Clear but Pricey", color: "orange", tooltip: "Conditions are stable, but you're paying full price — no discount here." },
+      bottomRight: { label: "Sunny Discount", color: "green", tooltip: "The price is down and the trend is steady — conditions look favorable." },
     },
     position: { x: 35, y: 65 },
     insight: "The stock is trading below its recent highs. This could be a reasonable entry point — but make sure the fundamentals still support the story.",
@@ -341,39 +341,7 @@ function ValuationQuadrantChart({ quadrant }: { quadrant: ValuationQuadrantData 
           strokeWidth="1"
         />
 
-        {/* Quadrant labels */}
-        <text 
-          x={padding + innerSize * 0.25} 
-          y={padding + innerSize * 0.15} 
-          textAnchor="middle" 
-          className={cn("text-xs font-medium fill-current", topLeftColors.label)}
-        >
-          {quadrant.zones.topLeft.label}
-        </text>
-        <text 
-          x={padding + innerSize * 0.75} 
-          y={padding + innerSize * 0.15} 
-          textAnchor="middle" 
-          className={cn("text-xs font-medium fill-current", topRightColors.label)}
-        >
-          {quadrant.zones.topRight.label}
-        </text>
-        <text 
-          x={padding + innerSize * 0.25} 
-          y={padding + innerSize * 0.88} 
-          textAnchor="middle" 
-          className={cn("text-xs font-medium fill-current", bottomLeftColors.label)}
-        >
-          {quadrant.zones.bottomLeft.label}
-        </text>
-        <text 
-          x={padding + innerSize * 0.75} 
-          y={padding + innerSize * 0.88} 
-          textAnchor="middle" 
-          className={cn("text-xs font-medium fill-current", bottomRightColors.label)}
-        >
-          {quadrant.zones.bottomRight.label}
-        </text>
+        {/* Quadrant labels are rendered as HTML overlays for tooltip support */}
 
         {/* Axis labels */}
         <text 
@@ -410,6 +378,95 @@ function ValuationQuadrantChart({ quadrant }: { quadrant: ValuationQuadrantData 
           />
         </g>
       </svg>
+      
+      {/* Zone labels with tooltips - positioned as HTML overlays */}
+      <div className="absolute inset-0 pointer-events-none" style={{ padding: '14%' }}>
+        <div className="relative w-full h-full">
+          {/* Top Left zone label */}
+          <div className="absolute pointer-events-auto" style={{ left: '25%', top: '10%', transform: 'translateX(-50%)' }}>
+            {quadrant.zones.topLeft.tooltip ? (
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <span className={cn("text-xs font-medium cursor-help flex items-center gap-1", topLeftColors.label)}>
+                    {quadrant.zones.topLeft.label}
+                    <HelpCircle className="w-3 h-3 opacity-60" />
+                  </span>
+                </TooltipTrigger>
+                <TooltipContent side="top" className="max-w-[200px] text-center">
+                  <p className="text-xs">{quadrant.zones.topLeft.tooltip}</p>
+                </TooltipContent>
+              </Tooltip>
+            ) : (
+              <span className={cn("text-xs font-medium", topLeftColors.label)}>
+                {quadrant.zones.topLeft.label}
+              </span>
+            )}
+          </div>
+          
+          {/* Top Right zone label */}
+          <div className="absolute pointer-events-auto" style={{ left: '75%', top: '10%', transform: 'translateX(-50%)' }}>
+            {quadrant.zones.topRight.tooltip ? (
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <span className={cn("text-xs font-medium cursor-help flex items-center gap-1", topRightColors.label)}>
+                    {quadrant.zones.topRight.label}
+                    <HelpCircle className="w-3 h-3 opacity-60" />
+                  </span>
+                </TooltipTrigger>
+                <TooltipContent side="top" className="max-w-[200px] text-center">
+                  <p className="text-xs">{quadrant.zones.topRight.tooltip}</p>
+                </TooltipContent>
+              </Tooltip>
+            ) : (
+              <span className={cn("text-xs font-medium", topRightColors.label)}>
+                {quadrant.zones.topRight.label}
+              </span>
+            )}
+          </div>
+          
+          {/* Bottom Left zone label */}
+          <div className="absolute pointer-events-auto" style={{ left: '25%', bottom: '8%', transform: 'translateX(-50%)' }}>
+            {quadrant.zones.bottomLeft.tooltip ? (
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <span className={cn("text-xs font-medium cursor-help flex items-center gap-1", bottomLeftColors.label)}>
+                    {quadrant.zones.bottomLeft.label}
+                    <HelpCircle className="w-3 h-3 opacity-60" />
+                  </span>
+                </TooltipTrigger>
+                <TooltipContent side="bottom" className="max-w-[200px] text-center">
+                  <p className="text-xs">{quadrant.zones.bottomLeft.tooltip}</p>
+                </TooltipContent>
+              </Tooltip>
+            ) : (
+              <span className={cn("text-xs font-medium", bottomLeftColors.label)}>
+                {quadrant.zones.bottomLeft.label}
+              </span>
+            )}
+          </div>
+          
+          {/* Bottom Right zone label */}
+          <div className="absolute pointer-events-auto" style={{ left: '75%', bottom: '8%', transform: 'translateX(-50%)' }}>
+            {quadrant.zones.bottomRight.tooltip ? (
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <span className={cn("text-xs font-medium cursor-help flex items-center gap-1", bottomRightColors.label)}>
+                    {quadrant.zones.bottomRight.label}
+                    <HelpCircle className="w-3 h-3 opacity-60" />
+                  </span>
+                </TooltipTrigger>
+                <TooltipContent side="bottom" className="max-w-[200px] text-center">
+                  <p className="text-xs">{quadrant.zones.bottomRight.tooltip}</p>
+                </TooltipContent>
+              </Tooltip>
+            ) : (
+              <span className={cn("text-xs font-medium", bottomRightColors.label)}>
+                {quadrant.zones.bottomRight.label}
+              </span>
+            )}
+          </div>
+        </div>
+      </div>
     </div>
   );
 }
@@ -529,10 +586,10 @@ function convertAPIQuadrantToLocal(apiQuadrant: APIValuationQuadrant): Valuation
   const getDefaultZones = (id: string) => {
     const zoneMap: Record<string, ValuationQuadrantData['zones']> = {
       'price-discipline': {
-        topRight: { label: "Euphoric High", color: "red" },
-        topLeft: { label: "Conviction Buy", color: "yellow" },
-        bottomRight: { label: "Discounted Entry", color: "green" },
-        bottomLeft: { label: "Falling Knife", color: "orange" },
+        topLeft: { label: "Stormy Peak", color: "red", tooltip: "Prices are high and the trend is shaky — not the best time to jump in." },
+        topRight: { label: "Bargain in the Rain", color: "yellow", tooltip: "The price has dropped, but conditions are still unstable — could get cheaper or bounce back." },
+        bottomLeft: { label: "Clear but Pricey", color: "orange", tooltip: "Conditions are stable, but you're paying full price — no discount here." },
+        bottomRight: { label: "Sunny Discount", color: "green", tooltip: "The price is down and the trend is steady — conditions look favorable." },
       },
       'valuation-check': {
         topRight: { label: "Priced for Perfection", color: "red" },
