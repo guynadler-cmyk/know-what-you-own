@@ -90,7 +90,7 @@ function generatePriceTag(quadrant: ValuationQuadrantData): TagData {
     return {
       tag: "Clear but Pricey",
       explanation: "Conditions are stable, but you're paying full price — no discount here.",
-      tone: "red",
+      tone: "yellow",
     };
   }
   
@@ -112,8 +112,8 @@ function generatePriceTag(quadrant: ValuationQuadrantData): TagData {
   
   if (strength === "risky") {
     return {
-      tag: "Clear but Pricey",
-      explanation: "The stock is priced near recent highs — you'd be paying full price.",
+      tag: "Stormy Peak",
+      explanation: "The stock is priced near recent highs with shaky conditions — proceed with caution.",
       tone: "red",
     };
   }
