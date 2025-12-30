@@ -131,25 +131,25 @@ const VALUATION_QUADRANT_DATA: ValuationQuadrantData[] = [
     strength: "sensible",
   },
   {
-    id: "valuation-check",
-    title: "Valuation Check",
-    verdict: "Fairly Valued",
+    id: "price-tag",
+    title: "Price Tag",
+    verdict: "Fairly Priced",
     signals: [
-      { label: "Valuation Rising", color: "red", direction: "up" },
-      { label: "Cheaper vs History", color: "green", direction: "down" }
+      { label: "P/E Ratio", color: "neutral", direction: "neutral" },
+      { label: "Earnings Growth", color: "neutral", direction: "neutral" }
     ],
-    xLabel: "Current Valuation",
-    yLabel: "Historical Percentile",
+    xLabel: "P/E Ratio",
+    yLabel: "Earnings Growth",
     zones: {
-      topRight: { label: "Priced for Perfection", color: "red" },
-      topLeft: { label: "Cheap for a Reason", color: "orange" },
-      bottomRight: { label: "Fair Value", color: "green" },
-      bottomLeft: { label: "Undervalued Opportunity", color: "blue" },
+      topLeft: { label: "Priced for Perfection", color: "red", tooltip: "Expensive stock with slow earnings growth — expectations may not be met." },
+      topRight: { label: "Growth Premium", color: "yellow", tooltip: "High price, but fast-growing earnings — the growth may justify the cost." },
+      bottomLeft: { label: "Cheap for a Reason", color: "orange", tooltip: "Low price, but earnings aren't growing — there may be a reason it's cheap." },
+      bottomRight: { label: "Undervalued Opportunity", color: "green", tooltip: "Low price with strong earnings growth — could be a hidden gem worth exploring." },
     },
     position: { x: 55, y: 45 },
-    insight: "The stock is trading at reasonable multiples compared to its own history. Future growth needs to justify today's price, but expectations aren't stretched.",
-    insightHighlight: "Expectations aren't stretched.",
-    strength: "sensible",
+    insight: "The price seems reasonable relative to earnings growth. Not a screaming deal, but not overpriced either.",
+    insightHighlight: "reasonable",
+    strength: "caution",
   },
   {
     id: "capital-discipline",
@@ -591,11 +591,11 @@ function convertAPIQuadrantToLocal(apiQuadrant: APIValuationQuadrant): Valuation
         bottomLeft: { label: "Clear but Pricey", color: "orange", tooltip: "Conditions are stable, but you're paying full price — no discount here." },
         bottomRight: { label: "Sunny Discount", color: "green", tooltip: "The price is down and the trend is steady — conditions look favorable." },
       },
-      'valuation-check': {
-        topRight: { label: "Priced for Perfection", color: "red" },
-        topLeft: { label: "Cheap for a Reason", color: "orange" },
-        bottomRight: { label: "Fair Value", color: "green" },
-        bottomLeft: { label: "Undervalued Opportunity", color: "blue" },
+      'price-tag': {
+        topLeft: { label: "Priced for Perfection", color: "red", tooltip: "Expensive stock with slow earnings growth — expectations may not be met." },
+        topRight: { label: "Growth Premium", color: "yellow", tooltip: "High price, but fast-growing earnings — the growth may justify the cost." },
+        bottomLeft: { label: "Cheap for a Reason", color: "orange", tooltip: "Low price, but earnings aren't growing — there may be a reason it's cheap." },
+        bottomRight: { label: "Undervalued Opportunity", color: "green", tooltip: "Low price with strong earnings growth — could be a hidden gem worth exploring." },
       },
       'capital-discipline': {
         topRight: { label: "Value Creator", color: "green" },
@@ -616,7 +616,7 @@ function convertAPIQuadrantToLocal(apiQuadrant: APIValuationQuadrant): Valuation
   const getAxisLabels = (id: string) => {
     const labelMap: Record<string, { xLabel: string; yLabel: string }> = {
       'price-discipline': { xLabel: "Distance from Highs", yLabel: "Entry Risk" },
-      'valuation-check': { xLabel: "Current Valuation", yLabel: "Historical Percentile" },
+      'price-tag': { xLabel: "P/E Ratio", yLabel: "Earnings Growth" },
       'capital-discipline': { xLabel: "Share Count Trend", yLabel: "Return on Capital" },
       'doubling-potential': { xLabel: "Growth Rate", yLabel: "Time to Double" },
     };
