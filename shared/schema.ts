@@ -376,6 +376,8 @@ export const valuationQuadrantSchema = z.object({
   insight: z.string(),
   insightHighlight: z.string(),
   strength: z.enum(["sensible", "caution", "risky"]),
+  tier1Summary: z.string().optional(),
+  tier2Explanation: z.string().optional(),
 });
 
 export const valuationMetricsSchema = z.object({

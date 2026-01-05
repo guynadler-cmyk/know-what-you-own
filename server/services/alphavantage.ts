@@ -1064,35 +1064,66 @@ export class AlphaVantageService {
       smaValue = 'Above Trend';
     }
 
-    // Determine overall price discipline verdict based on combination of signals
+    // Determine overall price discipline verdict based on 5 distinct cases
     let priceDisciplineVerdict = '';
     let priceDisciplineInsight = '';
     let priceDisciplineHighlight = '';
     let priceDisciplineStrength: 'sensible' | 'caution' | 'risky' = 'caution';
+    let priceDisciplineTier1 = '';
+    let priceDisciplineTier2 = '';
 
-    if (priceVsSma === 'below' && trajectory === 'recovering') {
-      // Best case: below SMA and recovering
-      priceDisciplineVerdict = 'Sensible Entry';
-      priceDisciplineInsight = 'The stock is trading below recent highs and showing signs of stabilizing. If the fundamentals hold, this could be a reasonable entry point.';
-      priceDisciplineHighlight = 'reasonable entry point';
-      priceDisciplineStrength = 'sensible';
-    } else if (priceVsSma === 'below' && trajectory === 'drifting') {
-      // Below SMA but still falling
-      priceDisciplineVerdict = 'Risky Entry';
-      priceDisciplineInsight = 'The stock is well below its highs, but the price trend is still drifting lower. This could signal ongoing weakness — check the story before buying the dip.';
-      priceDisciplineHighlight = 'ongoing weakness';
-      priceDisciplineStrength = 'risky';
-    } else if (distanceFromHigh < 10) {
-      // Near highs
+    // Case 5: Near or above highs (< 10% from 52-week high) — check first as it overrides other conditions
+    if (distanceFromHigh < 10) {
       priceDisciplineVerdict = 'Euphoric Entry';
-      priceDisciplineInsight = 'The stock is trading near recent highs. Consider waiting for a pullback unless conviction is high.';
-      priceDisciplineHighlight = 'waiting for a pullback';
+      priceDisciplineTier1 = 'Caution: Price is at or near recent highs. Buy only with strong conviction.';
+      priceDisciplineTier2 = 'The stock is trading very close to its 52-week high. While this could indicate strong momentum, it also means you\'re paying full price with little margin of safety. Unless you have high conviction in the business story and future growth, consider waiting for a pullback before buying.';
+      priceDisciplineInsight = priceDisciplineTier2;
+      priceDisciplineHighlight = 'strong conviction';
       priceDisciplineStrength = 'risky';
-    } else {
-      // Moderate case
+    }
+    // Case 1: Above SMA + Recovering
+    else if (priceVsSma === 'above' && trajectory === 'recovering') {
+      priceDisciplineVerdict = 'Sensible Entry';
+      priceDisciplineTier1 = 'Sensible: Price is off highs and trending up.';
+      priceDisciplineTier2 = 'The stock has pulled back from its highs but is now showing upward momentum. This combination of a reasonable price and positive trend direction suggests a sensible entry point — the market is confirming renewed interest.';
+      priceDisciplineInsight = priceDisciplineTier2;
+      priceDisciplineHighlight = 'sensible entry point';
+      priceDisciplineStrength = 'sensible';
+    }
+    // Case 2: Above SMA + Drifting
+    else if (priceVsSma === 'above' && trajectory === 'drifting') {
+      priceDisciplineVerdict = 'Watchlist Entry';
+      priceDisciplineTier1 = 'Watch: Price is weakening. Better opportunities may emerge.';
+      priceDisciplineTier2 = 'The stock is still trading above its long-term trend, but momentum is fading. This could be an early warning sign of a larger pullback. Consider adding to your watchlist and waiting for either a clearer recovery signal or a better entry price.';
+      priceDisciplineInsight = priceDisciplineTier2;
+      priceDisciplineHighlight = 'adding to your watchlist';
+      priceDisciplineStrength = 'caution';
+    }
+    // Case 3: Below SMA + Recovering
+    else if (priceVsSma === 'below' && trajectory === 'recovering') {
+      priceDisciplineVerdict = 'Recovery Entry';
+      priceDisciplineTier1 = 'Sensible: Trending up from a weak zone.';
+      priceDisciplineTier2 = 'The stock is trading below its long-term average but showing signs of recovery. This is often where value emerges — the price is discounted while the trend is turning positive. If the fundamentals support the story, this could be an attractive entry.';
+      priceDisciplineInsight = priceDisciplineTier2;
+      priceDisciplineHighlight = 'value emerges';
+      priceDisciplineStrength = 'sensible';
+    }
+    // Case 4: Below SMA + Drifting
+    else if (priceVsSma === 'below' && trajectory === 'drifting') {
+      priceDisciplineVerdict = 'Risky Entry';
+      priceDisciplineTier1 = 'Risky: Price is falling with no recovery yet.';
+      priceDisciplineTier2 = 'The stock is trading below its long-term average and continues to drift lower. While the price may look cheap, a falling knife can keep falling. Wait for signs of stabilization before committing capital — catching a bottom is harder than it looks.';
+      priceDisciplineInsight = priceDisciplineTier2;
+      priceDisciplineHighlight = 'signs of stabilization';
+      priceDisciplineStrength = 'risky';
+    }
+    // Fallback (should rarely hit — covers edge cases like stable trajectory)
+    else {
       priceDisciplineVerdict = 'Neutral Entry';
-      priceDisciplineInsight = 'The stock is at a moderate distance from its highs and trending above its long-term average. Entry timing is neither ideal nor risky.';
-      priceDisciplineHighlight = 'moderate distance';
+      priceDisciplineTier1 = 'Neutral: Price signals are mixed — no clear advantage.';
+      priceDisciplineTier2 = 'The price is at a moderate distance from its highs with no strong directional signal. Entry timing is neither ideal nor risky. Focus on the fundamentals and business story rather than price timing.';
+      priceDisciplineInsight = priceDisciplineTier2;
+      priceDisciplineHighlight = 'fundamentals and business story';
       priceDisciplineStrength = 'caution';
     }
 
@@ -1118,6 +1149,8 @@ export class AlphaVantageService {
         insight: priceDisciplineInsight,
         insightHighlight: priceDisciplineHighlight,
         strength: priceDisciplineStrength,
+        tier1Summary: priceDisciplineTier1,
+        tier2Explanation: priceDisciplineTier2,
       },
       {
         id: 'price-tag',

@@ -1,128 +1,21 @@
+import { useState } from "react";
 import { cn } from "@/lib/utils";
-import { Compass } from "lucide-react";
-import type { ValuationQuadrantData, ValuationSignalStrength } from "./ValuationExplorer";
+import { Compass, ChevronDown, ChevronUp } from "lucide-react";
+import type { ValuationQuadrantData } from "./ValuationExplorer";
 
 interface PriceDisciplineTagProps {
   quadrant: ValuationQuadrantData;
 }
 
-interface TagData {
-  tag: string;
-  explanation: string;
-  tone: "green" | "yellow" | "red";
-}
-
-function generatePriceTag(quadrant: ValuationQuadrantData): TagData {
-  const distanceSignal = quadrant.signals[0];
-  const trendSignal = quadrant.signals[1];
-  
-  const distanceValue = distanceSignal?.value?.toLowerCase() || "";
-  const trendValue = trendSignal?.value?.toLowerCase() || "";
-  const strength = quadrant.strength;
-  
-  const distanceNum = parseFloat(distanceValue.replace(/[^0-9.]/g, '')) || 0;
-  
-  const isFarFromHigh = distanceNum >= 25;
-  const isMidDistance = distanceNum >= 10 && distanceNum < 25;
-  const isNearHigh = distanceNum < 10;
-  
-  const isRising = trendValue.includes("rising") || trendValue.includes("recovering");
-  const isDrifting = trendValue.includes("drifting") || trendValue.includes("falling");
-  const isFlat = trendValue.includes("flat") || trendValue.includes("stable");
-
-  if (isFarFromHigh && isRising) {
-    return {
-      tag: "Sunny Discount",
-      explanation: "The price is down and the trend is steady — conditions look favorable.",
-      tone: "green",
-    };
+function getStrengthTone(strength: string): "green" | "yellow" | "red" {
+  switch (strength) {
+    case "sensible":
+      return "green";
+    case "risky":
+      return "red";
+    default:
+      return "yellow";
   }
-  
-  if (isFarFromHigh && isFlat) {
-    return {
-      tag: "Sunny Discount",
-      explanation: "The price is down and holding steady — conditions look favorable for buyers.",
-      tone: "green",
-    };
-  }
-  
-  if (isFarFromHigh && isDrifting) {
-    return {
-      tag: "Bargain in the Rain",
-      explanation: "The price has dropped, but conditions are still unstable — could get cheaper or bounce back.",
-      tone: "yellow",
-    };
-  }
-  
-  if (isMidDistance && isRising) {
-    return {
-      tag: "Clearing Skies",
-      explanation: "The stock is recovering from lower levels — not a steal, but conditions are improving.",
-      tone: "yellow",
-    };
-  }
-  
-  if (isMidDistance && isFlat) {
-    return {
-      tag: "Partly Cloudy",
-      explanation: "Price is in the middle range and holding flat — no strong signal either way.",
-      tone: "yellow",
-    };
-  }
-  
-  if (isMidDistance && isDrifting) {
-    return {
-      tag: "Clouds Gathering",
-      explanation: "Price is drifting lower — patience might get you a better deal.",
-      tone: "yellow",
-    };
-  }
-  
-  if (isNearHigh && isRising) {
-    return {
-      tag: "Stormy Peak",
-      explanation: "Prices are high and the trend is shaky — not the best time to jump in.",
-      tone: "red",
-    };
-  }
-  
-  if (isNearHigh && isFlat) {
-    return {
-      tag: "Clear but Pricey",
-      explanation: "Conditions are stable, but you're paying full price — no discount here.",
-      tone: "yellow",
-    };
-  }
-  
-  if (isNearHigh && isDrifting) {
-    return {
-      tag: "Storm Warning",
-      explanation: "Price is near the top but starting to fade — could be early signs of trouble.",
-      tone: "yellow",
-    };
-  }
-
-  if (strength === "sensible") {
-    return {
-      tag: "Fair Weather",
-      explanation: "The price looks fair based on where it's been — conditions are reasonable.",
-      tone: "green",
-    };
-  }
-  
-  if (strength === "risky") {
-    return {
-      tag: "Stormy Peak",
-      explanation: "The stock is priced near recent highs with shaky conditions — proceed with caution.",
-      tone: "red",
-    };
-  }
-
-  return {
-    tag: "Partly Cloudy",
-    explanation: "Price signals are mixed — no clear forecast, watch and wait.",
-    tone: "yellow",
-  };
 }
 
 function getToneStyles(tone: "green" | "yellow" | "red") {
@@ -152,8 +45,12 @@ function getToneStyles(tone: "green" | "yellow" | "red") {
 }
 
 export function PriceDisciplineTag({ quadrant }: PriceDisciplineTagProps) {
-  const tagData = generatePriceTag(quadrant);
-  const styles = getToneStyles(tagData.tone);
+  const [isExpanded, setIsExpanded] = useState(false);
+  
+  const tier1 = quadrant.tier1Summary || quadrant.verdict;
+  const tier2 = quadrant.tier2Explanation || quadrant.insight;
+  const tone = getStrengthTone(quadrant.strength);
+  const styles = getToneStyles(tone);
 
   return (
     <div 
@@ -166,16 +63,47 @@ export function PriceDisciplineTag({ quadrant }: PriceDisciplineTagProps) {
     >
       <div className="flex items-start gap-3">
         <Compass className={cn("w-5 h-5 mt-0.5 shrink-0", styles.tagColor)} />
-        <div className="space-y-1">
+        <div className="flex-1 space-y-2">
           <div className="flex items-center gap-2">
             <span className={cn("w-2 h-2 rounded-full", styles.dotColor)} />
             <span className={cn("font-semibold text-sm", styles.tagColor)} data-testid="price-tag-label">
-              {tagData.tag}
+              {quadrant.verdict}
             </span>
           </div>
-          <p className="text-sm text-muted-foreground leading-snug" data-testid="price-tag-explanation">
-            {tagData.explanation}
+          <p className="text-sm text-foreground leading-snug" data-testid="price-tag-tier1">
+            {tier1}
           </p>
+          
+          {tier2 && tier2 !== tier1 && (
+            <>
+              <button
+                onClick={() => setIsExpanded(!isExpanded)}
+                className="flex items-center gap-1 text-xs text-muted-foreground hover-elevate px-2 py-1 -ml-2 rounded-md transition-colors"
+                data-testid="button-expand-tier2"
+              >
+                {isExpanded ? (
+                  <>
+                    <ChevronUp className="w-3 h-3" />
+                    <span>Hide details</span>
+                  </>
+                ) : (
+                  <>
+                    <ChevronDown className="w-3 h-3" />
+                    <span>Why this matters</span>
+                  </>
+                )}
+              </button>
+              
+              {isExpanded && (
+                <div 
+                  className="text-sm text-muted-foreground leading-relaxed pt-2 border-t border-current/10"
+                  data-testid="price-tag-tier2"
+                >
+                  {tier2}
+                </div>
+              )}
+            </>
+          )}
         </div>
       </div>
     </div>
