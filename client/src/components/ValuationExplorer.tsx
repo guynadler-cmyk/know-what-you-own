@@ -106,6 +106,8 @@ export interface ValuationQuadrantData {
   insight: string;
   insightHighlight: string;
   strength: ValuationSignalStrength;
+  tier1Summary?: string;
+  tier2Explanation?: string;
 }
 
 const VALUATION_QUADRANT_DATA: ValuationQuadrantData[] = [
@@ -659,6 +661,8 @@ function convertAPIQuadrantToLocal(apiQuadrant: APIValuationQuadrant): Valuation
     insight: apiQuadrant.insight,
     insightHighlight: apiQuadrant.insightHighlight,
     strength: apiQuadrant.strength,
+    tier1Summary: apiQuadrant.tier1Summary,
+    tier2Explanation: apiQuadrant.tier2Explanation,
   };
 }
 
