@@ -1,0 +1,67 @@
+Improve the nuance and clarity of the Price Discipline signal by expanding the logic to cover more realistic price scenarios — especially those where a stock is consolidating or the trend is beginning to stabilize. This will make the recommendation more actionable for users while remaining simple and jargon-free.
+
+Changes to Make
+1. Expand Trend Logic with a New Case
+
+Introduce a third trend state between “drifting” and “recovering”:
+
+// New trend state
+type TrendTrajectory = 'drifting' | 'recovering' | 'basing';
+
+
+basing = price has stopped making lower lows and is moving sideways, with the 200-day average flattening or catching up.
+
+Detect "basing" using:
+
+Distance from 200-day average narrowing over last few weeks
+
+Price roughly flat (e.g. within ±5–7%) over past 6–8 weeks
+
+Lower lows no longer forming
+
+2. Update Price Discipline Logic
+
+Update the main conditional logic to account for this new trend:
+
+if (priceVsSma === 'below' && trajectory === 'recovering') {
+  verdict = 'Sensible Entry';
+  insight = 'The price is below recent highs and starting to recover. If the fundamentals check out, this may be a reasonable time to start a position.';
+  highlight = 'starting to recover';
+  strength = 'sensible';
+} else if (priceVsSma === 'below' && trajectory === 'basing') {
+  verdict = 'Monitor Closely';
+  insight = 'The price has stopped falling and is now moving sideways. While it’s early to commit, this could be the start of a trend change. Monitor price behavior and volume.';
+  highlight = 'moving sideways';
+  strength = 'caution';
+} else if (priceVsSma === 'below' && trajectory === 'drifting') {
+  verdict = 'Risky Entry';
+  insight = 'The stock is still trending down, with no sign of stabilization. Wait for the trend to settle before considering an entry.';
+  highlight = 'trending down';
+  strength = 'risky';
+} else if (distanceFromHigh < 10) {
+  verdict = 'Euphoric Entry';
+  insight = 'The stock is near its highs. Consider waiting for a pullback unless you have strong conviction.';
+  highlight = 'near highs';
+  strength = 'risky';
+} else {
+  verdict = 'Neutral Entry';
+  insight = 'No clear signal from price — not a bad entry, but not especially attractive. Focus on the fundamentals.';
+  highlight = 'no clear signal';
+  strength = 'caution';
+}
+
+3. Tiered UX Output
+
+Update the UX output to support two tiers:
+
+Tier 1 (Always Visible): One-liner summary with verdict and entry strength (e.g., “Monitor Closely — Price is moving sideways after a selloff.”)
+
+Tier 2 (Expandable): Detailed rationale and probable next steps.
+
+Label button “Why this matters” or “See context”
+
+Keep language non-technical (avoid “support,” “breakout,” etc.)
+
+Bonus (Optional, If Feasible)
+
+Highlight stocks in a "shortlist to watch" bucket if they fall into the new "basing" logic. This helps users feel guided even when a position isn’t yet actionable.
