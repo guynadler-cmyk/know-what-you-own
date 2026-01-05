@@ -104,12 +104,32 @@ interface AlphaVantageSMAResponse {
   };
 }
 
+interface AlphaVantageDailyPrices {
+  'Meta Data': {
+    '1. Information': string;
+    '2. Symbol': string;
+    '3. Last Refreshed': string;
+    '4. Output Size': string;
+    '5. Time Zone': string;
+  };
+  'Time Series (Daily)': {
+    [date: string]: {
+      '1. open': string;
+      '2. high': string;
+      '3. low': string;
+      '4. close': string;
+      '5. volume': string;
+    };
+  };
+}
+
 // Simple in-memory cache to avoid hitting rate limits
 const cache = new Map<string, { data: FinancialMetrics; timestamp: number }>();
 const balanceSheetCache = new Map<string, { data: BalanceSheetMetrics; timestamp: number }>();
+const dailyPriceCache = new Map<string, { closes: number[]; lows: number[]; timestamp: number }>();
 const priceCache = new Map<string, { cagr: number; yearsOfData: number; timestamp: number }>();
 const quoteCache = new Map<string, { currentPrice: number; weekHigh52: number; timestamp: number }>();
-const smaCache = new Map<string, { sma200: number; priceVsSma: 'above' | 'below'; trajectory: 'recovering' | 'drifting' | 'stable'; timestamp: number }>();
+const smaCache = new Map<string, { sma200: number; priceVsSma: 'above' | 'below'; trajectory: 'recovering' | 'drifting' | 'basing' | 'stable'; timestamp: number }>();
 const CACHE_TTL = 1000 * 60 * 60; // 1 hour
 
 export class AlphaVantageService {
@@ -593,7 +613,7 @@ export class AlphaVantageService {
     }
   }
 
-  async getSMAData(ticker: string): Promise<{ sma200: number; priceVsSma: 'above' | 'below'; trajectory: 'recovering' | 'drifting' | 'stable'; currentPrice: number }> {
+  async getSMAData(ticker: string): Promise<{ sma200: number; priceVsSma: 'above' | 'below'; trajectory: 'recovering' | 'drifting' | 'basing' | 'stable'; currentPrice: number }> {
     const upperTicker = ticker.toUpperCase();
 
     // Check cache first
@@ -608,7 +628,7 @@ export class AlphaVantageService {
     }
 
     try {
-      // Stagger SMA and quote calls to avoid 5 RPS burst limit
+      // Stagger SMA call
       const smaRes = await axios.get<AlphaVantageSMAResponse>(BASE_URL, {
         params: {
           function: 'SMA',
@@ -621,48 +641,62 @@ export class AlphaVantageService {
         timeout: 15000,
       });
       
-      // Delay before quote call to ensure we stay under 5 RPS limit
-      await new Promise(resolve => setTimeout(resolve, 500));
+      await new Promise(resolve => setTimeout(resolve, 300));
       
-      const quoteRes = await axios.get<AlphaVantageGlobalQuote>(BASE_URL, {
+      // Fetch daily prices for trajectory validation
+      const dailyRes = await axios.get<AlphaVantageDailyPrices>(BASE_URL, {
         params: {
-          function: 'GLOBAL_QUOTE',
+          function: 'TIME_SERIES_DAILY',
           symbol: upperTicker,
+          outputsize: 'compact', // Gets ~100 days, enough for our analysis
           apikey: ALPHA_VANTAGE_API_KEY,
         },
-        timeout: 10000,
+        timeout: 15000,
       });
 
       const smaData = smaRes.data;
-      const quoteData = quoteRes.data;
+      const dailyData = dailyRes.data;
 
       // Check for rate limiting
-      if ('Note' in smaData || 'Information' in smaData || 'Note' in quoteData || 'Information' in quoteData) {
+      if ('Note' in smaData || 'Information' in smaData || 'Note' in dailyData || 'Information' in dailyData) {
         console.log(`[SMA] ${upperTicker}: Rate limited`);
         throw new Error('Alpha Vantage API rate limit reached.');
       }
 
       const technicalData = smaData['Technical Analysis: SMA'];
-      const quote = quoteData['Global Quote'];
+      const timeSeries = dailyData['Time Series (Daily)'];
 
-      if (!technicalData || Object.keys(technicalData).length === 0 || !quote) {
-        console.log(`[SMA] ${upperTicker}: No SMA or quote data available`);
+      if (!technicalData || Object.keys(technicalData).length === 0 || !timeSeries || Object.keys(timeSeries).length === 0) {
+        console.log(`[SMA] ${upperTicker}: No SMA or daily price data available`);
         return { sma200: 0, priceVsSma: 'below', trajectory: 'stable', currentPrice: 0 };
       }
 
-      // Get the most recent SMA values to determine trajectory
+      // Get the most recent SMA values for trajectory analysis
       const smaDates = Object.keys(technicalData).sort((a, b) => new Date(b).getTime() - new Date(a).getTime());
       const currentSma = parseFloat(technicalData[smaDates[0]].SMA);
-      const previousSma = smaDates.length > 5 ? parseFloat(technicalData[smaDates[5]].SMA) : currentSma; // SMA from ~1 week ago
-      const olderSma = smaDates.length > 20 ? parseFloat(technicalData[smaDates[20]].SMA) : currentSma; // SMA from ~1 month ago
+      const sma1WeekAgo = smaDates.length > 5 ? parseFloat(technicalData[smaDates[5]].SMA) : currentSma;
+      const sma3WeeksAgo = smaDates.length > 15 ? parseFloat(technicalData[smaDates[15]].SMA) : currentSma;
 
-      const currentPrice = parseFloat(quote['05. price']);
+      // Get daily closing prices sorted by date (most recent first)
+      const priceDates = Object.keys(timeSeries).sort((a, b) => new Date(b).getTime() - new Date(a).getTime());
+      const currentPrice = parseFloat(timeSeries[priceDates[0]]['4. close']);
+      
+      // Extract last 30 trading days of closes and lows for basing detection
+      const recentCloses: number[] = [];
+      const recentLows: number[] = [];
+      for (let i = 0; i < Math.min(30, priceDates.length); i++) {
+        recentCloses.push(parseFloat(timeSeries[priceDates[i]]['4. close']));
+        recentLows.push(parseFloat(timeSeries[priceDates[i]]['3. low']));
+      }
+      
+      // Cache daily prices for potential reuse
+      dailyPriceCache.set(upperTicker, { closes: recentCloses, lows: recentLows, timestamp: Date.now() });
       
       // Cache the current price in quoteCache so other methods can use it
-      const cachedQuote = quoteCache.get(upperTicker);
+      const cachedQuoteData = quoteCache.get(upperTicker);
       quoteCache.set(upperTicker, { 
         currentPrice, 
-        weekHigh52: cachedQuote?.weekHigh52 || 0, 
+        weekHigh52: cachedQuoteData?.weekHigh52 || 0, 
         timestamp: Date.now() 
       });
       
@@ -672,29 +706,80 @@ export class AlphaVantageService {
       // Calculate price distance from SMA as a percentage
       const distanceFromSma = ((currentPrice - currentSma) / currentSma) * 100;
       
-      // Determine trajectory: is price moving toward or away from SMA?
-      // We compare recent price-to-SMA ratio vs older price-to-SMA ratio
-      // If we're below SMA and the gap is closing, we're recovering
-      // If we're below SMA and the gap is widening, we're drifting
-      let trajectory: 'recovering' | 'drifting' | 'stable' = 'stable';
+      // Calculate SMA rate of change
+      const smaChangeFrom1Week = ((currentSma - sma1WeekAgo) / sma1WeekAgo) * 100;
+      const smaChangeFrom3Weeks = ((currentSma - sma3WeeksAgo) / sma3WeeksAgo) * 100;
+      
+      // Determine trajectory using actual price data
+      let trajectory: 'recovering' | 'drifting' | 'basing' | 'stable' = 'stable';
       
       if (priceVsSma === 'below') {
-        // Compare current distance vs distance from a few days ago
-        // Using SMA trend as proxy: if SMA is falling faster than price, we're recovering
-        const smaChange = ((currentSma - olderSma) / olderSma) * 100;
+        const smaDeclineRate1Week = smaChangeFrom1Week;
+        const smaDeclineRate3Week = smaChangeFrom3Weeks / 3;
         
-        // If distance from SMA is shrinking (getting less negative), we're recovering
-        // We'll use the SMA slope and price momentum as indicators
+        // Check 1: Is price very close to SMA? → Recovering
         if (distanceFromSma > -5) {
-          trajectory = 'recovering'; // Very close to SMA
-        } else if (smaChange < distanceFromSma) {
-          trajectory = 'recovering'; // Price is catching up to SMA
-        } else {
-          trajectory = 'drifting'; // Price is falling away from SMA
+          trajectory = 'recovering';
+        }
+        // Check 2: Is the stock consolidating (basing)?
+        // Now we have actual price data to validate consolidation
+        else if (distanceFromSma >= -15 && distanceFromSma < -5 && recentCloses.length >= 20) {
+          // Analyze recent price action to detect basing
+          // Basing = price has stopped making lower lows over the last 3-4 weeks
+          
+          // Split into periods: last 2 weeks vs previous 2 weeks
+          const recent2Weeks = recentLows.slice(0, 10);
+          const previous2Weeks = recentLows.slice(10, 20);
+          
+          const recentMin = Math.min(...recent2Weeks);
+          const previousMin = Math.min(...previous2Weeks);
+          
+          // Check if recent lows are higher than or equal to previous lows (stopped declining)
+          const stoppedMakingLowerLows = recentMin >= previousMin * 0.98; // Allow 2% tolerance
+          
+          // Check price range is narrowing or stable (not expanding)
+          const recentRange = Math.max(...recent2Weeks) - recentMin;
+          const previousRange = Math.max(...previous2Weeks) - previousMin;
+          const rangeStableOrNarrowing = recentRange <= previousRange * 1.1;
+          
+          // Check SMA is also stabilizing
+          const smaStabilizing = Math.abs(smaDeclineRate1Week) < 0.5;
+          
+          // Basing requires: stopped lower lows + stable range + SMA stabilizing
+          if (stoppedMakingLowerLows && rangeStableOrNarrowing && smaStabilizing) {
+            trajectory = 'basing';
+            console.log(`[SMA] ${upperTicker}: Basing detected - recent min: $${recentMin.toFixed(2)}, prev min: $${previousMin.toFixed(2)}, SMA chg: ${smaDeclineRate1Week.toFixed(2)}%`);
+          } else if (smaDeclineRate3Week < distanceFromSma / 3) {
+            trajectory = 'recovering';
+          } else {
+            trajectory = 'drifting';
+          }
+        }
+        // Check 3: Is price catching up over a longer period?
+        else if (smaChangeFrom3Weeks < distanceFromSma) {
+          trajectory = 'recovering';
+        }
+        // Default: still drifting
+        else {
+          trajectory = 'drifting';
         }
       } else {
-        // Above SMA
-        trajectory = 'stable';
+        // Above SMA — check for weakening momentum using actual price data
+        if (recentCloses.length >= 10) {
+          const recent1Week = recentCloses.slice(0, 5);
+          const previous1Week = recentCloses.slice(5, 10);
+          const recentAvg = recent1Week.reduce((a, b) => a + b, 0) / recent1Week.length;
+          const previousAvg = previous1Week.reduce((a, b) => a + b, 0) / previous1Week.length;
+          
+          // If recent average is lower than previous and barely above SMA, momentum weakening
+          if (recentAvg < previousAvg && distanceFromSma < 5) {
+            trajectory = 'drifting';
+          } else {
+            trajectory = 'stable';
+          }
+        } else {
+          trajectory = 'stable';
+        }
       }
 
       console.log(`[SMA] ${upperTicker}: Price $${currentPrice.toFixed(2)}, SMA200 $${currentSma.toFixed(2)}, ${priceVsSma} SMA, ${trajectory} (${distanceFromSma.toFixed(1)}%)`);
@@ -1020,7 +1105,7 @@ export class AlphaVantageService {
     cagrYears: number;
     sma200: number;
     priceVsSma: 'above' | 'below';
-    trajectory: 'recovering' | 'drifting' | 'stable';
+    trajectory: 'recovering' | 'drifting' | 'basing' | 'stable';
     currentPrice: number;
     earningsGrowthRate: number;
     earningsGrowthYears: number;
@@ -1053,15 +1138,25 @@ export class AlphaVantageService {
         smaColor = 'green';
         smaLabel = 'Trend vs 200-day';
         smaValue = 'Recovering';
+      } else if (trajectory === 'basing') {
+        smaColor = 'yellow';
+        smaLabel = 'Trend vs 200-day';
+        smaValue = 'Basing';
       } else {
         smaColor = 'red';
         smaLabel = 'Trend vs 200-day';
         smaValue = 'Drifting Lower';
       }
     } else {
-      smaColor = 'yellow';
-      smaLabel = 'Trend vs 200-day';
-      smaValue = 'Above Trend';
+      if (trajectory === 'drifting') {
+        smaColor = 'yellow';
+        smaLabel = 'Trend vs 200-day';
+        smaValue = 'Weakening';
+      } else {
+        smaColor = 'yellow';
+        smaLabel = 'Trend vs 200-day';
+        smaValue = 'Above Trend';
+      }
     }
 
     // Determine overall price discipline verdict based on 5 distinct cases
@@ -1108,7 +1203,16 @@ export class AlphaVantageService {
       priceDisciplineHighlight = 'value emerges';
       priceDisciplineStrength = 'sensible';
     }
-    // Case 4: Below SMA + Drifting
+    // Case 4: Below SMA + Basing (new consolidation case)
+    else if (priceVsSma === 'below' && trajectory === 'basing') {
+      priceDisciplineVerdict = 'Monitor Closely';
+      priceDisciplineTier1 = 'Watch: Price has stopped falling and is moving sideways.';
+      priceDisciplineTier2 = 'The stock has stopped making new lows and appears to be consolidating. While it\'s too early to call this a recovery, it could be the start of a trend change. Keep this one on your radar and watch for price to break above its recent range before committing.';
+      priceDisciplineInsight = priceDisciplineTier2;
+      priceDisciplineHighlight = 'start of a trend change';
+      priceDisciplineStrength = 'caution';
+    }
+    // Case 5: Below SMA + Drifting
     else if (priceVsSma === 'below' && trajectory === 'drifting') {
       priceDisciplineVerdict = 'Risky Entry';
       priceDisciplineTier1 = 'Risky: Price is falling with no recovery yet.';
