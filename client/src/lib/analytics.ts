@@ -1,18 +1,8 @@
-// Google Analytics 4 + Firebase Analytics Integration
+// Firebase Analytics Integration (single pathway to avoid duplicate events)
 // See: blueprint:javascript_google_analytics
 
 import { initializeApp, getApps } from 'firebase/app';
 import { getAnalytics, logEvent, Analytics } from 'firebase/analytics';
-
-declare global {
-  interface Window {
-    dataLayer: any[];
-    gtag: (...args: any[]) => void;
-  }
-}
-
-// GA4 Measurement ID - this is a public identifier (visible in browser network requests)
-const GA_MEASUREMENT_ID = 'G-6CLK9XVV2K';
 
 // Firebase configuration from environment variables
 const firebaseConfig = {
@@ -48,38 +38,15 @@ const initFirebase = () => {
   }
 };
 
-// Initialize Google Analytics (legacy gtag)
+// Initialize Analytics (Firebase only - no direct gtag to avoid duplicate events)
 export const initGA = () => {
-  // Add Google Analytics script to the head
-  const script1 = document.createElement('script');
-  script1.async = true;
-  script1.src = `https://www.googletagmanager.com/gtag/js?id=${GA_MEASUREMENT_ID}`;
-  document.head.appendChild(script1);
-
-  // Initialize gtag
-  const script2 = document.createElement('script');
-  script2.textContent = `
-    window.dataLayer = window.dataLayer || [];
-    function gtag(){dataLayer.push(arguments);}
-    gtag('js', new Date());
-    gtag('config', '${GA_MEASUREMENT_ID}');
-  `;
-  document.head.appendChild(script2);
-  
-  // Initialize Firebase Analytics
+  // Initialize Firebase Analytics only
   initFirebase();
 };
 
 // Track page views - useful for single-page applications
 export const trackPageView = (url: string) => {
-  // GA4 gtag
-  if (typeof window !== 'undefined' && window.gtag) {
-    window.gtag('config', GA_MEASUREMENT_ID, {
-      page_path: url
-    });
-  }
-  
-  // Firebase Analytics
+  // Firebase Analytics only
   if (firebaseAnalytics) {
     logEvent(firebaseAnalytics, 'page_view', {
       page_path: url
@@ -87,23 +54,14 @@ export const trackPageView = (url: string) => {
   }
 };
 
-// Track custom events - sends to both GA4 and Firebase
+// Track custom events - sends to Firebase only
 export const trackEvent = (
   action: string, 
   category?: string, 
   label?: string, 
   value?: number
 ) => {
-  // GA4 gtag
-  if (typeof window !== 'undefined' && window.gtag) {
-    window.gtag('event', action, {
-      event_category: category,
-      event_label: label,
-      value: value,
-    });
-  }
-  
-  // Firebase Analytics
+  // Firebase Analytics only
   if (firebaseAnalytics) {
     logEvent(firebaseAnalytics, action, {
       event_category: category,
