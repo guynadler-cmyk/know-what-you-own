@@ -1,4 +1,252 @@
+// import axios, { AxiosError } from "axios";
+// import { db } from "@server/db";
+// import {
+//   secSubmissions,
+//   businessSections,
+//   footnotesSections,
+//   raw10KTexts,
+// } from "@shared/schema";
+// import { eq, and } from "drizzle-orm";
+
+// /* -------------------- TYPES -------------------- */
+// interface CompanyTickerMapping {
+//   cik_str: number;
+//   ticker: string;
+//   title: string;
+// }
+
+// interface SECSubmission {
+//   filings: {
+//     recent: {
+//       accessionNumber: string[];
+//       filingDate: string[];
+//       form: string[];
+//       primaryDocument: string[];
+//     };
+//   };
+//   name: string;
+// }
+
+// /* -------------------- CONSTANTS -------------------- */
+// const SEC_HEADERS = {
+//   "User-Agent": "Know What You Own info@restnvest.com",
+//   "Accept-Encoding": "gzip, deflate",
+// };
+
+// const CACHE_TTL_HOURS = 24;
+
+// /* -------------------- HELPERS -------------------- */
+// const isFresh = (date?: Date | null) =>
+//   !!date && Date.now() - date.getTime() < CACHE_TTL_HOURS * 60 * 60 * 1000;
+
+// async function retryWithBackoff<T>(
+//   fn: () => Promise<T>,
+//   maxRetries = 3,
+//   baseDelay = 800
+// ): Promise<T> {
+//   let lastError: Error | undefined;
+
+//   for (let attempt = 0; attempt <= maxRetries; attempt++) {
+//     try {
+//       return await fn();
+//     } catch (err) {
+//       lastError = err as Error;
+//       const axiosErr = err as AxiosError;
+//       const status = axiosErr.response?.status;
+
+//       const shouldRetry = !status || status === 429 || status >= 500;
+//       if (!shouldRetry || attempt === maxRetries) throw err;
+
+//       await new Promise((r) =>
+//         setTimeout(r, baseDelay * Math.pow(2, attempt))
+//       );
+//     }
+//   }
+
+//   throw lastError;
+// }
+
+// /* ==================== SERVICE ==================== */
+// export class SECService {
+//   private tickerCache = new Map<string, CompanyTickerMapping>();
+
+//   /* ---------- COMPANY INFO ---------- */
+//   async getCompanyInfo(ticker: string) {
+//     if (!this.tickerCache.size) await this.loadTickerMappings();
+
+//     const company = this.tickerCache.get(ticker.toUpperCase());
+//     if (!company) throw new Error(`Ticker ${ticker} not found`);
+
+//     return {
+//       cik: String(company.cik_str).padStart(10, "0"),
+//       name: company.title,
+//     };
+//   }
+
+//   /* ---------- SUBMISSIONS (CACHED) ---------- */
+//   async getSubmissions(cik: string): Promise<SECSubmission> {
+//     const cached = await db.query.secSubmissions.findFirst({
+//       where: eq(secSubmissions.cik, cik),
+//     });
+
+//     if (cached && isFresh(cached.updatedAt)) {
+//   return JSON.parse(cached.filings as string);
+// }
+
+
+//     const url = `https://data.sec.gov/submissions/CIK${cik}.json`;
+//     const { data } = await retryWithBackoff(() =>
+//       axios.get<SECSubmission>(url, { headers: SEC_HEADERS })
+//     );
+
+//     await db
+//       .insert(secSubmissions)
+//       .values({
+//         cik,
+//         filings: JSON.stringify(data),
+//         updatedAt: new Date(),
+//       })
+//       .onConflictDoUpdate({
+//         target: secSubmissions.cik,
+//         set: { filings: JSON.stringify(data), updatedAt: new Date() },
+//       });
+
+//     return data;
+//   }
+
+//   /* ---------- 10-K METADATA ---------- */
+//   async getLast5Years10K(cik: string) {
+//     const data = await this.getSubmissions(cik);
+//     const result = [];
+
+//     for (let i = 0; i < data.filings.recent.form.length && result.length < 5; i++) {
+//       if (data.filings.recent.form[i] === "10-K") {
+//         const filingDate = data.filings.recent.filingDate[i];
+//         result.push({
+//           accession: data.filings.recent.accessionNumber[i],
+//           filingDate,
+//           fiscalYear: new Date(filingDate).getFullYear().toString(),
+//         });
+//       }
+//     }
+
+//     return result;
+//   }
+
+//   /* ---------- RAW 10-K TEXT (CACHED ONCE) ---------- */
+//   private async getRaw10KText(cik: string, accession: string): Promise<string> {
+//     const cached = await db.query.raw10KTexts.findFirst({
+//       where: and(eq(raw10KTexts.cik, cik), eq(raw10KTexts.accession, accession)),
+//     });
+
+//     if (cached && isFresh(cached.updatedAt)) return cached.text;
+
+//     const accPath = accession.replace(/-/g, "");
+//     const url = `https://www.sec.gov/Archives/edgar/data/${parseInt(
+//       cik
+//     )}/${accPath}/${accession}.txt`;
+
+//     const { data } = await retryWithBackoff(() =>
+//       axios.get(url, { headers: SEC_HEADERS })
+//     );
+
+//     await db
+//       .insert(raw10KTexts)
+//       .values({ cik, accession, text: data, updatedAt: new Date() })
+//       .onConflictDoUpdate({
+//         target: [raw10KTexts.cik, raw10KTexts.accession],
+//         set: { text: data, updatedAt: new Date() },
+//       });
+
+//     return data;
+//   }
+
+//   /* ---------- BUSINESS SECTION ---------- */
+//   async get10KBusinessSection(cik: string, accession: string): Promise<string> {
+//     const cached = await db.query.businessSections.findFirst({
+//       where: and(
+//         eq(businessSections.cik, cik),
+//         eq(businessSections.accession, accession)
+//       ),
+//     });
+
+//     if (cached && isFresh(cached.updatedAt)) return cached.text;
+
+//     const raw = await this.getRaw10KText(cik, accession);
+//     const match = raw.match(
+//       /ITEM\s+1[\.\:\-]?\s*(?:Business)?([\s\S]*?)(?:ITEM\s+1A|ITEM\s+2)/i
+//     );
+//     if (!match) throw new Error("Business section not found");
+
+//     const text = this.clean(match[1]).slice(0, 15000);
+
+//     await db
+//       .insert(businessSections)
+//       .values({ cik, accession, text, updatedAt: new Date() })
+//       .onConflictDoUpdate({
+//         target: [businessSections.cik, businessSections.accession],
+//         set: { text, updatedAt: new Date() },
+//       });
+
+//     return text;
+//   }
+
+//   /* ---------- FOOTNOTES ---------- */
+//   async get10KFootnotesSection(cik: string, accession: string): Promise<string> {
+//     const cached = await db.query.footnotesSections.findFirst({
+//       where: and(
+//         eq(footnotesSections.cik, cik),
+//         eq(footnotesSections.accession, accession)
+//       ),
+//     });
+
+//     if (cached && isFresh(cached.updatedAt)) return cached.text;
+
+//     const raw = await this.getRaw10KText(cik, accession);
+//     const match = raw.match(
+//       /(Notes\s+to\s+.*?Financial\s+Statements[\s\S]*?)(?:ITEM\s+9|ITEM\s+15)/i
+//     );
+//     if (!match) throw new Error("Footnotes not found");
+
+//     const text = this.clean(match[1]).slice(0, 20000);
+
+//     await db
+//       .insert(footnotesSections)
+//       .values({ cik, accession, text, updatedAt: new Date() })
+//       .onConflictDoUpdate({
+//         target: [footnotesSections.cik, footnotesSections.accession],
+//         set: { text, updatedAt: new Date() },
+//       });
+
+//     return text;
+//   }
+
+//   /* ---------- CLEANER ---------- */
+//   private clean(text: string) {
+//     return text
+//       .replace(/<[^>]*>/g, " ")
+//       .replace(/&nbsp;|&[a-z]+;|&#\d+;/gi, " ")
+//       .replace(/\s+/g, " ")
+//       .trim();
+//   }
+
+//   /* ---------- TICKER MAP ---------- */
+//   private async loadTickerMappings() {
+//     const url = "https://www.sec.gov/files/company_tickers.json";
+//     const { data } = await retryWithBackoff(() =>
+//       axios.get(url, { headers: SEC_HEADERS })
+//     );
+
+//     Object.values(data).forEach((c: any) =>
+//       this.tickerCache.set(c.ticker.toUpperCase(), c)
+//     );
+//   }
+// }
+
+// export const secService = new SECService();
+
 import axios, { AxiosError } from "axios";
+import { MemoryCache } from "./caching";
 
 interface CompanyTickerMapping {
   cik_str: number;
@@ -29,42 +277,48 @@ async function retryWithBackoff<T>(
   baseDelay = 1000
 ): Promise<T> {
   let lastError: Error | undefined;
-  
+
   for (let attempt = 0; attempt <= maxRetries; attempt++) {
     try {
       return await fn();
     } catch (error) {
       lastError = error as Error;
-      
+
       const isAxiosError = error instanceof Error && 'isAxiosError' in error;
       const axiosError = error as AxiosError;
       const statusCode = axiosError.response?.status;
-      
-      const shouldRetry = 
-        !statusCode || 
-        statusCode === 429 || 
-        statusCode >= 500 || 
+
+      const shouldRetry =
+        !statusCode ||
+        statusCode === 429 ||
+        statusCode >= 500 ||
         (isAxiosError && !axiosError.response);
-      
+
       if (!shouldRetry || attempt === maxRetries) {
         throw error;
       }
-      
+
       const delay = baseDelay * Math.pow(2, attempt);
       console.log(`[SEC] Retry attempt ${attempt + 1}/${maxRetries} after ${delay}ms`);
       await new Promise(resolve => setTimeout(resolve, delay));
     }
   }
-  
+
   throw lastError;
 }
 
+
+
+
+
 export class SECService {
   private tickerCache: Map<string, CompanyTickerMapping> = new Map();
+  private submissionsCache = new MemoryCache(24 * 60 * 60 * 1000); // 24h
+  private filingTextCache = new MemoryCache(7 * 24 * 60 * 60 * 1000); // 7 days
 
   async getCompanyInfo(ticker: string): Promise<{ cik: string; name: string }> {
     const upperTicker = ticker.toUpperCase();
-    
+
     if (!this.tickerCache.size) {
       await this.loadTickerMappings();
     }
@@ -84,15 +338,26 @@ export class SECService {
     fiscalYear: string;
   }> {
     const url = `https://data.sec.gov/submissions/CIK${cik}.json`;
-    
-    const response = await retryWithBackoff(async () => {
-      return await axios.get<SECSubmission>(url, { headers: SEC_HEADERS });
-    });
-    
-    const { filings } = response.data;
+    const cacheKey = `submissions:${cik}`;
+    let data = this.submissionsCache.get<SECSubmission>(cacheKey);
+    console.log(data)
+    if (!data) {
+      const response = await retryWithBackoff(() =>
+        axios.get<SECSubmission>(url, { headers: SEC_HEADERS })
+      );
+      data = response.data;
+      this.submissionsCache.set(cacheKey, data);
+    }
+
+    const { filings } = data;
+//     const response = await retryWithBackoff(async () => {
+//       return await axios.get<SECSubmission>(url, { headers: SEC_HEADERS });
+//     });
+//
+//     const { filings } = response.data;
 
     const index = filings.recent.form.findIndex(form => form === "10-K");
-    
+
     if (index === -1) {
       throw new Error("No 10-K filing found for this company");
     }
@@ -110,9 +375,22 @@ export class SECService {
     fiscalYear: string;
   }>> {
     const url = `https://data.sec.gov/submissions/CIK${cik}.json`;
-    
-    const response = await axios.get<SECSubmission>(url, { headers: SEC_HEADERS });
-    const { filings } = response.data;
+
+    const cacheKey = `submissions:${cik}`;
+    let data = this.submissionsCache.get<SECSubmission>(cacheKey);
+
+    if (!data) {
+      const response = await retryWithBackoff(() =>
+        axios.get<SECSubmission>(url, { headers: SEC_HEADERS })
+      );
+      data = response.data;
+      this.submissionsCache.set(cacheKey, data);
+    }
+
+    const { filings } = data;
+
+//     const response = await axios.get<SECSubmission>(url, { headers: SEC_HEADERS });
+//     const { filings } = response.data;
 
     const tenKFilings: Array<{
       accessionNumber: string;
@@ -125,7 +403,7 @@ export class SECService {
         const accessionNumber = filings.recent.accessionNumber[i];
         const filingDate = filings.recent.filingDate[i];
         const fiscalYear = new Date(filingDate).getFullYear().toString();
-        
+
         tenKFilings.push({ accessionNumber, filingDate, fiscalYear });
       }
     }
@@ -164,12 +442,21 @@ export class SECService {
   async get10KBusinessSection(cik: string, accessionNumber: string): Promise<string> {
     const accessionPath = accessionNumber.replace(/-/g, '');
     const url = `https://www.sec.gov/Archives/edgar/data/${parseInt(cik)}/${accessionPath}/${accessionNumber}.txt`;
-    
-    const response = await retryWithBackoff(async () => {
-      return await axios.get(url, { headers: SEC_HEADERS });
-    });
-    
-    const text = response.data;
+    const cacheKey = `filing:${cik}:${accessionNumber}`;
+    let text = this.filingTextCache.get<string>(cacheKey);
+
+    if (!text) {
+      const response = await retryWithBackoff(() =>
+        axios.get(url, { headers: SEC_HEADERS })
+      );
+      text = response.data;
+      this.filingTextCache.set(cacheKey, text);
+    }
+//         const response = await retryWithBackoff(async () => {
+//           return await axios.get(url, { headers: SEC_HEADERS });
+//         });
+
+//     const text = response.data;
 
     // Try multiple regex patterns to handle different 10-K formatting
     const patterns = [
@@ -194,7 +481,7 @@ export class SECService {
     }
 
     let businessSection = businessMatch[1];
-    
+
     // Clean up HTML tags and entities
     businessSection = businessSection
       .replace(/<[^>]*>/g, ' ')
@@ -211,9 +498,18 @@ export class SECService {
   async get10KFootnotesSection(cik: string, accessionNumber: string): Promise<string> {
     const accessionPath = accessionNumber.replace(/-/g, '');
     const url = `https://www.sec.gov/Archives/edgar/data/${parseInt(cik)}/${accessionPath}/${accessionNumber}.txt`;
-    
-    const response = await axios.get(url, { headers: SEC_HEADERS });
-    const text = response.data;
+    const cacheKey = `filing:${cik}:${accessionNumber}`;
+    let text = this.filingTextCache.get<string>(cacheKey);
+
+    if (!text) {
+      const response = await retryWithBackoff(() =>
+        axios.get(url, { headers: SEC_HEADERS })
+      );
+      text = response.data;
+      this.filingTextCache.set(cacheKey, text);
+    }
+//     const response = await axios.get(url, { headers: SEC_HEADERS });
+//     const text = response.data;
 
     // Try multiple regex patterns to extract notes/footnotes
     // Footnotes typically appear in Item 8 after the financial statements
@@ -239,7 +535,7 @@ export class SECService {
     }
 
     let footnotesSection = footnotesMatch[1];
-    
+
     // Clean up HTML tags and entities
     footnotesSection = footnotesSection
       .replace(/<[^>]*>/g, ' ')
@@ -258,9 +554,9 @@ export class SECService {
     return retryWithBackoff(async () => {
       const url = "https://www.sec.gov/files/company_tickers.json";
       const response = await axios.get(url, { headers: SEC_HEADERS });
-      
+
       const data = response.data;
-      
+
       for (const key in data) {
         const company = data[key] as CompanyTickerMapping;
         this.tickerCache.set(company.ticker.toUpperCase(), company);
@@ -270,3 +566,5 @@ export class SECService {
 }
 
 export const secService = new SECService();
+
+

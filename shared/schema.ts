@@ -316,3 +316,58 @@ export const combinedFinancialMetricsSchema = incomeMetricsSchema.extend({
 export type CombinedFinancialMetrics = z.infer<typeof combinedFinancialMetricsSchema>;
 export type UpsertUser = typeof users.$inferInsert;
 export type User = typeof users.$inferSelect;
+
+
+//
+
+/* ============================
+   SEC CACHING TABLES
+============================ */
+
+export const secSubmissions = pgTable(
+  "sec_submissions",
+  {
+    cik: varchar("cik", { length: 10 }).primaryKey(),
+    filings: jsonb("filings").notNull(),
+    updatedAt: timestamp("updated_at").defaultNow().notNull(),
+  }
+);
+
+export const raw10KTexts = pgTable(
+  "raw_10k_texts",
+  {
+    cik: varchar("cik", { length: 10 }).notNull(),
+    accession: varchar("accession", { length: 20 }).notNull(),
+    text: varchar("text").notNull(),
+    updatedAt: timestamp("updated_at").defaultNow().notNull(),
+  },
+  (t) => ({
+    pk: index("raw_10k_pk").on(t.cik, t.accession),
+  })
+);
+
+export const businessSections = pgTable(
+  "business_sections",
+  {
+    cik: varchar("cik", { length: 10 }).notNull(),
+    accession: varchar("accession", { length: 20 }).notNull(),
+    text: varchar("text").notNull(),
+    updatedAt: timestamp("updated_at").defaultNow().notNull(),
+  },
+  (t) => ({
+    pk: index("business_sections_pk").on(t.cik, t.accession),
+  })
+);
+
+export const footnotesSections = pgTable(
+  "footnotes_sections",
+  {
+    cik: varchar("cik", { length: 10 }).notNull(),
+    accession: varchar("accession", { length: 20 }).notNull(),
+    text: varchar("text").notNull(),
+    updatedAt: timestamp("updated_at").defaultNow().notNull(),
+  },
+  (t) => ({
+    pk: index("footnotes_sections_pk").on(t.cik, t.accession),
+  })
+);
