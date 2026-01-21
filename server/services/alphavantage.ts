@@ -659,7 +659,8 @@ export class AlphaVantageService {
 
       // Check for rate limiting
       if ('Note' in smaData || 'Information' in smaData || 'Note' in dailyData || 'Information' in dailyData) {
-        console.log(`[SMA] ${upperTicker}: Rate limited`);
+        console.log(`[SMA] ${upperTicker}: Rate limited - SMA response:`, JSON.stringify(smaData).substring(0, 300));
+        console.log(`[SMA] ${upperTicker}: Rate limited - Daily response:`, JSON.stringify(dailyData).substring(0, 300));
         throw new Error('Alpha Vantage API rate limit reached.');
       }
 
