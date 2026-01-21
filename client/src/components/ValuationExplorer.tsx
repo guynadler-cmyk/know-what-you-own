@@ -674,8 +674,17 @@ interface ValuationExplorerProps {
 export function ValuationExplorer({ ticker, onQuadrantDataChange }: ValuationExplorerProps) {
   const { data: valuationData, isLoading, isError, error, refetch, isFetching } = useQuery<ValuationMetrics>({
     queryKey: ['/api/valuation', ticker],
+    queryFn: async () => {
+      const response = await fetch(`/api/valuation/${ticker}`);
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({ message: 'Failed to load valuation data' }));
+        throw new Error(errorData.message || `HTTP ${response.status}`);
+      }
+      return response.json();
+    },
     enabled: !!ticker,
     retry: false,
+    staleTime: 5 * 60 * 1000,
   });
 
   const quadrantData = useMemo(() => {
