@@ -85,14 +85,14 @@ export default function LandingPage() {
             <img 
               src={headerLogo} 
               alt="Restnvest - Informed investing, built to last" 
-              className="h-12 sm:h-14 w-auto object-contain"
+              className="h-14 md:h-[72px] w-auto object-contain"
             />
           </Link>
           <ThemeToggle />
         </div>
       </header>
 
-      <main className="flex-1 pt-20 sm:pt-[88px]">
+      <main className="flex-1 pt-[88px] md:pt-[104px]">
         {/* Hero Section */}
         <section 
           id="hero" 
