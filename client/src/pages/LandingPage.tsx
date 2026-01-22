@@ -80,19 +80,19 @@ export default function LandingPage() {
 
       {/* Sticky Header */}
       <header className="fixed top-0 left-0 right-0 z-50 bg-[#f8f9fa] dark:bg-background/95 backdrop-blur border-b border-[#e0e0e0] dark:border-border">
-        <div className="flex justify-between items-center px-4 sm:px-8 py-2 min-h-[80px] max-w-[1200px] mx-auto">
+        <div className="flex justify-between items-center px-4 sm:px-8 h-16 max-w-[1200px] mx-auto">
           <Link href="/" data-testid="link-logo" className="flex items-center">
             <img 
               src={headerLogo} 
               alt="Restnvest - Informed investing, built to last" 
-              className="h-24 md:h-32 w-auto object-contain"
+              className="h-48 md:h-64 w-auto object-contain"
             />
           </Link>
           <ThemeToggle />
         </div>
       </header>
 
-      <main className="flex-1 pt-[96px] md:pt-[112px]">
+      <main className="flex-1 pt-16">
         {/* Hero Section */}
         <section 
           id="hero" 
