@@ -9,8 +9,8 @@ const STAGES = [
   { number: 1, label: "Business" },
   { number: 2, label: "Performance" },
   { number: 3, label: "Valuation" },
-  { number: 4, label: "Strategy" },
-  { number: 5, label: "Timing" },
+  { number: 4, label: "Timing" },
+  { number: 5, label: "Strategy" },
   { number: 6, label: "Protection" }
 ];
 

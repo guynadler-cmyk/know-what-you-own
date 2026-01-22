@@ -422,3 +422,81 @@ export const valuationMetricsSchema = z.object({
 export type ValuationSignal = z.infer<typeof valuationSignalSchema>;
 export type ValuationQuadrant = z.infer<typeof valuationQuadrantSchema>;
 export type ValuationMetrics = z.infer<typeof valuationMetricsSchema>;
+
+// Timing Analysis Schemas - for market conditions assessment
+export const timingSignalStatusSchema = z.enum(["green", "yellow", "red"]);
+
+export const timingSignalSchema = z.object({
+  status: timingSignalStatusSchema,
+  label: z.string(),
+  interpretation: z.string(),
+  score: z.number().min(-1).max(1), // Normalized score from -1 to +1
+});
+
+// Chart data for visual representations
+export const trendChartDataSchema = z.object({
+  prices: z.array(z.number()), // Smoothed price series
+  baseline: z.array(z.number()), // Long-term EMA (optional baseline)
+  structurePoints: z.array(z.object({
+    index: z.number(),
+    type: z.enum(["high", "low"]),
+  })).optional(),
+});
+
+export const momentumChartDataSchema = z.object({
+  values: z.array(z.number()), // Oscillator values around zero
+  intensity: z.array(z.number()), // Strength/intensity of pressure (0-1)
+});
+
+export const stretchChartDataSchema = z.object({
+  values: z.array(z.number()), // Distance from equilibrium (-1 to +1)
+  tension: z.array(z.number()), // Tension level (0-1)
+});
+
+export const timingAnalysisSchema = z.object({
+  ticker: z.string(),
+  companyName: z.string().optional(),
+  lastUpdated: z.string(),
+  
+  // Overall verdict
+  verdict: z.object({
+    message: z.string(), // Human-readable verdict
+    subtitle: z.string(), // Disclaimer/context
+    alignmentScore: z.number().min(-1).max(1), // Combined alignment
+  }),
+  
+  // Three signal dimensions
+  trend: z.object({
+    signal: timingSignalSchema,
+    chartData: trendChartDataSchema,
+    deepDive: z.object({
+      title: z.string(),
+      explanation: z.string(),
+    }),
+  }),
+  
+  momentum: z.object({
+    signal: timingSignalSchema,
+    chartData: momentumChartDataSchema,
+    deepDive: z.object({
+      title: z.string(),
+      explanation: z.string(),
+    }),
+  }),
+  
+  stretch: z.object({
+    signal: timingSignalSchema,
+    chartData: stretchChartDataSchema,
+    deepDive: z.object({
+      title: z.string(),
+      explanation: z.string(),
+    }),
+  }),
+});
+
+export type TimingSignalStatus = z.infer<typeof timingSignalStatusSchema>;
+export type TimingSignal = z.infer<typeof timingSignalSchema>;
+export type TrendChartData = z.infer<typeof trendChartDataSchema>;
+export type MomentumChartData = z.infer<typeof momentumChartDataSchema>;
+export type StretchChartData = z.infer<typeof stretchChartDataSchema>;
+export type TimingAnalysis = z.infer<typeof timingAnalysisSchema>;

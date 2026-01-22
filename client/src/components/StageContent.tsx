@@ -2,6 +2,7 @@ import { useMemo, useState } from "react";
 import { SummaryCard } from "@/components/SummaryCard";
 import { ComingSoonStage } from "@/components/ComingSoonStage";
 import { ProtectStage } from "@/components/ProtectStage";
+import { TimingStage } from "@/components/TimingStage";
 import { QuadrantExplorer, generateQuadrantData } from "@/components/QuadrantExplorer";
 import { FinancialScorecard } from "@/components/FinancialScorecard";
 import { ValuationExplorer, VALUATION_QUADRANT_DATA, type ValuationQuadrantData } from "@/components/ValuationExplorer";
@@ -24,19 +25,12 @@ interface StageContentProps {
 }
 
 const COMING_SOON_STAGES = {
-  4: {
+  5: {
     stageTitle: "Plan Your Investment",
     icon: "🗺️",
     hook: "No more winging it. Invest with a plan.",
     summary: "What's your goal? How much should you invest — and when? This step helps you create a calm, intentional strategy that makes emotional blowups less likely.",
     cta: "Coming soon: your personal investing playbook. Join the waitlist to be the first in."
-  },
-  5: {
-    stageTitle: "Make Your Move",
-    icon: "🎯",
-    hook: "Don't time the market. Time your move.",
-    summary: "Execution isn't about prediction — it's about structure. This step guides you through entering with clarity: when, how, and how much. No FOMO, no YOLO, just calm execution.",
-    cta: "Be the first to try smarter execution tools. Join the waitlist below."
   },
   6: {
     stageTitle: "Protect What You Own",
@@ -223,6 +217,26 @@ export function StageContent({ stage, summaryData, financialMetrics, balanceShee
           <ValuationScorecard quadrantData={valuationQuadrantData} />
         </CardContent>
       </Card>
+    );
+  }
+
+  if (stage === 4) {
+    const getLogoUrl = (homepage: string) => {
+      try {
+        const url = new URL(homepage);
+        return `/api/logo/${url.hostname}`;
+      } catch {
+        return null;
+      }
+    };
+    const logoUrl = summaryData?.metadata?.homepage ? getLogoUrl(summaryData.metadata.homepage) : null;
+
+    return (
+      <TimingStage 
+        ticker={ticker}
+        companyName={summaryData?.companyName}
+        logoUrl={logoUrl || undefined}
+      />
     );
   }
 

@@ -1,5 +1,5 @@
 import axios from 'axios';
-import type { FinancialMetrics, BalanceSheetMetrics, ValuationMetrics, ValuationQuadrant } from '@shared/schema';
+import type { FinancialMetrics, BalanceSheetMetrics, ValuationMetrics, ValuationQuadrant, TimingAnalysis, TimingSignalStatus } from '@shared/schema';
 
 const ALPHA_VANTAGE_API_KEY = process.env.ALPHA_VANTAGE_API_KEY;
 const BASE_URL = 'https://www.alphavantage.co/query';
@@ -1420,8 +1420,447 @@ export class AlphaVantageService {
     if (isHighPE && isLowGrowth) return 'risky';
     return 'caution';
   }
+
+  async getTimingAnalysis(ticker: string): Promise<TimingAnalysis> {
+    const upperTicker = ticker.toUpperCase();
+
+    // Check cache first
+    const cached = timingCache.get(upperTicker);
+    if (cached && Date.now() - cached.timestamp < CACHE_TTL) {
+      return cached.data;
+    }
+
+    if (!ALPHA_VANTAGE_API_KEY) {
+      throw new Error('ALPHA_VANTAGE_API_KEY is not configured');
+    }
+
+    try {
+      const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
+
+      // Fetch daily prices with full output for more data points
+      const dailyRes = await axios.get<AlphaVantageDailyPrices>(BASE_URL, {
+        params: {
+          function: 'TIME_SERIES_DAILY',
+          symbol: upperTicker,
+          outputsize: 'full',
+          apikey: ALPHA_VANTAGE_API_KEY,
+        },
+        timeout: 15000,
+      });
+
+      await delay(300);
+
+      // Fetch company overview for name
+      const overviewRes = await axios.get(BASE_URL, {
+        params: {
+          function: 'OVERVIEW',
+          symbol: upperTicker,
+          apikey: ALPHA_VANTAGE_API_KEY,
+        },
+        timeout: 10000,
+      });
+
+      const dailyData = dailyRes.data;
+      const overview = overviewRes.data as AlphaVantageCompanyOverview;
+
+      // Check for rate limiting
+      if ('Note' in dailyData || 'Information' in dailyData) {
+        throw new Error('Alpha Vantage API rate limit reached. Please try again in a minute.');
+      }
+
+      if ('Error Message' in dailyData) {
+        throw new Error(`Ticker ${upperTicker} not found`);
+      }
+
+      const timeSeries = dailyData['Time Series (Daily)'];
+      if (!timeSeries || Object.keys(timeSeries).length < 50) {
+        throw new Error(`Insufficient price data for ${upperTicker}`);
+      }
+
+      // Sort dates descending (most recent first) and get last 200 days
+      const dates = Object.keys(timeSeries).sort((a, b) => new Date(b).getTime() - new Date(a).getTime());
+      const priceData = dates.slice(0, 200).map(date => ({
+        date,
+        close: parseFloat(timeSeries[date]['4. close']),
+        high: parseFloat(timeSeries[date]['2. high']),
+        low: parseFloat(timeSeries[date]['3. low']),
+      }));
+
+      // Calculate EMAs for trend analysis
+      const closes = priceData.map(d => d.close).reverse(); // Oldest first for EMA calculation
+      const ema20 = this.calculateEMA(closes, 20);
+      const ema50 = this.calculateEMA(closes, 50);
+      const ema200 = this.calculateEMA(closes, 200);
+
+      // Calculate MACD components for momentum
+      const ema12 = this.calculateEMA(closes, 12);
+      const ema26 = this.calculateEMA(closes, 26);
+      const macdLine = ema12.map((v, i) => v - ema26[i]);
+      const signalLine = this.calculateEMA(macdLine, 9);
+      const macdHistogram = macdLine.map((v, i) => v - signalLine[i]);
+
+      // Calculate RSI for stretch
+      const rsi = this.calculateRSI(closes, 14);
+
+      // Get latest values
+      const currentPrice = closes[closes.length - 1];
+      const currentEma20 = ema20[ema20.length - 1];
+      const currentEma50 = ema50[ema50.length - 1];
+      const currentEma200 = ema200[ema200.length - 1];
+      const currentMacdHist = macdHistogram[macdHistogram.length - 1];
+      const prevMacdHist = macdHistogram[macdHistogram.length - 2];
+      const currentRsi = rsi[rsi.length - 1];
+
+      // TREND ANALYSIS
+      const trendSignal = this.analyzeTrend(currentPrice, currentEma20, currentEma50, currentEma200, closes);
+      
+      // MOMENTUM ANALYSIS
+      const momentumSignal = this.analyzeMomentum(currentMacdHist, prevMacdHist, macdHistogram);
+      
+      // STRETCH ANALYSIS
+      const stretchSignal = this.analyzeStretch(currentRsi, currentPrice, currentEma20);
+
+      // Calculate overall alignment score (average of normalized scores)
+      const alignmentScore = (trendSignal.score + momentumSignal.score + stretchSignal.score) / 3;
+
+      // Generate verdict message based on alignment
+      const verdictMessage = this.generateVerdictMessage(alignmentScore, trendSignal.status, momentumSignal.status, stretchSignal.status);
+
+      // Prepare chart data (take last 60 points for visualization)
+      const chartLength = Math.min(60, closes.length);
+      const chartStartIndex = closes.length - chartLength;
+
+      // Smooth prices for trend chart (simple moving average smoothing)
+      const smoothedPrices = this.smoothPrices(closes.slice(chartStartIndex), 5);
+      const baselinePrices = ema50.slice(chartStartIndex);
+
+      // Normalize MACD histogram for momentum chart
+      const macdChartData = macdHistogram.slice(chartStartIndex);
+      const maxMacd = Math.max(...macdChartData.map(Math.abs));
+      const normalizedMacd = macdChartData.map(v => maxMacd > 0 ? v / maxMacd : 0);
+      const intensityData = macdChartData.map(v => maxMacd > 0 ? Math.abs(v) / maxMacd : 0);
+
+      // Normalize RSI for stretch chart (-1 to 1 around 50)
+      const rsiChartData = rsi.slice(chartStartIndex);
+      const normalizedRsi = rsiChartData.map(v => (v - 50) / 50);
+      const tensionData = rsiChartData.map(v => Math.abs(v - 50) / 50);
+
+      const analysis: TimingAnalysis = {
+        ticker: upperTicker,
+        companyName: overview.Name || upperTicker,
+        lastUpdated: new Date().toISOString(),
+        verdict: {
+          message: verdictMessage,
+          subtitle: 'These readings describe current market conditions — not the future.',
+          alignmentScore,
+        },
+        trend: {
+          signal: trendSignal,
+          chartData: {
+            prices: smoothedPrices,
+            baseline: baselinePrices,
+          },
+          deepDive: {
+            title: 'Market Structure',
+            explanation: this.getTrendExplanation(trendSignal.status),
+          },
+        },
+        momentum: {
+          signal: momentumSignal,
+          chartData: {
+            values: normalizedMacd,
+            intensity: intensityData,
+          },
+          deepDive: {
+            title: 'Pressure Flow',
+            explanation: this.getMomentumExplanation(momentumSignal.status),
+          },
+        },
+        stretch: {
+          signal: stretchSignal,
+          chartData: {
+            values: normalizedRsi,
+            tension: tensionData,
+          },
+          deepDive: {
+            title: 'Price Tension',
+            explanation: this.getStretchExplanation(stretchSignal.status),
+          },
+        },
+      };
+
+      // Cache the result
+      timingCache.set(upperTicker, { data: analysis, timestamp: Date.now() });
+
+      return analysis;
+    } catch (error: any) {
+      if (error.message?.includes('rate limit')) {
+        throw error;
+      }
+      if (error.code === 'ECONNABORTED' || error.code === 'ETIMEDOUT') {
+        throw new Error('Market data request timed out. Please try again.');
+      }
+      throw new Error(`Unable to analyze timing conditions: ${error.message}`);
+    }
+  }
+
+  private calculateEMA(data: number[], period: number): number[] {
+    const k = 2 / (period + 1);
+    const ema: number[] = [];
+    
+    if (data.length === 0) return ema;
+    
+    // Start with SMA for first value
+    let sum = 0;
+    for (let i = 0; i < Math.min(period, data.length); i++) {
+      sum += data[i];
+    }
+    ema.push(sum / Math.min(period, data.length));
+    
+    // Calculate EMA for remaining values
+    for (let i = 1; i < data.length; i++) {
+      ema.push(data[i] * k + ema[i - 1] * (1 - k));
+    }
+    
+    return ema;
+  }
+
+  private calculateRSI(data: number[], period: number): number[] {
+    const rsi: number[] = [];
+    if (data.length < period + 1) return data.map(() => 50);
+
+    let gains = 0;
+    let losses = 0;
+
+    // Calculate first average gain/loss
+    for (let i = 1; i <= period; i++) {
+      const change = data[i] - data[i - 1];
+      if (change > 0) gains += change;
+      else losses -= change;
+    }
+
+    let avgGain = gains / period;
+    let avgLoss = losses / period;
+
+    // Fill initial values
+    for (let i = 0; i <= period; i++) {
+      rsi.push(50);
+    }
+
+    // Calculate RSI for remaining values
+    for (let i = period + 1; i < data.length; i++) {
+      const change = data[i] - data[i - 1];
+      const gain = change > 0 ? change : 0;
+      const loss = change < 0 ? -change : 0;
+
+      avgGain = (avgGain * (period - 1) + gain) / period;
+      avgLoss = (avgLoss * (period - 1) + loss) / period;
+
+      const rs = avgLoss === 0 ? 100 : avgGain / avgLoss;
+      rsi.push(100 - (100 / (1 + rs)));
+    }
+
+    return rsi;
+  }
+
+  private smoothPrices(prices: number[], window: number): number[] {
+    const smoothed: number[] = [];
+    for (let i = 0; i < prices.length; i++) {
+      const start = Math.max(0, i - Math.floor(window / 2));
+      const end = Math.min(prices.length, i + Math.floor(window / 2) + 1);
+      const sum = prices.slice(start, end).reduce((a, b) => a + b, 0);
+      smoothed.push(sum / (end - start));
+    }
+    return smoothed;
+  }
+
+  private analyzeTrend(price: number, ema20: number, ema50: number, ema200: number, closes: number[]): { status: TimingSignalStatus; label: string; interpretation: string; score: number } {
+    // Check EMA alignment and price position
+    const aboveEma20 = price > ema20;
+    const aboveEma50 = price > ema50;
+    const aboveEma200 = price > ema200;
+    const ema20AboveEma50 = ema20 > ema50;
+    const ema50AboveEma200 = ema50 > ema200;
+
+    // Count bullish signals
+    const bullishCount = [aboveEma20, aboveEma50, aboveEma200, ema20AboveEma50, ema50AboveEma200].filter(Boolean).length;
+
+    // Check for higher highs in recent price action
+    const recentHighs = closes.slice(-20);
+    const midHighs = closes.slice(-40, -20);
+    const recentHigh = Math.max(...recentHighs);
+    const midHigh = midHighs.length > 0 ? Math.max(...midHighs) : recentHigh;
+    const makingHigherHighs = recentHigh > midHigh * 0.98;
+
+    let status: TimingSignalStatus;
+    let label: string;
+    let interpretation: string;
+    let score: number;
+
+    if (bullishCount >= 4 && makingHigherHighs) {
+      status = 'green';
+      label = 'Supportive';
+      interpretation = 'Structure shows rising momentum with aligned trends.';
+      score = 0.8;
+    } else if (bullishCount >= 3) {
+      status = 'green';
+      label = 'Constructive';
+      interpretation = 'Structure is generally positive, showing upward bias.';
+      score = 0.5;
+    } else if (bullishCount >= 2) {
+      status = 'yellow';
+      label = 'Mixed';
+      interpretation = 'Structure is transitioning — direction not yet clear.';
+      score = 0;
+    } else if (bullishCount === 1) {
+      status = 'yellow';
+      label = 'Weakening';
+      interpretation = 'Structure is under pressure, with few supportive elements.';
+      score = -0.3;
+    } else {
+      status = 'red';
+      label = 'Declining';
+      interpretation = 'Structure shows downward pressure across timeframes.';
+      score = -0.7;
+    }
+
+    return { status, label, interpretation, score };
+  }
+
+  private analyzeMomentum(currentHist: number, prevHist: number, histogram: number[]): { status: TimingSignalStatus; label: string; interpretation: string; score: number } {
+    const isPositive = currentHist > 0;
+    const isRising = currentHist > prevHist;
+    
+    // Check recent histogram trend (last 5 bars)
+    const recentHist = histogram.slice(-5);
+    const histTrend = recentHist[recentHist.length - 1] - recentHist[0];
+    const avgHist = recentHist.reduce((a, b) => a + b, 0) / recentHist.length;
+
+    let status: TimingSignalStatus;
+    let label: string;
+    let interpretation: string;
+    let score: number;
+
+    if (isPositive && isRising && histTrend > 0) {
+      status = 'green';
+      label = 'Building';
+      interpretation = 'Positive pressure is increasing — conditions favor patience.';
+      score = 0.7;
+    } else if (isPositive && !isRising) {
+      status = 'yellow';
+      label = 'Stabilizing';
+      interpretation = 'Positive pressure is present but not accelerating.';
+      score = 0.3;
+    } else if (!isPositive && isRising) {
+      status = 'yellow';
+      label = 'Improving';
+      interpretation = 'Negative pressure is easing — conditions may be shifting.';
+      score = 0.1;
+    } else if (!isPositive && avgHist < 0 && histTrend < 0) {
+      status = 'red';
+      label = 'Intensifying';
+      interpretation = 'Selling pressure continues to build.';
+      score = -0.7;
+    } else {
+      status = 'yellow';
+      label = 'Transitioning';
+      interpretation = 'Pressure is shifting — waiting for clarity.';
+      score = -0.2;
+    }
+
+    return { status, label, interpretation, score };
+  }
+
+  private analyzeStretch(rsi: number, price: number, ema20: number): { status: TimingSignalStatus; label: string; interpretation: string; score: number } {
+    const priceDistFromEma = ((price - ema20) / ema20) * 100;
+
+    let status: TimingSignalStatus;
+    let label: string;
+    let interpretation: string;
+    let score: number;
+
+    if (rsi > 70 || priceDistFromEma > 8) {
+      status = 'red';
+      label = 'Extended';
+      interpretation = 'Price appears stretched above equilibrium — tension is high.';
+      score = -0.6;
+    } else if (rsi < 30 || priceDistFromEma < -8) {
+      status = 'red';
+      label = 'Compressed';
+      interpretation = 'Price appears stretched below equilibrium — potential snap-back.';
+      score = -0.4;
+    } else if (rsi > 60 || priceDistFromEma > 4) {
+      status = 'yellow';
+      label = 'Warming';
+      interpretation = 'Price is moving away from equilibrium — some tension present.';
+      score = 0.1;
+    } else if (rsi < 40 || priceDistFromEma < -4) {
+      status = 'yellow';
+      label = 'Cooling';
+      interpretation = 'Price is below equilibrium — potential for mean reversion.';
+      score = 0.1;
+    } else {
+      status = 'green';
+      label = 'Balanced';
+      interpretation = 'Price is near equilibrium — no excessive tension.';
+      score = 0.5;
+    }
+
+    return { status, label, interpretation, score };
+  }
+
+  private generateVerdictMessage(alignmentScore: number, trendStatus: TimingSignalStatus, momentumStatus: TimingSignalStatus, stretchStatus: TimingSignalStatus): string {
+    const greenCount = [trendStatus, momentumStatus, stretchStatus].filter(s => s === 'green').length;
+    const redCount = [trendStatus, momentumStatus, stretchStatus].filter(s => s === 'red').length;
+
+    if (alignmentScore > 0.5 && greenCount >= 2) {
+      return 'Conditions look supportive';
+    } else if (alignmentScore > 0.2 && greenCount >= 1) {
+      return 'Conditions are improving, but not fully aligned';
+    } else if (alignmentScore > -0.2) {
+      return 'Conditions are mixed — patience may be rewarded';
+    } else if (redCount >= 2) {
+      return "We'd wait for stronger alignment";
+    } else {
+      return 'Conditions suggest waiting for more clarity';
+    }
+  }
+
+  private getTrendExplanation(status: TimingSignalStatus): string {
+    switch (status) {
+      case 'green':
+        return 'The overall structure shows prices making progress. Shorter-term trends are aligned with longer-term direction, suggesting underlying strength. This doesn\'t predict the future, but it describes a generally healthy pattern.';
+      case 'yellow':
+        return 'The structure is in transition. Some timeframes show strength while others lag. This mixed picture often resolves in one direction or another — waiting for clarity can help.';
+      case 'red':
+        return 'The structure shows prices moving lower across most timeframes. While this doesn\'t mean prices will continue falling, it suggests caution until conditions stabilize.';
+    }
+  }
+
+  private getMomentumExplanation(status: TimingSignalStatus): string {
+    switch (status) {
+      case 'green':
+        return 'Underlying pressure is positive and building. This suggests more participants are leaning in the same direction, which can support continued movement. However, strong momentum can reverse quickly.';
+      case 'yellow':
+        return 'Pressure is shifting or stabilizing. The balance between participants is changing, which often precedes a new directional move. Clarity may come soon.';
+      case 'red':
+        return 'Underlying pressure remains negative. More participants appear to be moving in the opposite direction. This doesn\'t predict further decline, but suggests waiting for pressure to ease.';
+    }
+  }
+
+  private getStretchExplanation(status: TimingSignalStatus): string {
+    switch (status) {
+      case 'green':
+        return 'Price is near its natural equilibrium — neither stretched too high nor too low. This balanced state often provides more stable conditions for patient decisions.';
+      case 'yellow':
+        return 'Price has moved somewhat away from equilibrium. Some tension exists, which could resolve through price returning toward balance or the equilibrium adjusting.';
+      case 'red':
+        return 'Price appears significantly stretched from equilibrium. High tension states often resolve through sharp moves. Patience may help avoid acting at extreme levels.';
+    }
+  }
 }
 
 const valuationCache = new Map<string, { data: ValuationMetrics; timestamp: number }>();
+const timingCache = new Map<string, { data: TimingAnalysis; timestamp: number }>();
 
 export const alphaVantageService = new AlphaVantageService();
