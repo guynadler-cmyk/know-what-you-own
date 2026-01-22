@@ -77,9 +77,8 @@ export default function LandingPage() {
         <meta name="twitter:description" content="Understand the businesses you invest in. Get plain-English summaries of SEC 10-K filings powered by AI." />
         <link rel="canonical" href="https://restnvest.com/" />
       </Helmet>
-
       {/* Sticky Header */}
-      <header className="fixed top-0 left-0 right-0 z-50 bg-[#f8f9fa] dark:bg-background/95 backdrop-blur border-b border-[#e0e0e0] dark:border-border overflow-visible">
+      <header className="fixed top-0 left-0 right-0 z-50 bg-[#f8f9fa] dark:bg-background/95 backdrop-blur border-b border-[#e0e0e0] dark:border-border overflow-visible pt-[5px] pb-[5px]">
         <div className="flex justify-between items-start px-4 sm:px-8 h-16 max-w-[1200px] mx-auto">
           <Link href="/" data-testid="link-logo" className="flex items-start -mt-2">
             <img 
@@ -93,7 +92,6 @@ export default function LandingPage() {
           </div>
         </div>
       </header>
-
       <main className="flex-1 pt-16">
         {/* Hero Section */}
         <section 
@@ -285,7 +283,6 @@ export default function LandingPage() {
           </div>
         </section>
       </main>
-
       {/* Minimal Footer */}
       <footer className="border-t border-border bg-background" data-testid="footer">
         <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8 py-12">
