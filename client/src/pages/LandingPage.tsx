@@ -9,7 +9,7 @@ import changesImg from "@assets/Changes_Over_Time_1766161245320.png";
 import competitionImg from "@assets/Competition_1766161245321.png";
 import performanceImg from "@assets/Understand_Performance_1766161245322.png";
 import technicalImg from "@assets/technical_analysis_1766161245321.png";
-import fullLogoWithTagline from "@assets/ChatGPT_Image_Jan_12,_2026,_03_01_20_PM_1769108794093.png";
+import fullLogoBanner from "@assets/ChatGPT_Image_Jan_12,_2026,_06_22_15_PM_1769108399893.png";
 import wordmarkWithTagline from "@assets/ChatGPT_Image_Jan_12,_2026,_06_06_56_PM_1769108399893.png";
 
 interface FeatureSection {
@@ -87,9 +87,9 @@ export default function LandingPage() {
               data-testid="link-logo"
             >
               <img 
-                src={fullLogoWithTagline} 
+                src={fullLogoBanner} 
                 alt="Restnvest - Informed investing, built to last" 
-                className="h-16 sm:h-20 object-contain"
+                className="h-14 sm:h-16 rounded-md object-contain"
               />
             </div>
             <ThemeToggle />
