@@ -12,6 +12,8 @@ import technicalImg from "@assets/technical_analysis_1766161245321.png";
 import headerLogo from "@assets/ChatGPT_Image_Jan_22,_2026,_12_16_06_PM_1769109403610.png";
 import wordmarkWithTagline from "@assets/ChatGPT_Image_Jan_12,_2026,_06_06_56_PM_1769108399893.png";
 
+import ChatGPT_Image_Jan_22__2026__01_22_13_PM from "@assets/ChatGPT Image Jan 22, 2026, 01_22_13 PM.png";
+
 interface FeatureSection {
   headline: string;
   body: string;
@@ -82,9 +84,9 @@ export default function LandingPage() {
         <div className="flex justify-between items-start px-4 sm:px-8 h-16 max-w-[1200px] mx-auto">
           <Link href="/" data-testid="link-logo" className="flex items-start -mt-2">
             <img 
-              src={headerLogo} 
+              src={ChatGPT_Image_Jan_22__2026__01_22_13_PM} 
               alt="Restnvest - Informed investing, built to last" 
-              className="h-48 md:h-64 w-auto object-contain"
+              className="h-48 md:h-64 w-auto object-contain mt-[0px] mb-[0px]"
             />
           </Link>
           <div className="pt-4">
