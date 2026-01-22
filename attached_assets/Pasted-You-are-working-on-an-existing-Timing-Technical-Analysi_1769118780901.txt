@@ -1,0 +1,194 @@
+You are working on an existing Timing (Technical Analysis) implementation in the restnvest app.
+
+⚠️ This is an edit, not a rebuild.
+Do NOT refactor architecture, APIs, routing, or data sources.
+
+The alignment bar is correct and should remain unchanged.
+
+Your task is to fix the charts, which currently look polished but fail to clearly communicate what the user should notice.
+
+Core Product Rule (Non-Negotiable)
+
+We do not show information. We drive action.
+Charts must visually encode the conclusion so users immediately know what to look for.
+
+If a chart requires the caption to understand what matters, the chart is wrong.
+
+Scenario-Agnostic Requirement
+
+All visuals must work correctly across all market states, including:
+
+Strengthening
+
+Weakening
+
+Sideways
+
+Transitional
+
+Indecisive
+
+Do NOT hard-code annotations for a specific case (e.g. “lower lows”).
+The geometry must adapt automatically to the data.
+
+GLOBAL CHART RULES (Apply to All)
+
+One chart = one conclusion
+
+No legends
+
+No instructional text inside charts
+
+No reliance on color alone to convey meaning
+
+Geometry (direction, distance, shape) must carry the message
+
+If the chart can’t be understood with text hidden → simplify further
+
+TREND CHART — Encode Price Structure Explicitly
+Question this chart answers
+
+“Is price structure stepping up, stepping down, or unresolved?”
+
+Required visual encoding
+
+The chart MUST:
+
+Explicitly mark swing highs and swing lows
+
+Make the direction of those swings unmistakable
+
+Encode structure through shape, not explanation
+
+Visual rules
+
+Single smooth price line or ribbon
+
+Dots ONLY at detected swing highs and swing lows
+
+Optional faint guide lines connecting highs and lows to show direction
+
+No EMAs
+
+No gradients
+
+No captions inside the chart
+
+No axes, dates, or numbers
+
+A user must instantly be able to say:
+
+“Highs are getting lower”
+
+“Lows are rising”
+
+“Structure is flat / unresolved”
+
+without reading any text.
+
+MOMENTUM CHART — Use EMA Relationship (Not MACD Histogram)
+Question this chart answers
+
+“Is short-term behavior diverging from or re-aligning with long-term behavior?”
+
+Required data primitive
+
+Short EMA vs Long EMA
+
+MACD histogram may be used internally for logic, but must not be visualized.
+
+Visual encoding rules
+
+Visualize ONLY the distance between short EMA and long EMA
+
+Centerline = long-term baseline
+
+Distance from center = pressure
+
+Above vs below = polarity
+
+Increasing distance = pressure intensifying
+
+Decreasing distance = pressure easing
+
+Do NOT include:
+
+MACD histogram bars
+
+Signal lines
+
+Multiple curves
+
+Bars + lines together
+
+A user must immediately see:
+
+“Pressure is pulling away downward”
+
+“Pressure is compressing”
+
+“No clear pressure / indecision”
+
+STRETCH CHART — Encode Distance From Equilibrium
+Question this chart answers
+
+“How far is price from balance — and is tension building or releasing?”
+
+Required visual encoding
+
+Equilibrium must be visually dominant
+
+Distance from equilibrium must be immediately visible
+
+Movement is secondary to distance
+
+Visual rules
+
+One strong equilibrium line or band
+
+Thin price line
+
+Shade ONLY the gap between price and equilibrium
+
+No RSI values
+
+No overbought / oversold zones
+
+No decorative gradients unrelated to distance
+
+A user must immediately feel:
+
+“Near balance”
+
+or “Meaningfully stretched”
+
+without reading the caption.
+
+WHAT NOT TO CHANGE
+
+Do NOT change data sources or APIs
+
+Do NOT add indicators
+
+Do NOT add numbers, axes, or timestamps
+
+Do NOT refactor component structure
+
+Do NOT introduce trading language or signals
+
+This is a visual communication correction, not a technical expansion.
+
+FINAL VALIDATION CHECK
+
+Before marking complete:
+
+Hide all explanatory text — does each chart still communicate its takeaway?
+
+Can a non-technical investor describe what they’re seeing in one sentence?
+
+Do the charts reduce decision anxiety rather than increase it?
+
+If not, remove visual elements until they do.
+
+Goal:
+Charts that make the correct behavior obvious, without asking the user to think like a trader.

@@ -5,7 +5,7 @@ interface TrendChartProps {
   status: TimingSignalStatus;
 }
 
-function getStrokeColor(status: TimingSignalStatus): string {
+function getAccentColor(status: TimingSignalStatus): string {
   switch (status) {
     case "green":
       return "#10b981";
@@ -16,35 +16,13 @@ function getStrokeColor(status: TimingSignalStatus): string {
   }
 }
 
-function getFillColor(status: TimingSignalStatus): string {
-  switch (status) {
-    case "green":
-      return "rgba(16, 185, 129, 0.12)";
-    case "yellow":
-      return "rgba(245, 158, 11, 0.12)";
-    case "red":
-      return "rgba(244, 63, 94, 0.12)";
-  }
-}
-
-function getStructureLabel(status: TimingSignalStatus): string {
-  switch (status) {
-    case "green":
-      return "Higher highs, higher lows";
-    case "yellow":
-      return "Structure transitioning";
-    case "red":
-      return "Lower highs, lower lows";
-  }
-}
-
 interface SwingPoint {
   index: number;
   value: number;
   type: 'high' | 'low';
 }
 
-function findSwingPoints(prices: number[], windowSize: number = 5): SwingPoint[] {
+function findSwingPoints(prices: number[], windowSize: number = 4): SwingPoint[] {
   const swings: SwingPoint[] = [];
   
   for (let i = windowSize; i < prices.length - windowSize; i++) {
@@ -52,12 +30,12 @@ function findSwingPoints(prices: number[], windowSize: number = 5): SwingPoint[]
     const windowAfter = prices.slice(i + 1, i + windowSize + 1);
     const current = prices[i];
     
-    const isLocalHigh = windowBefore.every(p => p < current) && windowAfter.every(p => p < current);
-    const isLocalLow = windowBefore.every(p => p > current) && windowAfter.every(p => p > current);
+    const isLocalHigh = windowBefore.every(p => p <= current) && windowAfter.every(p => p <= current);
+    const isLocalLow = windowBefore.every(p => p >= current) && windowAfter.every(p => p >= current);
     
-    if (isLocalHigh) {
+    if (isLocalHigh && (swings.length === 0 || swings[swings.length - 1].type !== 'high')) {
       swings.push({ index: i, value: current, type: 'high' });
-    } else if (isLocalLow) {
+    } else if (isLocalLow && (swings.length === 0 || swings[swings.length - 1].type !== 'low')) {
       swings.push({ index: i, value: current, type: 'low' });
     }
   }
@@ -66,7 +44,7 @@ function findSwingPoints(prices: number[], windowSize: number = 5): SwingPoint[]
 }
 
 export function TrendChart({ data, status }: TrendChartProps) {
-  const { prices, baseline } = data;
+  const { prices } = data;
   
   if (!prices || prices.length === 0) {
     return (
@@ -77,14 +55,13 @@ export function TrendChart({ data, status }: TrendChartProps) {
   }
 
   const width = 400;
-  const height = 140;
-  const padding = { top: 15, right: 15, bottom: 25, left: 15 };
+  const height = 120;
+  const padding = { top: 12, right: 12, bottom: 12, left: 12 };
   const chartWidth = width - padding.left - padding.right;
   const chartHeight = height - padding.top - padding.bottom;
 
-  const allValues = [...prices, ...(baseline || [])];
-  const minValue = Math.min(...allValues);
-  const maxValue = Math.max(...allValues);
+  const minValue = Math.min(...prices);
+  const maxValue = Math.max(...prices);
   const valueRange = maxValue - minValue || 1;
 
   const scaleX = (index: number) => padding.left + (index / (prices.length - 1)) * chartWidth;
@@ -94,24 +71,18 @@ export function TrendChart({ data, status }: TrendChartProps) {
     .map((p, i) => `${i === 0 ? "M" : "L"} ${scaleX(i)} ${scaleY(p)}`)
     .join(" ");
 
-  const areaPath = `${pricePath} L ${scaleX(prices.length - 1)} ${height - padding.bottom} L ${padding.left} ${height - padding.bottom} Z`;
-
-  const baselinePath = baseline && baseline.length > 0
-    ? baseline.map((p, i) => `${i === 0 ? "M" : "L"} ${scaleX(i)} ${scaleY(p)}`).join(" ")
-    : null;
-
-  const swingPoints = findSwingPoints(prices, 4);
+  const swingPoints = findSwingPoints(prices, 3);
   const highs = swingPoints.filter(s => s.type === 'high');
   const lows = swingPoints.filter(s => s.type === 'low');
   
-  const highsPath = highs.length >= 2 
+  const highsGuidePath = highs.length >= 2 
     ? highs.map((h, i) => `${i === 0 ? "M" : "L"} ${scaleX(h.index)} ${scaleY(h.value)}`).join(" ")
     : null;
-  const lowsPath = lows.length >= 2
+  const lowsGuidePath = lows.length >= 2
     ? lows.map((l, i) => `${i === 0 ? "M" : "L"} ${scaleX(l.index)} ${scaleY(l.value)}`).join(" ")
     : null;
 
-  const structureLabel = getStructureLabel(status);
+  const accentColor = getAccentColor(status);
 
   return (
     <svg 
@@ -120,128 +91,55 @@ export function TrendChart({ data, status }: TrendChartProps) {
       preserveAspectRatio="none"
       data-testid="trend-chart"
     >
-      <defs>
-        <linearGradient id={`trend-gradient-${status}`} x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stopColor={getFillColor(status)} />
-          <stop offset="100%" stopColor="transparent" />
-        </linearGradient>
-        <filter id="glow">
-          <feGaussianBlur stdDeviation="1.5" result="coloredBlur"/>
-          <feMerge>
-            <feMergeNode in="coloredBlur"/>
-            <feMergeNode in="SourceGraphic"/>
-          </feMerge>
-        </filter>
-      </defs>
-      
-      <path
-        d={areaPath}
-        fill={`url(#trend-gradient-${status})`}
-      />
-      
-      {baselinePath && (
+      {highsGuidePath && (
         <path
-          d={baselinePath}
+          d={highsGuidePath}
           fill="none"
-          stroke="currentColor"
+          stroke={accentColor}
           strokeWidth="1"
-          strokeDasharray="4 4"
-          className="text-muted-foreground/30"
+          strokeDasharray="4 3"
+          opacity="0.4"
         />
       )}
-
-      {highsPath && (
+      {lowsGuidePath && (
         <path
-          d={highsPath}
+          d={lowsGuidePath}
           fill="none"
-          stroke={status === 'green' ? '#10b981' : status === 'yellow' ? '#f59e0b' : '#f43f5e'}
-          strokeWidth="1.5"
-          strokeDasharray="6 4"
-          opacity="0.5"
-        />
-      )}
-      {lowsPath && (
-        <path
-          d={lowsPath}
-          fill="none"
-          stroke={status === 'green' ? '#10b981' : status === 'yellow' ? '#f59e0b' : '#f43f5e'}
-          strokeWidth="1.5"
-          strokeDasharray="6 4"
-          opacity="0.5"
+          stroke={accentColor}
+          strokeWidth="1"
+          strokeDasharray="4 3"
+          opacity="0.4"
         />
       )}
       
       <path
         d={pricePath}
         fill="none"
-        stroke={getStrokeColor(status)}
-        strokeWidth="2.5"
+        stroke="currentColor"
+        strokeWidth="2"
         strokeLinecap="round"
         strokeLinejoin="round"
-        filter="url(#glow)"
+        className="text-foreground/70"
       />
 
       {highs.map((swing, i) => (
-        <g key={`high-${i}`}>
-          <circle
-            cx={scaleX(swing.index)}
-            cy={scaleY(swing.value)}
-            r="4"
-            fill={getStrokeColor(status)}
-            opacity="0.7"
-          />
-          <line
-            x1={scaleX(swing.index)}
-            y1={scaleY(swing.value) - 6}
-            x2={scaleX(swing.index)}
-            y2={scaleY(swing.value) - 12}
-            stroke={getStrokeColor(status)}
-            strokeWidth="1.5"
-            opacity="0.5"
-          />
-        </g>
+        <circle
+          key={`high-${i}`}
+          cx={scaleX(swing.index)}
+          cy={scaleY(swing.value)}
+          r="4"
+          fill={accentColor}
+        />
       ))}
       {lows.map((swing, i) => (
-        <g key={`low-${i}`}>
-          <circle
-            cx={scaleX(swing.index)}
-            cy={scaleY(swing.value)}
-            r="4"
-            fill={getStrokeColor(status)}
-            opacity="0.7"
-          />
-          <line
-            x1={scaleX(swing.index)}
-            y1={scaleY(swing.value) + 6}
-            x2={scaleX(swing.index)}
-            y2={scaleY(swing.value) + 12}
-            stroke={getStrokeColor(status)}
-            strokeWidth="1.5"
-            opacity="0.5"
-          />
-        </g>
+        <circle
+          key={`low-${i}`}
+          cx={scaleX(swing.index)}
+          cy={scaleY(swing.value)}
+          r="4"
+          fill={accentColor}
+        />
       ))}
-
-      <rect
-        x={width / 2 - 75}
-        y={height - 20}
-        width="150"
-        height="16"
-        rx="3"
-        fill="currentColor"
-        className="text-background/80"
-      />
-      <text
-        x={width / 2}
-        y={height - 9}
-        textAnchor="middle"
-        fontSize="9"
-        fontWeight="500"
-        fill="currentColor"
-        className="text-muted-foreground"
-      >
-        {structureLabel}
-      </text>
     </svg>
   );
 }
