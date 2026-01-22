@@ -9,6 +9,8 @@ import changesImg from "@assets/Changes_Over_Time_1766161245320.png";
 import competitionImg from "@assets/Competition_1766161245321.png";
 import performanceImg from "@assets/Understand_Performance_1766161245322.png";
 import technicalImg from "@assets/technical_analysis_1766161245321.png";
+import rnvIconLogo from "@assets/ChatGPT_Image_Jan_22,_2026,_11_55_50_AM_1769108399894.png";
+import wordmarkWithTagline from "@assets/ChatGPT_Image_Jan_12,_2026,_06_06_56_PM_1769108399893.png";
 
 interface FeatureSection {
   headline: string;
@@ -80,12 +82,17 @@ export default function LandingPage() {
       <header className="fixed top-0 left-0 right-0 z-50 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-b border-border">
         <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
           <div className="flex h-14 items-center justify-between">
-            <span 
-              className="text-lg font-semibold"
+            <div 
+              className="flex items-center gap-2"
               data-testid="link-logo"
             >
-              restnvest
-            </span>
+              <img 
+                src={rnvIconLogo} 
+                alt="Restnvest" 
+                className="h-8 w-8 object-contain"
+              />
+              <span className="text-lg font-semibold">restnvest</span>
+            </div>
             <ThemeToggle />
           </div>
         </div>
@@ -285,10 +292,14 @@ export default function LandingPage() {
 
       {/* Minimal Footer */}
       <footer className="border-t border-border bg-background" data-testid="footer">
-        <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8 py-8">
-          <div className="text-center space-y-4">
-            <div className="text-sm font-semibold" data-testid="text-footer-brand">
-              restnvest
+        <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8 py-12">
+          <div className="text-center space-y-6">
+            <div className="flex justify-center" data-testid="text-footer-brand">
+              <img 
+                src={wordmarkWithTagline} 
+                alt="Restnvest - Informed investing, built to last" 
+                className="h-16 object-contain dark:brightness-110"
+              />
             </div>
             <p className="text-xs text-muted-foreground" data-testid="text-footer-disclaimer">
               For informational purposes only. Not investment advice.
