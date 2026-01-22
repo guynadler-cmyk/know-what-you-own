@@ -48,9 +48,46 @@ function getStatusBorderColor(status: TimingSignalStatus): string {
   }
 }
 
-function VerdictBanner({ verdict }: { verdict: TimingAnalysis["verdict"] }) {
-  const alignmentPercent = ((verdict.alignmentScore + 1) / 2) * 100;
+function AlignmentIndicator({ score }: { score: number }) {
+  const normalizedPosition = ((score + 1) / 2) * 100;
   
+  return (
+    <div className="mt-6" data-testid="alignment-indicator">
+      <div className="flex justify-between text-xs text-muted-foreground mb-2">
+        <span>Weak</span>
+        <span>Strong</span>
+      </div>
+      <div className="relative h-3 rounded-full overflow-hidden">
+        <div 
+          className="absolute inset-0 rounded-full"
+          style={{
+            background: 'linear-gradient(to right, #f43f5e 0%, #f59e0b 35%, #f59e0b 50%, #10b981 75%, #10b981 100%)'
+          }}
+        />
+        <div 
+          className="absolute inset-0 rounded-full opacity-20"
+          style={{
+            background: 'linear-gradient(to right, transparent 0%, rgba(255,255,255,0.3) 50%, transparent 100%)'
+          }}
+        />
+        <div 
+          className="absolute top-1/2 -translate-y-1/2 w-5 h-5 rounded-full bg-white border-2 border-neutral-800 dark:border-white shadow-lg transition-all duration-500 flex items-center justify-center"
+          style={{ left: `calc(${Math.max(5, Math.min(95, normalizedPosition))}% - 10px)` }}
+          data-testid="alignment-marker"
+        >
+          <div className="w-2 h-2 rounded-full bg-neutral-800 dark:bg-white" />
+        </div>
+      </div>
+      <div className="flex justify-center mt-3">
+        <span className="text-xs text-muted-foreground/70 italic">
+          Higher alignment means conditions are more supportive
+        </span>
+      </div>
+    </div>
+  );
+}
+
+function VerdictBanner({ verdict }: { verdict: TimingAnalysis["verdict"] }) {
   return (
     <div 
       className="bg-neutral-50 dark:bg-neutral-900/50 rounded-xl p-6 mb-8 border border-border/40"
@@ -63,17 +100,7 @@ function VerdictBanner({ verdict }: { verdict: TimingAnalysis["verdict"] }) {
         <p className="text-muted-foreground text-sm">
           {verdict.subtitle}
         </p>
-        <div className="flex items-center justify-center gap-3 mt-4">
-          <div className="w-48 h-2 bg-muted rounded-full overflow-hidden">
-            <div 
-              className={`h-full transition-all duration-500 rounded-full ${
-                alignmentPercent > 60 ? "bg-emerald-500" : 
-                alignmentPercent > 40 ? "bg-amber-500" : "bg-rose-500"
-              }`}
-              style={{ width: `${alignmentPercent}%` }}
-            />
-          </div>
-        </div>
+        <AlignmentIndicator score={verdict.alignmentScore} />
       </div>
     </div>
   );

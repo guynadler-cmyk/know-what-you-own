@@ -1,0 +1,194 @@
+You are working on an existing implementation of the Timing (Technical Analysis) stage in the restnvest app.
+
+This task is not a rebuild.
+
+You must:
+
+Preserve existing structure, components, and data logic
+
+Modify and enhance visuals and clarity
+
+Improve communication without adding complexity
+
+Assume:
+
+Trend, Momentum, and Stretch logic already exists
+
+Alpha Vantage integration already exists
+
+The page renders correctly today
+
+Your job is to make the meaning obvious at a glance.
+
+Primary Issues to Fix
+1. Alignment / “Wait” Indicator Is Unclear
+
+The current red marker under the verdict does not communicate:
+
+What it represents
+
+Whether higher or lower is better
+
+How it relates to the verdict
+
+Required Fix
+
+Replace the ambiguous marker with an explicit Market Alignment Indicator.
+
+Requirements:
+
+Clearly shows a spectrum from Weak → Strong
+
+Clearly marks the current position
+
+Visually indicates that higher alignment is better
+
+Subtle color progression (red → yellow → green)
+
+No numbers required
+
+This indicator must visually reinforce the verdict:
+
+“Conditions suggest waiting for more clarity”
+
+A user should understand this without reading any text.
+
+Chart Refinement: From Illustration → Explanation
+
+The charts are visually clean but still require users to read text to understand them.
+
+This must change.
+
+Each chart must visually communicate its conclusion at a glance.
+
+Text should confirm, not explain.
+
+Trend Chart: Make Structure Unmistakable
+Current Issue
+
+The price structure is aesthetically pleasing but ambiguous.
+Lower highs / lower lows are not visually explicit.
+
+Required Changes
+
+Without adding numbers or clutter:
+
+Add explicit visual markers:
+
+Subtle dots or ticks on swing highs and lows
+
+Light, sloping guide lines connecting highs and lows
+
+Make direction unavoidable:
+
+If structure is weakening, the eye should clearly see downward stepping
+
+If stabilizing, flattening should be obvious
+
+Add a light, embedded label inside the chart area:
+
+Example: “Price structure: lower highs, lower lows”
+
+Constraints:
+
+No axes
+
+No dates
+
+No candlesticks
+
+No numeric values
+
+This chart should explain trend without text below it.
+
+Momentum Chart: Emphasize Pressure, Not Symmetry
+Current Issue
+
+The chart looks balanced and requires explanation to interpret pressure.
+
+Required Changes
+
+Introduce visual asymmetry:
+
+Selling pressure should feel heavier than buying pressure
+
+Red areas thicker or denser than green when applicable
+
+Add a directional flow cue:
+
+Subtle slope, gradient, or motion indicating pressure direction over time
+
+Keep it abstract:
+
+No MACD lines
+
+No signal lines
+
+No numeric scale
+
+A user should immediately feel:
+
+“Selling pressure is dominant and not easing yet.”
+
+Stretch Chart: Make Tension Obvious
+Current Issue
+
+Equilibrium exists but is too subtle; tension is not immediately felt.
+
+Required Changes
+
+Make the equilibrium line unmistakable:
+
+Slightly thicker, glowing, or clearly labeled “Equilibrium”
+
+Emphasize distance from equilibrium:
+
+Visual shading or vertical distance highlighting
+
+The eye should notice “how far” price is from balance
+
+De-emphasize movement noise:
+
+Focus on tension, not oscillation detail
+
+The chart should visually answer:
+
+“Is price stretched, and is that tension resolving?”
+
+Global Visual Rule (Critical)
+
+For every chart:
+
+If all explanatory text were removed except the title, a smart user should still understand the conclusion.
+
+If not, refine the visuals further.
+
+What NOT to Change
+
+Do not change data sources
+
+Do not change alignment logic
+
+Do not add indicators
+
+Do not add numbers, axes, or timestamps
+
+Do not refactor architecture
+
+Do not add trading features or terminology
+
+This is a communication upgrade, not a technical one.
+
+Final Validation Checklist
+
+Before considering this task complete, confirm:
+
+The alignment indicator clearly shows why the verdict is “wait”
+
+Each chart communicates its message visually first
+
+Text reads as reassurance, not instruction
+
+The page feels calmer and clearer than before
+
+This feature exists to slow users down, not make them feel clever.

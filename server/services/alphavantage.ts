@@ -1759,7 +1759,7 @@ export class AlphaVantageService {
     } else if (!isPositive && avgHist < 0 && histTrend < 0) {
       status = 'red';
       label = 'Intensifying';
-      interpretation = 'Selling pressure continues to build.';
+      interpretation = 'Downward pressure continues to build.';
       score = -0.7;
     } else {
       status = 'yellow';
