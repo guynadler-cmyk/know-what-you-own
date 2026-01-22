@@ -1540,10 +1540,17 @@ export class AlphaVantageService {
       const normalizedMacd = macdChartData.map(v => maxMacd > 0 ? v / maxMacd : 0);
       const intensityData = macdChartData.map(v => maxMacd > 0 ? Math.abs(v) / maxMacd : 0);
 
-      // Normalize RSI for stretch chart (-1 to 1 around 50)
-      const rsiChartData = rsi.slice(chartStartIndex);
-      const normalizedRsi = rsiChartData.map(v => (v - 50) / 50);
-      const tensionData = rsiChartData.map(v => Math.abs(v - 50) / 50);
+      // Calculate price distance from equilibrium (EMA20) for stretch chart
+      // Use fixed scale: 10% deviation = full range
+      const pricesForStretch = closes.slice(chartStartIndex);
+      const ema20ForStretch = ema20.slice(chartStartIndex);
+      const distanceFromEquilibrium = pricesForStretch.map((p, i) => {
+        const eq = ema20ForStretch[i];
+        return eq > 0 ? ((p - eq) / eq) * 100 : 0; // Percent distance
+      });
+      const maxScale = 10; // 10% = full range, consistent across all tickers
+      const normalizedDistance = distanceFromEquilibrium.map(d => Math.max(-1, Math.min(1, d / maxScale)));
+      const tensionData = normalizedDistance.map(v => Math.abs(v));
 
       const analysis: TimingAnalysis = {
         ticker: upperTicker,
@@ -1567,18 +1574,26 @@ export class AlphaVantageService {
         },
         momentum: {
           signal: momentumSignal,
-          chartData: {
-            shortEma: ema12.slice(chartStartIndex).map((v, i) => {
-              const min = Math.min(...ema12.slice(chartStartIndex), ...ema26.slice(chartStartIndex));
-              const max = Math.max(...ema12.slice(chartStartIndex), ...ema26.slice(chartStartIndex));
-              return max > min ? (v - min) / (max - min) : 0.5;
-            }),
-            longEma: ema26.slice(chartStartIndex).map((v, i) => {
-              const min = Math.min(...ema12.slice(chartStartIndex), ...ema26.slice(chartStartIndex));
-              const max = Math.max(...ema12.slice(chartStartIndex), ...ema26.slice(chartStartIndex));
-              return max > min ? (v - min) / (max - min) : 0.5;
-            }),
-          },
+          chartData: (() => {
+            // Normalize by divergence: (short-long)/long as percentage
+            // Fixed 3% divergence scale: same visual gap = same actual divergence
+            const shortSlice = ema12.slice(chartStartIndex);
+            const longSlice = ema26.slice(chartStartIndex);
+            const divergenceScale = 3; // 3% divergence = 0.5 offset from midline
+            // Both curves around 0.5 midline, separation = divergence
+            const shortNorm = shortSlice.map((s, i) => {
+              const l = longSlice[i];
+              const divergence = l > 0 ? ((s - l) / l) * 100 : 0;
+              return Math.max(0, Math.min(1, 0.5 + divergence / (divergenceScale * 2)));
+            });
+            const longNorm = longSlice.map((_, i) => {
+              return 0.5; // Long EMA is always at midline
+            });
+            return {
+              shortEma: shortNorm,
+              longEma: longNorm,
+            };
+          })(),
           deepDive: {
             title: 'Pressure Flow',
             explanation: this.getMomentumExplanation(momentumSignal.status),
@@ -1587,7 +1602,7 @@ export class AlphaVantageService {
         stretch: {
           signal: stretchSignal,
           chartData: {
-            values: normalizedRsi,
+            values: normalizedDistance,
             tension: tensionData,
           },
           deepDive: {
