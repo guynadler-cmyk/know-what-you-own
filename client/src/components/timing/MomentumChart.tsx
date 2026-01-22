@@ -3,9 +3,10 @@ import type { MomentumChartData, TimingSignalStatus } from "@shared/schema";
 interface MomentumChartProps {
   data: MomentumChartData;
   status: TimingSignalStatus;
+  showOverlay?: boolean;
 }
 
-export function MomentumChart({ data, status }: MomentumChartProps) {
+export function MomentumChart({ data, status, showOverlay = false }: MomentumChartProps) {
   const { shortEma, longEma } = data;
   
   if (!shortEma || !longEma || shortEma.length === 0 || longEma.length === 0) {
@@ -76,6 +77,10 @@ export function MomentumChart({ data, status }: MomentumChartProps) {
   const latestLong = longEma[longEma.length - 1];
   const isCurrentlyAbove = latestShort > latestLong;
 
+  const overlayStartX = padding.left + chartWidth * 0.15;
+  const overlayEndX = padding.left + chartWidth * 0.45;
+  const overlayMidX = (overlayStartX + overlayEndX) / 2;
+
   return (
     <svg 
       viewBox={`0 0 ${width} ${height}`} 
@@ -109,6 +114,65 @@ export function MomentumChart({ data, status }: MomentumChartProps) {
         strokeLinecap="round"
         strokeLinejoin="round"
       />
+
+      <g 
+        className="transition-opacity duration-500 ease-out"
+        style={{ opacity: showOverlay ? 1 : 0, pointerEvents: showOverlay ? 'auto' : 'none' }}
+      >
+          <defs>
+            <linearGradient id="overlayFade" x1="0%" y1="0%" x2="100%" y2="0%">
+              <stop offset="0%" stopColor="currentColor" stopOpacity="0" />
+              <stop offset="20%" stopColor="currentColor" stopOpacity="0.15" />
+              <stop offset="80%" stopColor="currentColor" stopOpacity="0.15" />
+              <stop offset="100%" stopColor="currentColor" stopOpacity="0" />
+            </linearGradient>
+          </defs>
+          
+          <rect
+            x={overlayStartX - 10}
+            y={padding.top}
+            width={overlayEndX - overlayStartX + 20}
+            height={chartHeight}
+            fill="url(#overlayFade)"
+            className="text-primary"
+          />
+          
+          <path
+            d={`M ${overlayStartX} ${centerY + 20} 
+                Q ${overlayMidX - 20} ${centerY + 15}, ${overlayMidX} ${centerY + 5}
+                Q ${overlayMidX + 20} ${centerY - 5}, ${overlayEndX} ${centerY - 8}`}
+            fill="none"
+            stroke="#10b981"
+            strokeWidth="2"
+            strokeDasharray="4 4"
+            opacity="0.5"
+          />
+          
+          <path
+            d={`M ${overlayStartX} ${centerY} L ${overlayEndX} ${centerY}`}
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="1.5"
+            strokeDasharray="3 3"
+            opacity="0.3"
+            className="text-muted-foreground"
+          />
+          
+          <circle
+            cx={overlayMidX}
+            cy={centerY + 5}
+            r="3"
+            fill="#10b981"
+            opacity="0.6"
+          />
+          <circle
+            cx={overlayEndX - 15}
+            cy={centerY - 5}
+            r="3"
+            fill="#10b981"
+            opacity="0.6"
+          />
+        </g>
     </svg>
   );
 }
