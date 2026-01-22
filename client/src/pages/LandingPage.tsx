@@ -81,7 +81,7 @@ export default function LandingPage() {
       {/* Minimal Header */}
       <header className="fixed top-0 left-0 right-0 z-50 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-b border-border">
         <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
-          <div className="flex h-20 items-center justify-between">
+          <div className="flex h-24 items-center justify-between">
             <div 
               className="flex items-center"
               data-testid="link-logo"
@@ -89,7 +89,7 @@ export default function LandingPage() {
               <img 
                 src={headerLogo} 
                 alt="Restnvest - Informed investing, built to last" 
-                className="h-12 sm:h-14 object-contain"
+                className="h-20 sm:h-24 object-contain"
               />
             </div>
             <ThemeToggle />
@@ -97,7 +97,7 @@ export default function LandingPage() {
         </div>
       </header>
 
-      <main className="flex-1 pt-20">
+      <main className="flex-1 pt-24">
         {/* Hero Section */}
         <section 
           id="hero" 
