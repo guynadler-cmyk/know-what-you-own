@@ -2,6 +2,7 @@ import { Button } from "@/components/ui/button";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { Search } from "lucide-react";
 import { Link } from "wouter";
+import { Helmet } from "react-helmet-async";
 
 import businessOverviewImg from "@assets/Business_Overview_1766161245319.png";
 import changesImg from "@assets/Changes_Over_Time_1766161245320.png";
@@ -61,6 +62,20 @@ const BRIDGE_PADDING = "py-12 sm:py-16";
 export default function LandingPage() {
   return (
     <div className="flex min-h-screen flex-col bg-background">
+      <Helmet>
+        <title>Restnvest – Smarter Investing</title>
+        <meta name="description" content="Understand the businesses you invest in. Get plain-English summaries of SEC 10-K filings powered by AI. Research stocks with confidence." />
+        <meta property="og:title" content="Restnvest – Smarter Investing" />
+        <meta property="og:description" content="Understand the businesses you invest in. Get plain-English summaries of SEC 10-K filings powered by AI. Research stocks with confidence." />
+        <meta property="og:type" content="website" />
+        <meta property="og:url" content="https://restnvest.com/" />
+        <meta property="og:image" content="https://restnvest.com/icons/icon-512x512.png" />
+        <meta name="twitter:card" content="summary_large_image" />
+        <meta name="twitter:title" content="Restnvest – Smarter Investing" />
+        <meta name="twitter:description" content="Understand the businesses you invest in. Get plain-English summaries of SEC 10-K filings powered by AI." />
+        <link rel="canonical" href="https://restnvest.com/" />
+      </Helmet>
+
       {/* Minimal Header */}
       <header className="fixed top-0 left-0 right-0 z-50 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-b border-border">
         <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">

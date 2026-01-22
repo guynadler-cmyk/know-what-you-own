@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { useLocation } from "wouter";
+import { Helmet } from "react-helmet-async";
 import { queryClient } from "@/lib/queryClient";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
@@ -203,8 +204,29 @@ export default function AppPage() {
 
   const buttonText = getStageButtonText();
 
+  const pageTitle = summaryData 
+    ? `${summaryData.companyName} (${currentTicker}) Analysis | Restnvest`
+    : "Analyze Stocks | Restnvest";
+  
+  const pageDescription = summaryData
+    ? `AI-powered analysis of ${summaryData.companyName}'s SEC 10-K filing. Understand the business, financials, and investment thesis.`
+    : "Get plain-English summaries of SEC 10-K filings. Understand the businesses you invest in with AI-powered analysis.";
+
   return (
     <div className="flex min-h-screen flex-col">
+      <Helmet>
+        <title>{pageTitle}</title>
+        <meta name="description" content={pageDescription} />
+        <meta property="og:title" content={pageTitle} />
+        <meta property="og:description" content={pageDescription} />
+        <meta property="og:type" content="website" />
+        <meta property="og:url" content={`https://restnvest.com/app${currentTicker ? `?ticker=${currentTicker}` : ''}`} />
+        <meta property="og:image" content="https://restnvest.com/icons/icon-512x512.png" />
+        <meta name="twitter:card" content="summary" />
+        <meta name="twitter:title" content={pageTitle} />
+        <meta name="twitter:description" content={pageDescription} />
+        <link rel="canonical" href={`https://restnvest.com/app${currentTicker ? `?ticker=${currentTicker}` : ''}`} />
+      </Helmet>
       <Header />
       
       <main className="flex-1">
