@@ -1,0 +1,205 @@
+You are editing an existing Timing (Technical Analysis) implementation in the restnvest app.
+
+⚠️ This is an incremental edit, not a rebuild.
+Do NOT change routing, APIs, data sources, or alignment logic.
+
+We are improving three things:
+
+Add a toggleable “Supportive conditions” reference overlay (Momentum + Stretch)
+
+Add subtle, calming animations for that toggle
+
+Refine the Trend (price structure) chart for elegance, correctness, and clearer time context
+
+Core Product Principle (Non-Negotiable)
+
+We do not show information; we project judgment.
+Charts must make it obvious what the user should notice — without forcing interpretation.
+
+No “signals”, “entries”, “buy/sell”, or prescriptive language.
+
+Part A — “Show Supportive Conditions” Toggle (Momentum + Stretch)
+Toggle UI
+
+Add a subtle toggle labeled:
+“Show supportive conditions”
+
+Default: OFF
+
+ON: reveals a faint reference overlay for comparison (not data-driven, not snapping to current points)
+
+OFF: returns to baseline charts
+
+Animation requirement
+
+Use smooth, minimal animation (~300–500ms):
+
+opacity fade-in/out
+
+gentle morph/slide
+Avoid bouncy/attention-grabbing effects.
+
+Momentum — Overlay (Reference only)
+
+Momentum is the relationship between short-term behavior vs long-term behavior (e.g., short EMA vs long EMA). Keep existing base chart.
+
+When overlay is ON, add faint archetype reference shapes for:
+
+Pressure turning (early / fragile)
+
+short-term curve bending upward while still below long-term
+
+separation shrinking
+
+Pressure aligning (later / more supportive)
+
+convergence toward baseline
+
+separation near zero or gently positive
+
+Rules:
+
+Overlay must be muted, semi-transparent, and clearly separate from live data
+
+Must NOT snap to current data or highlight “now”
+
+No arrows pointing to the current curve
+
+No labels like entry/buy/signal
+
+Optional tooltip copy:
+
+“This overlay shows what supportive conditions often resemble, for comparison only.”
+
+Stretch — Overlay (Reference only)
+
+Stretch = distance from equilibrium. Keep existing base chart.
+
+When overlay is ON:
+
+show a soft “balance zone” band around equilibrium
+
+optionally faint directional hints toward equilibrium (very subtle)
+
+Rules:
+
+No thresholds, no RSI numbers, no “oversold/overbought”
+
+Must not highlight turning points
+
+Overlay is comparison only, not instruction
+
+Part B — Trend Chart Refinements (Required)
+
+The current Trend chart is “technically correct” but feels like a basic plotting output and has two issues:
+
+It marks too many/incorrect pivots (including incorrectly treating the latest point as a low)
+
+It has no sense of time horizon, which makes interpretation harder even if we hide dates/prices
+
+Trend Goal
+
+Make structure obvious and make the chart feel intentional, calm, and “designed”.
+
+1) Use structural pivots only (global highs/lows)
+
+Detect fewer, more meaningful pivots:
+
+Reduce dot count significantly (target ~3–6 highs and ~3–6 lows)
+
+Use a wider pivot window / prominence threshold so we ignore noise
+
+2) Never treat the latest bar as a confirmed pivot
+
+Do not mark the most recent point as a high/low unless:
+
+it is confirmed by pivot logic (i.e., enough bars after it)
+If not confirmed:
+
+render the latest value as a faint endpoint only (no pivot marker)
+
+3) Separate highs and lows visually (cohort grouping)
+
+Highs and lows must be instantly distinguishable:
+
+highs = one shape (e.g., circle)
+
+lows = a different shape (e.g., square)
+OR highs = top-aligned markers, lows = bottom-aligned markers
+
+Users must be able to compare highs-to-highs and lows-to-lows without thinking.
+
+4) Add an elegant “structure projection” that reads instantly
+
+Add a minimalist projection on the right side (or below) that shows:
+
+the sequence of highs as a vertical set of markers
+
+the sequence of lows as a vertical set of markers
+
+This projection should make patterns like these immediately visible:
+
+lower highs
+
+higher lows
+
+compression
+
+expansion
+
+Keep it calm and minimal.
+
+5) Add subtle time context without dates
+
+We do not show dates, but we need “how much history am I seeing?”
+
+Add a small label above the chart like:
+
+“Structure view: ~6 months” or “Structure view: ~180 days”
+(or whatever window you’re using)
+
+No axis ticks. No dates. Just one line of context.
+
+6) Visual elegance / design constraints
+
+Use fewer colors
+
+Avoid harsh blocks, thick bars, or “software default” shapes
+
+Prefer soft strokes, consistent thickness, generous whitespace
+
+No internal captions inside the plotting area
+
+Keep the price line as faint context; the structure/projection is the hero
+
+What NOT to change
+
+No changes to alignment score logic
+
+No new indicators
+
+No trading terms: entry/buy/sell/signal/confirmation
+
+No numeric axes or timestamps
+
+No refactors beyond what’s needed to implement these UI changes cleanly
+
+Final Validation Checklist
+
+With overlays OFF: charts behave as before
+
+With overlays ON: user instantly understands what “supportive shape” tends to resemble
+
+Trend chart:
+
+fewer, more meaningful pivots
+
+no incorrect latest pivot
+
+highs/lows visually grouped
+
+projection makes structure obvious
+
+time horizon is clear (without dates)
+
+The whole section feels calm, intentional, and “sensible investing” aligned

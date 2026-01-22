@@ -3,7 +3,8 @@ import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import { ChevronDown, ChevronUp, TrendingUp, Activity, Gauge, Info } from "lucide-react";
+import { Switch } from "@/components/ui/switch";
+import { ChevronDown, ChevronUp, TrendingUp, Activity, Gauge, Info, Eye } from "lucide-react";
 import type { TimingAnalysis, TimingSignalStatus } from "@shared/schema";
 import { TrendChart } from "./timing/TrendChart";
 import { MomentumChart } from "./timing/MomentumChart";
@@ -119,9 +120,12 @@ interface SignalCardProps {
     explanation: string;
   };
   chartComponent: React.ReactNode;
+  showOverlayToggle?: boolean;
+  showOverlay?: boolean;
+  onToggleOverlay?: () => void;
 }
 
-function SignalCard({ title, icon: Icon, signal, deepDive, chartComponent }: SignalCardProps) {
+function SignalCard({ title, icon: Icon, signal, deepDive, chartComponent, showOverlayToggle, showOverlay, onToggleOverlay }: SignalCardProps) {
   const [isExpanded, setIsExpanded] = useState(false);
 
   return (
@@ -171,9 +175,28 @@ function SignalCard({ title, icon: Icon, signal, deepDive, chartComponent }: Sig
 
         {isExpanded && (
           <div className="mt-4 pt-4 border-t border-border/40 space-y-4" data-testid={`deep-dive-${title.toLowerCase()}`}>
-            <div className="h-32 w-full">
+            <div className={title === "Trend" ? "h-36 w-full" : "h-32 w-full"}>
               {chartComponent}
             </div>
+            
+            {showOverlayToggle && (
+              <div 
+                className="flex items-center gap-3 py-2 transition-all duration-300"
+                data-testid={`overlay-toggle-${title.toLowerCase()}`}
+              >
+                <Switch
+                  checked={showOverlay}
+                  onCheckedChange={onToggleOverlay}
+                  className="data-[state=checked]:bg-primary/70"
+                  data-testid={`switch-overlay-${title.toLowerCase()}`}
+                />
+                <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                  <Eye className="w-3.5 h-3.5" />
+                  <span>Show supportive conditions</span>
+                </div>
+              </div>
+            )}
+            
             <div>
               <h4 className="font-medium text-foreground mb-2">{deepDive.title}</h4>
               <p className="text-sm text-muted-foreground leading-relaxed">
@@ -244,6 +267,9 @@ function ErrorState({ message }: { message: string }) {
 }
 
 export function TimingStage({ ticker, companyName, logoUrl }: TimingStageProps) {
+  const [showMomentumOverlay, setShowMomentumOverlay] = useState(false);
+  const [showStretchOverlay, setShowStretchOverlay] = useState(false);
+  
   const { data, isLoading, error } = useQuery<TimingAnalysis>({
     queryKey: [`/api/timing/${ticker}`],
     enabled: !!ticker,
@@ -313,7 +339,7 @@ export function TimingStage({ ticker, companyName, logoUrl }: TimingStageProps) 
             icon={TrendingUp}
             signal={data.trend.signal}
             deepDive={data.trend.deepDive}
-            chartComponent={<TrendChart data={data.trend.chartData} status={data.trend.signal.status} />}
+            chartComponent={<TrendChart data={data.trend.chartData} status={data.trend.signal.status} timeHorizon="~6 months" />}
           />
           
           <SignalCard
@@ -321,7 +347,16 @@ export function TimingStage({ ticker, companyName, logoUrl }: TimingStageProps) 
             icon={Activity}
             signal={data.momentum.signal}
             deepDive={data.momentum.deepDive}
-            chartComponent={<MomentumChart data={data.momentum.chartData} status={data.momentum.signal.status} />}
+            chartComponent={
+              <MomentumChart 
+                data={data.momentum.chartData} 
+                status={data.momentum.signal.status}
+                showOverlay={showMomentumOverlay}
+              />
+            }
+            showOverlayToggle={true}
+            showOverlay={showMomentumOverlay}
+            onToggleOverlay={() => setShowMomentumOverlay(!showMomentumOverlay)}
           />
           
           <SignalCard
@@ -329,7 +364,16 @@ export function TimingStage({ ticker, companyName, logoUrl }: TimingStageProps) 
             icon={Gauge}
             signal={data.stretch.signal}
             deepDive={data.stretch.deepDive}
-            chartComponent={<StretchChart data={data.stretch.chartData} status={data.stretch.signal.status} />}
+            chartComponent={
+              <StretchChart 
+                data={data.stretch.chartData} 
+                status={data.stretch.signal.status}
+                showOverlay={showStretchOverlay}
+              />
+            }
+            showOverlayToggle={true}
+            showOverlay={showStretchOverlay}
+            onToggleOverlay={() => setShowStretchOverlay(!showStretchOverlay)}
           />
         </div>
       </CardContent>

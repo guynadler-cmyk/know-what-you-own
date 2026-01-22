@@ -3,9 +3,10 @@ import type { StretchChartData, TimingSignalStatus } from "@shared/schema";
 interface StretchChartProps {
   data: StretchChartData;
   status: TimingSignalStatus;
+  showOverlay?: boolean;
 }
 
-export function StretchChart({ data, status }: StretchChartProps) {
+export function StretchChart({ data, status, showOverlay = false }: StretchChartProps) {
   const { values } = data;
   
   if (!values || values.length === 0) {
@@ -45,6 +46,8 @@ export function StretchChart({ data, status }: StretchChartProps) {
   const tensionOpacity = 0.15 + absLatest * 0.3;
   const tensionColor = absLatest > 0.5 ? `rgba(244, 63, 94, ${tensionOpacity})` : `rgba(245, 158, 11, ${tensionOpacity})`;
 
+  const balanceZoneHeight = chartHeight * 0.25;
+
   return (
     <svg 
       viewBox={`0 0 ${width} ${height}`} 
@@ -52,6 +55,73 @@ export function StretchChart({ data, status }: StretchChartProps) {
       preserveAspectRatio="none"
       data-testid="stretch-chart"
     >
+      <g 
+        className="transition-opacity duration-500 ease-out"
+        style={{ opacity: showOverlay ? 1 : 0, pointerEvents: showOverlay ? 'auto' : 'none' }}
+      >
+          <defs>
+            <linearGradient id="balanceZoneGradient" x1="0%" y1="0%" x2="0%" y2="100%">
+              <stop offset="0%" stopColor="#10b981" stopOpacity="0" />
+              <stop offset="35%" stopColor="#10b981" stopOpacity="0.12" />
+              <stop offset="50%" stopColor="#10b981" stopOpacity="0.15" />
+              <stop offset="65%" stopColor="#10b981" stopOpacity="0.12" />
+              <stop offset="100%" stopColor="#10b981" stopOpacity="0" />
+            </linearGradient>
+          </defs>
+          
+          <rect
+            x={padding.left}
+            y={centerY - balanceZoneHeight}
+            width={chartWidth}
+            height={balanceZoneHeight * 2}
+            fill="url(#balanceZoneGradient)"
+          />
+          
+          <line
+            x1={padding.left}
+            y1={centerY - balanceZoneHeight * 0.7}
+            x2={width - padding.right}
+            y2={centerY - balanceZoneHeight * 0.7}
+            stroke="#10b981"
+            strokeWidth="1"
+            strokeDasharray="6 4"
+            opacity="0.2"
+          />
+          <line
+            x1={padding.left}
+            y1={centerY + balanceZoneHeight * 0.7}
+            x2={width - padding.right}
+            y2={centerY + balanceZoneHeight * 0.7}
+            stroke="#10b981"
+            strokeWidth="1"
+            strokeDasharray="6 4"
+            opacity="0.2"
+          />
+          
+          <path
+            d={`M ${padding.left + chartWidth * 0.7} ${centerY - balanceZoneHeight * 1.2}
+                C ${padding.left + chartWidth * 0.75} ${centerY - balanceZoneHeight * 0.6},
+                  ${padding.left + chartWidth * 0.8} ${centerY - balanceZoneHeight * 0.3},
+                  ${padding.left + chartWidth * 0.85} ${centerY}`}
+            fill="none"
+            stroke="#10b981"
+            strokeWidth="1.5"
+            strokeDasharray="3 3"
+            opacity="0.35"
+          />
+          <path
+            d={`M ${padding.left + chartWidth * 0.2} ${centerY + balanceZoneHeight * 1.3}
+                C ${padding.left + chartWidth * 0.25} ${centerY + balanceZoneHeight * 0.7},
+                  ${padding.left + chartWidth * 0.3} ${centerY + balanceZoneHeight * 0.3},
+                  ${padding.left + chartWidth * 0.35} ${centerY}`}
+            fill="none"
+            stroke="#10b981"
+            strokeWidth="1.5"
+            strokeDasharray="3 3"
+            opacity="0.35"
+          />
+        </g>
+
       <path
         d={gapPath}
         fill={tensionColor}
