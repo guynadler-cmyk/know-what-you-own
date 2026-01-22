@@ -1,0 +1,330 @@
+You are working on a fork of the restnvest app that currently has no technical analysis and instead shows a “Coming Soon” page.
+
+This fork must implement the Timing stage of the restnvest investment workflow.
+
+restnvest follows a sensible investing philosophy:
+
+We do not predict the future
+
+We do not give buy/sell signals
+
+We help users understand market conditions
+
+Technical analysis is used only to assess timing conditions, not to trade
+
+This feature must slow users down, reduce emotional decision-making, and integrate cleanly with the restnvest workflow.
+
+High-Level Product Change
+1. Workflow Order Change (Critical)
+
+Update the investment workflow order as follows:
+
+Old order:
+4. Strategy
+5. Timing
+
+New order:
+4. Timing
+5. Strategy
+
+Rationale:
+
+We first assess market conditions (Timing)
+
+Only then do we decide how to enter (Strategy)
+
+This change must be reflected consistently in:
+
+Navigation
+
+Step labels
+
+Internal routing
+
+Any step index references
+
+Timing Stage: Product Definition
+
+The Timing stage answers one question only:
+
+“Are market conditions currently aligned enough to act with patience?”
+
+It does not:
+
+Predict prices
+
+Recommend buying or selling
+
+Suggest entry points or targets
+
+UI Structure (Timing Page)
+Top Section: Verdict Banner
+
+Display a single, human-readable verdict:
+
+Examples:
+
+“We’d wait for stronger alignment”
+
+“Conditions are improving, but not there yet”
+
+“Conditions look supportive”
+
+This verdict is derived from signal alignment, not any single indicator.
+
+Include a short subtitle:
+
+“These signals describe current market conditions — not the future.”
+
+Signal Categories (Three Only)
+
+The Timing stage evaluates exactly three dimensions:
+
+Trend – market structure
+
+Momentum – buying vs selling pressure
+
+Stretch – how extended price is vs equilibrium
+
+Each category should display:
+
+A status chip (e.g. Red / Yellow / Green)
+
+A short one-line interpretation
+
+An expandable “Go deeper” option
+
+No numerical values shown by default.
+
+Visual-First Design Requirement
+
+The default view must be visual, not textual.
+
+Text explanations should be:
+
+Secondary
+
+Collapsible
+
+Supportive, not dominant
+
+Deep Dive Views (Critical Design Constraint)
+
+When a user clicks “Go deeper” on Trend, Momentum, or Stretch:
+
+Guiding Principle
+
+These are conceptual charts, not trading charts.
+
+They must:
+
+Show shape, direction, and alignment
+
+Avoid exact values, timestamps, or noisy details
+
+Be visually calm and intuitive
+
+If a smart non-trader can’t describe what’s happening at a glance, the chart is too complex.
+
+Trend Deep Dive: Structure Chart
+
+Purpose: Show market structure, not price precision.
+
+Requirements:
+
+Smooth price line or ribbon
+
+Highlight higher highs / lower lows
+
+Optional long-term baseline (e.g. long EMA)
+
+No axis labels
+
+No gridlines
+
+No candlesticks
+
+No volume
+
+The chart should visually answer:
+
+Is structure rising, falling, or flattening?
+
+Momentum Deep Dive: Energy Chart
+
+Purpose: Show pressure, not indicator mechanics.
+
+Requirements:
+
+Single band oscillating around zero
+
+Thickness and color intensity reflect pressure strength
+
+Smooth curves, no histograms
+
+No MACD lines or signal lines
+
+No numeric scale
+
+The chart should visually answer:
+
+Is selling pressure dominant?
+
+Is pressure increasing or fading?
+
+Stretch Deep Dive: Elasticity Chart
+
+Purpose: Show how stretched price is vs equilibrium.
+
+Requirements:
+
+Centerline = equilibrium
+
+Distance from center = stretch
+
+Smooth motion
+
+Color fades as it returns toward equilibrium
+
+No RSI numbers shown
+
+The chart should visually answer:
+
+Is price stretched?
+
+Is tension building or releasing?
+
+Alignment Logic (Backend / Logic Layer)
+
+Each of the three dimensions (Trend, Momentum, Stretch) produces:
+
+A normalized score (e.g. -1 to +1)
+
+A status (Red / Yellow / Green)
+
+These are combined into an overall alignment score, which drives:
+
+The top verdict message
+
+The visual alignment bar (if implemented)
+
+No single indicator should override the others.
+
+Data Sources (Alpha Vantage)
+
+Use Alpha Vantage API for all market data.
+
+Required endpoints:
+
+Daily adjusted price data
+
+Used for:
+
+Price series
+
+EMAs
+
+Structure analysis
+
+Technical Indicators
+
+EMA (short-term and long-term)
+
+MACD (used internally for momentum, not exposed directly)
+
+RSI (used internally for stretch, not exposed directly)
+
+Important Constraints
+
+Raw indicator values must NOT be shown to users
+
+Indicators are inputs to interpretations, not outputs
+
+Cache results to avoid API rate limits
+
+Handle missing or delayed data gracefully
+
+Language & Tone (Very Important)
+
+All copy must:
+
+Be calm
+
+Be patient
+
+Avoid urgency
+
+Avoid trading language
+
+Forbidden words:
+
+Buy
+
+Sell
+
+Entry
+
+Target
+
+Breakout
+
+Signal
+
+Prediction
+
+Preferred language:
+
+“Conditions”
+
+“Alignment”
+
+“Pressure”
+
+“Stabilization”
+
+“Waiting”
+
+“Improving”
+
+Technical Architecture Requirements
+
+Modular components (Timing should be swappable)
+
+No coupling between Timing and Strategy logic
+
+Clear separation:
+
+Data fetching
+
+Interpretation logic
+
+UI rendering
+
+Minimal shared state to reduce merge conflicts
+
+Explicit Non-Goals (Do NOT Build)
+
+No alerts
+
+No notifications
+
+No auto-actions
+
+No price forecasts
+
+No pattern detection (flags, wedges, etc.)
+
+If a feature feels like it would excite a day trader, it should not be built.
+
+Final Check
+
+Before finalizing, validate that:
+
+The Timing stage makes users more patient
+
+The UI feels calmer than a brokerage chart
+
+The visuals explain the idea without teaching TA mechanics
+
+This is not a trading tool.
+It is a decision-calming tool.
