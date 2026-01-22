@@ -444,8 +444,8 @@ export const trendChartDataSchema = z.object({
 });
 
 export const momentumChartDataSchema = z.object({
-  values: z.array(z.number()), // Oscillator values around zero
-  intensity: z.array(z.number()), // Strength/intensity of pressure (0-1)
+  shortEma: z.array(z.number()), // Short-term EMA (responsive behavior) - normalized
+  longEma: z.array(z.number()), // Long-term EMA (anchoring behavior) - normalized
 });
 
 export const stretchChartDataSchema = z.object({

@@ -6,9 +6,9 @@ interface MomentumChartProps {
 }
 
 export function MomentumChart({ data, status }: MomentumChartProps) {
-  const { values } = data;
+  const { shortEma, longEma } = data;
   
-  if (!values || values.length === 0) {
+  if (!shortEma || !longEma || shortEma.length === 0 || longEma.length === 0) {
     return (
       <div className="w-full h-full flex items-center justify-center text-muted-foreground text-sm">
         No data available
@@ -21,27 +21,33 @@ export function MomentumChart({ data, status }: MomentumChartProps) {
   const padding = { top: 12, right: 12, bottom: 12, left: 12 };
   const chartWidth = width - padding.left - padding.right;
   const chartHeight = height - padding.top - padding.bottom;
-  const centerY = padding.top + chartHeight / 2;
 
-  const scaleX = (index: number) => padding.left + (index / (values.length - 1)) * chartWidth;
-  const scaleY = (value: number) => centerY - value * (chartHeight / 2) * 0.85;
+  const scaleX = (index: number) => padding.left + (index / (shortEma.length - 1)) * chartWidth;
+  const scaleY = (value: number) => padding.top + chartHeight - value * chartHeight;
 
-  const gapLinePath = values
+  const longEmaPath = longEma
     .map((v, i) => `${i === 0 ? "M" : "L"} ${scaleX(i)} ${scaleY(v)}`)
     .join(" ");
 
-  const gapAreaPath = values.map((v, i) => {
+  const shortEmaPath = shortEma
+    .map((v, i) => `${i === 0 ? "M" : "L"} ${scaleX(i)} ${scaleY(v)}`)
+    .join(" ");
+
+  const gapPath = shortEma.map((v, i) => {
     const x = scaleX(i);
-    const y = scaleY(v);
-    return i === 0 ? `M ${x} ${centerY} L ${x} ${y}` : `L ${x} ${y}`;
+    const yShort = scaleY(v);
+    const yLong = scaleY(longEma[i]);
+    return i === 0 ? `M ${x} ${yLong} L ${x} ${yShort}` : `L ${x} ${yShort}`;
   }).join(" ") + 
-    values.slice().reverse().map((_, i) => {
-      const originalIndex = values.length - 1 - i;
-      return `L ${scaleX(originalIndex)} ${centerY}`;
+    shortEma.slice().reverse().map((_, i) => {
+      const originalIndex = shortEma.length - 1 - i;
+      return `L ${scaleX(originalIndex)} ${scaleY(longEma[originalIndex])}`;
     }).join(" ") + " Z";
 
-  const latestValue = values[values.length - 1];
-  const isPositive = latestValue >= 0;
+  const latestShort = shortEma[shortEma.length - 1];
+  const latestLong = longEma[longEma.length - 1];
+  const isAbove = latestShort > latestLong;
+  const gapColor = isAbove ? "rgba(16, 185, 129, 0.35)" : "rgba(244, 63, 94, 0.35)";
 
   return (
     <svg 
@@ -50,25 +56,25 @@ export function MomentumChart({ data, status }: MomentumChartProps) {
       preserveAspectRatio="none"
       data-testid="momentum-chart"
     >
-      <line
-        x1={padding.left}
-        y1={centerY}
-        x2={width - padding.right}
-        y2={centerY}
-        stroke="currentColor"
-        strokeWidth="1.5"
-        className="text-muted-foreground/40"
+      <path
+        d={gapPath}
+        fill={gapColor}
       />
 
       <path
-        d={gapAreaPath}
-        fill={isPositive ? "rgba(16, 185, 129, 0.25)" : "rgba(244, 63, 94, 0.3)"}
-      />
-
-      <path
-        d={gapLinePath}
+        d={longEmaPath}
         fill="none"
-        stroke={isPositive ? "#10b981" : "#f43f5e"}
+        stroke="currentColor"
+        strokeWidth="3"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        className="text-muted-foreground/50"
+      />
+
+      <path
+        d={shortEmaPath}
+        fill="none"
+        stroke={isAbove ? "#10b981" : "#f43f5e"}
         strokeWidth="2"
         strokeLinecap="round"
         strokeLinejoin="round"

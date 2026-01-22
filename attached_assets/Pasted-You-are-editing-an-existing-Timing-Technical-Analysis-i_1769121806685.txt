@@ -1,0 +1,251 @@
+You are editing an existing Timing (Technical Analysis) implementation in the restnvest app.
+
+⚠️ This is an incremental correction, not a rebuild.
+Do NOT change routing, APIs, data fetching, or alignment logic.
+
+The alignment bar is correct and should remain unchanged.
+
+The goal is to fix the charts so they immediately communicate what the user should notice, without requiring interpretation.
+
+Core Product Principle (Non-Negotiable)
+
+We do not show information. We project judgment.
+Charts must encode the intended interpretation directly into their geometry.
+
+If a user has to think about what to look for, the chart is wrong.
+
+Global Requirements (Apply to All Charts)
+
+One chart = one decision-relevant conclusion
+
+Charts must work across all market states:
+
+Strengthening
+
+Weakening
+
+Sideways
+
+Transitional
+
+No legends
+
+No instructional text inside charts
+
+No axes, dates, or numeric values
+
+Meaning must be carried by shape, direction, distance, and grouping
+
+Color may reinforce meaning but must not be the primary carrier
+
+TREND (PRICE STRUCTURE) — Redesign
+Question this chart answers
+
+“Are structural highs and lows stepping up, stepping down, or unresolved?”
+
+Required changes
+
+Reduce noise
+
+Detect and display only structural (global) swing highs and swing lows
+
+Expect a small number of pivots (≈3–6), not local wiggles
+
+Separate cohorts visually
+
+Highs and lows must NEVER share the same encoding
+
+Example: highs = circles near top, lows = squares near bottom
+
+The eye must group highs with highs, lows with lows automatically
+
+Add structural projection
+
+Create a 1-D vertical projection of highs and lows:
+
+A simplified column or spine that shows the relative level of each high (and/or low)
+
+This projection is the primary signal:
+
+Lower highs → immediately visible
+
+Higher lows → immediately visible
+
+Compression → immediately visible
+
+Optional context
+
+A faint, simplified price line may remain as background context only
+
+It must not compete with the structural projection
+
+Hard constraints
+
+No EMAs
+
+No gradients
+
+No internal captions
+
+No requirement for the user to compare points manually
+
+A user must instantly be able to say:
+
+“Highs are stepping down”
+
+“Lows are rising”
+
+“Structure is unresolved”
+
+without reading any text.
+
+MOMENTUM — Redesign Using EMA Relationship (Not Histogram)
+Question this chart answers
+
+“Is short-term behavior diverging from or re-aligning with long-term behavior — and in which direction?”
+
+Required approach
+
+Momentum MUST be visualized as the relationship between two curves:
+
+Short-term EMA → responsive behavior
+
+Long-term EMA → anchoring behavior
+
+MACD histogram or signal lines must not be shown.
+
+Visual encoding rules
+
+Show both curves
+
+Long-term EMA:
+
+Thicker
+
+Muted
+
+Visually stable
+
+Short-term EMA:
+
+Thinner
+
+Higher contrast
+
+Visually responsive
+
+Emphasize the relationship
+
+Shade the area between the two curves
+
+Distance between curves = strength of pressure
+
+Position relative to long-term EMA = direction of pressure
+
+Encode change over time
+
+Widening shaded area = pressure intensifying
+
+Narrowing shaded area = pressure easing
+
+Convergence / crossing = regime tension or transition
+
+Hard constraints
+
+No histogram bars
+
+No third signal line
+
+No symmetry that hides direction
+
+The relationship must be more visually prominent than the lines themselves
+
+A user must immediately be able to say:
+
+“Short-term is pulling away downward”
+
+“Pressure is easing and re-aligning”
+
+“No clear momentum — indecision”
+
+without explanation.
+
+STRETCH — Redesign to Show Distance From Equilibrium
+Question this chart answers
+
+“How far is price from balance right now — is tension meaningful or mild?”
+
+Required changes
+
+Make equilibrium dominant
+
+One thick, calm equilibrium line or band
+
+This is the visual anchor of the chart
+
+De-emphasize motion
+
+Price movement should be subtle
+
+Wiggles are secondary to distance
+
+Encode tension as distance
+
+Shade ONLY the vertical distance between price and equilibrium
+
+Greater distance = greater tension
+
+Minimal distance = low tension
+
+Focus on current state
+
+The present position should dominate the visual
+
+Historical motion may appear faintly as context only
+
+Hard constraints
+
+No RSI numbers
+
+No overbought / oversold zones
+
+No multiple bands
+
+No decorative gradients unrelated to distance
+
+A user must immediately feel:
+
+“Near balance”
+
+or “Meaningfully stretched”
+
+without reading the caption.
+
+What NOT to Change
+
+Do NOT modify data sources or APIs
+
+Do NOT add indicators
+
+Do NOT change alignment scoring
+
+Do NOT add trading language or signals
+
+Do NOT refactor component structure
+
+This task is a visual-meaning correction, not a technical expansion.
+
+Final Validation Test
+
+Before completing:
+
+Hide all explanatory text — does each chart still communicate its takeaway?
+
+Can a non-technical user describe what to notice in one sentence?
+
+Does the chart reduce decision ambiguity rather than increase it?
+
+If not, simplify further.
+
+Goal:
+Charts that make the right behavior obvious — without teaching technical analysis.

@@ -1568,8 +1568,16 @@ export class AlphaVantageService {
         momentum: {
           signal: momentumSignal,
           chartData: {
-            values: normalizedMacd,
-            intensity: intensityData,
+            shortEma: ema12.slice(chartStartIndex).map((v, i) => {
+              const min = Math.min(...ema12.slice(chartStartIndex), ...ema26.slice(chartStartIndex));
+              const max = Math.max(...ema12.slice(chartStartIndex), ...ema26.slice(chartStartIndex));
+              return max > min ? (v - min) / (max - min) : 0.5;
+            }),
+            longEma: ema26.slice(chartStartIndex).map((v, i) => {
+              const min = Math.min(...ema12.slice(chartStartIndex), ...ema26.slice(chartStartIndex));
+              const max = Math.max(...ema12.slice(chartStartIndex), ...ema26.slice(chartStartIndex));
+              return max > min ? (v - min) / (max - min) : 0.5;
+            }),
           },
           deepDive: {
             title: 'Pressure Flow',

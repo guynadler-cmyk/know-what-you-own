@@ -26,7 +26,7 @@ export function StretchChart({ data, status }: StretchChartProps) {
   const scaleX = (index: number) => padding.left + (index / (values.length - 1)) * chartWidth;
   const scaleY = (value: number) => centerY - value * (chartHeight / 2) * 0.85;
 
-  const linePath = values
+  const pricePath = values
     .map((v, i) => `${i === 0 ? "M" : "L"} ${scaleX(i)} ${scaleY(v)}`)
     .join(" ");
 
@@ -42,7 +42,8 @@ export function StretchChart({ data, status }: StretchChartProps) {
 
   const latestValue = values[values.length - 1];
   const absLatest = Math.abs(latestValue);
-  const tensionOpacity = 0.15 + absLatest * 0.25;
+  const tensionOpacity = 0.15 + absLatest * 0.3;
+  const tensionColor = absLatest > 0.5 ? `rgba(244, 63, 94, ${tensionOpacity})` : `rgba(245, 158, 11, ${tensionOpacity})`;
 
   return (
     <svg 
@@ -53,7 +54,7 @@ export function StretchChart({ data, status }: StretchChartProps) {
     >
       <path
         d={gapPath}
-        fill={absLatest > 0.4 ? `rgba(244, 63, 94, ${tensionOpacity})` : `rgba(245, 158, 11, ${tensionOpacity})`}
+        fill={tensionColor}
       />
 
       <line
@@ -62,17 +63,17 @@ export function StretchChart({ data, status }: StretchChartProps) {
         x2={width - padding.right}
         y2={centerY}
         stroke="#10b981"
-        strokeWidth="2.5"
+        strokeWidth="4"
       />
 
       <path
-        d={linePath}
+        d={pricePath}
         fill="none"
         stroke="currentColor"
         strokeWidth="1.5"
         strokeLinecap="round"
         strokeLinejoin="round"
-        className="text-foreground/60"
+        className="text-foreground/50"
       />
     </svg>
   );
