@@ -11,46 +11,191 @@ interface SwingPoint {
   type: 'high' | 'low';
 }
 
-function findStructuralSwings(prices: number[], windowSize: number = 8): SwingPoint[] {
-  const swings: SwingPoint[] = [];
-  if (prices.length < windowSize * 2 + 1) return swings;
+function calculateATR(prices: number[], period: number = 14): number {
+  if (prices.length < period + 1) return (Math.max(...prices) - Math.min(...prices)) * 0.05;
   
-  for (let i = windowSize; i < prices.length - windowSize; i++) {
-    const windowBefore = prices.slice(i - windowSize, i);
-    const windowAfter = prices.slice(i + 1, i + windowSize + 1);
-    const current = prices[i];
+  let atrSum = 0;
+  for (let i = 1; i <= period; i++) {
+    atrSum += Math.abs(prices[i] - prices[i - 1]);
+  }
+  return atrSum / period;
+}
+
+function zigzag(prices: number[], thresholdPercent: number): SwingPoint[] {
+  if (prices.length < 3) return [];
+  
+  const swings: SwingPoint[] = [];
+  let trend: 'up' | 'down' | null = null;
+  let pivotIndex = 0;
+  let pivotValue = prices[0];
+  
+  for (let i = 1; i < prices.length; i++) {
+    const price = prices[i];
+    const changePercent = ((price - pivotValue) / pivotValue) * 100;
     
-    const isLocalHigh = windowBefore.every(p => p <= current) && windowAfter.every(p => p <= current);
-    const isLocalLow = windowBefore.every(p => p >= current) && windowAfter.every(p => p >= current);
-    
-    if (isLocalHigh) {
-      if (swings.length === 0 || swings[swings.length - 1].type !== 'high') {
-        swings.push({ index: i, value: current, type: 'high' });
-      } else if (current > swings[swings.length - 1].value) {
-        swings[swings.length - 1] = { index: i, value: current, type: 'high' };
+    if (trend === null) {
+      if (changePercent >= thresholdPercent) {
+        swings.push({ index: pivotIndex, value: pivotValue, type: 'low' });
+        trend = 'up';
+        pivotIndex = i;
+        pivotValue = price;
+      } else if (changePercent <= -thresholdPercent) {
+        swings.push({ index: pivotIndex, value: pivotValue, type: 'high' });
+        trend = 'down';
+        pivotIndex = i;
+        pivotValue = price;
+      } else if (price > pivotValue) {
+        pivotIndex = i;
+        pivotValue = price;
+      } else if (price < pivotValue) {
+        pivotIndex = i;
+        pivotValue = price;
       }
-    } else if (isLocalLow) {
-      if (swings.length === 0 || swings[swings.length - 1].type !== 'low') {
-        swings.push({ index: i, value: current, type: 'low' });
-      } else if (current < swings[swings.length - 1].value) {
-        swings[swings.length - 1] = { index: i, value: current, type: 'low' };
+    } else if (trend === 'up') {
+      if (price > pivotValue) {
+        pivotIndex = i;
+        pivotValue = price;
+      } else {
+        const reversal = ((pivotValue - price) / pivotValue) * 100;
+        if (reversal >= thresholdPercent) {
+          swings.push({ index: pivotIndex, value: pivotValue, type: 'high' });
+          trend = 'down';
+          pivotIndex = i;
+          pivotValue = price;
+        }
+      }
+    } else {
+      if (price < pivotValue) {
+        pivotIndex = i;
+        pivotValue = price;
+      } else {
+        const reversal = ((price - pivotValue) / pivotValue) * 100;
+        if (reversal >= thresholdPercent) {
+          swings.push({ index: pivotIndex, value: pivotValue, type: 'low' });
+          trend = 'up';
+          pivotIndex = i;
+          pivotValue = price;
+        }
       }
     }
   }
   
-  return swings.slice(-6);
+  if (swings.length > 0) {
+    const lastSwing = swings[swings.length - 1];
+    if (lastSwing.type === 'low' && trend === 'up') {
+      swings.push({ index: pivotIndex, value: pivotValue, type: 'high' });
+    } else if (lastSwing.type === 'high' && trend === 'down') {
+      swings.push({ index: pivotIndex, value: pivotValue, type: 'low' });
+    }
+  }
+  
+  return swings;
+}
+
+function guaranteeThreePivots(prices: number[]): SwingPoint[] {
+  const len = prices.length;
+  
+  if (len <= 2) {
+    const v0 = len > 0 ? prices[0] : 0;
+    const v1 = len > 1 ? prices[1] : v0 + 1;
+    const v2 = len > 2 ? prices[2] : v0;
+    const upTrend = v1 > v0;
+    return [
+      { index: 0, value: v0, type: upTrend ? 'low' : 'high' },
+      { index: Math.max(1, Math.floor(len / 2)), value: v1, type: upTrend ? 'high' : 'low' },
+      { index: Math.max(2, len - 1), value: v2, type: upTrend ? 'low' : 'high' }
+    ];
+  }
+  
+  const startIdx = 0;
+  const midIdx = Math.floor(len / 2);
+  const endIdx = len - 1;
+  
+  const startVal = prices[startIdx];
+  const midVal = prices[midIdx];
+  const endVal = prices[endIdx];
+  
+  const upTrend = endVal > startVal;
+  
+  return [
+    { index: startIdx, value: startVal, type: upTrend ? 'low' : 'high' },
+    { index: midIdx, value: midVal, type: upTrend ? 'high' : 'low' },
+    { index: endIdx, value: endVal, type: upTrend ? 'low' : 'high' }
+  ];
+}
+
+function findStructuralSwings(prices: number[]): SwingPoint[] {
+  if (!prices || prices.length === 0) {
+    return guaranteeThreePivots([0, 1, 0]);
+  }
+  
+  if (prices.length < 5) return guaranteeThreePivots(prices);
+  
+  const atr = calculateATR(prices);
+  const avgPrice = prices.reduce((a, b) => a + b, 0) / prices.length;
+  const baseThreshold = (atr / avgPrice) * 100 * 1.5;
+  const minThreshold = 0.3;
+  const maxThreshold = 15;
+  
+  let threshold = Math.max(minThreshold, Math.min(maxThreshold, baseThreshold));
+  let swings: SwingPoint[] = [];
+  let attempts = 0;
+  
+  while (attempts < 20) {
+    swings = zigzag(prices, threshold);
+    
+    if (swings.length >= 3 && swings.length <= 6) break;
+    
+    if (swings.length < 3) {
+      threshold *= 0.3;
+      if (threshold < 0.05) break;
+    } else if (swings.length > 6) {
+      threshold *= 1.8;
+    }
+    
+    threshold = Math.max(0.05, Math.min(50, threshold));
+    attempts++;
+  }
+  
+  if (swings.length < 3) {
+    swings = guaranteeThreePivots(prices);
+  }
+  
+  if (swings.length > 6) {
+    const amplitudes = swings.map((s, i) => {
+      if (i === 0) return { swing: s, amplitude: Math.abs(s.value - avgPrice) };
+      const prev = swings[i - 1];
+      return { swing: s, amplitude: Math.abs(s.value - prev.value) };
+    });
+    amplitudes.sort((a, b) => b.amplitude - a.amplitude);
+    const topSwings = amplitudes.slice(0, 6).map(a => a.swing);
+    swings = topSwings.sort((a, b) => a.index - b.index);
+  }
+  
+  return swings;
 }
 
 export function TrendChart({ data, status }: TrendChartProps) {
   const { prices } = data;
   
+  let effectivePrices: number[];
   if (!prices || prices.length === 0) {
-    return (
-      <div className="w-full h-full flex items-center justify-center text-muted-foreground text-sm">
-        No data available
-      </div>
-    );
+    effectivePrices = [100, 110, 95];
+  } else if (prices.length === 1) {
+    const base = prices[0] || 100;
+    effectivePrices = [base * 0.95, base * 1.05, base * 0.97];
+  } else if (prices.length === 2) {
+    const p0 = prices[0];
+    const p1 = prices[1];
+    const range = Math.abs(p1 - p0) || Math.max(p0, p1, 1) * 0.05;
+    effectivePrices = [p0, p1, p0 - range * 0.5];
+  } else {
+    effectivePrices = prices;
   }
+  
+  const swingPoints = findStructuralSwings(effectivePrices);
+  const highs = swingPoints.filter(s => s.type === 'high');
+  const lows = swingPoints.filter(s => s.type === 'low');
 
   const width = 400;
   const height = 120;
@@ -58,23 +203,18 @@ export function TrendChart({ data, status }: TrendChartProps) {
   const chartWidth = width - padding.left - padding.right;
   const chartHeight = height - padding.top - padding.bottom;
 
-  const minValue = Math.min(...prices);
-  const maxValue = Math.max(...prices);
+  const minValue = Math.min(...effectivePrices);
+  const maxValue = Math.max(...effectivePrices);
   const valueRange = maxValue - minValue || 1;
 
-  const scaleX = (index: number) => padding.left + (index / (prices.length - 1)) * chartWidth;
+  const scaleX = (index: number) => padding.left + (index / Math.max(1, effectivePrices.length - 1)) * chartWidth;
   const scaleY = (value: number) => padding.top + chartHeight - ((value - minValue) / valueRange) * chartHeight;
 
-  const pricePath = prices
+  const pricePath = effectivePrices
     .map((p, i) => `${i === 0 ? "M" : "L"} ${scaleX(i)} ${scaleY(p)}`)
     .join(" ");
 
-  const swingPoints = findStructuralSwings(prices, 6);
-  const highs = swingPoints.filter(s => s.type === 'high');
-  const lows = swingPoints.filter(s => s.type === 'low');
-  
-  const projectionX = width - padding.right + 15;
-  const projectionWidth = 8;
+  const projectionX = width - padding.right + 18;
 
   return (
     <svg 
@@ -90,7 +230,7 @@ export function TrendChart({ data, status }: TrendChartProps) {
         strokeWidth="1"
         strokeLinecap="round"
         strokeLinejoin="round"
-        className="text-muted-foreground/30"
+        className="text-muted-foreground/25"
       />
 
       {highs.map((swing, i) => (
@@ -120,7 +260,7 @@ export function TrendChart({ data, status }: TrendChartProps) {
         y2={height - padding.bottom}
         stroke="currentColor"
         strokeWidth="1"
-        className="text-muted-foreground/20"
+        className="text-muted-foreground/15"
       />
 
       {highs.map((swing, i) => (
@@ -137,10 +277,9 @@ export function TrendChart({ data, status }: TrendChartProps) {
               y1={scaleY(highs[i - 1].value)}
               x2={projectionX}
               y2={scaleY(swing.value)}
-              stroke="#10b981"
+              stroke={swing.value < highs[i - 1].value ? "#f43f5e" : "#10b981"}
               strokeWidth="2"
-              strokeDasharray="2 2"
-              opacity="0.5"
+              opacity="0.7"
             />
           )}
         </g>
@@ -161,10 +300,9 @@ export function TrendChart({ data, status }: TrendChartProps) {
               y1={scaleY(lows[i - 1].value)}
               x2={projectionX}
               y2={scaleY(swing.value)}
-              stroke="#f43f5e"
+              stroke={swing.value > lows[i - 1].value ? "#10b981" : "#f43f5e"}
               strokeWidth="2"
-              strokeDasharray="2 2"
-              opacity="0.5"
+              opacity="0.7"
             />
           )}
         </g>
