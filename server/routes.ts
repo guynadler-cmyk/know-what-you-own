@@ -2,7 +2,7 @@ import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { secService } from "./services/sec";
 import { openaiService } from "./services/openai";
-import { companySummarySchema, incomeMetricsSchema, balanceSheetMetricsSchema, combinedFinancialMetricsSchema, finePrintAnalysisSchema, insertWaitlistSignupSchema, insertScheduledCheckupSchema, valuationMetricsSchema } from "@shared/schema";
+import { companySummarySchema, incomeMetricsSchema, balanceSheetMetricsSchema, combinedFinancialMetricsSchema, finePrintAnalysisSchema, insertWaitlistSignupSchema, insertScheduledCheckupSchema, valuationMetricsSchema, timingAnalysisSchema } from "@shared/schema";
 import { alphaVantageService } from "./services/alphavantage";
 import { storage } from "./storage";
 
@@ -343,6 +343,62 @@ export async function registerRoutes(app: Express): Promise<Server> {
       return res.status(500).json({
         error: "Data Retrieval Failed",
         message: "Unable to retrieve valuation metrics."
+      });
+    }
+  });
+
+  // --------------------------------------------------------------------------
+  // TIMING ANALYSIS (Technical Signals)
+  // --------------------------------------------------------------------------
+  app.get("/api/timing/:ticker", async (req: any, res) => {
+    try {
+      const { ticker } = req.params;
+
+      if (!ticker || !/^[A-Z]{1,5}$/i.test(ticker)) {
+        return res.status(400).json({
+          error: "Invalid ticker format",
+          message: "Please provide 1-5 letter ticker symbol."
+        });
+      }
+
+      const analysis = await alphaVantageService.getTimingAnalysis(ticker.toUpperCase());
+      const validated = timingAnalysisSchema.parse(analysis);
+
+      res.json(validated);
+    } catch (error: any) {
+      console.error("Timing analysis error:", error);
+
+      if (error.message?.includes("not found")) {
+        return res.status(404).json({
+          error: "Company Not Found",
+          message: `Could not find market data for "${req.params.ticker.toUpperCase()}".`
+        });
+      }
+
+      if (error.message?.includes("Insufficient")) {
+        return res.status(404).json({
+          error: "Insufficient Data",
+          message: "Not enough historical data to analyze market conditions."
+        });
+      }
+
+      if (error.message?.includes("rate limit") || error.message?.includes("Try again")) {
+        return res.status(429).json({
+          error: "Rate Limited",
+          message: "Too many requests. Please wait a moment and try again."
+        });
+      }
+
+      if (error.message?.includes("timed out")) {
+        return res.status(503).json({
+          error: "Service Timeout",
+          message: "Market data service timed out."
+        });
+      }
+
+      return res.status(500).json({
+        error: "Analysis Failed",
+        message: "Unable to analyze timing conditions. Please try again."
       });
     }
   });
