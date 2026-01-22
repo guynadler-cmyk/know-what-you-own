@@ -79,24 +79,20 @@ export default function LandingPage() {
       </Helmet>
 
       {/* Sticky Header */}
-      <header className="fixed top-0 left-0 right-0 z-50 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-b border-border">
+      <header className="fixed top-0 left-0 right-0 z-50 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-b border-border/50">
         <div className="flex justify-between items-center px-4 sm:px-8 py-4 max-w-[1200px] mx-auto">
-          {/* Logo + Tagline */}
-          <div 
-            className="flex flex-col sm:flex-row items-center sm:items-center gap-2 sm:gap-4 animate-in fade-in slide-in-from-left-2 duration-500"
-            data-testid="link-logo"
-          >
+          <Link href="/" data-testid="link-logo">
             <img 
               src={headerLogo} 
-              alt="Restnvest" 
-              className="max-w-[140px] sm:max-w-[180px] h-auto object-contain"
+              alt="Restnvest - Informed investing, built to last" 
+              className="h-12 sm:h-14 w-auto object-contain"
             />
-          </div>
+          </Link>
           <ThemeToggle />
         </div>
       </header>
 
-      <main className="flex-1 pt-24 sm:pt-20">
+      <main className="flex-1 pt-20 sm:pt-[88px]">
         {/* Hero Section */}
         <section 
           id="hero" 
