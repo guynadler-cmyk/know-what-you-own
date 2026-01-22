@@ -80,21 +80,19 @@ export default function LandingPage() {
         <link rel="canonical" href="https://restnvest.com/" />
       </Helmet>
       {/* Sticky Header */}
-      <header className="fixed top-0 left-0 right-0 z-50 bg-[#f8f9fa] dark:bg-background/95 backdrop-blur border-b border-[#e0e0e0] dark:border-border overflow-visible pt-[5px] pb-[5px]">
-        <div className="flex justify-between items-start px-4 sm:px-8 h-16 max-w-[1200px] mx-auto">
-          <Link href="/" data-testid="link-logo" className="flex items-start -mt-2">
+      <header className="fixed top-0 left-0 right-0 z-50 bg-[#f8f9fa] dark:bg-background/95 backdrop-blur border-b border-[#e0e0e0] dark:border-border">
+        <div className="flex justify-between items-center px-4 sm:px-8 h-20 max-w-[1200px] mx-auto">
+          <Link href="/" data-testid="link-logo" className="flex items-center">
             <img 
               src={ChatGPT_Image_Jan_22__2026__01_22_13_PM} 
               alt="Restnvest - Informed investing, built to last" 
-              className="h-48 md:h-64 w-auto object-contain mt-[0px] mb-[0px]"
+              className="h-14 md:h-16 w-auto object-contain"
             />
           </Link>
-          <div className="pt-4">
-            <ThemeToggle />
-          </div>
+          <ThemeToggle />
         </div>
       </header>
-      <main className="flex-1 pt-16">
+      <main className="flex-1 pt-20">
         {/* Hero Section */}
         <section 
           id="hero" 
