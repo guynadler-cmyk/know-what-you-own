@@ -91,9 +91,6 @@ export default function LandingPage() {
               alt="Restnvest" 
               className="max-w-[140px] sm:max-w-[180px] h-auto object-contain"
             />
-            <span className="text-sm sm:text-base font-medium text-[#1A1A1A] dark:text-foreground tracking-wide">
-              Sensible Investing
-            </span>
           </div>
           <ThemeToggle />
         </div>
