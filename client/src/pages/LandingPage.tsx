@@ -89,7 +89,7 @@ export default function LandingPage() {
               <img 
                 src={rnvIconLogo} 
                 alt="Restnvest" 
-                className="h-8 w-8 object-contain"
+                className="h-10 w-10 object-contain"
               />
               <span className="text-lg font-semibold">restnvest</span>
             </div>
@@ -298,7 +298,7 @@ export default function LandingPage() {
               <img 
                 src={wordmarkWithTagline} 
                 alt="Restnvest - Informed investing, built to last" 
-                className="h-16 object-contain dark:brightness-110"
+                className="h-24 sm:h-32 object-contain dark:brightness-110"
               />
             </div>
             <p className="text-xs text-muted-foreground" data-testid="text-footer-disclaimer">
