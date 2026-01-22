@@ -85,7 +85,7 @@ export default function LandingPage() {
             <img 
               src={headerLogo} 
               alt="Restnvest - Informed investing, built to last" 
-              className="h-16 md:h-[96px] w-auto object-contain"
+              className="h-24 md:h-32 w-auto object-contain"
             />
           </Link>
           <ThemeToggle />
