@@ -9,7 +9,7 @@ import changesImg from "@assets/Changes_Over_Time_1766161245320.png";
 import competitionImg from "@assets/Competition_1766161245321.png";
 import performanceImg from "@assets/Understand_Performance_1766161245322.png";
 import technicalImg from "@assets/technical_analysis_1766161245321.png";
-import rnvIconLogo from "@assets/ChatGPT_Image_Jan_22,_2026,_11_55_50_AM_1769108399894.png";
+import fullLogoWithTagline from "@assets/ChatGPT_Image_Jan_12,_2026,_03_01_20_PM_1769108794093.png";
 import wordmarkWithTagline from "@assets/ChatGPT_Image_Jan_12,_2026,_06_06_56_PM_1769108399893.png";
 
 interface FeatureSection {
@@ -83,15 +83,14 @@ export default function LandingPage() {
         <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
           <div className="flex h-14 items-center justify-between">
             <div 
-              className="flex items-center gap-2"
+              className="flex items-center"
               data-testid="link-logo"
             >
               <img 
-                src={rnvIconLogo} 
-                alt="Restnvest" 
-                className="h-10 w-10 object-contain"
+                src={fullLogoWithTagline} 
+                alt="Restnvest - Informed investing, built to last" 
+                className="h-12 sm:h-14 object-contain"
               />
-              <span className="text-lg font-semibold">restnvest</span>
             </div>
             <ThemeToggle />
           </div>
