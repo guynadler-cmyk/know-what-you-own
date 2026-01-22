@@ -14,6 +14,8 @@ import wordmarkWithTagline from "@assets/ChatGPT_Image_Jan_12,_2026,_06_06_56_PM
 
 import ChatGPT_Image_Jan_22__2026__01_22_13_PM from "@assets/ChatGPT Image Jan 22, 2026, 01_22_13 PM.png";
 
+import ChatGPT_Image_Jan_22__2026__01_43_07_PM_cropped from "@assets/ChatGPT Image Jan 22, 2026, 01_43_07 PM_cropped.png";
+
 interface FeatureSection {
   headline: string;
   body: string;
@@ -84,7 +86,7 @@ export default function LandingPage() {
         <div className="flex justify-between items-center px-4 sm:px-8 h-20 max-w-[1200px] mx-auto">
           <Link href="/" data-testid="link-logo" className="flex items-center">
             <img 
-              src={ChatGPT_Image_Jan_22__2026__01_22_13_PM} 
+              src={ChatGPT_Image_Jan_22__2026__01_43_07_PM_cropped} 
               alt="Restnvest - Informed investing, built to last" 
               className="h-14 md:h-16 w-auto object-contain"
             />
