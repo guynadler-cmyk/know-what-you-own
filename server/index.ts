@@ -19,6 +19,28 @@ app.get("/api/health", (req, res) => {
   });
 });
 
+// SEO files - serve before catch-all routes
+import path from "path";
+import fs from "fs";
+
+app.get("/robots.txt", (req, res) => {
+  const filePath = path.resolve(import.meta.dirname, "..", "client", "public", "robots.txt");
+  if (fs.existsSync(filePath)) {
+    res.type("text/plain").sendFile(filePath);
+  } else {
+    res.status(404).send("Not found");
+  }
+});
+
+app.get("/sitemap.xml", (req, res) => {
+  const filePath = path.resolve(import.meta.dirname, "..", "client", "public", "sitemap.xml");
+  if (fs.existsSync(filePath)) {
+    res.type("application/xml").sendFile(filePath);
+  } else {
+    res.status(404).send("Not found");
+  }
+});
+
 app.use((req, res, next) => {
   const start = Date.now();
   const path = req.path;
