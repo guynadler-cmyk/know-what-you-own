@@ -5,25 +5,15 @@ interface TrendChartProps {
   status: TimingSignalStatus;
 }
 
-function getAccentColor(status: TimingSignalStatus): string {
-  switch (status) {
-    case "green":
-      return "#10b981";
-    case "yellow":
-      return "#f59e0b";
-    case "red":
-      return "#f43f5e";
-  }
-}
-
 interface SwingPoint {
   index: number;
   value: number;
   type: 'high' | 'low';
 }
 
-function findSwingPoints(prices: number[], windowSize: number = 4): SwingPoint[] {
+function findStructuralSwings(prices: number[], windowSize: number = 8): SwingPoint[] {
   const swings: SwingPoint[] = [];
+  if (prices.length < windowSize * 2 + 1) return swings;
   
   for (let i = windowSize; i < prices.length - windowSize; i++) {
     const windowBefore = prices.slice(i - windowSize, i);
@@ -33,14 +23,22 @@ function findSwingPoints(prices: number[], windowSize: number = 4): SwingPoint[]
     const isLocalHigh = windowBefore.every(p => p <= current) && windowAfter.every(p => p <= current);
     const isLocalLow = windowBefore.every(p => p >= current) && windowAfter.every(p => p >= current);
     
-    if (isLocalHigh && (swings.length === 0 || swings[swings.length - 1].type !== 'high')) {
-      swings.push({ index: i, value: current, type: 'high' });
-    } else if (isLocalLow && (swings.length === 0 || swings[swings.length - 1].type !== 'low')) {
-      swings.push({ index: i, value: current, type: 'low' });
+    if (isLocalHigh) {
+      if (swings.length === 0 || swings[swings.length - 1].type !== 'high') {
+        swings.push({ index: i, value: current, type: 'high' });
+      } else if (current > swings[swings.length - 1].value) {
+        swings[swings.length - 1] = { index: i, value: current, type: 'high' };
+      }
+    } else if (isLocalLow) {
+      if (swings.length === 0 || swings[swings.length - 1].type !== 'low') {
+        swings.push({ index: i, value: current, type: 'low' });
+      } else if (current < swings[swings.length - 1].value) {
+        swings[swings.length - 1] = { index: i, value: current, type: 'low' };
+      }
     }
   }
   
-  return swings;
+  return swings.slice(-6);
 }
 
 export function TrendChart({ data, status }: TrendChartProps) {
@@ -56,7 +54,7 @@ export function TrendChart({ data, status }: TrendChartProps) {
 
   const width = 400;
   const height = 120;
-  const padding = { top: 12, right: 12, bottom: 12, left: 12 };
+  const padding = { top: 12, right: 40, bottom: 12, left: 12 };
   const chartWidth = width - padding.left - padding.right;
   const chartHeight = height - padding.top - padding.bottom;
 
@@ -71,18 +69,12 @@ export function TrendChart({ data, status }: TrendChartProps) {
     .map((p, i) => `${i === 0 ? "M" : "L"} ${scaleX(i)} ${scaleY(p)}`)
     .join(" ");
 
-  const swingPoints = findSwingPoints(prices, 3);
+  const swingPoints = findStructuralSwings(prices, 6);
   const highs = swingPoints.filter(s => s.type === 'high');
   const lows = swingPoints.filter(s => s.type === 'low');
   
-  const highsGuidePath = highs.length >= 2 
-    ? highs.map((h, i) => `${i === 0 ? "M" : "L"} ${scaleX(h.index)} ${scaleY(h.value)}`).join(" ")
-    : null;
-  const lowsGuidePath = lows.length >= 2
-    ? lows.map((l, i) => `${i === 0 ? "M" : "L"} ${scaleX(l.index)} ${scaleY(l.value)}`).join(" ")
-    : null;
-
-  const accentColor = getAccentColor(status);
+  const projectionX = width - padding.right + 15;
+  const projectionWidth = 8;
 
   return (
     <svg 
@@ -91,54 +83,91 @@ export function TrendChart({ data, status }: TrendChartProps) {
       preserveAspectRatio="none"
       data-testid="trend-chart"
     >
-      {highsGuidePath && (
-        <path
-          d={highsGuidePath}
-          fill="none"
-          stroke={accentColor}
-          strokeWidth="1"
-          strokeDasharray="4 3"
-          opacity="0.4"
-        />
-      )}
-      {lowsGuidePath && (
-        <path
-          d={lowsGuidePath}
-          fill="none"
-          stroke={accentColor}
-          strokeWidth="1"
-          strokeDasharray="4 3"
-          opacity="0.4"
-        />
-      )}
-      
       <path
         d={pricePath}
         fill="none"
         stroke="currentColor"
-        strokeWidth="2"
+        strokeWidth="1"
         strokeLinecap="round"
         strokeLinejoin="round"
-        className="text-foreground/70"
+        className="text-muted-foreground/30"
       />
 
       {highs.map((swing, i) => (
         <circle
-          key={`high-${i}`}
+          key={`high-main-${i}`}
           cx={scaleX(swing.index)}
           cy={scaleY(swing.value)}
-          r="4"
-          fill={accentColor}
+          r="5"
+          fill="#10b981"
         />
       ))}
       {lows.map((swing, i) => (
-        <circle
-          key={`low-${i}`}
-          cx={scaleX(swing.index)}
-          cy={scaleY(swing.value)}
-          r="4"
-          fill={accentColor}
+        <rect
+          key={`low-main-${i}`}
+          x={scaleX(swing.index) - 4}
+          y={scaleY(swing.value) - 4}
+          width="8"
+          height="8"
+          fill="#f43f5e"
         />
+      ))}
+
+      <line
+        x1={projectionX}
+        y1={padding.top}
+        x2={projectionX}
+        y2={height - padding.bottom}
+        stroke="currentColor"
+        strokeWidth="1"
+        className="text-muted-foreground/20"
+      />
+
+      {highs.map((swing, i) => (
+        <g key={`high-proj-${i}`}>
+          <circle
+            cx={projectionX}
+            cy={scaleY(swing.value)}
+            r="4"
+            fill="#10b981"
+          />
+          {i > 0 && (
+            <line
+              x1={projectionX}
+              y1={scaleY(highs[i - 1].value)}
+              x2={projectionX}
+              y2={scaleY(swing.value)}
+              stroke="#10b981"
+              strokeWidth="2"
+              strokeDasharray="2 2"
+              opacity="0.5"
+            />
+          )}
+        </g>
+      ))}
+
+      {lows.map((swing, i) => (
+        <g key={`low-proj-${i}`}>
+          <rect
+            x={projectionX - 3}
+            y={scaleY(swing.value) - 3}
+            width="6"
+            height="6"
+            fill="#f43f5e"
+          />
+          {i > 0 && (
+            <line
+              x1={projectionX}
+              y1={scaleY(lows[i - 1].value)}
+              x2={projectionX}
+              y2={scaleY(swing.value)}
+              stroke="#f43f5e"
+              strokeWidth="2"
+              strokeDasharray="2 2"
+              opacity="0.5"
+            />
+          )}
+        </g>
       ))}
     </svg>
   );
