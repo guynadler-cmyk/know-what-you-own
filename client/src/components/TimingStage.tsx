@@ -107,6 +107,12 @@ function VerdictBanner({ verdict }: { verdict: TimingAnalysis["verdict"] }) {
   );
 }
 
+const GUIDED_QUESTIONS = {
+  Trend: "Are structural highs and lows improving, deteriorating, or unresolved?",
+  Momentum: "Is short-term pressure forcing change, or being absorbed by the long-term?",
+  Stretch: "How far from balance are we — and are we moving toward it or away?"
+};
+
 interface SignalCardProps {
   title: string;
   icon: typeof TrendingUp;
@@ -123,10 +129,12 @@ interface SignalCardProps {
   showOverlayToggle?: boolean;
   showOverlay?: boolean;
   onToggleOverlay?: () => void;
+  guidedView?: boolean;
 }
 
-function SignalCard({ title, icon: Icon, signal, deepDive, chartComponent, showOverlayToggle, showOverlay, onToggleOverlay }: SignalCardProps) {
+function SignalCard({ title, icon: Icon, signal, deepDive, chartComponent, showOverlayToggle, showOverlay, onToggleOverlay, guidedView = true }: SignalCardProps) {
   const [isExpanded, setIsExpanded] = useState(false);
+  const guidedQuestion = GUIDED_QUESTIONS[title as keyof typeof GUIDED_QUESTIONS];
 
   return (
     <Card 
@@ -134,6 +142,23 @@ function SignalCard({ title, icon: Icon, signal, deepDive, chartComponent, showO
       data-testid={`signal-card-${title.toLowerCase()}`}
     >
       <CardContent className="p-5">
+        <div 
+          className="transition-all duration-300 ease-out"
+          style={{ 
+            height: guidedView && guidedQuestion ? 'auto' : '0px',
+            opacity: guidedView && guidedQuestion ? 1 : 0,
+            visibility: guidedView && guidedQuestion ? 'visible' : 'hidden',
+            marginBottom: guidedView && guidedQuestion ? '12px' : '0px'
+          }}
+          data-testid={`guided-container-${title.toLowerCase()}`}
+        >
+          <div className="bg-primary/5 dark:bg-primary/10 rounded-lg px-4 py-3 border border-primary/10">
+            <p className="text-sm text-foreground/80 italic leading-relaxed" data-testid={`guided-question-${title.toLowerCase()}`}>
+              {guidedQuestion}
+            </p>
+          </div>
+        </div>
+
         <div className="flex items-start justify-between gap-4">
           <div className="flex items-center gap-3">
             <div className={`w-10 h-10 rounded-full ${getStatusBgColor(signal.status)} flex items-center justify-center`}>
@@ -267,6 +292,7 @@ function ErrorState({ message }: { message: string }) {
 }
 
 export function TimingStage({ ticker, companyName, logoUrl }: TimingStageProps) {
+  const [guidedView, setGuidedView] = useState(true);
   const [showMomentumOverlay, setShowMomentumOverlay] = useState(false);
   const [showStretchOverlay, setShowStretchOverlay] = useState(false);
   
@@ -329,6 +355,19 @@ export function TimingStage({ ticker, companyName, logoUrl }: TimingStageProps) 
         <CardTitle className="text-2xl">Assess Timing Conditions</CardTitle>
       </CardHeader>
       <CardContent className="pb-12">
+        <div className="flex items-center justify-between flex-wrap gap-3 mb-6 pb-4 border-b border-border/40">
+          <div className="flex items-center gap-2">
+            <Eye className="w-4 h-4 text-muted-foreground" />
+            <span className="text-sm font-medium text-foreground">Guided view</span>
+          </div>
+          <Switch
+            checked={guidedView}
+            onCheckedChange={setGuidedView}
+            className="data-[state=checked]:bg-primary"
+            data-testid="switch-guided-view"
+          />
+        </div>
+
         <TimingIntroBlock />
         
         <VerdictBanner verdict={data.verdict} />
@@ -340,6 +379,7 @@ export function TimingStage({ ticker, companyName, logoUrl }: TimingStageProps) 
             signal={data.trend.signal}
             deepDive={data.trend.deepDive}
             chartComponent={<TrendChart data={data.trend.chartData} status={data.trend.signal.status} timeHorizon="~6 months" />}
+            guidedView={guidedView}
           />
           
           <SignalCard
@@ -357,6 +397,7 @@ export function TimingStage({ ticker, companyName, logoUrl }: TimingStageProps) 
             showOverlayToggle={true}
             showOverlay={showMomentumOverlay}
             onToggleOverlay={() => setShowMomentumOverlay(!showMomentumOverlay)}
+            guidedView={guidedView}
           />
           
           <SignalCard
@@ -374,6 +415,7 @@ export function TimingStage({ ticker, companyName, logoUrl }: TimingStageProps) 
             showOverlayToggle={true}
             showOverlay={showStretchOverlay}
             onToggleOverlay={() => setShowStretchOverlay(!showStretchOverlay)}
+            guidedView={guidedView}
           />
         </div>
       </CardContent>

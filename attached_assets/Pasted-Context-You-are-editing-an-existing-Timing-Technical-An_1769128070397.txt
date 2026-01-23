@@ -1,0 +1,243 @@
+Context
+
+You are editing an existing Timing (Technical Analysis) section in the restnvest app.
+
+⚠️ This is an edit of existing work, not a rebuild.
+Do not change routing, data sources, API calls, alignment logic, or verdict text.
+
+The current implementation experimented with abstract charts, but retail users cannot decode them without guidance.
+Your task is to replace time-series charts with judgment-first visual objects and add an always-on guided mode that trains users how to read them.
+
+Core Product Principle (Non-Negotiable)
+
+We do not show market information.
+We help users recognize conditions.
+
+No trading language.
+No signals.
+No entries.
+No “buy / sell / confirmation”.
+
+Every visual must answer a single question immediately.
+
+PART 1 — Guided View (Required)
+Global behavior
+
+Add a “Guided view” toggle at the top of the Timing section.
+
+Default: ON
+
+User can toggle OFF at any time
+
+No persistence required (stateless product)
+
+When ON:
+
+Each section shows one explicit question that tells the user what to look for
+
+Subtle visual cues may appear to reinforce attention
+
+When OFF:
+
+All guidance text and cues disappear
+
+Visuals remain clean and minimal
+
+PART 2 — Replace Charts with Judgment-First Visual Objects
+1️⃣ Trend — Structural Fingerprint (Replace price chart entirely)
+User question (shown when Guided view = ON)
+
+Are structural highs and lows improving, deteriorating, or unresolved?
+
+What to remove
+
+Continuous price line
+
+Candles
+
+Short-term waves
+
+Any “current price” emphasis
+
+What to render instead
+
+A structural fingerprint, consisting of:
+
+Two vertical sequences side-by-side:
+
+Highs
+
+Lows
+
+Each sequence shows only globally significant pivots
+
+No time axis, no price axis
+
+No connecting lines
+
+Rules
+
+Never treat the most recent data point as a confirmed pivot
+
+Reduce pivot count aggressively (noise filtered)
+
+Highs and lows must be visually distinct (shape or color)
+
+Add a small label above:
+“Structure view (~6 months)”
+
+Goal
+
+User should identify structure direction in under 1 second, without interpreting price.
+
+2️⃣ Momentum — Relationship Diagram (Replace waveform / MACD-style chart)
+User question (Guided view = ON)
+
+Is short-term pressure forcing change, or being absorbed by the long-term?
+
+What to remove
+
+Waveforms
+
+Histograms
+
+Oscillations
+
+Time-series momentum plots
+
+What to render instead
+
+A relationship diagram that shows dominance:
+
+A stable long-term reference (fixed position)
+
+A mobile short-term reference
+
+Visible distance between them
+
+How meaning is conveyed
+
+Increasing separation → short-term forcing change
+
+Decreasing separation → long-term absorbing pressure
+
+Flat / ambiguous → neutral
+
+Visual constraints
+
+No history
+
+No curves
+
+No numeric values
+
+No snapping to “now”
+
+Optional (Guided view only)
+
+A single, subtle animation on load showing the direction of dominance
+(fade or gentle drift only, ≤500ms)
+
+3️⃣ Stretch — Balance Gauge (Replace RSI / oscillation chart)
+User question (Guided view = ON)
+
+How far from balance are we — and are we moving toward it or away?
+
+What to remove
+
+RSI line charts
+
+Oscillation history
+
+Overbought / oversold language
+
+What to render instead
+
+A balance gauge:
+
+Central equilibrium zone
+
+Single marker showing current state
+
+Subtle directional hint (arrow or gradient)
+
+Rules
+
+State is primary, direction is secondary
+
+No thresholds
+
+No historical path dominating the view
+
+Goal
+
+User instantly understands tension + direction, not timing.
+
+PART 3 — Tone, Animation, and Restraint
+Animation
+
+Calm, minimal transitions (300–500ms)
+
+Opacity fades, gentle motion only
+
+No bounce, no emphasis, no urgency
+
+Copy constraints
+
+Allowed:
+
+“Structure”
+
+“Pressure”
+
+“Balance”
+
+“Alignment”
+
+Forbidden:
+
+Entry
+
+Buy / Sell
+
+Signal
+
+Ideal time
+
+Confirmation
+
+Prediction
+
+Final Validation Checklist
+
+Before marking complete, verify:
+
+Each section answers its question in <1 second
+
+No visual requires prior TA knowledge
+
+Guided view teaches where to look, not what to do
+
+Turning Guided view OFF results in a clean, calm interface
+
+The section feels observational, not reactive
+
+Success Criteria
+
+If a retail investor can say:
+
+“Structure looks weak”
+
+“Momentum is still fighting the long-term”
+
+“Price is stretched but easing”
+
+…without seeing a single traditional chart — the task is complete.
+
+Final answer to your question
+
+Yes — we’re ready.
+You’ve done the hard work: clarifying intent, rejecting noise, and committing to a coherent visual language.
+
+At this point, the only way forward is exactly this:
+one strong prompt, then evaluate execution — not concepts.
