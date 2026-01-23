@@ -19,132 +19,167 @@ export function StretchChart({ data, status, showOverlay = false }: StretchChart
 
   const width = 400;
   const height = 120;
-  const padding = { top: 12, right: 12, bottom: 12, left: 12 };
-  const chartWidth = width - padding.left - padding.right;
-  const chartHeight = height - padding.top - padding.bottom;
-  const centerY = padding.top + chartHeight / 2;
-
-  const scaleX = (index: number) => padding.left + (index / (values.length - 1)) * chartWidth;
-  const scaleY = (value: number) => centerY - value * (chartHeight / 2) * 0.85;
-
-  const pricePath = values
-    .map((v, i) => `${i === 0 ? "M" : "L"} ${scaleX(i)} ${scaleY(v)}`)
-    .join(" ");
-
-  const gapPath = values.map((v, i) => {
-    const x = scaleX(i);
-    const y = scaleY(v);
-    return i === 0 ? `M ${x} ${centerY} L ${x} ${y}` : `L ${x} ${y}`;
-  }).join(" ") + 
-    values.slice().reverse().map((_, i) => {
-      const originalIndex = values.length - 1 - i;
-      return `L ${scaleX(originalIndex)} ${centerY}`;
-    }).join(" ") + " Z";
+  const centerX = width / 2;
+  const centerY = height / 2;
 
   const latestValue = values[values.length - 1];
-  const absLatest = Math.abs(latestValue);
-  const tensionOpacity = 0.15 + absLatest * 0.3;
-  const tensionColor = absLatest > 0.5 ? `rgba(244, 63, 94, ${tensionOpacity})` : `rgba(245, 158, 11, ${tensionOpacity})`;
+  const prevValue = values.length > 5 ? values[values.length - 6] : latestValue;
+  
+  const maxStretch = 60;
+  const stretchDistance = latestValue * maxStretch;
+  const clampedStretch = Math.max(-maxStretch, Math.min(maxStretch, stretchDistance));
+  
+  const markerY = centerY - clampedStretch;
+  
+  const isReturning = Math.abs(latestValue) < Math.abs(prevValue);
+  const isStretching = !isReturning;
+  
+  const absStretch = Math.abs(clampedStretch);
+  const stretchRatio = absStretch / maxStretch;
+  
+  const balanceZoneHeight = 16;
+  
+  const stretchColor = stretchRatio > 0.6 ? '#f43f5e' : 
+                       stretchRatio > 0.3 ? '#f59e0b' : 
+                       '#10b981';
+  
+  const markerOpacity = 0.5 + stretchRatio * 0.5;
+  const markerSize = 8 + stretchRatio * 6;
 
-  const balanceZoneHeight = chartHeight * 0.25;
+  const directionHintLength = 15 + stretchRatio * 10;
+  const hintDirection = isReturning ? 'returning' : 'stretching';
 
   return (
     <svg 
       viewBox={`0 0 ${width} ${height}`} 
       className="w-full h-full"
-      preserveAspectRatio="none"
+      preserveAspectRatio="xMidYMid meet"
       data-testid="stretch-chart"
     >
+      <defs>
+        <linearGradient id="balanceGradient" x1="0%" y1="0%" x2="0%" y2="100%">
+          <stop offset="0%" stopColor="#10b981" stopOpacity="0" />
+          <stop offset="40%" stopColor="#10b981" stopOpacity="0.15" />
+          <stop offset="50%" stopColor="#10b981" stopOpacity="0.2" />
+          <stop offset="60%" stopColor="#10b981" stopOpacity="0.15" />
+          <stop offset="100%" stopColor="#10b981" stopOpacity="0" />
+        </linearGradient>
+      </defs>
+
+      <rect
+        x={centerX - 60}
+        y={centerY - balanceZoneHeight}
+        width={120}
+        height={balanceZoneHeight * 2}
+        fill="url(#balanceGradient)"
+        rx="4"
+      />
+
+      <line
+        x1={centerX - 50}
+        y1={centerY}
+        x2={centerX + 50}
+        y2={centerY}
+        stroke="#10b981"
+        strokeWidth="3"
+        strokeLinecap="round"
+        opacity="0.8"
+      />
+
+      {absStretch > 5 && (
+        <line
+          x1={centerX}
+          y1={centerY}
+          x2={centerX}
+          y2={markerY}
+          stroke={stretchColor}
+          strokeWidth="1.5"
+          strokeDasharray="4 3"
+          opacity="0.4"
+          className="transition-all duration-500"
+        />
+      )}
+
+      <circle
+        cx={centerX}
+        cy={markerY}
+        r={markerSize}
+        fill={stretchColor}
+        opacity={markerOpacity}
+        className="transition-all duration-500 ease-out"
+      />
+
+      {absStretch > 8 && (
+        <g 
+          className="transition-all duration-500"
+          style={{ opacity: 0.5 }}
+        >
+          {hintDirection === 'returning' ? (
+            <path
+              d={`M ${centerX + 20} ${markerY} 
+                  Q ${centerX + 25} ${(markerY + centerY) / 2}, ${centerX + 20} ${centerY + (latestValue > 0 ? -5 : 5)}`}
+              fill="none"
+              stroke="#10b981"
+              strokeWidth="1.5"
+              strokeDasharray="3 3"
+            />
+          ) : (
+            <g transform={`translate(${centerX + 20}, ${markerY})`}>
+              <line
+                x1={0}
+                y1={0}
+                x2={0}
+                y2={latestValue > 0 ? -directionHintLength : directionHintLength}
+                stroke={stretchColor}
+                strokeWidth="1.5"
+              />
+              <path
+                d={latestValue > 0 
+                  ? `M -4 ${-directionHintLength + 5} L 0 ${-directionHintLength} L 4 ${-directionHintLength + 5}`
+                  : `M -4 ${directionHintLength - 5} L 0 ${directionHintLength} L 4 ${directionHintLength - 5}`
+                }
+                fill="none"
+                stroke={stretchColor}
+                strokeWidth="1.5"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+            </g>
+          )}
+        </g>
+      )}
+
       <g 
         className="transition-opacity duration-500 ease-out"
         style={{ opacity: showOverlay ? 1 : 0, pointerEvents: showOverlay ? 'auto' : 'none' }}
       >
-          <defs>
-            <linearGradient id="balanceZoneGradient" x1="0%" y1="0%" x2="0%" y2="100%">
-              <stop offset="0%" stopColor="#10b981" stopOpacity="0" />
-              <stop offset="35%" stopColor="#10b981" stopOpacity="0.12" />
-              <stop offset="50%" stopColor="#10b981" stopOpacity="0.15" />
-              <stop offset="65%" stopColor="#10b981" stopOpacity="0.12" />
-              <stop offset="100%" stopColor="#10b981" stopOpacity="0" />
-            </linearGradient>
-          </defs>
-          
-          <rect
-            x={padding.left}
-            y={centerY - balanceZoneHeight}
-            width={chartWidth}
-            height={balanceZoneHeight * 2}
-            fill="url(#balanceZoneGradient)"
-          />
-          
-          <line
-            x1={padding.left}
-            y1={centerY - balanceZoneHeight * 0.7}
-            x2={width - padding.right}
-            y2={centerY - balanceZoneHeight * 0.7}
-            stroke="#10b981"
-            strokeWidth="1"
-            strokeDasharray="6 4"
-            opacity="0.2"
-          />
-          <line
-            x1={padding.left}
-            y1={centerY + balanceZoneHeight * 0.7}
-            x2={width - padding.right}
-            y2={centerY + balanceZoneHeight * 0.7}
-            stroke="#10b981"
-            strokeWidth="1"
-            strokeDasharray="6 4"
-            opacity="0.2"
-          />
-          
-          <path
-            d={`M ${padding.left + chartWidth * 0.7} ${centerY - balanceZoneHeight * 1.2}
-                C ${padding.left + chartWidth * 0.75} ${centerY - balanceZoneHeight * 0.6},
-                  ${padding.left + chartWidth * 0.8} ${centerY - balanceZoneHeight * 0.3},
-                  ${padding.left + chartWidth * 0.85} ${centerY}`}
-            fill="none"
-            stroke="#10b981"
-            strokeWidth="1.5"
-            strokeDasharray="3 3"
-            opacity="0.35"
-          />
-          <path
-            d={`M ${padding.left + chartWidth * 0.2} ${centerY + balanceZoneHeight * 1.3}
-                C ${padding.left + chartWidth * 0.25} ${centerY + balanceZoneHeight * 0.7},
-                  ${padding.left + chartWidth * 0.3} ${centerY + balanceZoneHeight * 0.3},
-                  ${padding.left + chartWidth * 0.35} ${centerY}`}
-            fill="none"
-            stroke="#10b981"
-            strokeWidth="1.5"
-            strokeDasharray="3 3"
-            opacity="0.35"
-          />
-        </g>
-
-      <path
-        d={gapPath}
-        fill={tensionColor}
-      />
-
-      <line
-        x1={padding.left}
-        y1={centerY}
-        x2={width - padding.right}
-        y2={centerY}
-        stroke="#10b981"
-        strokeWidth="4"
-      />
-
-      <path
-        d={pricePath}
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="1.5"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        className="text-foreground/50"
-      />
+        <rect
+          x={centerX - 120}
+          y={centerY - balanceZoneHeight * 0.8}
+          width={40}
+          height={balanceZoneHeight * 1.6}
+          fill="#10b981"
+          opacity="0.1"
+          rx="3"
+        />
+        <line
+          x1={centerX - 110}
+          y1={centerY}
+          x2={centerX - 90}
+          y2={centerY}
+          stroke="#10b981"
+          strokeWidth="2"
+          strokeLinecap="round"
+          opacity="0.5"
+        />
+        <circle
+          cx={centerX - 100}
+          cy={centerY}
+          r={5}
+          fill="#10b981"
+          opacity="0.4"
+        />
+      </g>
     </svg>
   );
 }

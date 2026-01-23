@@ -1,0 +1,141 @@
+You are editing an existing Timing (Technical Analysis) section in the restnvest app.
+
+⚠️ This is an incremental refactor, not a rebuild.
+Routing, APIs, alignment logic, and verdict text must remain unchanged.
+
+The current implementation uses time-series charts that technically work but fail to communicate judgment clearly.
+
+Your task is to replace these charts with simpler, judgment-first visual objects.
+
+Core Principle (Non-Negotiable)
+
+We do not show market information.
+We show market conditions.
+
+Users should not interpret charts.
+They should recognize states.
+
+No trading language.
+No signals.
+No entries.
+
+1. Trend — Replace Price Chart with Structural Fingerprint
+Goal
+
+Allow users to instantly perceive whether structure is:
+
+up
+
+down
+
+unresolved
+
+Implementation
+
+Remove the continuous price line and pivot plot
+
+Replace with two vertical sequences:
+
+Structural highs
+
+Structural lows
+
+Show only globally significant pivots (noise filtered)
+
+Do NOT treat the latest data point as a confirmed pivot
+
+No time axis, no price axis
+
+Visual constraints
+
+Minimal marks
+
+No connecting lines
+
+Calm, neutral colors
+
+Optional small label: “Structure view (~6 months)”
+
+2. Momentum — Replace Waveform with Relationship Diagram
+Goal
+
+Let users see whether:
+
+short-term behavior is forcing change, or
+
+long-term behavior is absorbing pressure
+
+Implementation
+
+Remove the waveform / histogram style chart
+
+Represent momentum as a relationship between:
+
+a stable long-term reference
+
+a mobile short-term reference
+
+Show separation and direction of pull
+
+Optional subtle animation to suggest direction
+
+Constraints
+
+No oscillation
+
+No history
+
+No curves
+
+No snapping to “now”
+
+3. Stretch — Replace RSI Chart with Balance Gauge
+Goal
+
+Let users instantly see:
+
+how far from balance price is
+
+whether it’s moving further away or returning
+
+Implementation
+
+Remove historical line chart
+
+Show:
+
+a central balance zone
+
+a single current-state marker
+
+a faint directional hint (arrow or gradient)
+
+Constraints
+
+No thresholds
+
+No numeric values
+
+No “oversold/overbought”
+
+4. Animation & Tone
+
+All transitions should be smooth and calming (300–500ms)
+
+Use fades, gentle motion
+
+Avoid sharp or attention-grabbing effects
+
+This section should feel observational, not reactive.
+
+Final Check
+
+Before marking complete, confirm:
+
+Each visual answers its question in <1 second
+
+No chart requires interpretation
+
+The section feels calmer and clearer than before
+
+Nothing implies action or prediction
