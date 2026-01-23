@@ -390,7 +390,7 @@ export class SECService {
     const { filings } = data;
 
 //     const response = await axios.get<SECSubmission>(url, { headers: SEC_HEADERS });
-//     const { filings } = response.data;
+//     const { filings } = response.data;                                       
 
     const tenKFilings: Array<{
       accessionNumber: string;

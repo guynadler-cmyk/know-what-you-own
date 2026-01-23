@@ -334,7 +334,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/analyze/:ticker", async (req: any, res) => {
     try {
       const { ticker } = req.params;
-      
+      debugger;
       if (!ticker || !/^[A-Z]{1,5}$/i.test(ticker)) {
         return res.status(400).json({ 
           error: "Invalid ticker format. Please provide 1-5 letter ticker symbol." 

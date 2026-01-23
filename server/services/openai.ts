@@ -676,6 +676,22 @@ import { MemoryCache } from "./caching";
 import crypto from "node:crypto";
 import { SecretManagerServiceClient } from "@google-cloud/secret-manager";
 
+import {
+  getBusinessByCacheKey,
+  insertBusinessAnalysis,
+} from "../repositories/businessAnalysis.repo";
+
+import {
+  getTemporalByCacheKey,
+  saveTemporalAnalysis,
+} from "../repositories/temporalAnalysis.repo";
+
+import {
+  getFootnotesByCacheKey,
+  saveFootnotesAnalysis,
+} from "../repositories/footnotesAnalysis.repo";
+
+
 // const openai = new OpenAI({
 //   apiKey: process.env.AI_INTEGRATIONS_OPENAI_API_KEY,
 //   baseURL: process.env.AI_INTEGRATIONS_OPENAI_BASE_URL,
@@ -856,11 +872,12 @@ export class OpenAIService {
                           businessSection
                           );
 
-  const cached = this.businessCache.get<CompanySummary>(cacheKey);
+  const cached = await getBusinessByCacheKey(cacheKey);
     if (cached) {
-      console.log("[AI CACHE] BUSINESS HIT:", ticker, fiscalYear);
+      console.log("[DB CACHE] BUSINESS HIT:", ticker, fiscalYear);
       return cached;
     }
+
 
     console.log("[AI CACHE] BUSINESS MISS:", ticker, fiscalYear);
 
@@ -1012,7 +1029,16 @@ Requirements:
       },
       cik,
     };
-    this.businessCache.set(cacheKey, summary);
+    await insertBusinessAnalysis({
+      cacheKey,
+      companyName,
+      ticker,
+      cik,
+      fiscalYear,
+      filingDate,
+      result: summary,
+    });
+
     return summary;
   }
 
@@ -1028,13 +1054,14 @@ Requirements:
     const yearsAnalyzed = yearlyData.map(d => d.fiscalYear).sort();
     const cacheKey = this.makeTemporalCacheKey(companyName, ticker, yearlyData);
 
-    const cached = this.temporalCache.get<TemporalAnalysis>(cacheKey);
+    const cached = await getTemporalByCacheKey(cacheKey);
     if (cached) {
-      console.log("[AI CACHE] TEMPORAL HIT:", ticker);
+      console.log("[DB CACHE] TEMPORAL HIT:", ticker);
       return cached;
     }
 
-    console.log("[AI CACHE] TEMPORAL MISS:", ticker);
+    console.log("[DB CACHE] TEMPORAL MISS:", ticker);
+
 
     // Truncate each business section to avoid token limits and timeouts
     const MAX_CHARS_PER_YEAR = 8000;
@@ -1313,7 +1340,14 @@ Additional Guidelines:
       evolved,
       newProducts,
     };
-    this.temporalCache.set(cacheKey, temporalAnalysis);
+    await saveTemporalAnalysis({
+          cacheKey,
+          companyName,
+          ticker,
+          yearsAnalyzed,
+          result: temporalAnalysis,
+        });
+
     return temporalAnalysis;
   }
 
@@ -1332,13 +1366,14 @@ Additional Guidelines:
           filingDate,
           footnotesSection
         );
-    const cached = this.footnotesCache.get<FinePrintAnalysis>(cacheKey);
+    const cached = await getFootnotesByCacheKey(cacheKey);
     if (cached) {
-      console.log("[AI CACHE] FOOTNOTES HIT:", ticker, fiscalYear);
+      console.log("[DB CACHE] FOOTNOTES HIT:", ticker, fiscalYear);
       return cached;
     }
 
-    console.log("[AI CACHE] FOOTNOTES MISS:", ticker, fiscalYear);
+    console.log("[DB CACHE] FOOTNOTES MISS:", ticker, fiscalYear);
+
     const prompt = `You are analyzing footnotes from a company's 10-K filing. Extract and categorize key information that investors should know.
 
 Company: ${companyName} (${ticker})
@@ -1447,7 +1482,15 @@ Requirements:
       relatedPartyTransactions: sanitizeItems(result.relatedPartyTransactions || []),
       otherMaterialDisclosures: sanitizeItems(result.otherMaterialDisclosures || []),
     };
-    this.footnotesCache.set(cacheKey, resp);
+    await saveFootnotesAnalysis({
+          cacheKey,
+          companyName,
+          ticker,
+          fiscalYear,
+          filingDate,
+          result: resp,
+        });
+
     return resp
   }
 }
