@@ -19,160 +19,168 @@ export function MomentumChart({ data, status, showOverlay = false }: MomentumCha
 
   const width = 400;
   const height = 120;
-  const padding = { top: 12, right: 12, bottom: 12, left: 12 };
-  const chartWidth = width - padding.left - padding.right;
-  const chartHeight = height - padding.top - padding.bottom;
-  const centerY = padding.top + chartHeight / 2;
-
-  const scaleX = (index: number) => padding.left + (index / (shortEma.length - 1)) * chartWidth;
-  const scaleY = (value: number) => padding.top + chartHeight - value * chartHeight;
-
-  const longEmaPath = longEma
-    .map((v, i) => `${i === 0 ? "M" : "L"} ${scaleX(i)} ${scaleY(v)}`)
-    .join(" ");
-
-  const shortEmaPath = shortEma
-    .map((v, i) => `${i === 0 ? "M" : "L"} ${scaleX(i)} ${scaleY(v)}`)
-    .join(" ");
-
-  const gapSegments: { path: string; isAbove: boolean }[] = [];
-  let currentSegmentStart = 0;
-  let currentIsAbove = shortEma[0] > longEma[0];
-  
-  for (let i = 1; i <= shortEma.length; i++) {
-    const atEnd = i === shortEma.length;
-    const isAbove = atEnd ? currentIsAbove : shortEma[i] > longEma[i];
-    
-    if (isAbove !== currentIsAbove || atEnd) {
-      const segmentIndices = [];
-      for (let j = currentSegmentStart; j < i; j++) {
-        segmentIndices.push(j);
-      }
-      
-      if (segmentIndices.length > 0) {
-        const pathTop = segmentIndices.map((idx, pi) => {
-          const x = scaleX(idx);
-          const y = scaleY(shortEma[idx]);
-          return pi === 0 ? `M ${x} ${y}` : `L ${x} ${y}`;
-        }).join(" ");
-        
-        const pathBottom = segmentIndices.slice().reverse().map((idx) => {
-          const x = scaleX(idx);
-          const y = scaleY(longEma[idx]);
-          return `L ${x} ${y}`;
-        }).join(" ");
-        
-        gapSegments.push({
-          path: pathTop + pathBottom + " Z",
-          isAbove: currentIsAbove
-        });
-      }
-      
-      currentSegmentStart = i;
-      currentIsAbove = isAbove;
-    }
-  }
+  const centerX = width / 2;
+  const centerY = height / 2;
 
   const latestShort = shortEma[shortEma.length - 1];
   const latestLong = longEma[longEma.length - 1];
-  const isCurrentlyAbove = latestShort > latestLong;
+  
+  const separation = (latestShort - latestLong) * 15;
+  const clampedSeparation = Math.max(-40, Math.min(40, separation));
+  
+  const prevShort = shortEma.length > 5 ? shortEma[shortEma.length - 6] : latestShort;
+  const prevLong = longEma.length > 5 ? longEma[longEma.length - 6] : latestLong;
+  const prevSeparation = (prevShort - prevLong) * 15;
+  
+  const isConverging = Math.abs(separation) < Math.abs(prevSeparation);
+  const isDiverging = !isConverging;
+  
+  const shortTermY = centerY - clampedSeparation;
+  
+  const forceDirection = separation > 0 ? 'up' : separation < 0 ? 'down' : 'neutral';
+  const forceColor = forceDirection === 'up' ? '#10b981' : forceDirection === 'down' ? '#f43f5e' : 'currentColor';
+  
+  const absForce = Math.abs(clampedSeparation);
+  const forceOpacity = 0.3 + (absForce / 40) * 0.5;
 
-  const overlayStartX = padding.left + chartWidth * 0.15;
-  const overlayEndX = padding.left + chartWidth * 0.45;
-  const overlayMidX = (overlayStartX + overlayEndX) / 2;
+  const longTermRadius = 24;
+  const shortTermRadius = 12;
+
+  const arrowAngle = separation > 0 ? -90 : 90;
+  const arrowLength = Math.min(20, absForce * 0.5);
 
   return (
     <svg 
       viewBox={`0 0 ${width} ${height}`} 
       className="w-full h-full"
-      preserveAspectRatio="none"
+      preserveAspectRatio="xMidYMid meet"
       data-testid="momentum-chart"
     >
-      {gapSegments.map((segment, i) => (
-        <path
-          key={`gap-${i}`}
-          d={segment.path}
-          fill={segment.isAbove ? "rgba(16, 185, 129, 0.35)" : "rgba(244, 63, 94, 0.35)"}
-        />
-      ))}
-
-      <line
-        x1={padding.left}
-        y1={centerY}
-        x2={width - padding.right}
-        y2={centerY}
+      <circle
+        cx={centerX}
+        cy={centerY}
+        r={longTermRadius}
+        fill="none"
         stroke="currentColor"
         strokeWidth="3"
-        className="text-muted-foreground/40"
+        className="text-muted-foreground/30"
       />
 
-      <path
-        d={shortEmaPath}
-        fill="none"
-        stroke={isCurrentlyAbove ? "#10b981" : "#f43f5e"}
-        strokeWidth="2"
-        strokeLinecap="round"
-        strokeLinejoin="round"
+      <circle
+        cx={centerX}
+        cy={shortTermY}
+        r={shortTermRadius}
+        fill={forceColor}
+        opacity={forceOpacity}
+        className="transition-all duration-500 ease-out"
       />
+
+      {absForce > 5 && (
+        <g className="transition-opacity duration-300" style={{ opacity: 0.5 }}>
+          <line
+            x1={centerX}
+            y1={centerY}
+            x2={centerX}
+            y2={shortTermY + (separation > 0 ? shortTermRadius : -shortTermRadius)}
+            stroke={forceColor}
+            strokeWidth="2"
+            strokeDasharray="4 3"
+            className="transition-all duration-500"
+          />
+        </g>
+      )}
+
+      {isDiverging && absForce > 10 && (
+        <g 
+          transform={`translate(${centerX + 40}, ${(centerY + shortTermY) / 2}) rotate(${arrowAngle})`}
+          className="transition-all duration-500"
+          style={{ opacity: forceOpacity }}
+        >
+          <line
+            x1={0}
+            y1={0}
+            x2={arrowLength}
+            y2={0}
+            stroke={forceColor}
+            strokeWidth="2"
+          />
+          <path
+            d={`M ${arrowLength - 5} -4 L ${arrowLength} 0 L ${arrowLength - 5} 4`}
+            fill="none"
+            stroke={forceColor}
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
+        </g>
+      )}
+
+      {isConverging && (
+        <g 
+          className="transition-opacity duration-500"
+          style={{ opacity: 0.4 }}
+        >
+          <line
+            x1={centerX - 50}
+            y1={shortTermY}
+            x2={centerX - 35}
+            y2={centerY}
+            stroke={forceColor}
+            strokeWidth="1.5"
+            strokeDasharray="3 3"
+          />
+          <path
+            d={`M ${centerX - 38} ${centerY + (separation > 0 ? 4 : -4)} L ${centerX - 35} ${centerY} L ${centerX - 32} ${centerY + (separation > 0 ? 4 : -4)}`}
+            fill="none"
+            stroke={forceColor}
+            strokeWidth="1.5"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
+        </g>
+      )}
 
       <g 
         className="transition-opacity duration-500 ease-out"
         style={{ opacity: showOverlay ? 1 : 0, pointerEvents: showOverlay ? 'auto' : 'none' }}
       >
-          <defs>
-            <linearGradient id="overlayFade" x1="0%" y1="0%" x2="100%" y2="0%">
-              <stop offset="0%" stopColor="currentColor" stopOpacity="0" />
-              <stop offset="20%" stopColor="currentColor" stopOpacity="0.15" />
-              <stop offset="80%" stopColor="currentColor" stopOpacity="0.15" />
-              <stop offset="100%" stopColor="currentColor" stopOpacity="0" />
-            </linearGradient>
-          </defs>
-          
-          <rect
-            x={overlayStartX - 10}
-            y={padding.top}
-            width={overlayEndX - overlayStartX + 20}
-            height={chartHeight}
-            fill="url(#overlayFade)"
-            className="text-primary"
-          />
-          
-          <path
-            d={`M ${overlayStartX} ${centerY + 20} 
-                Q ${overlayMidX - 20} ${centerY + 15}, ${overlayMidX} ${centerY + 5}
-                Q ${overlayMidX + 20} ${centerY - 5}, ${overlayEndX} ${centerY - 8}`}
-            fill="none"
-            stroke="#10b981"
-            strokeWidth="2"
-            strokeDasharray="4 4"
-            opacity="0.5"
-          />
-          
-          <path
-            d={`M ${overlayStartX} ${centerY} L ${overlayEndX} ${centerY}`}
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="1.5"
-            strokeDasharray="3 3"
-            opacity="0.3"
-            className="text-muted-foreground"
-          />
-          
-          <circle
-            cx={overlayMidX}
-            cy={centerY + 5}
-            r="3"
-            fill="#10b981"
-            opacity="0.6"
-          />
-          <circle
-            cx={overlayEndX - 15}
-            cy={centerY - 5}
-            r="3"
-            fill="#10b981"
-            opacity="0.6"
-          />
-        </g>
+        <circle
+          cx={centerX - 100}
+          cy={centerY}
+          r={longTermRadius * 0.6}
+          fill="none"
+          stroke="#10b981"
+          strokeWidth="2"
+          strokeDasharray="4 4"
+          opacity="0.3"
+        />
+        <circle
+          cx={centerX - 100}
+          cy={centerY - 8}
+          r={shortTermRadius * 0.6}
+          fill="#10b981"
+          opacity="0.25"
+        />
+        <line
+          x1={centerX - 100}
+          y1={centerY - 8}
+          x2={centerX - 100}
+          y2={centerY}
+          stroke="#10b981"
+          strokeWidth="1.5"
+          strokeDasharray="2 2"
+          opacity="0.4"
+        />
+        <path
+          d={`M ${centerX - 103} ${centerY - 3} L ${centerX - 100} ${centerY} L ${centerX - 97} ${centerY - 3}`}
+          fill="none"
+          stroke="#10b981"
+          strokeWidth="1.5"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          opacity="0.4"
+        />
+      </g>
     </svg>
   );
 }

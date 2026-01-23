@@ -112,12 +112,11 @@ function guaranteeThreePivots(prices: number[]): SwingPoint[] {
   if (len <= 2) {
     const v0 = len > 0 ? prices[0] : 0;
     const v1 = len > 1 ? prices[1] : v0 + 1;
-    const v2 = len > 2 ? prices[2] : v0;
     const upTrend = v1 > v0;
     return [
       { index: 0, value: v0, type: upTrend ? 'low' : 'high', confirmed: true },
-      { index: Math.max(1, Math.floor(len / 2)), value: v1, type: upTrend ? 'high' : 'low', confirmed: true },
-      { index: Math.max(2, len - 1), value: v2, type: upTrend ? 'low' : 'high', confirmed: true }
+      { index: 1, value: v1, type: upTrend ? 'high' : 'low', confirmed: true },
+      { index: 2, value: v0, type: upTrend ? 'low' : 'high', confirmed: true }
     ];
   }
   
@@ -221,167 +220,130 @@ export function TrendChart({ data, status, timeHorizon = "~6 months" }: TrendCha
   const swingPoints = findStructuralSwings(effectivePrices);
   const confirmedHighs = swingPoints.filter(s => s.type === 'high' && s.confirmed);
   const confirmedLows = swingPoints.filter(s => s.type === 'low' && s.confirmed);
-  const unconfirmedPoints = swingPoints.filter(s => !s.confirmed);
 
   const width = 400;
   const height = 140;
-  const padding = { top: 24, right: 48, bottom: 12, left: 12 };
-  const chartWidth = width - padding.left - padding.right;
+  const padding = { top: 28, right: 20, bottom: 16, left: 20 };
   const chartHeight = height - padding.top - padding.bottom;
 
   const minValue = Math.min(...effectivePrices);
   const maxValue = Math.max(...effectivePrices);
   const valueRange = maxValue - minValue || 1;
 
-  const scaleX = (index: number) => padding.left + (index / Math.max(1, effectivePrices.length - 1)) * chartWidth;
   const scaleY = (value: number) => padding.top + chartHeight - ((value - minValue) / valueRange) * chartHeight;
 
-  const pricePath = effectivePrices
-    .map((p, i) => `${i === 0 ? "M" : "L"} ${scaleX(i)} ${scaleY(p)}`)
-    .join(" ");
+  const highsX = width * 0.35;
+  const lowsX = width * 0.65;
 
-  const projectionX = width - padding.right + 20;
+  const highValues = confirmedHighs.map(s => s.value).sort((a, b) => b - a);
+  const lowValues = confirmedLows.map(s => s.value).sort((a, b) => a - b);
 
-  const latestPrice = effectivePrices[effectivePrices.length - 1];
-  const latestX = scaleX(effectivePrices.length - 1);
-  const latestY = scaleY(latestPrice);
+  const latestHigh = highValues.length > 0 ? Math.max(...confirmedHighs.filter(h => h.index === Math.max(...confirmedHighs.map(x => x.index))).map(h => h.value)) : null;
+  const latestLow = lowValues.length > 0 ? Math.min(...confirmedLows.filter(l => l.index === Math.max(...confirmedLows.map(x => x.index))).map(l => l.value)) : null;
+
+  const highsTrending = highValues.length >= 2 ? (highValues[0] > highValues[highValues.length - 1] ? 'up' : 'down') : 'flat';
+  const lowsTrending = lowValues.length >= 2 ? (lowValues[lowValues.length - 1] > lowValues[0] ? 'up' : 'down') : 'flat';
+
+  const overallTrend = highsTrending === 'up' && lowsTrending === 'up' ? 'up' : 
+                       highsTrending === 'down' && lowsTrending === 'down' ? 'down' : 'unresolved';
 
   return (
     <div className="relative w-full h-full">
-      <div className="absolute top-0 left-0 text-[10px] text-muted-foreground/60 font-medium tracking-wide">
-        Structure view: {timeHorizon}
+      <div className="absolute top-0 left-0 right-0 flex justify-center">
+        <span className="text-[10px] text-muted-foreground/50 font-medium tracking-wide">
+          Structure view ({timeHorizon})
+        </span>
       </div>
       <svg 
         viewBox={`0 0 ${width} ${height}`} 
         className="w-full h-full"
-        preserveAspectRatio="none"
+        preserveAspectRatio="xMidYMid meet"
         data-testid="trend-chart"
       >
-        <path
-          d={pricePath}
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="1"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          className="text-muted-foreground/20"
-        />
-
-        {confirmedHighs.map((swing, i) => (
-          <circle
-            key={`high-main-${i}`}
-            cx={scaleX(swing.index)}
-            cy={scaleY(swing.value)}
-            r="4"
-            fill="#10b981"
-            opacity="0.9"
-          />
-        ))}
-        {confirmedLows.map((swing, i) => (
-          <rect
-            key={`low-main-${i}`}
-            x={scaleX(swing.index) - 3.5}
-            y={scaleY(swing.value) - 3.5}
-            width="7"
-            height="7"
-            fill="#f43f5e"
-            opacity="0.9"
-          />
-        ))}
-
-        {unconfirmedPoints.map((swing, i) => (
-          swing.type === 'high' ? (
-            <circle
-              key={`unconf-high-${i}`}
-              cx={scaleX(swing.index)}
-              cy={scaleY(swing.value)}
-              r="4"
-              fill="none"
-              stroke="#10b981"
-              strokeWidth="1.5"
-              strokeDasharray="2 2"
-              opacity="0.5"
-            />
-          ) : (
-            <rect
-              key={`unconf-low-${i}`}
-              x={scaleX(swing.index) - 3.5}
-              y={scaleY(swing.value) - 3.5}
-              width="7"
-              height="7"
-              fill="none"
-              stroke="#f43f5e"
-              strokeWidth="1.5"
-              strokeDasharray="2 2"
-              opacity="0.5"
-            />
-          )
-        ))}
-
-        <circle
-          cx={latestX}
-          cy={latestY}
-          r="3"
-          fill="currentColor"
-          className="text-muted-foreground/40"
-        />
-
         <line
-          x1={projectionX}
+          x1={highsX}
           y1={padding.top}
-          x2={projectionX}
+          x2={highsX}
           y2={height - padding.bottom}
           stroke="currentColor"
           strokeWidth="1"
-          className="text-muted-foreground/10"
+          className="text-muted-foreground/15"
+        />
+        <line
+          x1={lowsX}
+          y1={padding.top}
+          x2={lowsX}
+          y2={height - padding.bottom}
+          stroke="currentColor"
+          strokeWidth="1"
+          className="text-muted-foreground/15"
         />
 
-        {confirmedHighs.map((swing, i) => (
-          <g key={`high-proj-${i}`}>
+        {confirmedHighs.map((swing, i) => {
+          const isLatest = swing.value === latestHigh;
+          return (
             <circle
-              cx={projectionX}
+              key={`high-${i}`}
+              cx={highsX}
               cy={scaleY(swing.value)}
-              r="3"
-              fill="#10b981"
-              opacity="0.8"
+              r={isLatest ? 6 : 4}
+              fill={isLatest ? "#10b981" : "#10b981"}
+              opacity={isLatest ? 1 : 0.5}
+              className="transition-all duration-300"
             />
-            {i > 0 && (
-              <line
-                x1={projectionX}
-                y1={scaleY(confirmedHighs[i - 1].value)}
-                x2={projectionX}
-                y2={scaleY(swing.value)}
-                stroke={swing.value < confirmedHighs[i - 1].value ? "#f43f5e" : "#10b981"}
-                strokeWidth="1.5"
-                opacity="0.5"
-              />
-            )}
-          </g>
-        ))}
+          );
+        })}
 
-        {confirmedLows.map((swing, i) => (
-          <g key={`low-proj-${i}`}>
+        {confirmedLows.map((swing, i) => {
+          const isLatest = swing.value === latestLow;
+          return (
             <rect
-              x={projectionX - 2.5}
-              y={scaleY(swing.value) - 2.5}
-              width="5"
-              height="5"
+              key={`low-${i}`}
+              x={lowsX - (isLatest ? 5 : 3.5)}
+              y={scaleY(swing.value) - (isLatest ? 5 : 3.5)}
+              width={isLatest ? 10 : 7}
+              height={isLatest ? 10 : 7}
               fill="#f43f5e"
-              opacity="0.8"
+              opacity={isLatest ? 1 : 0.5}
+              className="transition-all duration-300"
             />
-            {i > 0 && (
-              <line
-                x1={projectionX}
-                y1={scaleY(confirmedLows[i - 1].value)}
-                x2={projectionX}
-                y2={scaleY(swing.value)}
-                stroke={swing.value > confirmedLows[i - 1].value ? "#10b981" : "#f43f5e"}
-                strokeWidth="1.5"
-                opacity="0.5"
-              />
-            )}
-          </g>
-        ))}
+          );
+        })}
+
+        {overallTrend === 'up' && (
+          <path
+            d={`M ${width/2 - 8} ${height - 8} L ${width/2} ${height - 16} L ${width/2 + 8} ${height - 8}`}
+            fill="none"
+            stroke="#10b981"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            opacity="0.6"
+          />
+        )}
+        {overallTrend === 'down' && (
+          <path
+            d={`M ${width/2 - 8} ${height - 16} L ${width/2} ${height - 8} L ${width/2 + 8} ${height - 16}`}
+            fill="none"
+            stroke="#f43f5e"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            opacity="0.6"
+          />
+        )}
+        {overallTrend === 'unresolved' && (
+          <line
+            x1={width/2 - 10}
+            y1={height - 12}
+            x2={width/2 + 10}
+            y2={height - 12}
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            className="text-muted-foreground/40"
+          />
+        )}
       </svg>
     </div>
   );
