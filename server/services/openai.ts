@@ -674,7 +674,6 @@ import OpenAI from "openai";
 import { CompanySummary, TemporalAnalysis, FinePrintAnalysis } from "@shared/schema";
 import { MemoryCache } from "./caching";
 import crypto from "node:crypto";
-import { SecretManagerServiceClient } from "@google-cloud/secret-manager";
 
 import {
   getBusinessByCacheKey,
@@ -691,25 +690,8 @@ import {
   saveFootnotesAnalysis,
 } from "../repositories/footnotesAnalysis.repo";
 
-
-// const openai = new OpenAI({
-//   apiKey: process.env.AI_INTEGRATIONS_OPENAI_API_KEY,
-//   baseURL: process.env.AI_INTEGRATIONS_OPENAI_BASE_URL,
-// });
-
-
-const client = new SecretManagerServiceClient();
-
-export async function getOpenAIKey(): Promise<string> {
-  const [version] = await client.accessSecretVersion({
-    name: "projects/restnvest-sec-ai/secrets/OpenAI_restnvest_dev_key/versions/latest",
-  });
-
-  return version.payload?.data?.toString() || "";
-}
-
 const openai = new OpenAI({
-  apiKey: await getOpenAIKey(),
+  apiKey: process.env.OPENAI_API_KEY,
 });
 
 
