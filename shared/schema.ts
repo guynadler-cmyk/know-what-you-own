@@ -431,6 +431,14 @@ export const timingSignalSchema = z.object({
   label: z.string(),
   interpretation: z.string(),
   score: z.number().min(-1).max(1), // Normalized score from -1 to +1
+  position: z.object({
+    x: z.number().min(0).max(100), // Quadrant X position (0-100)
+    y: z.number().min(0).max(100), // Quadrant Y position (0-100)
+  }).optional(),
+  signals: z.array(z.object({
+    label: z.string(),
+    value: z.string(),
+  })).optional(),
 });
 
 // Chart data for visual representations
