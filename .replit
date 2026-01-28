@@ -41,3 +41,9 @@ waitForPort = 5000
 
 [agent]
 integrations = ["github:1.0.0", "javascript_log_in_with_replit:1.0.0"]
+expertMode = true
+
+[userenv]
+
+[userenv.shared]
+DATABASE_URL = "postgresql://nagen:1N[b7zLlgFua\"xJ=@34.180.32.78:5432/restnvest_db"
