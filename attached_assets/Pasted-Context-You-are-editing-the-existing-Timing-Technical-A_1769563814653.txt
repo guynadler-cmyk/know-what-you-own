@@ -1,0 +1,445 @@
+Context
+
+You are editing the existing Timing (Technical Analysis) section of the restnvest app.
+
+⚠️ This is an in-place refactor, not a rebuild.
+Do NOT change routing, authentication (none), ticker selection flow, the alignment bar, or underlying data fetching/API wiring unless strictly necessary.
+
+The current Timing view uses abstract diagrams (fingerprints/gauges) that feel visually inconsistent with the rest of the product and are hard for retail users to decode.
+
+We want Timing to feel like Performance and Valuation:
+
+card-based
+
+status label
+
+a quadrant map + dot marker
+
+short plain-English explanation
+
+“Go deeper” reveals detail charts
+
+High-level goal
+
+Replace the current Trend/Momentum/Stretch visuals with three “signals cards” that follow the same pattern as:
+
+Growth Quality (Performance)
+
+Price Discipline (Valuation)
+
+Each TA card must have:
+
+A clear label (Trend / Momentum / Stretch)
+
+A status badge (e.g., Improving / Weakening / Cooling / Intensifying / Mixed)
+
+A quadrant map with soft colored quadrants and a single dot marker
+
+1–2 plain-English bullet signals (like “Distance from 52-week high…”)
+
+A short paragraph explanation (“what this means”)
+
+“Why this matters” collapsible section
+
+“Go deeper” expands into charts and definitions (optional learning)
+
+Layout & UI structure
+A) Timing header remains
+
+Keep:
+
+“Assess Timing Conditions”
+
+the explanatory text
+
+the alignment bar (it’s good, keep unchanged)
+
+B) Three TA cards appear below the alignment bar
+
+Order:
+
+Trend
+
+Momentum
+
+Stretch
+(Optional 4th consideration — see below)
+
+Each card should visually match existing Restnvest cards:
+
+same padding, borders, typography, soft background tints
+
+same dot-in-quadrant visual style as the valuation quadrant (“Stormy Peak / Sunny Discount”)
+
+Card 1 — TREND → “Structure Quality” quadrant
+User outcome
+
+User should immediately see whether price structure is:
+
+improving
+
+weakening
+
+unresolved / choppy
+
+Data inputs (already available or derivable)
+
+From price series:
+
+structural highs/lows (swing pivots, noise filtered)
+
+trend quality metrics derived from pivot sequence
+
+Quadrant map definition
+
+Axes must be intuitive and stated plainly:
+
+X-axis: Highs progression
+
+left = lower highs / weakening highs
+
+right = higher highs / strengthening highs
+
+Y-axis: Lows progression
+
+bottom = lower lows / weakening lows
+
+top = higher lows / strengthening lows
+
+Quadrant labels (use plain English, restnvest tone):
+
+Top-right: Strengthening structure
+
+Top-left: Stabilizing (higher lows, highs not yet)
+
+Bottom-right: Breakout attempt (higher highs, lows not yet)
+
+Bottom-left: Weakening structure
+
+Dot placement:
+
+normalized based on recent pivot behavior (no need to show numeric values)
+
+“Signals” pills (like valuation)
+
+Under the status badge, show 1–2 structured signals:
+
+“Recent highs: Lowering / Improving / Mixed”
+
+“Recent lows: Lowering / Improving / Mixed”
+
+No numbers. No dates.
+
+Explanation copy
+
+1 short paragraph explaining the structure implication in observational language:
+
+no “buy/sell”
+
+no “entry”
+
+no “signal”
+
+just “conditions suggest…”
+
+Go deeper content (Trend)
+
+When user expands “Go deeper”:
+
+show an artistic, simplified price structure chart:
+
+minimal price line
+
+only global swing highs/lows
+
+faint connecting structure
+
+no axis labels by default
+
+add a short “How to read” (2–3 bullets)
+
+optional toggle inside deeper view: “show dates / show values” (OFF by default)
+
+Card 2 — MOMENTUM → “Pressure Balance” quadrant
+User outcome
+
+User should understand whether:
+
+short-term pressure is forcing change (dragging long-term)
+
+long-term is absorbing pressure (pulling short-term back)
+
+momentum is mixed/unclear
+
+Data inputs
+
+Use EMA dynamics (not histogram-first):
+
+short EMA slope / direction
+
+long EMA slope / direction
+
+separation trend (widening vs narrowing)
+
+Quadrant map definition
+
+Axes are relationship-first, not indicator-first:
+
+X-axis: Short-term pressure direction
+
+left = downward pressure
+
+right = upward pressure
+
+Y-axis: Long-term baseline direction
+
+bottom = long-term weakening
+
+top = long-term strengthening
+
+Quadrant labels:
+
+Top-right: Momentum aligned (supportive)
+
+Top-left: Pullback within strength (absorbing)
+
+Bottom-right: Early recovery (short improving, long weak)
+
+Bottom-left: Pressure building (misaligned)
+
+Dot placement:
+
+based on current short/long slopes, plus how separation is changing (widening vs narrowing influences how “deep” into quadrant)
+
+“Signals” pills
+
+Under badge, show 1–2 signals:
+
+“Short-term pressure: Improving / Weakening / Flat”
+
+“Long-term baseline: Improving / Weakening / Flat”
+Optional third:
+
+“Pressure gap: Widening / Narrowing”
+
+Explanation copy
+
+Plain language describing dominance:
+
+“Short-term is still pressing against the long-term…” or
+
+“Pressure is being absorbed…” etc.
+
+Go deeper content (Momentum)
+
+When expanded:
+
+show the “artistic” EMA relationship chart:
+
+two curves (short vs long)
+
+shaded region between them (distance)
+
+minimal axis noise
+
+include a small legend only in deeper mode:
+
+“Short-term” / “Long-term”
+
+include a micro “How to read” (2 bullets max)
+
+Card 3 — STRETCH → “Distance from Balance” quadrant
+User outcome
+
+User instantly sees:
+
+how far from balance price is
+
+whether it’s moving toward balance or away
+
+Data inputs
+
+Pick one consistent internal measure (avoid RSI jargon on surface):
+
+normalized distance from equilibrium (e.g., z-score vs 50/200, or RSI-derived stretch normalized 0–1)
+
+direction of stretch change (moving toward equilibrium vs away)
+
+Quadrant map definition
+
+Axes:
+
+X-axis: Distance from balance
+
+left = near balance
+
+right = far from balance
+
+Y-axis: Direction
+
+bottom = moving further away (stretch increasing)
+
+top = moving back toward balance (stretch easing)
+
+Quadrant labels:
+
+Top-left: Calm / balanced
+
+Top-right: Stretch easing (tension cooling)
+
+Bottom-right: Stretch building (tension rising)
+
+Bottom-left: Drifting (low conviction)
+
+Dot placement:
+
+uses current distance and recent change rate
+
+“Signals” pills
+
+Under badge:
+
+“Distance from balance: Low / Moderate / High”
+
+“Direction: Returning / Moving away / Flat”
+
+Explanation copy
+
+Use pendulum framing but stay plain:
+
+“Tension is elevated, but easing…” or
+
+“Tension is building…” etc.
+
+Go deeper content (Stretch)
+
+When expanded:
+
+show a simplified stretch chart:
+
+one line (stretch metric) with an equilibrium band
+
+minimal scale
+
+highlight current region
+
+include “How to read” (2 bullets)
+
+Optional 4th Timing Consideration (add if feasible)
+
+Add a fourth card only if it fits cleanly:
+
+“Volatility / Choppiness” (Market Noise)
+
+Purpose: retail users confuse noise with opportunity.
+
+Possible approach:
+
+X-axis: volatility level (low→high)
+
+Y-axis: trend clarity (clear→choppy)
+Quadrants:
+
+Clear & calm (best)
+
+Clear but volatile
+
+Choppy but calm
+
+Choppy & volatile (worst)
+
+If adding this increases complexity or distracts, skip it for now.
+
+Guided view redefinition
+
+Replace the current “Guided view” behavior.
+
+Guided view should NOT merely show the question text.
+
+It should:
+
+add short “How to read this” callouts within each card, in the same style as tooltips/help icons in valuation/performance
+
+show a small “?” icon next to the quadrant title; clicking reveals 2–3 bullets:
+
+what the axes mean
+
+how to interpret the dot position
+
+Guided view ON:
+
+axis labels visible (simple)
+
+quadrant labels visible
+
+“?” tooltips enabled by default
+
+Guided view OFF:
+
+axis labels simplified/hidden
+
+only quadrant names remain
+
+“?” tooltips still accessible but not expanded
+
+No user accounts; do not persist state beyond session.
+
+Style requirements
+
+Must visually match existing restnvest sections:
+
+same spacing, soft quadrant fills, rounded corners
+
+dot marker style consistent with valuation quadrant (ring + center)
+
+status chips consistent with existing risk/caution/sensible styling
+
+keep everything calm, observational, not urgent
+
+Avoid:
+
+“trader” aesthetics
+
+dense chart elements
+
+numeric overload
+
+Content / compliance constraints
+
+No trading instructions:
+
+no “good entry”
+
+no “buy”
+
+no “sell”
+
+no “signal”
+
+no “confirm”
+
+Allowed:
+
+“supportive”
+
+“mixed”
+
+“patience”
+
+“conditions suggest”
+
+“pressure easing/building”
+
+“moving toward balance/away”
+
+Final acceptance criteria
+
+A retail investor should be able to:
+
+read each card’s state without opening Go deeper
+
+understand the quadrant dot with minimal help
+
+feel the Timing section belongs to the same product as Valuation & Performance
+
+use Go deeper only when curious, not required to understand
