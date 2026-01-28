@@ -4,8 +4,11 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Switch } from "@/components/ui/switch";
-import { ChevronDown, ChevronUp, TrendingUp, Activity, Gauge, Info, Eye } from "lucide-react";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import { ChevronDown, ChevronUp, TrendingUp, Activity, Gauge, Info, Eye, HelpCircle } from "lucide-react";
+import { cn } from "@/lib/utils";
 import type { TimingAnalysis, TimingSignalStatus } from "@shared/schema";
+import { TimingQuadrantChart, type TimingQuadrantConfig } from "./timing/TimingQuadrantChart";
 import { TrendChart } from "./timing/TrendChart";
 import { MomentumChart } from "./timing/MomentumChart";
 import { StretchChart } from "./timing/StretchChart";
@@ -18,36 +21,137 @@ interface TimingStageProps {
 
 function getStatusColor(status: TimingSignalStatus): string {
   switch (status) {
-    case "green":
-      return "bg-emerald-500";
-    case "yellow":
-      return "bg-amber-500";
-    case "red":
-      return "bg-rose-500";
+    case "green": return "bg-emerald-500";
+    case "yellow": return "bg-amber-500";
+    case "red": return "bg-rose-500";
   }
 }
 
 function getStatusBgColor(status: TimingSignalStatus): string {
   switch (status) {
-    case "green":
-      return "bg-emerald-50 dark:bg-emerald-950/30";
-    case "yellow":
-      return "bg-amber-50 dark:bg-amber-950/30";
-    case "red":
-      return "bg-rose-50 dark:bg-rose-950/30";
+    case "green": return "bg-green-500/10";
+    case "yellow": return "bg-yellow-500/10";
+    case "red": return "bg-red-500/10";
   }
 }
 
 function getStatusBorderColor(status: TimingSignalStatus): string {
   switch (status) {
-    case "green":
-      return "border-emerald-200 dark:border-emerald-800";
-    case "yellow":
-      return "border-amber-200 dark:border-amber-800";
-    case "red":
-      return "border-rose-200 dark:border-rose-800";
+    case "green": return "border-green-500/20";
+    case "yellow": return "border-yellow-500/20";
+    case "red": return "border-red-500/20";
   }
 }
+
+function getStatusTextColor(status: TimingSignalStatus): string {
+  switch (status) {
+    case "green": return "text-green-700 dark:text-green-400";
+    case "yellow": return "text-yellow-700 dark:text-yellow-400";
+    case "red": return "text-red-700 dark:text-red-400";
+  }
+}
+
+const QUADRANT_CONFIGS: Record<string, Omit<TimingQuadrantConfig, 'position' | 'guidedView'>> = {
+  trend: {
+    id: "trend",
+    xLabel: "Highs Progression",
+    yLabel: "Lows Progression",
+    zones: {
+      topRight: { 
+        label: "Strengthening", 
+        color: "green",
+        tooltip: "Both highs and lows are improving — structure is supportive."
+      },
+      topLeft: { 
+        label: "Stabilizing", 
+        color: "blue",
+        tooltip: "Higher lows forming, but highs not yet improving — early signs of support."
+      },
+      bottomRight: { 
+        label: "Breakout Attempt", 
+        color: "yellow",
+        tooltip: "Higher highs appearing, but lows still weak — momentum without foundation."
+      },
+      bottomLeft: { 
+        label: "Weakening", 
+        color: "red",
+        tooltip: "Both highs and lows are declining — structure is under pressure."
+      },
+    },
+  },
+  momentum: {
+    id: "momentum",
+    xLabel: "Short-term Pressure",
+    yLabel: "Long-term Baseline",
+    zones: {
+      topRight: { 
+        label: "Aligned", 
+        color: "green",
+        tooltip: "Short and long-term moving in the same direction — momentum is supportive."
+      },
+      topLeft: { 
+        label: "Pullback", 
+        color: "blue",
+        tooltip: "Short-term pressure against a strong baseline — often absorbed."
+      },
+      bottomRight: { 
+        label: "Early Recovery", 
+        color: "yellow",
+        tooltip: "Short-term improving while long-term still weak — early but unconfirmed."
+      },
+      bottomLeft: { 
+        label: "Pressure Building", 
+        color: "red",
+        tooltip: "Both time frames moving lower — pressure is intensifying."
+      },
+    },
+  },
+  stretch: {
+    id: "stretch",
+    xLabel: "Distance from Balance",
+    yLabel: "Direction",
+    zones: {
+      topLeft: { 
+        label: "Calm", 
+        color: "green",
+        tooltip: "Near equilibrium and stable — balanced conditions."
+      },
+      topRight: { 
+        label: "Tension Easing", 
+        color: "blue",
+        tooltip: "Extended but returning toward balance — stretch is cooling."
+      },
+      bottomLeft: { 
+        label: "Drifting", 
+        color: "neutral",
+        tooltip: "Near balance but moving away — low conviction drift."
+      },
+      bottomRight: { 
+        label: "Tension Rising", 
+        color: "red",
+        tooltip: "Extended and moving further — stretch is building."
+      },
+    },
+  },
+};
+
+const HOW_TO_READ: Record<string, string[]> = {
+  trend: [
+    "X-axis shows whether recent price highs are improving (right) or weakening (left).",
+    "Y-axis shows whether recent price lows are improving (top) or weakening (bottom).",
+    "The dot shows the current structural state of the stock."
+  ],
+  momentum: [
+    "X-axis shows short-term pressure direction: right means upward, left means downward.",
+    "Y-axis shows long-term baseline direction: top means strengthening, bottom means weakening.",
+    "When short and long-term align (top-right), momentum is most supportive."
+  ],
+  stretch: [
+    "X-axis shows how far price is from its typical equilibrium: left is near balance, right is stretched.",
+    "Y-axis shows direction: top means returning toward balance, bottom means moving away.",
+    "Calm conditions (top-left) suggest stability; rising tension (bottom-right) suggests caution."
+  ],
+};
 
 function AlignmentIndicator({ score }: { score: number }) {
   const normalizedPosition = ((score + 1) / 2) * 100;
@@ -107,120 +211,159 @@ function VerdictBanner({ verdict }: { verdict: TimingAnalysis["verdict"] }) {
   );
 }
 
-const GUIDED_QUESTIONS = {
-  Trend: "Are structural highs and lows improving, deteriorating, or unresolved?",
-  Momentum: "Is short-term pressure forcing change, or being absorbed by the long-term?",
-  Stretch: "How far from balance are we — and are we moving toward it or away?"
-};
-
-interface SignalCardProps {
-  title: string;
-  icon: typeof TrendingUp;
-  signal: {
-    status: TimingSignalStatus;
-    label: string;
-    interpretation: string;
-  };
-  deepDive: {
-    title: string;
-    explanation: string;
-  };
-  chartComponent: React.ReactNode;
-  showOverlayToggle?: boolean;
-  showOverlay?: boolean;
-  onToggleOverlay?: () => void;
-  guidedView?: boolean;
+interface SignalPillProps {
+  label: string;
+  value: string;
 }
 
-function SignalCard({ title, icon: Icon, signal, deepDive, chartComponent, showOverlayToggle, showOverlay, onToggleOverlay, guidedView = true }: SignalCardProps) {
+function SignalPill({ label, value }: SignalPillProps) {
+  const isPositive = value.toLowerCase().includes("improving") || value.toLowerCase().includes("returning") || value.toLowerCase().includes("low");
+  const isNegative = value.toLowerCase().includes("weakening") || value.toLowerCase().includes("away") || value.toLowerCase().includes("high");
+  
+  return (
+    <div 
+      className={cn(
+        "flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-medium",
+        isPositive && "bg-green-500/10 text-green-700 dark:text-green-400",
+        isNegative && "bg-red-500/10 text-red-700 dark:text-red-400",
+        !isPositive && !isNegative && "bg-yellow-500/10 text-yellow-700 dark:text-yellow-400"
+      )}
+      data-testid="signal-pill"
+    >
+      <span className="text-muted-foreground">{label}:</span>
+      <span className="font-semibold">{value}</span>
+    </div>
+  );
+}
+
+interface TimingCardProps {
+  type: "trend" | "momentum" | "stretch";
+  icon: typeof TrendingUp;
+  signal: TimingAnalysis["trend"]["signal"];
+  deepDive: { title: string; explanation: string };
+  chartData: TimingAnalysis["trend"]["chartData"] | TimingAnalysis["momentum"]["chartData"] | TimingAnalysis["stretch"]["chartData"];
+  guidedView: boolean;
+}
+
+function TimingCard({ type, icon: Icon, signal, deepDive, chartData, guidedView }: TimingCardProps) {
   const [isExpanded, setIsExpanded] = useState(false);
-  const guidedQuestion = GUIDED_QUESTIONS[title as keyof typeof GUIDED_QUESTIONS];
+  const config = QUADRANT_CONFIGS[type];
+  const howToRead = HOW_TO_READ[type];
+  
+  const position = signal.position || { x: 50, y: 50 };
+  const signals = signal.signals || [];
+  
+  const titleMap = {
+    trend: "Structure Quality",
+    momentum: "Pressure Balance", 
+    stretch: "Distance from Balance"
+  };
 
   return (
     <Card 
-      className={`${getStatusBgColor(signal.status)} ${getStatusBorderColor(signal.status)} border transition-all duration-200`}
-      data-testid={`signal-card-${title.toLowerCase()}`}
+      className={cn(
+        "border transition-all duration-200",
+        getStatusBgColor(signal.status),
+        getStatusBorderColor(signal.status)
+      )}
+      data-testid={`timing-card-${type}`}
     >
       <CardContent className="p-5">
-        <div 
-          className="transition-all duration-300 ease-out"
-          style={{ 
-            height: guidedView && guidedQuestion ? 'auto' : '0px',
-            opacity: guidedView && guidedQuestion ? 1 : 0,
-            visibility: guidedView && guidedQuestion ? 'visible' : 'hidden',
-            marginBottom: guidedView && guidedQuestion ? '12px' : '0px'
-          }}
-          data-testid={`guided-container-${title.toLowerCase()}`}
-        >
-          <div className="bg-primary/5 dark:bg-primary/10 rounded-lg px-4 py-3 border border-primary/10">
-            <p className="text-sm text-foreground/80 italic leading-relaxed" data-testid={`guided-question-${title.toLowerCase()}`}>
-              {guidedQuestion}
-            </p>
-          </div>
-        </div>
-
-        <div className="flex items-start justify-between gap-4">
-          <div className="flex items-center gap-3">
-            <div className={`w-10 h-10 rounded-full ${getStatusBgColor(signal.status)} flex items-center justify-center`}>
-              <Icon className="w-5 h-5 text-foreground" />
-            </div>
-            <div>
-              <h3 className="font-semibold text-foreground">{title}</h3>
-              <div className="flex items-center gap-2 mt-1">
-                <span className={`w-2.5 h-2.5 rounded-full ${getStatusColor(signal.status)}`} />
-                <span className="text-sm font-medium text-foreground">{signal.label}</span>
+        <div className="flex flex-col lg:flex-row gap-5">
+          <div className="flex-1 min-w-0">
+            <div className="flex items-start justify-between gap-4 flex-wrap">
+              <div className="flex items-center gap-3">
+                <div className={cn("w-10 h-10 rounded-full flex items-center justify-center", getStatusBgColor(signal.status))}>
+                  <Icon className="w-5 h-5 text-foreground" />
+                </div>
+                <div>
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <h3 className="font-semibold text-foreground capitalize">{type}</h3>
+                    <span className="text-xs text-muted-foreground">({titleMap[type]})</span>
+                  </div>
+                  <div className="flex items-center gap-2 mt-1">
+                    <span className={cn("w-2.5 h-2.5 rounded-full", getStatusColor(signal.status))} />
+                    <span className={cn("text-sm font-semibold", getStatusTextColor(signal.status))}>
+                      {signal.label}
+                    </span>
+                  </div>
+                </div>
               </div>
+              
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <button className="text-muted-foreground hover:text-foreground transition-colors" data-testid={`help-${type}`}>
+                    <HelpCircle className="w-5 h-5" />
+                  </button>
+                </TooltipTrigger>
+                <TooltipContent side="left" className="max-w-[250px]">
+                  <p className="text-xs font-medium mb-2">How to read this:</p>
+                  <ul className="text-xs space-y-1 list-disc pl-3">
+                    {howToRead.map((item, i) => (
+                      <li key={i}>{item}</li>
+                    ))}
+                  </ul>
+                </TooltipContent>
+              </Tooltip>
             </div>
+            
+            {signals.length > 0 && (
+              <div className="flex flex-wrap gap-2 mt-4">
+                {signals.map((s, i) => (
+                  <SignalPill key={i} label={s.label} value={s.value} />
+                ))}
+              </div>
+            )}
+            
+            <p className="text-sm text-muted-foreground mt-4 leading-relaxed">
+              {signal.interpretation}
+            </p>
+            
+            <Button
+              variant="ghost"
+              size="sm"
+              className="mt-3 text-muted-foreground hover:text-foreground"
+              onClick={() => setIsExpanded(!isExpanded)}
+              data-testid={`expand-${type}`}
+            >
+              {isExpanded ? (
+                <>
+                  <ChevronUp className="w-4 h-4 mr-1" />
+                  Less detail
+                </>
+              ) : (
+                <>
+                  <ChevronDown className="w-4 h-4 mr-1" />
+                  Go deeper
+                </>
+              )}
+            </Button>
+          </div>
+          
+          <div className="flex-shrink-0 flex justify-center">
+            <TimingQuadrantChart 
+              config={{
+                ...config,
+                position,
+                guidedView
+              }} 
+            />
           </div>
         </div>
         
-        <p className="text-sm text-muted-foreground mt-3 leading-relaxed">
-          {signal.interpretation}
-        </p>
-
-        <Button
-          variant="ghost"
-          size="sm"
-          className="mt-3 text-muted-foreground hover:text-foreground"
-          onClick={() => setIsExpanded(!isExpanded)}
-          data-testid={`expand-${title.toLowerCase()}`}
-        >
-          {isExpanded ? (
-            <>
-              <ChevronUp className="w-4 h-4 mr-1" />
-              Less detail
-            </>
-          ) : (
-            <>
-              <ChevronDown className="w-4 h-4 mr-1" />
-              Go deeper
-            </>
-          )}
-        </Button>
-
         {isExpanded && (
-          <div className="mt-4 pt-4 border-t border-border/40 space-y-4" data-testid={`deep-dive-${title.toLowerCase()}`}>
-            <div className={title === "Trend" ? "h-36 w-full" : "h-32 w-full"}>
-              {chartComponent}
+          <div className="mt-5 pt-5 border-t border-border/40 space-y-4" data-testid={`deep-dive-${type}`}>
+            <div className="h-32 w-full">
+              {type === "trend" && (
+                <TrendChart data={chartData as TimingAnalysis["trend"]["chartData"]} status={signal.status} timeHorizon="~6 months" />
+              )}
+              {type === "momentum" && (
+                <MomentumChart data={chartData as TimingAnalysis["momentum"]["chartData"]} status={signal.status} showOverlay={false} />
+              )}
+              {type === "stretch" && (
+                <StretchChart data={chartData as TimingAnalysis["stretch"]["chartData"]} status={signal.status} showOverlay={false} />
+              )}
             </div>
-            
-            {showOverlayToggle && (
-              <div 
-                className="flex items-center gap-3 py-2 transition-all duration-300"
-                data-testid={`overlay-toggle-${title.toLowerCase()}`}
-              >
-                <Switch
-                  checked={showOverlay}
-                  onCheckedChange={onToggleOverlay}
-                  className="data-[state=checked]:bg-primary/70"
-                  data-testid={`switch-overlay-${title.toLowerCase()}`}
-                />
-                <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
-                  <Eye className="w-3.5 h-3.5" />
-                  <span>Show supportive conditions</span>
-                </div>
-              </div>
-            )}
             
             <div>
               <h4 className="font-medium text-foreground mb-2">{deepDive.title}</h4>
@@ -268,9 +411,9 @@ function LoadingState() {
       <CardContent className="pb-12">
         <Skeleton className="h-32 w-full mb-8 rounded-xl" />
         <div className="grid gap-4">
-          <Skeleton className="h-40 w-full rounded-xl" />
-          <Skeleton className="h-40 w-full rounded-xl" />
-          <Skeleton className="h-40 w-full rounded-xl" />
+          <Skeleton className="h-64 w-full rounded-xl" />
+          <Skeleton className="h-64 w-full rounded-xl" />
+          <Skeleton className="h-64 w-full rounded-xl" />
         </div>
       </CardContent>
     </Card>
@@ -293,8 +436,6 @@ function ErrorState({ message }: { message: string }) {
 
 export function TimingStage({ ticker, companyName, logoUrl }: TimingStageProps) {
   const [guidedView, setGuidedView] = useState(true);
-  const [showMomentumOverlay, setShowMomentumOverlay] = useState(false);
-  const [showStretchOverlay, setShowStretchOverlay] = useState(false);
   
   const { data, isLoading, error } = useQuery<TimingAnalysis>({
     queryKey: [`/api/timing/${ticker}`],
@@ -373,48 +514,30 @@ export function TimingStage({ ticker, companyName, logoUrl }: TimingStageProps) 
         <VerdictBanner verdict={data.verdict} />
 
         <div className="grid gap-4">
-          <SignalCard
-            title="Trend"
+          <TimingCard
+            type="trend"
             icon={TrendingUp}
             signal={data.trend.signal}
             deepDive={data.trend.deepDive}
-            chartComponent={<TrendChart data={data.trend.chartData} status={data.trend.signal.status} timeHorizon="~6 months" />}
+            chartData={data.trend.chartData}
             guidedView={guidedView}
           />
           
-          <SignalCard
-            title="Momentum"
+          <TimingCard
+            type="momentum"
             icon={Activity}
             signal={data.momentum.signal}
             deepDive={data.momentum.deepDive}
-            chartComponent={
-              <MomentumChart 
-                data={data.momentum.chartData} 
-                status={data.momentum.signal.status}
-                showOverlay={showMomentumOverlay}
-              />
-            }
-            showOverlayToggle={true}
-            showOverlay={showMomentumOverlay}
-            onToggleOverlay={() => setShowMomentumOverlay(!showMomentumOverlay)}
+            chartData={data.momentum.chartData}
             guidedView={guidedView}
           />
           
-          <SignalCard
-            title="Stretch"
+          <TimingCard
+            type="stretch"
             icon={Gauge}
             signal={data.stretch.signal}
             deepDive={data.stretch.deepDive}
-            chartComponent={
-              <StretchChart 
-                data={data.stretch.chartData} 
-                status={data.stretch.signal.status}
-                showOverlay={showStretchOverlay}
-              />
-            }
-            showOverlayToggle={true}
-            showOverlay={showStretchOverlay}
-            onToggleOverlay={() => setShowStretchOverlay(!showStretchOverlay)}
+            chartData={data.stretch.chartData}
             guidedView={guidedView}
           />
         </div>

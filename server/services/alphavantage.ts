@@ -1515,10 +1515,10 @@ export class AlphaVantageService {
       const trendSignal = this.analyzeTrend(currentPrice, currentEma20, currentEma50, currentEma200, closes);
       
       // MOMENTUM ANALYSIS
-      const momentumSignal = this.analyzeMomentum(currentMacdHist, prevMacdHist, macdHistogram);
+      const momentumSignal = this.analyzeMomentum(currentMacdHist, prevMacdHist, macdHistogram, ema12, ema26);
       
       // STRETCH ANALYSIS
-      const stretchSignal = this.analyzeStretch(currentRsi, currentPrice, currentEma20);
+      const stretchSignal = this.analyzeStretch(currentRsi, currentPrice, currentEma20, rsi);
 
       // Calculate overall alignment score (average of normalized scores)
       const alignmentScore = (trendSignal.score + momentumSignal.score + stretchSignal.score) / 3;
@@ -1697,7 +1697,7 @@ export class AlphaVantageService {
     return smoothed;
   }
 
-  private analyzeTrend(price: number, ema20: number, ema50: number, ema200: number, closes: number[]): { status: TimingSignalStatus; label: string; interpretation: string; score: number } {
+  private analyzeTrend(price: number, ema20: number, ema50: number, ema200: number, closes: number[]): { status: TimingSignalStatus; label: string; interpretation: string; score: number; position: { x: number; y: number }; signals: { label: string; value: string }[] } {
     // Check EMA alignment and price position
     const aboveEma20 = price > ema20;
     const aboveEma50 = price > ema50;
@@ -1708,11 +1708,36 @@ export class AlphaVantageService {
     // Count bullish signals
     const bullishCount = [aboveEma20, aboveEma50, aboveEma200, ema20AboveEma50, ema50AboveEma200].filter(Boolean).length;
 
-    // Check for higher highs in recent price action
+    // Check for higher highs and higher lows in recent price action
     const recentHighs = closes.slice(-20);
     const midHighs = closes.slice(-40, -20);
+    const olderHighs = closes.slice(-60, -40);
     const recentHigh = Math.max(...recentHighs);
     const midHigh = midHighs.length > 0 ? Math.max(...midHighs) : recentHigh;
+    const olderHigh = olderHighs.length > 0 ? Math.max(...olderHighs) : midHigh;
+    
+    const recentLow = Math.min(...recentHighs);
+    const midLow = midHighs.length > 0 ? Math.min(...midHighs) : recentLow;
+    const olderLow = olderHighs.length > 0 ? Math.min(...olderHighs) : midLow;
+    
+    // Calculate highs and lows progression for quadrant position
+    const highsImproving = recentHigh > midHigh && midHigh > olderHigh * 0.98;
+    const highsWeakening = recentHigh < midHigh * 0.98;
+    const lowsImproving = recentLow > midLow && midLow > olderLow * 0.98;
+    const lowsWeakening = recentLow < midLow * 0.98;
+    
+    // Calculate quadrant position (0-100)
+    // X-axis: Highs progression (left=weakening, right=improving)
+    // Y-axis: Lows progression (bottom=weakening, top=improving)
+    const highsScore = highsImproving ? 75 : (highsWeakening ? 25 : 50);
+    const lowsScore = lowsImproving ? 75 : (lowsWeakening ? 25 : 50);
+    
+    // Add some variance based on actual ratios
+    const highsRatio = midHigh > 0 ? (recentHigh / midHigh - 1) * 100 : 0;
+    const lowsRatio = midLow > 0 ? (recentLow / midLow - 1) * 100 : 0;
+    const xPosition = Math.max(10, Math.min(90, 50 + highsRatio * 5));
+    const yPosition = Math.max(10, Math.min(90, 50 + lowsRatio * 5));
+    
     const makingHigherHighs = recentHigh > midHigh * 0.98;
 
     let status: TimingSignalStatus;
@@ -1722,7 +1747,7 @@ export class AlphaVantageService {
 
     if (bullishCount >= 4 && makingHigherHighs) {
       status = 'green';
-      label = 'Supportive';
+      label = 'Strengthening';
       interpretation = 'Structure shows rising momentum with aligned trends.';
       score = 0.8;
     } else if (bullishCount >= 3) {
@@ -1747,10 +1772,23 @@ export class AlphaVantageService {
       score = -0.7;
     }
 
-    return { status, label, interpretation, score };
+    const highsStatus = highsImproving ? 'Improving' : (highsWeakening ? 'Weakening' : 'Mixed');
+    const lowsStatus = lowsImproving ? 'Improving' : (lowsWeakening ? 'Weakening' : 'Mixed');
+
+    return { 
+      status, 
+      label, 
+      interpretation, 
+      score,
+      position: { x: xPosition, y: yPosition },
+      signals: [
+        { label: 'Recent highs', value: highsStatus },
+        { label: 'Recent lows', value: lowsStatus }
+      ]
+    };
   }
 
-  private analyzeMomentum(currentHist: number, prevHist: number, histogram: number[]): { status: TimingSignalStatus; label: string; interpretation: string; score: number } {
+  private analyzeMomentum(currentHist: number, prevHist: number, histogram: number[], ema12: number[], ema26: number[]): { status: TimingSignalStatus; label: string; interpretation: string; score: number; position: { x: number; y: number }; signals: { label: string; value: string }[] } {
     const isPositive = currentHist > 0;
     const isRising = currentHist > prevHist;
     
@@ -1759,6 +1797,23 @@ export class AlphaVantageService {
     const histTrend = recentHist[recentHist.length - 1] - recentHist[0];
     const avgHist = recentHist.reduce((a, b) => a + b, 0) / recentHist.length;
 
+    // Calculate short-term and long-term slopes for quadrant position
+    const shortRecent = ema12.slice(-5);
+    const longRecent = ema26.slice(-5);
+    const shortSlope = shortRecent.length > 1 ? (shortRecent[shortRecent.length - 1] - shortRecent[0]) / shortRecent[0] * 100 : 0;
+    const longSlope = longRecent.length > 1 ? (longRecent[longRecent.length - 1] - longRecent[0]) / longRecent[0] * 100 : 0;
+
+    // X-axis: Short-term pressure direction (left=downward, right=upward)
+    // Y-axis: Long-term baseline direction (bottom=weakening, top=strengthening)
+    const xPosition = Math.max(10, Math.min(90, 50 + shortSlope * 10));
+    const yPosition = Math.max(10, Math.min(90, 50 + longSlope * 10));
+
+    // Determine signal labels
+    const shortTermStatus = shortSlope > 0.5 ? 'Improving' : (shortSlope < -0.5 ? 'Weakening' : 'Flat');
+    const longTermStatus = longSlope > 0.3 ? 'Improving' : (longSlope < -0.3 ? 'Weakening' : 'Flat');
+    const gapWidening = Math.abs(currentHist) > Math.abs(prevHist);
+    const gapStatus = gapWidening ? 'Widening' : 'Narrowing';
+
     let status: TimingSignalStatus;
     let label: string;
     let interpretation: string;
@@ -1766,23 +1821,23 @@ export class AlphaVantageService {
 
     if (isPositive && isRising && histTrend > 0) {
       status = 'green';
-      label = 'Building';
-      interpretation = 'Positive pressure is increasing — conditions favor patience.';
+      label = 'Aligned';
+      interpretation = 'Short and long-term pressures are aligned and supportive.';
       score = 0.7;
     } else if (isPositive && !isRising) {
       status = 'yellow';
-      label = 'Stabilizing';
-      interpretation = 'Positive pressure is present but not accelerating.';
+      label = 'Pullback';
+      interpretation = 'Short-term pressure against a positive baseline — often absorbed.';
       score = 0.3;
     } else if (!isPositive && isRising) {
       status = 'yellow';
-      label = 'Improving';
-      interpretation = 'Negative pressure is easing — conditions may be shifting.';
+      label = 'Early Recovery';
+      interpretation = 'Short-term improving while long-term still weak — early but unconfirmed.';
       score = 0.1;
     } else if (!isPositive && avgHist < 0 && histTrend < 0) {
       status = 'red';
-      label = 'Intensifying';
-      interpretation = 'Downward pressure continues to build.';
+      label = 'Pressure Building';
+      interpretation = 'Both time frames under pressure — conditions are intensifying.';
       score = -0.7;
     } else {
       status = 'yellow';
@@ -1791,11 +1846,39 @@ export class AlphaVantageService {
       score = -0.2;
     }
 
-    return { status, label, interpretation, score };
+    return { 
+      status, 
+      label, 
+      interpretation, 
+      score,
+      position: { x: xPosition, y: yPosition },
+      signals: [
+        { label: 'Short-term pressure', value: shortTermStatus },
+        { label: 'Long-term baseline', value: longTermStatus },
+        { label: 'Pressure gap', value: gapStatus }
+      ]
+    };
   }
 
-  private analyzeStretch(rsi: number, price: number, ema20: number): { status: TimingSignalStatus; label: string; interpretation: string; score: number } {
+  private analyzeStretch(rsi: number, price: number, ema20: number, rsiHistory: number[]): { status: TimingSignalStatus; label: string; interpretation: string; score: number; position: { x: number; y: number }; signals: { label: string; value: string }[] } {
     const priceDistFromEma = ((price - ema20) / ema20) * 100;
+    
+    // Calculate direction: is RSI/stretch moving toward or away from equilibrium?
+    const recentRsi = rsiHistory.slice(-5);
+    const prevRsi = recentRsi.length > 1 ? recentRsi[0] : rsi;
+    const rsiChange = rsi - prevRsi;
+    const isReturningToBalance = (rsi > 50 && rsiChange < 0) || (rsi < 50 && rsiChange > 0);
+    const isMovingAway = (rsi > 50 && rsiChange > 0) || (rsi < 50 && rsiChange < 0);
+
+    // X-axis: Distance from balance (left=near, right=far)
+    // Y-axis: Direction (bottom=moving away, top=returning)
+    const distanceNormalized = Math.abs(priceDistFromEma);
+    const xPosition = Math.max(10, Math.min(90, 20 + distanceNormalized * 8));
+    const yPosition = Math.max(10, Math.min(90, isReturningToBalance ? 70 : (isMovingAway ? 30 : 50)));
+
+    // Determine signal labels
+    const distanceLevel = distanceNormalized > 6 ? 'High' : (distanceNormalized > 3 ? 'Moderate' : 'Low');
+    const directionLabel = isReturningToBalance ? 'Returning' : (isMovingAway ? 'Moving away' : 'Flat');
 
     let status: TimingSignalStatus;
     let label: string;
@@ -1804,32 +1887,47 @@ export class AlphaVantageService {
 
     if (rsi > 70 || priceDistFromEma > 8) {
       status = 'red';
-      label = 'Extended';
-      interpretation = 'Price appears stretched above equilibrium — tension is high.';
+      label = 'Tension Rising';
+      interpretation = 'Price appears stretched above equilibrium — tension is elevated.';
       score = -0.6;
     } else if (rsi < 30 || priceDistFromEma < -8) {
       status = 'red';
-      label = 'Compressed';
+      label = 'Tension Rising';
       interpretation = 'Price appears stretched below equilibrium — potential snap-back.';
       score = -0.4;
-    } else if (rsi > 60 || priceDistFromEma > 4) {
+    } else if ((rsi > 60 || priceDistFromEma > 4) && !isReturningToBalance) {
       status = 'yellow';
-      label = 'Warming';
+      label = 'Drifting';
       interpretation = 'Price is moving away from equilibrium — some tension present.';
       score = 0.1;
-    } else if (rsi < 40 || priceDistFromEma < -4) {
+    } else if ((rsi < 40 || priceDistFromEma < -4) && !isReturningToBalance) {
       status = 'yellow';
-      label = 'Cooling';
-      interpretation = 'Price is below equilibrium — potential for mean reversion.';
+      label = 'Drifting';
+      interpretation = 'Price is below equilibrium and moving further.';
       score = 0.1;
+    } else if (isReturningToBalance && distanceNormalized > 3) {
+      status = 'yellow';
+      label = 'Tension Easing';
+      interpretation = 'Price is stretched but returning toward balance — tension is cooling.';
+      score = 0.3;
     } else {
       status = 'green';
-      label = 'Balanced';
-      interpretation = 'Price is near equilibrium — no excessive tension.';
+      label = 'Calm';
+      interpretation = 'Price is near equilibrium — balanced conditions.';
       score = 0.5;
     }
 
-    return { status, label, interpretation, score };
+    return { 
+      status, 
+      label, 
+      interpretation, 
+      score,
+      position: { x: xPosition, y: yPosition },
+      signals: [
+        { label: 'Distance from balance', value: distanceLevel },
+        { label: 'Direction', value: directionLabel }
+      ]
+    };
   }
 
   private generateVerdictMessage(alignmentScore: number, trendStatus: TimingSignalStatus, momentumStatus: TimingSignalStatus, stretchStatus: TimingSignalStatus): string {
