@@ -1,5 +1,5 @@
 import axios from 'axios';
-import type { FinancialMetrics, BalanceSheetMetrics, ValuationMetrics, ValuationQuadrant, TimingAnalysis, TimingSignalStatus } from '@shared/schema';
+import type { FinancialMetrics, BalanceSheetMetrics, ValuationMetrics, ValuationQuadrant, TimingAnalysis, TimingSignalStatus, TimingTimeframe, TimingDebug } from '@shared/schema';
 
 const ALPHA_VANTAGE_API_KEY = process.env.ALPHA_VANTAGE_API_KEY;
 const BASE_URL = 'https://www.alphavantage.co/query';
@@ -1421,11 +1421,12 @@ export class AlphaVantageService {
     return 'caution';
   }
 
-  async getTimingAnalysis(ticker: string): Promise<TimingAnalysis> {
+  async getTimingAnalysis(ticker: string, timeframe: TimingTimeframe = 'weekly'): Promise<TimingAnalysis> {
     const upperTicker = ticker.toUpperCase();
+    const cacheKey = `${upperTicker}_${timeframe}`;
 
     // Check cache first
-    const cached = timingCache.get(upperTicker);
+    const cached = timingCache.get(cacheKey);
     if (cached && Date.now() - cached.timestamp < CACHE_TTL) {
       return cached.data;
     }
@@ -1477,143 +1478,165 @@ export class AlphaVantageService {
         throw new Error(`Insufficient price data for ${upperTicker}`);
       }
 
-      // Sort dates descending (most recent first) and get last 200 days
+      // Sort dates descending (most recent first)
       const dates = Object.keys(timeSeries).sort((a, b) => new Date(b).getTime() - new Date(a).getTime());
-      const priceData = dates.slice(0, 200).map(date => ({
+      let priceData = dates.slice(0, 500).map(date => ({
         date,
         close: parseFloat(timeSeries[date]['4. close']),
         high: parseFloat(timeSeries[date]['2. high']),
         low: parseFloat(timeSeries[date]['3. low']),
       }));
 
-      // Calculate EMAs for trend analysis
-      const closes = priceData.map(d => d.close).reverse(); // Oldest first for EMA calculation
-      const ema20 = this.calculateEMA(closes, 20);
-      const ema50 = this.calculateEMA(closes, 50);
-      const ema200 = this.calculateEMA(closes, 200);
+      // AGGREGATE TO WEEKLY if timeframe === 'weekly'
+      if (timeframe === 'weekly') {
+        priceData = this.aggregateToWeekly(priceData);
+      }
 
-      // Calculate MACD components for momentum
+      // Ensure we have enough data
+      const minBars = timeframe === 'weekly' ? 30 : 50;
+      if (priceData.length < minBars) {
+        throw new Error(`Insufficient price data for ${upperTicker}`);
+      }
+
+      // Reverse for calculations (oldest first)
+      const closes = priceData.map(d => d.close).reverse();
+      const highs = priceData.map(d => d.high).reverse();
+      const lows = priceData.map(d => d.low).reverse();
+      const lastBarDate = priceData[0].date;
+
+      // Calculate EMAs - adjust periods for weekly
+      const shortEmaPeriod = timeframe === 'weekly' ? 4 : 20;
+      const longEmaPeriod = timeframe === 'weekly' ? 10 : 50;
+      const ema20 = this.calculateEMA(closes, shortEmaPeriod);
+      const ema50 = this.calculateEMA(closes, longEmaPeriod);
+
+      // Calculate MACD components - standard 12,26,9
       const ema12 = this.calculateEMA(closes, 12);
       const ema26 = this.calculateEMA(closes, 26);
       const macdLine = ema12.map((v, i) => v - ema26[i]);
       const signalLine = this.calculateEMA(macdLine, 9);
       const macdHistogram = macdLine.map((v, i) => v - signalLine[i]);
 
-      // Calculate RSI for stretch
+      // Calculate RSI for stretch - standard 14 period
       const rsi = this.calculateRSI(closes, 14);
 
       // Get latest values
       const currentPrice = closes[closes.length - 1];
       const currentEma20 = ema20[ema20.length - 1];
-      const currentEma50 = ema50[ema50.length - 1];
-      const currentEma200 = ema200[ema200.length - 1];
+      const currentMacdLine = macdLine[macdLine.length - 1];
+      const currentMacdSignal = signalLine[signalLine.length - 1];
       const currentMacdHist = macdHistogram[macdHistogram.length - 1];
       const prevMacdHist = macdHistogram[macdHistogram.length - 2];
       const currentRsi = rsi[rsi.length - 1];
+      const prevRsi = rsi[rsi.length - 2];
 
-      // TREND ANALYSIS
-      const trendSignal = this.analyzeTrend(currentPrice, currentEma20, currentEma50, currentEma200, closes);
+      // Calculate slopes for classification
+      const shortEmaSlope = this.calculateSlope(ema12.slice(-5));
+      const longEmaSlope = this.calculateSlope(ema26.slice(-5));
+
+      // TREND ANALYSIS - using highs/lows progression
+      const trendResult = this.analyzeTrendV2(highs, lows, timeframe);
       
-      // MOMENTUM ANALYSIS
-      const momentumSignal = this.analyzeMomentum(currentMacdHist, prevMacdHist, macdHistogram, ema12, ema26);
+      // MOMENTUM ANALYSIS - chips must match conclusion
+      const momentumResult = this.analyzeMomentumV2(shortEmaSlope, longEmaSlope, currentMacdHist, prevMacdHist);
       
-      // STRETCH ANALYSIS
-      const stretchSignal = this.analyzeStretch(currentRsi, currentPrice, currentEma20, rsi);
+      // STRETCH ANALYSIS - FIX: use RSI distance from 50, not price distance from EMA
+      const stretchResult = this.analyzeStretchV2(currentRsi, prevRsi, rsi);
 
       // Calculate overall alignment score (average of normalized scores)
-      const alignmentScore = (trendSignal.score + momentumSignal.score + stretchSignal.score) / 3;
+      const alignmentScore = (trendResult.score + momentumResult.score + stretchResult.score) / 3;
 
       // Generate verdict message based on alignment
-      const verdictMessage = this.generateVerdictMessage(alignmentScore, trendSignal.status, momentumSignal.status, stretchSignal.status);
+      const verdictMessage = this.generateVerdictMessage(alignmentScore, trendResult.status, momentumResult.status, stretchResult.status);
 
-      // Prepare chart data (take last 60 points for visualization)
-      const chartLength = Math.min(60, closes.length);
+      // Prepare chart data
+      const chartLength = Math.min(timeframe === 'weekly' ? 30 : 60, closes.length);
       const chartStartIndex = closes.length - chartLength;
 
-      // Smooth prices for trend chart (simple moving average smoothing)
-      const smoothedPrices = this.smoothPrices(closes.slice(chartStartIndex), 5);
+      const smoothedPrices = this.smoothPrices(closes.slice(chartStartIndex), timeframe === 'weekly' ? 2 : 5);
       const baselinePrices = ema50.slice(chartStartIndex);
 
-      // Normalize MACD histogram for momentum chart
-      const macdChartData = macdHistogram.slice(chartStartIndex);
-      const maxMacd = Math.max(...macdChartData.map(Math.abs));
-      const normalizedMacd = macdChartData.map(v => maxMacd > 0 ? v / maxMacd : 0);
-      const intensityData = macdChartData.map(v => maxMacd > 0 ? Math.abs(v) / maxMacd : 0);
-
-      // Calculate price distance from equilibrium (EMA20) for stretch chart
-      // Use fixed scale: 10% deviation = full range
-      const pricesForStretch = closes.slice(chartStartIndex);
-      const ema20ForStretch = ema20.slice(chartStartIndex);
-      const distanceFromEquilibrium = pricesForStretch.map((p, i) => {
-        const eq = ema20ForStretch[i];
-        return eq > 0 ? ((p - eq) / eq) * 100 : 0; // Percent distance
-      });
-      const maxScale = 10; // 10% = full range, consistent across all tickers
-      const normalizedDistance = distanceFromEquilibrium.map(d => Math.max(-1, Math.min(1, d / maxScale)));
+      // For stretch chart - use RSI distance from 50 (not price distance from EMA)
+      const rsiForChart = rsi.slice(chartStartIndex);
+      const normalizedDistance = rsiForChart.map(r => (r - 50) / 50); // -1 to +1 scale
       const tensionData = normalizedDistance.map(v => Math.abs(v));
+
+      // Build debug data
+      const debug: TimingDebug = {
+        timeframe,
+        lastBarDate,
+        seriesType: 'unadjusted',
+        rsiLatest: Math.round(currentRsi * 100) / 100,
+        rsiPrevious: Math.round(prevRsi * 100) / 100,
+        rsiDistanceFrom50: Math.round(Math.abs(currentRsi - 50) * 100) / 100,
+        macdLine: Math.round(currentMacdLine * 1000) / 1000,
+        macdSignal: Math.round(currentMacdSignal * 1000) / 1000,
+        macdHist: Math.round(currentMacdHist * 1000) / 1000,
+        macdHistPrev: Math.round(prevMacdHist * 1000) / 1000,
+        shortEmaSlope: Math.round(shortEmaSlope * 10000) / 10000,
+        longEmaSlope: Math.round(longEmaSlope * 10000) / 10000,
+        highsProgression: trendResult.highsChip,
+        lowsProgression: trendResult.lowsChip,
+        distanceFromBalance: Math.round(Math.abs(currentRsi - 50) * 100) / 100,
+        directionToBalance: stretchResult.directionChip,
+      };
 
       const analysis: TimingAnalysis = {
         ticker: upperTicker,
         companyName: overview.Name || upperTicker,
         lastUpdated: new Date().toISOString(),
+        timeframe,
+        debug,
         verdict: {
           message: verdictMessage,
           subtitle: 'These readings describe current market conditions — not the future.',
           alignmentScore,
         },
         trend: {
-          signal: trendSignal,
+          signal: trendResult,
           chartData: {
             prices: smoothedPrices,
             baseline: baselinePrices,
           },
           deepDive: {
             title: 'Market Structure',
-            explanation: this.getTrendExplanation(trendSignal.status),
+            explanation: this.getTrendExplanation(trendResult.status),
           },
         },
         momentum: {
-          signal: momentumSignal,
+          signal: momentumResult,
           chartData: (() => {
-            // Normalize by divergence: (short-long)/long as percentage
-            // Fixed 3% divergence scale: same visual gap = same actual divergence
             const shortSlice = ema12.slice(chartStartIndex);
             const longSlice = ema26.slice(chartStartIndex);
-            const divergenceScale = 3; // 3% divergence = 0.5 offset from midline
-            // Both curves around 0.5 midline, separation = divergence
+            const divergenceScale = 3;
             const shortNorm = shortSlice.map((s, i) => {
               const l = longSlice[i];
               const divergence = l > 0 ? ((s - l) / l) * 100 : 0;
               return Math.max(0, Math.min(1, 0.5 + divergence / (divergenceScale * 2)));
             });
-            const longNorm = longSlice.map((_, i) => {
-              return 0.5; // Long EMA is always at midline
-            });
-            return {
-              shortEma: shortNorm,
-              longEma: longNorm,
-            };
+            const longNorm = longSlice.map(() => 0.5);
+            return { shortEma: shortNorm, longEma: longNorm };
           })(),
           deepDive: {
             title: 'Pressure Flow',
-            explanation: this.getMomentumExplanation(momentumSignal.status),
+            explanation: this.getMomentumExplanation(momentumResult.status),
           },
         },
         stretch: {
-          signal: stretchSignal,
+          signal: stretchResult,
           chartData: {
             values: normalizedDistance,
             tension: tensionData,
           },
           deepDive: {
             title: 'Price Tension',
-            explanation: this.getStretchExplanation(stretchSignal.status),
+            explanation: this.getStretchExplanation(stretchResult.status),
           },
         },
       };
 
       // Cache the result
-      timingCache.set(upperTicker, { data: analysis, timestamp: Date.now() });
+      timingCache.set(cacheKey, { data: analysis, timestamp: Date.now() });
 
       return analysis;
     } catch (error: any) {
@@ -1625,6 +1648,301 @@ export class AlphaVantageService {
       }
       throw new Error(`Unable to analyze timing conditions: ${error.message}`);
     }
+  }
+
+  // Aggregate daily bars into weekly bars
+  private aggregateToWeekly(dailyData: { date: string; close: number; high: number; low: number }[]): { date: string; close: number; high: number; low: number }[] {
+    const weeklyBars: { date: string; close: number; high: number; low: number }[] = [];
+    let currentWeek: { date: string; close: number; high: number; low: number } | null = null;
+    let currentWeekNum = -1;
+
+    for (const bar of dailyData) {
+      const d = new Date(bar.date);
+      const weekNum = this.getWeekNumber(d);
+
+      if (weekNum !== currentWeekNum) {
+        if (currentWeek) {
+          weeklyBars.push(currentWeek);
+        }
+        currentWeek = { date: bar.date, close: bar.close, high: bar.high, low: bar.low };
+        currentWeekNum = weekNum;
+      } else if (currentWeek) {
+        currentWeek.high = Math.max(currentWeek.high, bar.high);
+        currentWeek.low = Math.min(currentWeek.low, bar.low);
+        // close stays as first day of week (most recent)
+      }
+    }
+    if (currentWeek) {
+      weeklyBars.push(currentWeek);
+    }
+
+    return weeklyBars;
+  }
+
+  private getWeekNumber(d: Date): number {
+    const start = new Date(d.getFullYear(), 0, 1);
+    const diff = d.getTime() - start.getTime();
+    const oneWeek = 1000 * 60 * 60 * 24 * 7;
+    return Math.floor(diff / oneWeek) + d.getFullYear() * 100;
+  }
+
+  private calculateSlope(data: number[]): number {
+    if (data.length < 2) return 0;
+    const first = data[0];
+    const last = data[data.length - 1];
+    return first > 0 ? (last - first) / first : 0;
+  }
+
+  // V2 Trend: deterministic mapping from highs/lows chips
+  private analyzeTrendV2(highs: number[], lows: number[], timeframe: TimingTimeframe): { 
+    status: TimingSignalStatus; label: string; interpretation: string; score: number; 
+    position: { x: number; y: number }; signals: { label: string; value: string }[];
+    highsChip: string; lowsChip: string;
+  } {
+    const lookback = timeframe === 'weekly' ? 10 : 20;
+    const halfLookback = Math.floor(lookback / 2);
+
+    const recentHighs = highs.slice(-halfLookback);
+    const olderHighs = highs.slice(-lookback, -halfLookback);
+    const recentLows = lows.slice(-halfLookback);
+    const olderLows = lows.slice(-lookback, -halfLookback);
+
+    const recentHigh = Math.max(...recentHighs);
+    const olderHigh = olderHighs.length > 0 ? Math.max(...olderHighs) : recentHigh;
+    const recentLow = Math.min(...recentLows);
+    const olderLow = olderLows.length > 0 ? Math.min(...olderLows) : recentLow;
+
+    // Determine chips with thresholds
+    const highsStrengthening = recentHigh > olderHigh * 1.02;
+    const highsWeakening = recentHigh < olderHigh * 0.98;
+    const lowsStrengthening = recentLow > olderLow * 1.02;
+    const lowsWeakening = recentLow < olderLow * 0.98;
+
+    const highsChip = highsStrengthening ? 'Strengthening' : (highsWeakening ? 'Weakening' : 'Mixed');
+    const lowsChip = lowsStrengthening ? 'Strengthening' : (lowsWeakening ? 'Weakening' : 'Mixed');
+
+    // DETERMINISTIC MAPPING from chips to conclusion
+    let status: TimingSignalStatus;
+    let label: string;
+    let interpretation: string;
+    let score: number;
+    let xPosition: number;
+    let yPosition: number;
+
+    if (highsChip === 'Strengthening' && lowsChip === 'Strengthening') {
+      status = 'green';
+      label = 'Strengthening structure';
+      interpretation = 'Both highs and lows are improving — structure is supportive.';
+      score = 0.7;
+      xPosition = 70;
+      yPosition = 70;
+    } else if (highsChip === 'Weakening' && lowsChip === 'Weakening') {
+      status = 'red';
+      label = 'Weakening structure';
+      interpretation = 'Both highs and lows are declining — structure is under pressure.';
+      score = -0.5;
+      xPosition = 30;
+      yPosition = 30;
+    } else if (lowsChip === 'Strengthening' && (highsChip === 'Mixed' || highsChip === 'Weakening')) {
+      status = 'yellow';
+      label = 'Stabilizing';
+      interpretation = 'Higher lows forming, but highs not yet improving — early signs of support.';
+      score = 0.3;
+      xPosition = 30;
+      yPosition = 70;
+    } else if (highsChip === 'Strengthening' && (lowsChip === 'Mixed' || lowsChip === 'Weakening')) {
+      status = 'yellow';
+      label = 'Breakout attempt';
+      interpretation = 'Higher highs appearing, but lows still weak — momentum without foundation.';
+      score = 0.1;
+      xPosition = 70;
+      yPosition = 30;
+    } else {
+      status = 'yellow';
+      label = 'Unresolved';
+      interpretation = 'Mixed signals in structure — no clear direction yet.';
+      score = 0;
+      xPosition = 50;
+      yPosition = 50;
+    }
+
+    return {
+      status,
+      label,
+      interpretation,
+      score,
+      position: { x: xPosition, y: yPosition },
+      signals: [
+        { label: 'Highs', value: highsChip },
+        { label: 'Lows', value: lowsChip }
+      ],
+      highsChip,
+      lowsChip,
+    };
+  }
+
+  // V2 Momentum: deterministic mapping from short/long pressure chips
+  private analyzeMomentumV2(shortSlope: number, longSlope: number, currentHist: number, prevHist: number): { 
+    status: TimingSignalStatus; label: string; interpretation: string; score: number; 
+    position: { x: number; y: number }; signals: { label: string; value: string }[];
+  } {
+    // Determine chips from slopes (percentage thresholds)
+    const shortThreshold = 0.005; // 0.5%
+    const longThreshold = 0.003; // 0.3%
+
+    const shortImproving = shortSlope > shortThreshold;
+    const shortWeakening = shortSlope < -shortThreshold;
+    const longImproving = longSlope > longThreshold;
+    const longWeakening = longSlope < -longThreshold;
+
+    const shortChip = shortImproving ? 'Improving' : (shortWeakening ? 'Weakening' : 'Flat');
+    const longChip = longImproving ? 'Improving' : (longWeakening ? 'Weakening' : 'Flat');
+    
+    // Gap chip: is pressure divergence widening or narrowing?
+    const gapWidening = Math.abs(currentHist) > Math.abs(prevHist);
+    const gapChip = gapWidening ? 'Widening' : 'Narrowing';
+
+    // DETERMINISTIC MAPPING from chips to conclusion
+    let status: TimingSignalStatus;
+    let label: string;
+    let interpretation: string;
+    let score: number;
+    let xPosition: number;
+    let yPosition: number;
+
+    if (shortImproving && longImproving) {
+      status = 'green';
+      label = 'Aligned';
+      interpretation = 'Short and long-term pressures are aligned and supportive.';
+      score = 0.7;
+      xPosition = 70;
+      yPosition = 70;
+    } else if (shortWeakening && longImproving) {
+      status = 'yellow';
+      label = 'Pullback';
+      interpretation = 'Short-term pressure against a strong baseline — often absorbed.';
+      score = 0.3;
+      xPosition = 30;
+      yPosition = 70;
+    } else if (shortImproving && longWeakening && !gapWidening) {
+      // CRITICAL: Early shift ONLY when short improving, long weak, AND gap narrowing
+      status = 'yellow';
+      label = 'Early shift';
+      interpretation = 'Short-term improving while long-term still weak — early but unconfirmed.';
+      score = 0.1;
+      xPosition = 70;
+      yPosition = 30;
+    } else if (shortWeakening && longWeakening) {
+      status = 'red';
+      label = 'Pressure building';
+      interpretation = 'Both time frames under pressure — conditions are intensifying.';
+      score = -0.5;
+      xPosition = 30;
+      yPosition = 30;
+    } else {
+      status = 'yellow';
+      label = 'Mixed';
+      interpretation = 'Momentum signals are mixed — no clear direction yet.';
+      score = 0;
+      xPosition = 50;
+      yPosition = 50;
+    }
+
+    return {
+      status,
+      label,
+      interpretation,
+      score,
+      position: { x: xPosition, y: yPosition },
+      signals: [
+        { label: 'Short-term pressure', value: shortChip },
+        { label: 'Long-term baseline', value: longChip },
+        { label: 'Pressure gap', value: gapChip }
+      ],
+    };
+  }
+
+  // V2 Stretch: use RSI distance from 50 (not price distance from EMA)
+  private analyzeStretchV2(currentRsi: number, prevRsi: number, rsiHistory: number[]): { 
+    status: TimingSignalStatus; label: string; interpretation: string; score: number; 
+    position: { x: number; y: number }; signals: { label: string; value: string }[];
+    directionChip: string;
+  } {
+    // FIX: Distance from balance = abs(RSI - 50)
+    const distanceFrom50 = Math.abs(currentRsi - 50);
+    
+    // Distance thresholds based on RSI deviation from 50
+    // RSI 31 -> distance = 19 -> High
+    // RSI 45 -> distance = 5 -> Low
+    const isHighDistance = distanceFrom50 > 15;  // RSI < 35 or > 65
+    const isModerateDistance = distanceFrom50 > 8; // RSI 42-58 = low, 35-42 or 58-65 = moderate
+    
+    // Direction: is RSI moving toward or away from 50?
+    const rsiChange = currentRsi - prevRsi;
+    const isReturningTo50 = (currentRsi > 50 && rsiChange < 0) || (currentRsi < 50 && rsiChange > 0);
+    const isMovingAway = (currentRsi > 50 && rsiChange > 0) || (currentRsi < 50 && rsiChange < 0);
+
+    // Chip labels
+    const distanceChip = isHighDistance ? 'High' : (isModerateDistance ? 'Moderate' : 'Low');
+    const directionChip = isReturningTo50 ? 'Returning' : (isMovingAway ? 'Moving away' : 'Flat');
+
+    // DETERMINISTIC MAPPING from chips to conclusion
+    let status: TimingSignalStatus;
+    let label: string;
+    let interpretation: string;
+    let score: number;
+    let xPosition: number;
+    let yPosition: number;
+
+    if (isHighDistance && isMovingAway) {
+      status = 'red';
+      label = 'Tension rising';
+      interpretation = 'Price is stretched and moving further from balance — tension is building.';
+      score = -0.5;
+      xPosition = 70;
+      yPosition = 30;
+    } else if ((isHighDistance || isModerateDistance) && isReturningTo50) {
+      status = 'yellow';
+      label = 'Tension easing';
+      interpretation = 'Price is stretched but returning toward balance — tension is cooling.';
+      score = 0.3;
+      xPosition = 70;
+      yPosition = 70;
+    } else if (!isHighDistance && !isModerateDistance && isMovingAway) {
+      status = 'yellow';
+      label = 'Drifting';
+      interpretation = 'Price is near balance but drifting away — low conviction movement.';
+      score = 0.1;
+      xPosition = 30;
+      yPosition = 30;
+    } else if (!isHighDistance && !isModerateDistance) {
+      status = 'green';
+      label = 'Calm';
+      interpretation = 'Price is near equilibrium — balanced conditions.';
+      score = 0.5;
+      xPosition = 30;
+      yPosition = 70;
+    } else {
+      status = 'yellow';
+      label = 'Mixed';
+      interpretation = 'Stretch conditions are transitioning — monitor for clarity.';
+      score = 0;
+      xPosition = 50;
+      yPosition = 50;
+    }
+
+    return {
+      status,
+      label,
+      interpretation,
+      score,
+      position: { x: xPosition, y: yPosition },
+      signals: [
+        { label: 'Distance from balance', value: distanceChip },
+        { label: 'Direction', value: directionChip }
+      ],
+      directionChip,
+    };
   }
 
   private calculateEMA(data: number[], period: number): number[] {

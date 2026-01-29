@@ -461,10 +461,47 @@ export const stretchChartDataSchema = z.object({
   tension: z.array(z.number()), // Tension level (0-1)
 });
 
+export const timingTimeframeSchema = z.enum(["weekly", "daily"]);
+export type TimingTimeframe = z.infer<typeof timingTimeframeSchema>;
+
+// Debug primitives for transparency
+export const timingDebugSchema = z.object({
+  timeframe: timingTimeframeSchema,
+  lastBarDate: z.string(),
+  seriesType: z.string(), // "adjusted" or "unadjusted"
+  
+  // RSI primitives
+  rsiLatest: z.number(),
+  rsiPrevious: z.number(),
+  rsiDistanceFrom50: z.number(), // abs(rsi - 50)
+  
+  // MACD primitives
+  macdLine: z.number(),
+  macdSignal: z.number(),
+  macdHist: z.number(),
+  macdHistPrev: z.number(),
+  
+  // EMA slopes used for classification
+  shortEmaSlope: z.number(), // percentage change over period
+  longEmaSlope: z.number(),
+  
+  // Trend primitives
+  highsProgression: z.string(), // "strengthening" | "weakening" | "mixed"
+  lowsProgression: z.string(),
+  
+  // Stretch primitives
+  distanceFromBalance: z.number(), // percentage
+  directionToBalance: z.string(), // "returning" | "moving_away" | "flat"
+});
+
 export const timingAnalysisSchema = z.object({
   ticker: z.string(),
   companyName: z.string().optional(),
   lastUpdated: z.string(),
+  timeframe: timingTimeframeSchema.optional(), // "weekly" or "daily"
+  
+  // Debug data for internal QA
+  debug: timingDebugSchema.optional(),
   
   // Overall verdict
   verdict: z.object({
@@ -508,3 +545,4 @@ export type TrendChartData = z.infer<typeof trendChartDataSchema>;
 export type MomentumChartData = z.infer<typeof momentumChartDataSchema>;
 export type StretchChartData = z.infer<typeof stretchChartDataSchema>;
 export type TimingAnalysis = z.infer<typeof timingAnalysisSchema>;
+export type TimingDebug = z.infer<typeof timingDebugSchema>;

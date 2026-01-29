@@ -353,6 +353,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/timing/:ticker", async (req: any, res) => {
     try {
       const { ticker } = req.params;
+      const timeframe = (req.query.timeframe === 'daily') ? 'daily' : 'weekly'; // default to weekly
 
       if (!ticker || !/^[A-Z]{1,5}$/i.test(ticker)) {
         return res.status(400).json({
@@ -361,7 +362,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
 
-      const analysis = await alphaVantageService.getTimingAnalysis(ticker.toUpperCase());
+      const analysis = await alphaVantageService.getTimingAnalysis(ticker.toUpperCase(), timeframe);
       const validated = timingAnalysisSchema.parse(analysis);
 
       res.json(validated);
