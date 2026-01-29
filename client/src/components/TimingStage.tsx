@@ -66,6 +66,42 @@ function getStrengthStyles(strength: TimingStrength) {
   }
 }
 
+function getChipStyle(label: string, value: string): { bg: string; text: string; Icon: typeof TrendingUp } {
+  const labelLower = label.toLowerCase();
+  const valueLower = value.toLowerCase();
+  
+  if (labelLower === 'zone') {
+    switch (valueLower) {
+      case 'oversold':
+        return { bg: "bg-red-500/10", text: "text-red-700 dark:text-red-400", Icon: TrendingDown };
+      case 'overbought':
+        return { bg: "bg-orange-500/10", text: "text-orange-700 dark:text-orange-400", Icon: TrendingUp };
+      default:
+        return { bg: "bg-blue-500/10", text: "text-blue-700 dark:text-blue-400", Icon: Activity };
+    }
+  }
+  
+  if (labelLower === 'tension') {
+    switch (valueLower) {
+      case 'easing':
+        return { bg: "bg-green-500/10", text: "text-green-700 dark:text-green-400", Icon: TrendingDown };
+      case 'rising':
+        return { bg: "bg-red-500/10", text: "text-red-700 dark:text-red-400", Icon: TrendingUp };
+      default:
+        return { bg: "bg-yellow-500/10", text: "text-yellow-700 dark:text-yellow-400", Icon: Activity };
+    }
+  }
+  
+  const isPositive = valueLower.includes("improving") || valueLower.includes("strengthening") || 
+                     valueLower.includes("returning") || valueLower.includes("low") || 
+                     valueLower.includes("calm") || valueLower.includes("narrowing") ||
+                     valueLower.includes("easing");
+  
+  return isPositive 
+    ? { bg: "bg-green-500/10", text: "text-green-700 dark:text-green-400", Icon: TrendingUp }
+    : { bg: "bg-red-500/10", text: "text-red-700 dark:text-red-400", Icon: TrendingDown };
+}
+
 const QUADRANT_CONFIGS: Record<string, Omit<TimingQuadrantConfig, 'position' | 'guidedView'>> = {
   trend: {
     id: "trend",
@@ -92,12 +128,12 @@ const QUADRANT_CONFIGS: Record<string, Omit<TimingQuadrantConfig, 'position' | '
   stretch: {
     id: "stretch",
     xLabel: "Distance from Balance",
-    yLabel: "Direction",
+    yLabel: "Tension Direction",
     zones: {
-      topLeft: { label: "Calm", color: "green", tooltip: "Near equilibrium and stable — balanced conditions." },
-      topRight: { label: "Tension Easing", color: "blue", tooltip: "Extended but returning toward balance — stretch is cooling." },
-      bottomLeft: { label: "Drifting", color: "neutral", tooltip: "Near balance but moving away — low conviction drift." },
-      bottomRight: { label: "Tension Rising", color: "red", tooltip: "Extended and moving further — stretch is building." },
+      topLeft: { label: "Calm", color: "green", tooltip: "Near balance, stabilizing — conditions look calmer." },
+      topRight: { label: "Stabilizing", color: "blue", tooltip: "Stretched (oversold/overbought) but tension is easing — early stabilization." },
+      bottomLeft: { label: "Drifting", color: "neutral", tooltip: "Near balance but drifting away — tension is building." },
+      bottomRight: { label: "Pressure", color: "red", tooltip: "Stretched and tension still rising — may need more time to stabilize." },
     },
   },
 };
@@ -227,25 +263,16 @@ function SummaryCardRow({ selectedId, onSelect, metrics }: SummaryCardRowProps) 
             </p>
             <div className="flex flex-wrap gap-1.5">
               {apiSignals.map((s, idx) => {
-                const val = s.value.toLowerCase();
-                const isPositive = val.includes("improving") || val.includes("strengthening") || 
-                                   val.includes("returning") || val.includes("low") || 
-                                   val.includes("calm") || val.includes("narrowing");
+                const chipStyle = getChipStyle(s.label, s.value);
                 return (
                   <span 
                     key={idx} 
                     className={cn(
                       "inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full",
-                      isPositive 
-                        ? "bg-green-500/10 text-green-700 dark:text-green-400" 
-                        : "bg-red-500/10 text-red-700 dark:text-red-400"
+                      chipStyle.bg, chipStyle.text
                     )}
                   >
-                    {isPositive ? (
-                      <TrendingUp className="w-3 h-3" />
-                    ) : (
-                      <TrendingDown className="w-3 h-3" />
-                    )}
+                    <chipStyle.Icon className="w-3 h-3" />
                     {s.label}: {s.value}
                   </span>
                 );
@@ -333,20 +360,29 @@ function TimingInsightTag({ signal, deepDive }: TimingInsightTagProps) {
 interface SignalTagProps {
   label: string;
   value: string;
+  metricType?: TimingMetricType;
 }
 
-function SignalTag({ label, value }: SignalTagProps) {
-  const isPositive = value.toLowerCase().includes("improving") || 
-                     value.toLowerCase().includes("returning") || 
-                     value.toLowerCase().includes("low") ||
-                     value.toLowerCase().includes("calm");
-  const isNegative = value.toLowerCase().includes("weakening") || 
-                     value.toLowerCase().includes("away") || 
-                     value.toLowerCase().includes("high") ||
-                     value.toLowerCase().includes("rising");
+const STRETCH_CHIP_TOOLTIPS: Record<string, Record<string, string>> = {
+  Zone: {
+    Oversold: "RSI below 30 — price has fallen sharply and may be due for stabilization.",
+    Neutral: "RSI between 30-70 — price is in balanced territory.",
+    Overbought: "RSI above 70 — price has risen sharply and may be extended.",
+  },
+  Tension: {
+    Easing: "Momentum is reversing toward balance — conditions may be stabilizing.",
+    Rising: "Momentum is pushing further from balance — tension is building.",
+    Stalling: "Momentum is flat — waiting for directional clarity.",
+  },
+};
+
+function SignalTag({ label, value, metricType }: SignalTagProps) {
+  const chipStyle = getChipStyle(label, value);
   
-  const color = isPositive ? "green" : isNegative ? "red" : "yellow";
-  const Icon = isPositive ? TrendingUp : isNegative ? TrendingDown : AlertTriangle;
+  let tooltipText = `${label}: ${value}`;
+  if (metricType === 'stretch' && STRETCH_CHIP_TOOLTIPS[label]) {
+    tooltipText = STRETCH_CHIP_TOOLTIPS[label][value] || tooltipText;
+  }
   
   return (
     <Tooltip>
@@ -354,13 +390,11 @@ function SignalTag({ label, value }: SignalTagProps) {
         <div 
           className={cn(
             "flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium cursor-help",
-            color === "green" && "bg-green-500/10 text-green-700 dark:text-green-400",
-            color === "red" && "bg-red-500/10 text-red-700 dark:text-red-400",
-            color === "yellow" && "bg-yellow-500/10 text-yellow-700 dark:text-yellow-400"
+            chipStyle.bg, chipStyle.text
           )}
           data-testid="timing-signal-tag"
         >
-          <Icon className="w-4 h-4" />
+          <chipStyle.Icon className="w-4 h-4" />
           <span className="inline-flex items-center gap-1">
             {label}
             <span className="font-bold ml-1">{value}</span>
@@ -369,9 +403,42 @@ function SignalTag({ label, value }: SignalTagProps) {
         </div>
       </TooltipTrigger>
       <TooltipContent side="top" className="max-w-xs text-sm">
-        {label}: {value}
+        {tooltipText}
       </TooltipContent>
     </Tooltip>
+  );
+}
+
+function StretchGuidedHelper() {
+  return (
+    <div className="bg-muted/30 rounded-lg p-4 text-sm space-y-3" data-testid="stretch-guided-helper">
+      <div className="flex items-center gap-2 text-foreground font-medium">
+        <Info className="w-4 h-4 text-primary" />
+        How to read this
+      </div>
+      <div className="grid gap-2 text-muted-foreground">
+        <div className="flex gap-2">
+          <span className="w-16 shrink-0 font-medium text-foreground">The dot:</span>
+          <span>Shows where price currently sits based on distance from balance and tension direction.</span>
+        </div>
+        <div className="flex gap-2">
+          <span className="w-16 shrink-0 font-medium text-foreground">X-axis:</span>
+          <span>Distance from balance — left is near equilibrium, right is stretched.</span>
+        </div>
+        <div className="flex gap-2">
+          <span className="w-16 shrink-0 font-medium text-foreground">Y-axis:</span>
+          <span>Tension direction — top is easing/stabilizing, bottom is rising/building.</span>
+        </div>
+        <div className="flex gap-2">
+          <span className="w-16 shrink-0 font-medium text-foreground">Zone:</span>
+          <span>Oversold (below 30), Neutral (30-70), or Overbought (above 70) based on RSI.</span>
+        </div>
+        <div className="flex gap-2">
+          <span className="w-16 shrink-0 font-medium text-foreground">Tension:</span>
+          <span>Whether momentum is easing back toward balance or pushing further away.</span>
+        </div>
+      </div>
+    </div>
   );
 }
 
@@ -421,9 +488,13 @@ function TimingDetailPanel({ type, signal, deepDive, chartData, guidedView }: Ti
           {apiSignals.length > 0 && (
             <div className="flex flex-wrap gap-3">
               {apiSignals.map((s, idx) => (
-                <SignalTag key={idx} label={s.label} value={s.value} />
+                <SignalTag key={idx} label={s.label} value={s.value} metricType={type} />
               ))}
             </div>
+          )}
+          
+          {type === "stretch" && guidedView && (
+            <StretchGuidedHelper />
           )}
           
           <TimingInsightTag signal={signal} deepDive={deepDive} />
@@ -752,8 +823,12 @@ function DebugDrawer({ debug, isOpen, onToggle }: { debug: TimingAnalysis['debug
                 <span className="ml-2">{debug.distanceFromBalance.toFixed(2)}</span>
               </div>
               <div>
-                <span className="text-muted-foreground">Direction:</span>
-                <span className="ml-2">{debug.directionToBalance}</span>
+                <span className="text-muted-foreground">Zone:</span>
+                <span className="ml-2">{debug.rsiZone}</span>
+              </div>
+              <div>
+                <span className="text-muted-foreground">Tension:</span>
+                <span className="ml-2">{debug.tensionDirection}</span>
               </div>
             </div>
           </div>
