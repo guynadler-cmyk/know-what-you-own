@@ -1,20 +1,24 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Switch } from "@/components/ui/switch";
+import { Badge } from "@/components/ui/badge";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { 
   ChevronDown, ChevronUp, TrendingUp, TrendingDown, Activity, Info, Eye, 
-  AlertOctagon, RefreshCw, Compass, CheckCircle, AlertTriangle, XCircle, HelpCircle 
+  AlertOctagon, RefreshCw, Compass, CheckCircle, AlertTriangle, XCircle, HelpCircle,
+  Calendar, Clock, Bug
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import type { TimingAnalysis, TimingSignalStatus } from "@shared/schema";
+import type { TimingAnalysis, TimingSignalStatus, TimingTimeframe } from "@shared/schema";
 import { TimingQuadrantChart, type TimingQuadrantConfig } from "./timing/TimingQuadrantChart";
 import { TrendChart } from "./timing/TrendChart";
 import { MomentumChart } from "./timing/MomentumChart";
 import { StretchChart } from "./timing/StretchChart";
+
+const TIMEFRAME_STORAGE_KEY = 'timing-timeframe';
 
 interface TimingStageProps {
   ticker?: string;
@@ -197,15 +201,7 @@ function SummaryCardRow({ selectedId, onSelect, metrics }: SummaryCardRowProps) 
     <div className="grid grid-cols-2 lg:grid-cols-3 gap-3" data-testid="timing-summary-card-row">
       {metrics.map(({ id, signal }) => {
         const isSelected = selectedId === id;
-        const strength = statusToStrength(signal.status);
-        const styles = getStrengthStyles(strength);
-        const signals = METRIC_SIGNALS[id];
         const apiSignals = signal.signals || [];
-        
-        const signalDirections = apiSignals.map(s => {
-          const val = s.value.toLowerCase();
-          return val.includes("improving") || val.includes("returning") || val.includes("low") || val.includes("calm");
-        });
         
         return (
           <button
@@ -230,8 +226,11 @@ function SummaryCardRow({ selectedId, onSelect, metrics }: SummaryCardRowProps) 
               {signal.label}
             </p>
             <div className="flex flex-wrap gap-1.5">
-              {signals.map((signalLabel, idx) => {
-                const isPositive = signalDirections[idx] ?? (signal.status === "green");
+              {apiSignals.map((s, idx) => {
+                const val = s.value.toLowerCase();
+                const isPositive = val.includes("improving") || val.includes("strengthening") || 
+                                   val.includes("returning") || val.includes("low") || 
+                                   val.includes("calm") || val.includes("narrowing");
                 return (
                   <span 
                     key={idx} 
@@ -247,7 +246,7 @@ function SummaryCardRow({ selectedId, onSelect, metrics }: SummaryCardRowProps) 
                     ) : (
                       <TrendingDown className="w-3 h-3" />
                     )}
-                    {signalLabel}
+                    {s.label}: {s.value}
                   </span>
                 );
               })}
@@ -604,12 +603,194 @@ function TimingScorecard({ metrics }: TimingScorecardProps) {
   );
 }
 
+function TimeframeToggle({ 
+  timeframe, 
+  onTimeframeChange 
+}: { 
+  timeframe: TimingTimeframe; 
+  onTimeframeChange: (tf: TimingTimeframe) => void;
+}) {
+  return (
+    <div className="space-y-2" data-testid="timeframe-toggle">
+      <div className="flex items-center gap-2">
+        <div className="flex rounded-lg border border-border overflow-hidden">
+          <button
+            onClick={() => onTimeframeChange('weekly')}
+            className={cn(
+              "px-3 py-1.5 text-sm font-medium transition-colors",
+              timeframe === 'weekly' 
+                ? "bg-primary text-primary-foreground" 
+                : "bg-background hover:bg-muted text-muted-foreground"
+            )}
+            data-testid="button-timeframe-weekly"
+          >
+            <span className="flex items-center gap-1.5">
+              <Calendar className="w-3.5 h-3.5" />
+              Weekly
+            </span>
+          </button>
+          <button
+            onClick={() => onTimeframeChange('daily')}
+            className={cn(
+              "px-3 py-1.5 text-sm font-medium transition-colors border-l border-border",
+              timeframe === 'daily' 
+                ? "bg-primary text-primary-foreground" 
+                : "bg-background hover:bg-muted text-muted-foreground"
+            )}
+            data-testid="button-timeframe-daily"
+          >
+            <span className="flex items-center gap-1.5">
+              <Clock className="w-3.5 h-3.5" />
+              Daily
+            </span>
+          </button>
+        </div>
+      </div>
+      <p className="text-xs text-muted-foreground">
+        Weekly smooths noise. Daily reacts sooner — and may shift more often.
+      </p>
+    </div>
+  );
+}
+
+function DebugDrawer({ debug, isOpen, onToggle }: { debug: TimingAnalysis['debug']; isOpen: boolean; onToggle: () => void }) {
+  if (!debug) return null;
+
+  return (
+    <div className="mt-4 border border-border rounded-lg overflow-hidden" data-testid="debug-drawer">
+      <button
+        onClick={onToggle}
+        className="w-full flex items-center justify-between px-4 py-2 bg-muted/50 hover:bg-muted transition-colors"
+        data-testid="button-toggle-debug"
+      >
+        <span className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
+          <Bug className="w-4 h-4" />
+          Debug Data
+        </span>
+        {isOpen ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+      </button>
+      {isOpen && (
+        <div className="p-4 bg-muted/20 space-y-3 text-xs font-mono" data-testid="debug-content">
+          <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+            <div>
+              <span className="text-muted-foreground">Timeframe:</span>
+              <span className="ml-2 font-semibold">{debug.timeframe}</span>
+            </div>
+            <div>
+              <span className="text-muted-foreground">Last Bar:</span>
+              <span className="ml-2 font-semibold">{debug.lastBarDate}</span>
+            </div>
+            <div>
+              <span className="text-muted-foreground">Series:</span>
+              <span className="ml-2 font-semibold">{debug.seriesType}</span>
+            </div>
+          </div>
+          <div className="border-t border-border pt-3">
+            <div className="font-semibold mb-2 text-foreground">RSI</div>
+            <div className="grid grid-cols-3 gap-3">
+              <div>
+                <span className="text-muted-foreground">Latest:</span>
+                <span className="ml-2">{debug.rsiLatest.toFixed(2)}</span>
+              </div>
+              <div>
+                <span className="text-muted-foreground">Previous:</span>
+                <span className="ml-2">{debug.rsiPrevious.toFixed(2)}</span>
+              </div>
+              <div>
+                <span className="text-muted-foreground">Dist from 50:</span>
+                <span className="ml-2">{debug.rsiDistanceFrom50.toFixed(2)}</span>
+              </div>
+            </div>
+          </div>
+          <div className="border-t border-border pt-3">
+            <div className="font-semibold mb-2 text-foreground">MACD</div>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+              <div>
+                <span className="text-muted-foreground">Line:</span>
+                <span className="ml-2">{debug.macdLine.toFixed(3)}</span>
+              </div>
+              <div>
+                <span className="text-muted-foreground">Signal:</span>
+                <span className="ml-2">{debug.macdSignal.toFixed(3)}</span>
+              </div>
+              <div>
+                <span className="text-muted-foreground">Hist:</span>
+                <span className="ml-2">{debug.macdHist.toFixed(3)}</span>
+              </div>
+              <div>
+                <span className="text-muted-foreground">Hist Prev:</span>
+                <span className="ml-2">{debug.macdHistPrev.toFixed(3)}</span>
+              </div>
+            </div>
+          </div>
+          <div className="border-t border-border pt-3">
+            <div className="font-semibold mb-2 text-foreground">EMA Slopes</div>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <span className="text-muted-foreground">Short EMA:</span>
+                <span className="ml-2">{(debug.shortEmaSlope * 100).toFixed(3)}%</span>
+              </div>
+              <div>
+                <span className="text-muted-foreground">Long EMA:</span>
+                <span className="ml-2">{(debug.longEmaSlope * 100).toFixed(3)}%</span>
+              </div>
+            </div>
+          </div>
+          <div className="border-t border-border pt-3">
+            <div className="font-semibold mb-2 text-foreground">Classification Chips</div>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+              <div>
+                <span className="text-muted-foreground">Highs:</span>
+                <span className="ml-2">{debug.highsProgression}</span>
+              </div>
+              <div>
+                <span className="text-muted-foreground">Lows:</span>
+                <span className="ml-2">{debug.lowsProgression}</span>
+              </div>
+              <div>
+                <span className="text-muted-foreground">Dist Balance:</span>
+                <span className="ml-2">{debug.distanceFromBalance.toFixed(2)}</span>
+              </div>
+              <div>
+                <span className="text-muted-foreground">Direction:</span>
+                <span className="ml-2">{debug.directionToBalance}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 export function TimingStage({ ticker, companyName, logoUrl }: TimingStageProps) {
   const [guidedView, setGuidedView] = useState(true);
   const [selectedMetric, setSelectedMetric] = useState<TimingMetricType>("trend");
+  const [showDebug, setShowDebug] = useState(false);
+  
+  // Timeframe with localStorage persistence
+  const [timeframe, setTimeframe] = useState<TimingTimeframe>(() => {
+    if (typeof window !== 'undefined') {
+      const stored = localStorage.getItem(TIMEFRAME_STORAGE_KEY);
+      if (stored === 'daily' || stored === 'weekly') return stored;
+    }
+    return 'weekly';
+  });
+
+  useEffect(() => {
+    localStorage.setItem(TIMEFRAME_STORAGE_KEY, timeframe);
+  }, [timeframe]);
   
   const { data, isLoading, error, refetch, isFetching } = useQuery<TimingAnalysis>({
-    queryKey: [`/api/timing/${ticker}`],
+    queryKey: ['/api/timing', ticker, timeframe],
+    queryFn: async () => {
+      const res = await fetch(`/api/timing/${ticker}?timeframe=${timeframe}`);
+      if (!res.ok) {
+        const errData = await res.json().catch(() => ({}));
+        throw new Error(errData.message || 'Failed to load timing data');
+      }
+      return res.json();
+    },
     enabled: !!ticker,
     retry: false,
   });
@@ -681,20 +862,28 @@ export function TimingStage({ ticker, companyName, logoUrl }: TimingStageProps) 
             </div>
           </div>
         )}
-        <CardTitle className="text-2xl">Assess Timing Conditions</CardTitle>
+        <div className="flex items-center justify-center gap-2 mb-2">
+          <CardTitle className="text-2xl">Assess Timing Conditions</CardTitle>
+          <Badge variant="outline" className="text-xs" data-testid="timing-timeframe-badge">
+            {timeframe === 'weekly' ? 'Weekly' : 'Daily'}
+          </Badge>
+        </div>
       </CardHeader>
       <CardContent className="pb-12">
-        <div className="flex items-center justify-between flex-wrap gap-3 mb-6 pb-4 border-b border-border/40">
-          <div className="flex items-center gap-2">
-            <Eye className="w-4 h-4 text-muted-foreground" />
-            <span className="text-sm font-medium text-foreground">Guided view</span>
+        <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4 mb-6 pb-4 border-b border-border/40">
+          <TimeframeToggle timeframe={timeframe} onTimeframeChange={setTimeframe} />
+          <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2">
+              <Eye className="w-4 h-4 text-muted-foreground" />
+              <span className="text-sm font-medium text-foreground">Guided view</span>
+            </div>
+            <Switch
+              checked={guidedView}
+              onCheckedChange={setGuidedView}
+              className="data-[state=checked]:bg-primary"
+              data-testid="switch-guided-view"
+            />
           </div>
-          <Switch
-            checked={guidedView}
-            onCheckedChange={setGuidedView}
-            className="data-[state=checked]:bg-primary"
-            data-testid="switch-guided-view"
-          />
         </div>
 
         <TimingIntroBlock />
@@ -717,6 +906,12 @@ export function TimingStage({ ticker, companyName, logoUrl }: TimingStageProps) 
         </div>
         
         <TimingScorecard metrics={metrics} />
+        
+        <DebugDrawer 
+          debug={data.debug} 
+          isOpen={showDebug} 
+          onToggle={() => setShowDebug(!showDebug)} 
+        />
       </CardContent>
     </Card>
   );
