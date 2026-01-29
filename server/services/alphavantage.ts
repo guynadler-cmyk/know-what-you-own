@@ -1578,7 +1578,8 @@ export class AlphaVantageService {
         highsProgression: trendResult.highsChip,
         lowsProgression: trendResult.lowsChip,
         distanceFromBalance: Math.round(Math.abs(currentRsi - 50) * 100) / 100,
-        directionToBalance: stretchResult.directionChip,
+        rsiZone: stretchResult.zone,
+        tensionDirection: stretchResult.tension,
       };
 
       const analysis: TimingAnalysis = {
@@ -1863,30 +1864,74 @@ export class AlphaVantageService {
   }
 
   // V2 Stretch: use RSI distance from 50 (not price distance from EMA)
+  /**
+   * Stretch Analysis V2 - Zone + Tension based
+   * 
+   * Zone classification with hysteresis:
+   * - Enter Oversold when RSI ≤ 30, exit when RSI ≥ 35
+   * - Enter Overbought when RSI ≥ 70, exit when RSI ≤ 65
+   * - Otherwise Neutral
+   * 
+   * Tension direction based on zone context:
+   * - In Oversold: delta > threshold → Easing (Rebounding), delta < -threshold → Rising (Digging deeper)
+   * - In Overbought: delta < -threshold → Easing (Cooling), delta > threshold → Rising (Heating up)
+   * - In Neutral: distNow < distPrev → Easing (Returning), distNow > distPrev → Rising (Moving away)
+   */
   private analyzeStretchV2(currentRsi: number, prevRsi: number, rsiHistory: number[]): { 
     status: TimingSignalStatus; label: string; interpretation: string; score: number; 
     position: { x: number; y: number }; signals: { label: string; value: string }[];
-    directionChip: string;
+    zone: 'Oversold' | 'Neutral' | 'Overbought';
+    tension: 'Easing' | 'Rising' | 'Stalling';
   } {
-    // FIX: Distance from balance = abs(RSI - 50)
-    const distanceFrom50 = Math.abs(currentRsi - 50);
+    // Calculate 3-period RSI averages for smoother delta
+    const rsiAvg3Now = this.calculateRsiAverage(rsiHistory, 3, 0);
+    const rsiAvg3Prev = this.calculateRsiAverage(rsiHistory, 3, 3);
+    const delta = rsiAvg3Now - rsiAvg3Prev;
     
-    // Distance thresholds based on RSI deviation from 50
-    // RSI 31 -> distance = 19 -> High
-    // RSI 45 -> distance = 5 -> Low
-    const isHighDistance = distanceFrom50 > 15;  // RSI < 35 or > 65
-    const isModerateDistance = distanceFrom50 > 8; // RSI 42-58 = low, 35-42 or 58-65 = moderate
+    // Distance to balance for neutral case
+    const distNow = Math.abs(currentRsi - 50);
+    const distPrev = Math.abs(prevRsi - 50);
     
-    // Direction: is RSI moving toward or away from 50?
-    const rsiChange = currentRsi - prevRsi;
-    const isReturningTo50 = (currentRsi > 50 && rsiChange < 0) || (currentRsi < 50 && rsiChange > 0);
-    const isMovingAway = (currentRsi > 50 && rsiChange > 0) || (currentRsi < 50 && rsiChange < 0);
+    // Zone classification with hysteresis
+    // Use previous RSI to determine if we're exiting a zone
+    const zone = this.classifyRsiZoneWithHysteresis(currentRsi, prevRsi);
+    
+    // Tension classification based on zone context
+    const DELTA_THRESHOLD = 2; // RSI points to filter noise
+    const DIST_THRESHOLD = 2;  // Distance change threshold for neutral zone
+    
+    let tension: 'Easing' | 'Rising' | 'Stalling';
+    
+    if (zone === 'Oversold') {
+      // In oversold: positive delta = easing (rebounding), negative = rising (digging deeper)
+      if (delta > DELTA_THRESHOLD) {
+        tension = 'Easing';
+      } else if (delta < -DELTA_THRESHOLD) {
+        tension = 'Rising';
+      } else {
+        tension = 'Stalling';
+      }
+    } else if (zone === 'Overbought') {
+      // In overbought: negative delta = easing (cooling), positive = rising (heating up)
+      if (delta < -DELTA_THRESHOLD) {
+        tension = 'Easing';
+      } else if (delta > DELTA_THRESHOLD) {
+        tension = 'Rising';
+      } else {
+        tension = 'Stalling';
+      }
+    } else {
+      // Neutral zone: check distance change from balance
+      if (distNow < distPrev - DIST_THRESHOLD) {
+        tension = 'Easing';
+      } else if (distNow > distPrev + DIST_THRESHOLD) {
+        tension = 'Rising';
+      } else {
+        tension = 'Stalling';
+      }
+    }
 
-    // Chip labels
-    const distanceChip = isHighDistance ? 'High' : (isModerateDistance ? 'Moderate' : 'Low');
-    const directionChip = isReturningTo50 ? 'Returning' : (isMovingAway ? 'Moving away' : 'Flat');
-
-    // DETERMINISTIC MAPPING from chips to conclusion
+    // DETERMINISTIC MAPPING from Zone + Tension to summary
     let status: TimingSignalStatus;
     let label: string;
     let interpretation: string;
@@ -1894,41 +1939,74 @@ export class AlphaVantageService {
     let xPosition: number;
     let yPosition: number;
 
-    if (isHighDistance && isMovingAway) {
-      status = 'red';
-      label = 'Tension rising';
-      interpretation = 'Price is stretched and moving further from balance — tension is building.';
-      score = -0.5;
-      xPosition = 70;
-      yPosition = 30;
-    } else if ((isHighDistance || isModerateDistance) && isReturningTo50) {
-      status = 'yellow';
-      label = 'Tension easing';
-      interpretation = 'Price is stretched but returning toward balance — tension is cooling.';
-      score = 0.3;
-      xPosition = 70;
-      yPosition = 70;
-    } else if (!isHighDistance && !isModerateDistance && isMovingAway) {
-      status = 'yellow';
-      label = 'Drifting';
-      interpretation = 'Price is near balance but drifting away — low conviction movement.';
-      score = 0.1;
-      xPosition = 30;
-      yPosition = 30;
-    } else if (!isHighDistance && !isModerateDistance) {
-      status = 'green';
-      label = 'Calm';
-      interpretation = 'Price is near equilibrium — balanced conditions.';
-      score = 0.5;
-      xPosition = 30;
-      yPosition = 70;
+    // Quadrant positioning:
+    // X-axis: Distance from Balance (left=near/low, right=far/high)
+    // Y-axis: Tension Direction (bottom=rising, top=easing)
+    
+    if (zone === 'Oversold') {
+      xPosition = 75; // Far from balance (right side)
+      if (tension === 'Easing') {
+        status = 'yellow';
+        label = 'Stabilizing';
+        interpretation = 'Price tension is high but easing — early stabilization signs.';
+        score = 0.3;
+        yPosition = 70;
+      } else if (tension === 'Rising') {
+        status = 'red';
+        label = 'Pressure building';
+        interpretation = 'Price tension is high and still rising — may need more time to stabilize.';
+        score = -0.5;
+        yPosition = 25;
+      } else {
+        status = 'yellow';
+        label = 'Holding low';
+        interpretation = 'Price is oversold and holding — watch for signs of stabilization.';
+        score = 0;
+        yPosition = 50;
+      }
+    } else if (zone === 'Overbought') {
+      xPosition = 75; // Far from balance (right side)
+      if (tension === 'Easing') {
+        status = 'yellow';
+        label = 'Cooling off';
+        interpretation = 'Price is stretched but cooling — momentum may be fading; consider protecting gains.';
+        score = 0.2;
+        yPosition = 70;
+      } else if (tension === 'Rising') {
+        status = 'red';
+        label = 'Overheating';
+        interpretation = 'Price is stretched and still heating up — strong run, but reversal risk rises if it stalls.';
+        score = -0.3;
+        yPosition = 25;
+      } else {
+        status = 'yellow';
+        label = 'Holding high';
+        interpretation = 'Price is overbought and holding — extended conditions may persist or reverse.';
+        score = 0;
+        yPosition = 50;
+      }
     } else {
-      status = 'yellow';
-      label = 'Mixed';
-      interpretation = 'Stretch conditions are transitioning — monitor for clarity.';
-      score = 0;
-      xPosition = 50;
-      yPosition = 50;
+      // Neutral zone
+      xPosition = 25; // Near balance (left side)
+      if (tension === 'Easing') {
+        status = 'green';
+        label = 'Calm';
+        interpretation = 'Near balance and stabilizing — conditions look calmer.';
+        score = 0.5;
+        yPosition = 70;
+      } else if (tension === 'Rising') {
+        status = 'yellow';
+        label = 'Drifting';
+        interpretation = 'Drifting away from balance — tension is building.';
+        score = 0.1;
+        yPosition = 30;
+      } else {
+        status = 'green';
+        label = 'Balanced';
+        interpretation = 'Holding near balance — stable conditions with low tension.';
+        score = 0.4;
+        yPosition = 50;
+      }
     }
 
     return {
@@ -1938,11 +2016,53 @@ export class AlphaVantageService {
       score,
       position: { x: xPosition, y: yPosition },
       signals: [
-        { label: 'Distance from balance', value: distanceChip },
-        { label: 'Direction', value: directionChip }
+        { label: 'Zone', value: zone },
+        { label: 'Tension', value: tension }
       ],
-      directionChip,
+      zone,
+      tension,
     };
+  }
+
+  /**
+   * Calculate average of last N RSI values, with offset from end
+   */
+  private calculateRsiAverage(rsiHistory: number[], periods: number, offset: number): number {
+    if (rsiHistory.length < periods + offset) {
+      return rsiHistory[rsiHistory.length - 1 - offset] || 50;
+    }
+    const startIdx = rsiHistory.length - periods - offset;
+    const values = rsiHistory.slice(startIdx, startIdx + periods);
+    return values.reduce((sum, v) => sum + v, 0) / values.length;
+  }
+
+  /**
+   * RSI Zone classification with hysteresis to prevent flip-flops
+   * Entry thresholds: Oversold ≤30, Overbought ≥70
+   * Exit thresholds: Oversold exits at ≥35, Overbought exits at ≤65
+   */
+  private classifyRsiZoneWithHysteresis(currentRsi: number, prevRsi: number): 'Oversold' | 'Neutral' | 'Overbought' {
+    // Determine what zone we were in based on prev RSI
+    const wasOversold = prevRsi <= 35;
+    const wasOverbought = prevRsi >= 65;
+    
+    // Entry conditions (strict)
+    if (currentRsi <= 30) {
+      return 'Oversold';
+    }
+    if (currentRsi >= 70) {
+      return 'Overbought';
+    }
+    
+    // Stay in zone with hysteresis (soft exit)
+    if (wasOversold && currentRsi < 35) {
+      return 'Oversold';
+    }
+    if (wasOverbought && currentRsi > 65) {
+      return 'Overbought';
+    }
+    
+    return 'Neutral';
   }
 
   private calculateEMA(data: number[], period: number): number[] {
