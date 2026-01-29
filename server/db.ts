@@ -29,15 +29,18 @@ import * as schema from "@shared/schema";
 
 const { Pool } = pkg;
 
-if (!process.env.DATABASE_URL) {
-  throw new Error("DATABASE_URL is not set");
+const dbUrl = process.env.EXTERNAL_DATABASE_URL || process.env.DATABASE_URL;
+
+if (!dbUrl) {
+  throw new Error("EXTERNAL_DATABASE_URL or DATABASE_URL must be set");
 }
 
+// Remove sslmode from URL and handle SSL config separately
+const cleanUrl = dbUrl.replace(/[?&]sslmode=[^&]+/, '');
+
 const pool = new Pool({
-  connectionString: process.env.DATABASE_URL,
-  ssl: {
-    rejectUnauthorized: false, // REQUIRED for Cloud SQL
-  },
+  connectionString: cleanUrl,
+  ssl: process.env.EXTERNAL_DATABASE_URL ? { rejectUnauthorized: false } : false,
 });
 
 
