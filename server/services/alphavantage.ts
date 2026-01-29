@@ -1870,51 +1870,69 @@ export class AlphaVantageService {
     const isReturningToBalance = (rsi > 50 && rsiChange < 0) || (rsi < 50 && rsiChange > 0);
     const isMovingAway = (rsi > 50 && rsiChange > 0) || (rsi < 50 && rsiChange < 0);
 
-    // X-axis: Distance from balance (left=near, right=far)
-    // Y-axis: Direction (bottom=moving away, top=returning)
+    // Distance from balance (normalized 0-100 scale, where 0=near balance)
     const distanceNormalized = Math.abs(priceDistFromEma);
-    const xPosition = Math.max(10, Math.min(90, 20 + distanceNormalized * 8));
-    const yPosition = Math.max(10, Math.min(90, isReturningToBalance ? 70 : (isMovingAway ? 30 : 50)));
-
+    
     // Determine signal labels
     const distanceLevel = distanceNormalized > 6 ? 'High' : (distanceNormalized > 3 ? 'Moderate' : 'Low');
-    const directionLabel = isReturningToBalance ? 'Returning' : (isMovingAway ? 'Moving away' : 'Flat');
+    const directionLabel = isReturningToBalance ? 'Returning' : (isMovingAway ? 'Moving away' : 'Stable');
 
     let status: TimingSignalStatus;
     let label: string;
     let interpretation: string;
     let score: number;
+    let xPosition: number;
+    let yPosition: number;
 
+    // Determine the signal status and label first, then set position to match the quadrant
     if (rsi > 70 || priceDistFromEma > 8) {
+      // Tension Rising (red) - bottomRight: far distance, moving away
       status = 'red';
       label = 'Tension Rising';
       interpretation = 'Price appears stretched above equilibrium — tension is elevated.';
       score = -0.6;
+      xPosition = 70 + Math.min(20, distanceNormalized * 2);
+      yPosition = 25;
     } else if (rsi < 30 || priceDistFromEma < -8) {
+      // Tension Rising (red) - bottomRight: far distance, moving away
       status = 'red';
       label = 'Tension Rising';
       interpretation = 'Price appears stretched below equilibrium — potential snap-back.';
       score = -0.4;
+      xPosition = 70 + Math.min(20, distanceNormalized * 2);
+      yPosition = 25;
     } else if ((rsi > 60 || priceDistFromEma > 4) && !isReturningToBalance) {
+      // Drifting (neutral) - bottomLeft: near balance, moving away
       status = 'yellow';
       label = 'Drifting';
       interpretation = 'Price is moving away from equilibrium — some tension present.';
       score = 0.1;
+      xPosition = 25 + Math.min(20, distanceNormalized * 3);
+      yPosition = 30;
     } else if ((rsi < 40 || priceDistFromEma < -4) && !isReturningToBalance) {
+      // Drifting (neutral) - bottomLeft: near balance, moving away
       status = 'yellow';
       label = 'Drifting';
       interpretation = 'Price is below equilibrium and moving further.';
       score = 0.1;
+      xPosition = 25 + Math.min(20, distanceNormalized * 3);
+      yPosition = 30;
     } else if (isReturningToBalance && distanceNormalized > 3) {
+      // Tension Easing (blue) - topRight: far distance, returning
       status = 'yellow';
       label = 'Tension Easing';
       interpretation = 'Price is stretched but returning toward balance — tension is cooling.';
       score = 0.3;
+      xPosition = 60 + Math.min(25, distanceNormalized * 3);
+      yPosition = 70;
     } else {
+      // Calm (green) - topLeft: near balance, stable/returning
       status = 'green';
       label = 'Calm';
       interpretation = 'Price is near equilibrium — balanced conditions.';
       score = 0.5;
+      xPosition = 20 + Math.min(25, distanceNormalized * 5);
+      yPosition = 75;
     }
 
     return { 
