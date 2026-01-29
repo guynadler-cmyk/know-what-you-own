@@ -29,8 +29,8 @@ function getZoneColors(color: string) {
 }
 
 export function TimingQuadrantChart({ config }: { config: TimingQuadrantConfig }) {
-  const chartSize = 280;
-  const padding = 40;
+  const chartSize = 400;
+  const padding = 56;
   const innerSize = chartSize - padding * 2;
   const center = chartSize / 2;
   
@@ -45,7 +45,7 @@ export function TimingQuadrantChart({ config }: { config: TimingQuadrantConfig }
   const showLabels = config.guidedView !== false;
 
   return (
-    <div className="relative w-full max-w-[280px] mx-auto" data-testid={`timing-quadrant-${config.id}`}>
+    <div className="relative w-full max-w-[400px] mx-auto" data-testid={`timing-quadrant-${config.id}`}>
       <svg 
         viewBox={`0 0 ${chartSize} ${chartSize}`} 
         className="w-full h-auto"
@@ -133,18 +133,18 @@ export function TimingQuadrantChart({ config }: { config: TimingQuadrantConfig }
           <>
             <text 
               x={center} 
-              y={chartSize - 8} 
+              y={chartSize - 16} 
               textAnchor="middle" 
-              className="text-[10px] fill-muted-foreground"
+              className="text-xs fill-muted-foreground"
             >
               {config.xLabel}
             </text>
             <text 
-              x={10} 
+              x={16} 
               y={center} 
               textAnchor="middle" 
-              className="text-[10px] fill-muted-foreground"
-              transform={`rotate(-90, 10, ${center})`}
+              className="text-xs fill-muted-foreground"
+              transform={`rotate(-90, 16, ${center})`}
             >
               {config.yLabel}
             </text>
@@ -155,13 +155,13 @@ export function TimingQuadrantChart({ config }: { config: TimingQuadrantConfig }
           <circle 
             cx={dotX} 
             cy={dotY} 
-            r="10" 
+            r="12" 
             className="fill-primary"
           />
           <circle 
             cx={dotX} 
             cy={dotY} 
-            r="5" 
+            r="6" 
             className="fill-white"
           />
         </g>
@@ -170,81 +170,81 @@ export function TimingQuadrantChart({ config }: { config: TimingQuadrantConfig }
       {showLabels && (
         <div className="absolute inset-0 pointer-events-none" style={{ padding: '14%' }}>
           <div className="relative w-full h-full">
-            <div className="absolute pointer-events-auto" style={{ left: '25%', top: '8%', transform: 'translateX(-50%)' }}>
+            <div className="absolute pointer-events-auto" style={{ left: '25%', top: '10%', transform: 'translateX(-50%)' }}>
               {config.zones.topLeft.tooltip ? (
                 <Tooltip>
                   <TooltipTrigger asChild>
-                    <span className={cn("text-[10px] font-medium cursor-help flex items-center gap-0.5", topLeftColors.label)}>
+                    <span className={cn("text-xs font-medium cursor-help flex items-center gap-1", topLeftColors.label)}>
                       {config.zones.topLeft.label}
-                      <HelpCircle className="w-2.5 h-2.5 opacity-60" />
+                      <HelpCircle className="w-3 h-3 opacity-60" />
                     </span>
                   </TooltipTrigger>
-                  <TooltipContent side="top" className="max-w-[180px] text-center">
+                  <TooltipContent side="top" className="max-w-[200px] text-center">
                     <p className="text-xs">{config.zones.topLeft.tooltip}</p>
                   </TooltipContent>
                 </Tooltip>
               ) : (
-                <span className={cn("text-[10px] font-medium", topLeftColors.label)}>
+                <span className={cn("text-xs font-medium", topLeftColors.label)}>
                   {config.zones.topLeft.label}
                 </span>
               )}
             </div>
             
-            <div className="absolute pointer-events-auto" style={{ left: '75%', top: '8%', transform: 'translateX(-50%)' }}>
+            <div className="absolute pointer-events-auto" style={{ left: '75%', top: '10%', transform: 'translateX(-50%)' }}>
               {config.zones.topRight.tooltip ? (
                 <Tooltip>
                   <TooltipTrigger asChild>
-                    <span className={cn("text-[10px] font-medium cursor-help flex items-center gap-0.5", topRightColors.label)}>
+                    <span className={cn("text-xs font-medium cursor-help flex items-center gap-1", topRightColors.label)}>
                       {config.zones.topRight.label}
-                      <HelpCircle className="w-2.5 h-2.5 opacity-60" />
+                      <HelpCircle className="w-3 h-3 opacity-60" />
                     </span>
                   </TooltipTrigger>
-                  <TooltipContent side="top" className="max-w-[180px] text-center">
+                  <TooltipContent side="top" className="max-w-[200px] text-center">
                     <p className="text-xs">{config.zones.topRight.tooltip}</p>
                   </TooltipContent>
                 </Tooltip>
               ) : (
-                <span className={cn("text-[10px] font-medium", topRightColors.label)}>
+                <span className={cn("text-xs font-medium", topRightColors.label)}>
                   {config.zones.topRight.label}
                 </span>
               )}
             </div>
             
-            <div className="absolute pointer-events-auto" style={{ left: '25%', bottom: '6%', transform: 'translateX(-50%)' }}>
+            <div className="absolute pointer-events-auto" style={{ left: '25%', bottom: '8%', transform: 'translateX(-50%)' }}>
               {config.zones.bottomLeft.tooltip ? (
                 <Tooltip>
                   <TooltipTrigger asChild>
-                    <span className={cn("text-[10px] font-medium cursor-help flex items-center gap-0.5", bottomLeftColors.label)}>
+                    <span className={cn("text-xs font-medium cursor-help flex items-center gap-1", bottomLeftColors.label)}>
                       {config.zones.bottomLeft.label}
-                      <HelpCircle className="w-2.5 h-2.5 opacity-60" />
+                      <HelpCircle className="w-3 h-3 opacity-60" />
                     </span>
                   </TooltipTrigger>
-                  <TooltipContent side="bottom" className="max-w-[180px] text-center">
+                  <TooltipContent side="bottom" className="max-w-[200px] text-center">
                     <p className="text-xs">{config.zones.bottomLeft.tooltip}</p>
                   </TooltipContent>
                 </Tooltip>
               ) : (
-                <span className={cn("text-[10px] font-medium", bottomLeftColors.label)}>
+                <span className={cn("text-xs font-medium", bottomLeftColors.label)}>
                   {config.zones.bottomLeft.label}
                 </span>
               )}
             </div>
             
-            <div className="absolute pointer-events-auto" style={{ left: '75%', bottom: '6%', transform: 'translateX(-50%)' }}>
+            <div className="absolute pointer-events-auto" style={{ left: '75%', bottom: '8%', transform: 'translateX(-50%)' }}>
               {config.zones.bottomRight.tooltip ? (
                 <Tooltip>
                   <TooltipTrigger asChild>
-                    <span className={cn("text-[10px] font-medium cursor-help flex items-center gap-0.5", bottomRightColors.label)}>
+                    <span className={cn("text-xs font-medium cursor-help flex items-center gap-1", bottomRightColors.label)}>
                       {config.zones.bottomRight.label}
-                      <HelpCircle className="w-2.5 h-2.5 opacity-60" />
+                      <HelpCircle className="w-3 h-3 opacity-60" />
                     </span>
                   </TooltipTrigger>
-                  <TooltipContent side="bottom" className="max-w-[180px] text-center">
+                  <TooltipContent side="bottom" className="max-w-[200px] text-center">
                     <p className="text-xs">{config.zones.bottomRight.tooltip}</p>
                   </TooltipContent>
                 </Tooltip>
               ) : (
-                <span className={cn("text-[10px] font-medium", bottomRightColors.label)}>
+                <span className={cn("text-xs font-medium", bottomRightColors.label)}>
                   {config.zones.bottomRight.label}
                 </span>
               )}
