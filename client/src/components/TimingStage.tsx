@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Switch } from "@/components/ui/switch";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
-import { ChevronDown, ChevronUp, TrendingUp, Activity, Gauge, Info, Eye, HelpCircle } from "lucide-react";
+import { ChevronDown, ChevronUp, TrendingUp, Activity, Gauge, Info, Eye, HelpCircle, CheckCircle, AlertTriangle, XCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { TimingAnalysis, TimingSignalStatus } from "@shared/schema";
 import { TimingQuadrantChart, type TimingQuadrantConfig } from "./timing/TimingQuadrantChart";
@@ -18,6 +18,8 @@ interface TimingStageProps {
   companyName?: string;
   logoUrl?: string;
 }
+
+type TimingMetricType = "trend" | "momentum" | "stretch";
 
 function getStatusColor(status: TimingSignalStatus): string {
   switch (status) {
@@ -48,6 +50,22 @@ function getStatusTextColor(status: TimingSignalStatus): string {
     case "green": return "text-green-700 dark:text-green-400";
     case "yellow": return "text-yellow-700 dark:text-yellow-400";
     case "red": return "text-red-700 dark:text-red-400";
+  }
+}
+
+function getStatusIcon(status: TimingSignalStatus) {
+  switch (status) {
+    case "green": return CheckCircle;
+    case "yellow": return AlertTriangle;
+    case "red": return XCircle;
+  }
+}
+
+function getStatusLabel(status: TimingSignalStatus): string {
+  switch (status) {
+    case "green": return "Supportive";
+    case "yellow": return "Mixed";
+    case "red": return "Challenging";
   }
 }
 
@@ -153,6 +171,18 @@ const HOW_TO_READ: Record<string, string[]> = {
   ],
 };
 
+const METRIC_TITLES: Record<TimingMetricType, string> = {
+  trend: "Structure Quality",
+  momentum: "Pressure Balance",
+  stretch: "Distance from Balance"
+};
+
+const METRIC_ICONS: Record<TimingMetricType, typeof TrendingUp> = {
+  trend: TrendingUp,
+  momentum: Activity,
+  stretch: Gauge
+};
+
 function AlignmentIndicator({ score }: { score: number }) {
   const normalizedPosition = ((score + 1) / 2) * 100;
   
@@ -236,40 +266,103 @@ function SignalPill({ label, value }: SignalPillProps) {
   );
 }
 
-interface TimingCardProps {
-  type: "trend" | "momentum" | "stretch";
-  icon: typeof TrendingUp;
+interface MetricSelectorCardProps {
+  type: TimingMetricType;
+  label: string;
+  status: TimingSignalStatus;
+  isSelected: boolean;
+  onClick: () => void;
+}
+
+function MetricSelectorCard({ type, label, status, isSelected, onClick }: MetricSelectorCardProps) {
+  const Icon = getStatusIcon(status);
+  
+  return (
+    <button
+      onClick={onClick}
+      className={cn(
+        "flex-shrink-0 min-w-[140px] p-4 rounded-xl border text-left transition-all",
+        isSelected 
+          ? "border-primary bg-primary/5 ring-2 ring-primary/20" 
+          : "border-border hover-elevate",
+        getStatusBgColor(status)
+      )}
+      data-testid={`timing-selector-${type}`}
+    >
+      <div className="flex items-center justify-between mb-1">
+        <span className="text-sm font-medium text-foreground capitalize">{type}</span>
+        <Icon className={cn("w-4 h-4", getStatusTextColor(status))} />
+      </div>
+      <div className={cn("text-xs font-semibold flex items-center gap-1", getStatusTextColor(status))}>
+        {label}
+      </div>
+    </button>
+  );
+}
+
+interface MetricSelectorRowProps {
+  selectedMetric: TimingMetricType;
+  onSelect: (metric: TimingMetricType) => void;
+  data: TimingAnalysis;
+}
+
+function MetricSelectorRow({ selectedMetric, onSelect, data }: MetricSelectorRowProps) {
+  return (
+    <div className="flex flex-nowrap gap-3 mb-6 overflow-x-auto pb-2 -mx-1 px-1" data-testid="timing-metric-selector-row">
+      <MetricSelectorCard
+        type="trend"
+        label={data.trend.signal.label}
+        status={data.trend.signal.status}
+        isSelected={selectedMetric === "trend"}
+        onClick={() => onSelect("trend")}
+      />
+      <MetricSelectorCard
+        type="momentum"
+        label={data.momentum.signal.label}
+        status={data.momentum.signal.status}
+        isSelected={selectedMetric === "momentum"}
+        onClick={() => onSelect("momentum")}
+      />
+      <MetricSelectorCard
+        type="stretch"
+        label={data.stretch.signal.label}
+        status={data.stretch.signal.status}
+        isSelected={selectedMetric === "stretch"}
+        onClick={() => onSelect("stretch")}
+      />
+    </div>
+  );
+}
+
+interface MetricDetailPanelProps {
+  type: TimingMetricType;
   signal: TimingAnalysis["trend"]["signal"];
   deepDive: { title: string; explanation: string };
   chartData: TimingAnalysis["trend"]["chartData"] | TimingAnalysis["momentum"]["chartData"] | TimingAnalysis["stretch"]["chartData"];
   guidedView: boolean;
 }
 
-function TimingCard({ type, icon: Icon, signal, deepDive, chartData, guidedView }: TimingCardProps) {
+function MetricDetailPanel({ type, signal, deepDive, chartData, guidedView }: MetricDetailPanelProps) {
   const [isExpanded, setIsExpanded] = useState(false);
+  const [showWhyMatters, setShowWhyMatters] = useState(false);
   const config = QUADRANT_CONFIGS[type];
   const howToRead = HOW_TO_READ[type];
+  const Icon = METRIC_ICONS[type];
   
   const position = signal.position || { x: 50, y: 50 };
   const signals = signal.signals || [];
-  
-  const titleMap = {
-    trend: "Structure Quality",
-    momentum: "Pressure Balance", 
-    stretch: "Distance from Balance"
-  };
 
   return (
     <Card 
       className={cn(
-        "border transition-all duration-200",
+        "border transition-all duration-300 animate-in fade-in-50",
         getStatusBgColor(signal.status),
         getStatusBorderColor(signal.status)
       )}
-      data-testid={`timing-card-${type}`}
+      data-testid={`timing-detail-panel-${type}`}
     >
-      <CardContent className="p-5">
-        <div className="flex flex-col lg:flex-row gap-5">
+      <CardContent className="p-6">
+        <div className="flex flex-col lg:flex-row gap-6">
           <div className="flex-1 min-w-0">
             <div className="flex items-start justify-between gap-4 flex-wrap">
               <div className="flex items-center gap-3">
@@ -278,8 +371,8 @@ function TimingCard({ type, icon: Icon, signal, deepDive, chartData, guidedView 
                 </div>
                 <div>
                   <div className="flex items-center gap-2 flex-wrap">
-                    <h3 className="font-semibold text-foreground capitalize">{type}</h3>
-                    <span className="text-xs text-muted-foreground">({titleMap[type]})</span>
+                    <h3 className="text-lg font-semibold text-foreground capitalize">{type}</h3>
+                    <span className="text-sm text-muted-foreground">({METRIC_TITLES[type]})</span>
                   </div>
                   <div className="flex items-center gap-2 mt-1">
                     <span className={cn("w-2.5 h-2.5 rounded-full", getStatusColor(signal.status))} />
@@ -292,7 +385,7 @@ function TimingCard({ type, icon: Icon, signal, deepDive, chartData, guidedView 
               
               <Tooltip>
                 <TooltipTrigger asChild>
-                  <button className="text-muted-foreground hover:text-foreground transition-colors" data-testid={`help-${type}`}>
+                  <button className="text-muted-foreground" data-testid={`help-${type}`}>
                     <HelpCircle className="w-5 h-5" />
                   </button>
                 </TooltipTrigger>
@@ -315,14 +408,39 @@ function TimingCard({ type, icon: Icon, signal, deepDive, chartData, guidedView 
               </div>
             )}
             
-            <p className="text-sm text-muted-foreground mt-4 leading-relaxed">
-              {signal.interpretation}
-            </p>
+            <div className="mt-4 p-4 bg-background/50 rounded-lg border border-border/30">
+              <div className="flex items-start gap-2">
+                <div className={cn("w-2 h-2 rounded-full mt-1.5 flex-shrink-0", getStatusColor(signal.status))} />
+                <div>
+                  <p className={cn("text-sm font-medium", getStatusTextColor(signal.status))}>
+                    {signal.label}
+                  </p>
+                  <p className="text-sm text-muted-foreground mt-1 leading-relaxed">
+                    {signal.interpretation}
+                  </p>
+                </div>
+              </div>
+              
+              <button
+                onClick={() => setShowWhyMatters(!showWhyMatters)}
+                className="flex items-center gap-1 text-xs text-muted-foreground mt-3"
+                data-testid={`why-matters-${type}`}
+              >
+                {showWhyMatters ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
+                Why this matters
+              </button>
+              
+              {showWhyMatters && (
+                <p className="text-xs text-muted-foreground mt-2 pl-4 border-l-2 border-border/40 leading-relaxed animate-in fade-in-50 slide-in-from-top-2">
+                  {deepDive.explanation}
+                </p>
+              )}
+            </div>
             
             <Button
               variant="ghost"
               size="sm"
-              className="mt-3 text-muted-foreground hover:text-foreground"
+              className="mt-4 text-muted-foreground"
               onClick={() => setIsExpanded(!isExpanded)}
               data-testid={`expand-${type}`}
             >
@@ -340,7 +458,7 @@ function TimingCard({ type, icon: Icon, signal, deepDive, chartData, guidedView 
             </Button>
           </div>
           
-          <div className="flex-shrink-0 flex justify-center">
+          <div className="flex-shrink-0 flex justify-center lg:justify-end">
             <TimingQuadrantChart 
               config={{
                 ...config,
@@ -352,8 +470,8 @@ function TimingCard({ type, icon: Icon, signal, deepDive, chartData, guidedView 
         </div>
         
         {isExpanded && (
-          <div className="mt-5 pt-5 border-t border-border/40 space-y-4" data-testid={`deep-dive-${type}`}>
-            <div className="h-32 w-full">
+          <div className="mt-6 pt-6 border-t border-border/40 space-y-4 animate-in fade-in-50 slide-in-from-top-2" data-testid={`deep-dive-${type}`}>
+            <div className="h-40 w-full bg-background/50 rounded-lg p-4">
               {type === "trend" && (
                 <TrendChart data={chartData as TimingAnalysis["trend"]["chartData"]} status={signal.status} timeHorizon="~6 months" />
               )}
@@ -365,7 +483,7 @@ function TimingCard({ type, icon: Icon, signal, deepDive, chartData, guidedView 
               )}
             </div>
             
-            <div>
+            <div className="bg-background/50 rounded-lg p-4">
               <h4 className="font-medium text-foreground mb-2">{deepDive.title}</h4>
               <p className="text-sm text-muted-foreground leading-relaxed">
                 {deepDive.explanation}
@@ -375,6 +493,73 @@ function TimingCard({ type, icon: Icon, signal, deepDive, chartData, guidedView 
         )}
       </CardContent>
     </Card>
+  );
+}
+
+function TimingScoreBar({ data }: { data: TimingAnalysis }) {
+  const statuses = [
+    data.trend.signal.status,
+    data.momentum.signal.status,
+    data.stretch.signal.status
+  ];
+  
+  const supportiveCount = statuses.filter(s => s === "green").length;
+  const totalSignals = statuses.length;
+  
+  const getScoreLabel = () => {
+    if (supportiveCount === 3) return "supportive";
+    if (supportiveCount >= 2) return "mostly supportive";
+    if (supportiveCount === 1) return "mixed";
+    return "challenging";
+  };
+
+  return (
+    <div className="bg-neutral-50 dark:bg-neutral-900/50 rounded-xl p-5 border border-border/40" data-testid="timing-score-bar">
+      <div className="flex items-center gap-3 mb-3">
+        <Activity className="w-5 h-5 text-primary" />
+        <span className="text-sm font-semibold text-foreground">
+          Timing Score: {supportiveCount} of {totalSignals} signals {getScoreLabel()}
+        </span>
+      </div>
+      
+      <div className="flex gap-1 mb-4">
+        {statuses.map((status, i) => (
+          <div 
+            key={i}
+            className={cn(
+              "flex-1 h-2 rounded-full transition-all",
+              status === "green" && "bg-green-500",
+              status === "yellow" && "bg-yellow-500",
+              status === "red" && "bg-red-500"
+            )}
+          />
+        ))}
+      </div>
+      
+      <div className="grid grid-cols-3 gap-3">
+        {(['trend', 'momentum', 'stretch'] as TimingMetricType[]).map((type) => {
+          const signal = data[type].signal;
+          return (
+            <div 
+              key={type}
+              className={cn(
+                "p-3 rounded-lg",
+                getStatusBgColor(signal.status)
+              )}
+              data-testid={`timing-score-tile-${type}`}
+            >
+              <div className="text-xs font-medium text-foreground capitalize mb-1">{type}</div>
+              <div className={cn("text-xs font-semibold flex items-center gap-1", getStatusTextColor(signal.status))}>
+                {signal.status === "green" && <CheckCircle className="w-3 h-3" />}
+                {signal.status === "yellow" && <AlertTriangle className="w-3 h-3" />}
+                {signal.status === "red" && <XCircle className="w-3 h-3" />}
+                {getStatusLabel(signal.status)}
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </div>
   );
 }
 
@@ -410,11 +595,12 @@ function LoadingState() {
       </CardHeader>
       <CardContent className="pb-12">
         <Skeleton className="h-32 w-full mb-8 rounded-xl" />
-        <div className="grid gap-4">
-          <Skeleton className="h-64 w-full rounded-xl" />
-          <Skeleton className="h-64 w-full rounded-xl" />
-          <Skeleton className="h-64 w-full rounded-xl" />
+        <div className="flex gap-3 mb-6">
+          <Skeleton className="flex-1 h-20 rounded-xl" />
+          <Skeleton className="flex-1 h-20 rounded-xl" />
+          <Skeleton className="flex-1 h-20 rounded-xl" />
         </div>
+        <Skeleton className="h-64 w-full rounded-xl" />
       </CardContent>
     </Card>
   );
@@ -436,6 +622,7 @@ function ErrorState({ message }: { message: string }) {
 
 export function TimingStage({ ticker, companyName, logoUrl }: TimingStageProps) {
   const [guidedView, setGuidedView] = useState(true);
+  const [selectedMetric, setSelectedMetric] = useState<TimingMetricType>("trend");
   
   const { data, isLoading, error } = useQuery<TimingAnalysis>({
     queryKey: [`/api/timing/${ticker}`],
@@ -459,6 +646,10 @@ export function TimingStage({ ticker, companyName, logoUrl }: TimingStageProps) 
   if (error || !data) {
     return <ErrorState message={(error as Error)?.message || "Could not load timing data."} />;
   }
+
+  const selectedSignal = data[selectedMetric].signal;
+  const selectedDeepDive = data[selectedMetric].deepDive;
+  const selectedChartData = data[selectedMetric].chartData;
 
   return (
     <Card data-testid="timing-stage-content">
@@ -513,34 +704,24 @@ export function TimingStage({ ticker, companyName, logoUrl }: TimingStageProps) 
         
         <VerdictBanner verdict={data.verdict} />
 
-        <div className="grid gap-4">
-          <TimingCard
-            type="trend"
-            icon={TrendingUp}
-            signal={data.trend.signal}
-            deepDive={data.trend.deepDive}
-            chartData={data.trend.chartData}
-            guidedView={guidedView}
-          />
-          
-          <TimingCard
-            type="momentum"
-            icon={Activity}
-            signal={data.momentum.signal}
-            deepDive={data.momentum.deepDive}
-            chartData={data.momentum.chartData}
-            guidedView={guidedView}
-          />
-          
-          <TimingCard
-            type="stretch"
-            icon={Gauge}
-            signal={data.stretch.signal}
-            deepDive={data.stretch.deepDive}
-            chartData={data.stretch.chartData}
+        <MetricSelectorRow 
+          selectedMetric={selectedMetric}
+          onSelect={setSelectedMetric}
+          data={data}
+        />
+        
+        <div className="mb-8">
+          <MetricDetailPanel
+            key={selectedMetric}
+            type={selectedMetric}
+            signal={selectedSignal}
+            deepDive={selectedDeepDive}
+            chartData={selectedChartData}
             guidedView={guidedView}
           />
         </div>
+        
+        <TimingScoreBar data={data} />
       </CardContent>
     </Card>
   );
