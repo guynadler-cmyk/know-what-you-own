@@ -1698,16 +1698,6 @@ export class AlphaVantageService {
   }
 
   private analyzeTrend(price: number, ema20: number, ema50: number, ema200: number, closes: number[]): { status: TimingSignalStatus; label: string; interpretation: string; score: number; position: { x: number; y: number }; signals: { label: string; value: string }[] } {
-    // Check EMA alignment and price position
-    const aboveEma20 = price > ema20;
-    const aboveEma50 = price > ema50;
-    const aboveEma200 = price > ema200;
-    const ema20AboveEma50 = ema20 > ema50;
-    const ema50AboveEma200 = ema50 > ema200;
-
-    // Count bullish signals
-    const bullishCount = [aboveEma20, aboveEma50, aboveEma200, ema20AboveEma50, ema50AboveEma200].filter(Boolean).length;
-
     // Check for higher highs and higher lows in recent price action
     const recentHighs = closes.slice(-20);
     const midHighs = closes.slice(-40, -20);
@@ -1720,60 +1710,63 @@ export class AlphaVantageService {
     const midLow = midHighs.length > 0 ? Math.min(...midHighs) : recentLow;
     const olderLow = olderHighs.length > 0 ? Math.min(...olderHighs) : midLow;
     
-    // Calculate highs and lows progression for quadrant position
-    const highsImproving = recentHigh > midHigh && midHigh > olderHigh * 0.98;
-    const highsWeakening = recentHigh < midHigh * 0.98;
-    const lowsImproving = recentLow > midLow && midLow > olderLow * 0.98;
-    const lowsWeakening = recentLow < midLow * 0.98;
+    // Determine highs and lows progression
+    const highsImproving = recentHigh > midHigh * 0.98;
+    const highsWeakening = recentHigh < midHigh * 0.97;
+    const lowsImproving = recentLow > midLow * 0.98;
+    const lowsWeakening = recentLow < midLow * 0.97;
     
-    // Calculate quadrant position (0-100)
-    // X-axis: Highs progression (left=weakening, right=improving)
-    // Y-axis: Lows progression (bottom=weakening, top=improving)
-    const highsScore = highsImproving ? 75 : (highsWeakening ? 25 : 50);
-    const lowsScore = lowsImproving ? 75 : (lowsWeakening ? 25 : 50);
-    
-    // Add some variance based on actual ratios
-    const highsRatio = midHigh > 0 ? (recentHigh / midHigh - 1) * 100 : 0;
-    const lowsRatio = midLow > 0 ? (recentLow / midLow - 1) * 100 : 0;
-    const xPosition = Math.max(10, Math.min(90, 50 + highsRatio * 5));
-    const yPosition = Math.max(10, Math.min(90, 50 + lowsRatio * 5));
-    
-    const makingHigherHighs = recentHigh > midHigh * 0.98;
+    const highsStatus = highsImproving ? 'Improving' : (highsWeakening ? 'Weakening' : 'Mixed');
+    const lowsStatus = lowsImproving ? 'Improving' : (lowsWeakening ? 'Weakening' : 'Mixed');
 
     let status: TimingSignalStatus;
     let label: string;
     let interpretation: string;
     let score: number;
+    let xPosition: number;
+    let yPosition: number;
 
-    if (bullishCount >= 4 && makingHigherHighs) {
+    // Quadrant zones (must match frontend QUADRANT_CONFIGS):
+    // X-axis: Highs Progression (left=weakening, right=improving)
+    // Y-axis: Lows Progression (bottom=weakening, top=improving)
+    // topRight: Strengthening (green) - both improving
+    // topLeft: Stabilizing (blue) - highs weak, lows improving
+    // bottomRight: Breakout Attempt (yellow) - highs improving, lows weak
+    // bottomLeft: Weakening (red) - both weak
+
+    if (highsImproving && lowsImproving) {
+      // Strengthening - topRight quadrant
       status = 'green';
       label = 'Strengthening';
-      interpretation = 'Structure shows rising momentum with aligned trends.';
-      score = 0.8;
-    } else if (bullishCount >= 3) {
-      status = 'green';
-      label = 'Constructive';
-      interpretation = 'Structure is generally positive, showing upward bias.';
-      score = 0.5;
-    } else if (bullishCount >= 2) {
+      interpretation = 'Both highs and lows are improving — structure is supportive.';
+      score = 0.7;
+      xPosition = 70;
+      yPosition = 70;
+    } else if (!highsImproving && lowsImproving) {
+      // Stabilizing - topLeft quadrant
       status = 'yellow';
-      label = 'Mixed';
-      interpretation = 'Structure is transitioning — direction not yet clear.';
-      score = 0;
-    } else if (bullishCount === 1) {
+      label = 'Stabilizing';
+      interpretation = 'Higher lows forming, but highs not yet improving — early signs of support.';
+      score = 0.3;
+      xPosition = 30;
+      yPosition = 70;
+    } else if (highsImproving && !lowsImproving) {
+      // Breakout Attempt - bottomRight quadrant
       status = 'yellow';
-      label = 'Weakening';
-      interpretation = 'Structure is under pressure, with few supportive elements.';
-      score = -0.3;
+      label = 'Breakout Attempt';
+      interpretation = 'Higher highs appearing, but lows still weak — momentum without foundation.';
+      score = 0.1;
+      xPosition = 70;
+      yPosition = 30;
     } else {
+      // Weakening - bottomLeft quadrant
       status = 'red';
-      label = 'Declining';
-      interpretation = 'Structure shows downward pressure across timeframes.';
-      score = -0.7;
+      label = 'Weakening';
+      interpretation = 'Both highs and lows are declining — structure is under pressure.';
+      score = -0.5;
+      xPosition = 30;
+      yPosition = 30;
     }
-
-    const highsStatus = highsImproving ? 'Improving' : (highsWeakening ? 'Weakening' : 'Mixed');
-    const lowsStatus = lowsImproving ? 'Improving' : (lowsWeakening ? 'Weakening' : 'Mixed');
 
     return { 
       status, 
@@ -1797,16 +1790,11 @@ export class AlphaVantageService {
     const histTrend = recentHist[recentHist.length - 1] - recentHist[0];
     const avgHist = recentHist.reduce((a, b) => a + b, 0) / recentHist.length;
 
-    // Calculate short-term and long-term slopes for quadrant position
+    // Calculate short-term and long-term slopes for signal labels
     const shortRecent = ema12.slice(-5);
     const longRecent = ema26.slice(-5);
     const shortSlope = shortRecent.length > 1 ? (shortRecent[shortRecent.length - 1] - shortRecent[0]) / shortRecent[0] * 100 : 0;
     const longSlope = longRecent.length > 1 ? (longRecent[longRecent.length - 1] - longRecent[0]) / longRecent[0] * 100 : 0;
-
-    // X-axis: Short-term pressure direction (left=downward, right=upward)
-    // Y-axis: Long-term baseline direction (bottom=weakening, top=strengthening)
-    const xPosition = Math.max(10, Math.min(90, 50 + shortSlope * 10));
-    const yPosition = Math.max(10, Math.min(90, 50 + longSlope * 10));
 
     // Determine signal labels
     const shortTermStatus = shortSlope > 0.5 ? 'Improving' : (shortSlope < -0.5 ? 'Weakening' : 'Flat');
@@ -1818,32 +1806,47 @@ export class AlphaVantageService {
     let label: string;
     let interpretation: string;
     let score: number;
+    let xPosition: number;
+    let yPosition: number;
+
+    // Quadrant zones (must match frontend QUADRANT_CONFIGS):
+    // topRight: Aligned (green) - both improving
+    // topLeft: Pullback (blue) - short weak, long strong
+    // bottomRight: Early Recovery (yellow) - short improving, long weak
+    // bottomLeft: Pressure Building (red) - both weak
 
     if (isPositive && isRising && histTrend > 0) {
+      // Aligned - topRight quadrant
       status = 'green';
       label = 'Aligned';
       interpretation = 'Short and long-term pressures are aligned and supportive.';
       score = 0.7;
+      xPosition = 70;
+      yPosition = 70;
     } else if (isPositive && !isRising) {
+      // Pullback - topLeft quadrant
       status = 'yellow';
       label = 'Pullback';
       interpretation = 'Short-term pressure against a positive baseline — often absorbed.';
       score = 0.3;
+      xPosition = 30;
+      yPosition = 70;
     } else if (!isPositive && isRising) {
+      // Early Recovery - bottomRight quadrant
       status = 'yellow';
       label = 'Early Recovery';
       interpretation = 'Short-term improving while long-term still weak — early but unconfirmed.';
       score = 0.1;
-    } else if (!isPositive && avgHist < 0 && histTrend < 0) {
+      xPosition = 70;
+      yPosition = 30;
+    } else {
+      // Pressure Building - bottomLeft quadrant (catches all other cases including former "Transitioning")
       status = 'red';
       label = 'Pressure Building';
       interpretation = 'Both time frames under pressure — conditions are intensifying.';
-      score = -0.7;
-    } else {
-      status = 'yellow';
-      label = 'Transitioning';
-      interpretation = 'Pressure is shifting — waiting for clarity.';
-      score = -0.2;
+      score = -0.5;
+      xPosition = 30;
+      yPosition = 30;
     }
 
     return { 
@@ -1870,10 +1873,14 @@ export class AlphaVantageService {
     const isReturningToBalance = (rsi > 50 && rsiChange < 0) || (rsi < 50 && rsiChange > 0);
     const isMovingAway = (rsi > 50 && rsiChange > 0) || (rsi < 50 && rsiChange < 0);
 
-    // Distance from balance (normalized 0-100 scale, where 0=near balance)
+    // Distance from balance (normalized percentage)
     const distanceNormalized = Math.abs(priceDistFromEma);
     
-    // Determine signal labels
+    // Distance thresholds for quadrant zones
+    const isHighDistance = distanceNormalized > 5;  // Far from balance (right side)
+    const isLowDistance = distanceNormalized <= 5;  // Near balance (left side)
+    
+    // Determine signal labels for display
     const distanceLevel = distanceNormalized > 6 ? 'High' : (distanceNormalized > 3 ? 'Moderate' : 'Low');
     const directionLabel = isReturningToBalance ? 'Returning' : (isMovingAway ? 'Moving away' : 'Stable');
 
@@ -1884,55 +1891,48 @@ export class AlphaVantageService {
     let xPosition: number;
     let yPosition: number;
 
-    // Determine the signal status and label first, then set position to match the quadrant
-    if (rsi > 70 || priceDistFromEma > 8) {
+    // Quadrant zones (must match frontend QUADRANT_CONFIGS):
+    // X-axis: Distance from Balance (left=near, right=far)
+    // Y-axis: Direction (bottom=moving away, top=returning/stable)
+    // topLeft: Calm (green) - near balance, stable/returning
+    // topRight: Tension Easing (blue) - far distance, returning
+    // bottomLeft: Drifting (neutral/yellow) - near balance, moving away
+    // bottomRight: Tension Rising (red) - far distance, moving away
+
+    if (isHighDistance && !isReturningToBalance) {
       // Tension Rising (red) - bottomRight: far distance, moving away
       status = 'red';
       label = 'Tension Rising';
-      interpretation = 'Price appears stretched above equilibrium — tension is elevated.';
-      score = -0.6;
-      xPosition = 70 + Math.min(20, distanceNormalized * 2);
-      yPosition = 25;
-    } else if (rsi < 30 || priceDistFromEma < -8) {
-      // Tension Rising (red) - bottomRight: far distance, moving away
-      status = 'red';
-      label = 'Tension Rising';
-      interpretation = 'Price appears stretched below equilibrium — potential snap-back.';
-      score = -0.4;
-      xPosition = 70 + Math.min(20, distanceNormalized * 2);
-      yPosition = 25;
-    } else if ((rsi > 60 || priceDistFromEma > 4) && !isReturningToBalance) {
-      // Drifting (neutral) - bottomLeft: near balance, moving away
-      status = 'yellow';
-      label = 'Drifting';
-      interpretation = 'Price is moving away from equilibrium — some tension present.';
-      score = 0.1;
-      xPosition = 25 + Math.min(20, distanceNormalized * 3);
+      interpretation = priceDistFromEma > 0 
+        ? 'Price appears stretched above equilibrium — tension is elevated.'
+        : 'Price appears stretched below equilibrium — potential snap-back.';
+      score = -0.5;
+      xPosition = 70;
       yPosition = 30;
-    } else if ((rsi < 40 || priceDistFromEma < -4) && !isReturningToBalance) {
-      // Drifting (neutral) - bottomLeft: near balance, moving away
-      status = 'yellow';
-      label = 'Drifting';
-      interpretation = 'Price is below equilibrium and moving further.';
-      score = 0.1;
-      xPosition = 25 + Math.min(20, distanceNormalized * 3);
-      yPosition = 30;
-    } else if (isReturningToBalance && distanceNormalized > 3) {
+    } else if (isHighDistance && isReturningToBalance) {
       // Tension Easing (blue) - topRight: far distance, returning
       status = 'yellow';
       label = 'Tension Easing';
       interpretation = 'Price is stretched but returning toward balance — tension is cooling.';
       score = 0.3;
-      xPosition = 60 + Math.min(25, distanceNormalized * 3);
+      xPosition = 70;
       yPosition = 70;
+    } else if (isLowDistance && isMovingAway) {
+      // Drifting (neutral) - bottomLeft: near balance, moving away
+      status = 'yellow';
+      label = 'Drifting';
+      interpretation = 'Price is near balance but drifting away — low conviction movement.';
+      score = 0.1;
+      xPosition = 30;
+      yPosition = 30;
     } else {
       // Calm (green) - topLeft: near balance, stable/returning
       status = 'green';
       label = 'Calm';
       interpretation = 'Price is near equilibrium — balanced conditions.';
       score = 0.5;
-      xPosition = 20 + Math.min(25, distanceNormalized * 5);
-      yPosition = 75;
+      xPosition = 30;
+      yPosition = 70;
     }
 
     return { 
