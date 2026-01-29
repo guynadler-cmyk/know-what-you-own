@@ -1,0 +1,203 @@
+Timing (TA) is deployed in the main app but not published. Design is good. Two remaining issues:
+
+Timeframe mismatch causes users to compare Weekly-vs-Daily unknowingly and think we’re wrong.
+
+Chip-to-conclusion mismatch: the conclusion label sometimes doesn’t follow from the chips shown.
+
+This task is an edit to existing work, not a rebuild. Keep UI structure, cards, and data fetching unless explicitly required.
+
+Part A — Timeframe Toggle (Option C)
+1) Add timeframe toggle (copy exactly)
+
+Near Timing header/alignment bar, add a two-option toggle:
+
+Weekly (less sensitive)
+
+Daily (earlier signals)
+
+Default: Weekly.
+
+Helper microcopy under the toggle:
+
+“Weekly smooths noise. Daily reacts sooner — and may shift more often.”
+
+Always display a small pill near the alignment bar:
+
+“Timing timeframe: Weekly”
+
+“Timing timeframe: Daily”
+
+Persist selection in localStorage (no login).
+
+2) Timeframe drives all Timing outputs
+
+Switching timeframe must update coherently:
+
+Trend / Momentum / Stretch results
+
+chips, quadrant dot, explanation copy
+
+alignment score & verdict
+
+No mixed states.
+
+3) Consistent series + indicator definitions
+
+For each timeframe:
+
+Use one consistent close series policy (adjusted or unadjusted) across everything.
+
+Prefer computing indicators locally from the selected bar series for parity.
+
+Definitions:
+
+RSI(14) Wilder
+
+MACD(12,26,9) EMA
+
+EMA slopes used for momentum must come from the same timeframe series.
+
+Add/extend “Show Debug” drawer (internal) showing:
+
+timeframe, last bar timestamp, series type
+
+RSI latest + recent delta
+
+MACD line/signal/hist latest + recent delta
+
+slopes used for classification
+
+Part B — Make Conclusions “Follow From” Chips (No Contradictions)
+Core rule
+
+The headline label + quadrant position must be derivable from the chips.
+If chips say “short-term weakening” and “long-term weakening,” the label cannot imply recovery/alignment.
+
+4) Refactor classification so chips and label share the same primitives
+
+For each card, define:
+
+Primitive metrics (computed values)
+
+Chips (simple qualitative states derived from primitives)
+
+Conclusion label (a deterministic mapping from the chips)
+
+Do NOT create label logic separate from chip logic.
+
+Trend mapping (Structure Quality)
+
+Primitives (timeframe-specific):
+
+highs progression score (higher highs vs lower highs)
+
+lows progression score (higher lows vs lower lows)
+
+Chips:
+
+“Highs: strengthening / weakening / mixed”
+
+“Lows: strengthening / weakening / mixed”
+
+Conclusion label mapping:
+
+highs strengthening + lows strengthening → “Strengthening structure”
+
+highs weakening + lows weakening → “Weakening structure”
+
+lows strengthening + highs mixed/weakening → “Stabilizing”
+
+highs strengthening + lows mixed/weakening → “Breakout attempt”
+
+mixed/mixed → “Unresolved”
+
+Quadrant dot must match those two axes.
+
+Momentum mapping (Pressure Balance)
+
+This is where mismatch is currently worst.
+
+Primitives:
+
+short-term pressure direction (short EMA slope OR MACD line slope)
+
+long-term baseline direction (long EMA slope)
+
+pressure change (gap widening vs narrowing: EMA spread change OR MACD histogram change)
+
+Chips (must be derived directly from these):
+
+“Short-term pressure: improving / weakening / flat”
+
+“Long-term baseline: improving / weakening / flat”
+
+“Pressure gap: widening / narrowing / flat” (optional but recommended if needed to disambiguate)
+
+Conclusion label mapping (deterministic):
+
+short improving + long improving → “Aligned”
+
+short weakening + long improving → “Pullback (absorbing)”
+
+short improving + long weakening → “Early shift”
+
+short weakening + long weakening → “Pressure building”
+
+any case where chips conflict/flat → “Mixed”
+
+Important constraint:
+
+“Early shift” (or “Early recovery”) may only be used when short-term is improving while long-term is still weak AND gap is narrowing.
+
+If both chips are “weakening,” label must NOT be early shift/recovery.
+
+Rename labels if needed to keep tone sensible (avoid trader-y).
+
+Stretch mapping (Distance from Balance)
+
+This appears to be wrong in your AI example.
+
+Primitives:
+
+distance from balance (use RSI distance from 50, or your existing normalized stretch metric)
+
+direction toward/away from balance (based on recent change)
+
+Chips:
+
+“Distance: low / moderate / high”
+
+“Direction: returning / moving away / flat”
+
+Conclusion label mapping:
+
+high + moving away → “Tension rising”
+
+high/moderate + returning → “Tension easing”
+
+low + flat/returning → “Calm”
+
+low/moderate + flat → “Drifting”
+
+Ensure a low RSI (e.g., ~31) cannot yield “Distance: Low.”
+(With RSI distance-from-50 approach, abs(31-50)=19 → High.)
+
+5) UX consistency
+
+Chips should always explain the label.
+
+If label uses a concept, it must appear in chips (e.g., “gap narrowing”).
+
+Quadrant dot must reflect the same axes the chips describe.
+
+Acceptance Criteria
+
+Weekly/Daily toggle works and is obvious (Option C copy).
+
+Debug confirms indicators are computed per timeframe with consistent series.
+
+For Momentum and Stretch, label is always logically consistent with chips.
+
+The AI example no longer shows “Calm/Distance Low” if RSI is far from balance.
+
+Users can read chips → understand label without trust gaps.
