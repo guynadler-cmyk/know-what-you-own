@@ -1,0 +1,202 @@
+Context
+We already have the TA “Assess Timing Conditions” stage deployed in the main app (not published yet). This task is to refine the Stretch (RSI) logic and its chips + summary, keeping the current “template” design (selectable cards at top + 2-column layout with quadrant visual on left, explanation on right).
+
+Goal
+
+Stretch must clearly convey (1) where we are (oversold/neutral/overbought) and (2) what is happening now (tension rising/easing/stalling) in a way that makes sense to retail investors (without needing RSI knowledge).
+
+Key changes
+
+Add explicit RSI territory handling
+Stretch currently lacks explicit “oversold/overbought” territory meaning. Add it.
+
+Add directionality
+Stretch must include direction that actually matters:
+
+Are we moving toward balance or away from balance?
+
+If we are in oversold/overbought, is tension easing or intensifying?
+
+Stop using “direction: moving away/returning” alone
+That text can apply in both up and down contexts and confuses users. Instead, direction should be presented as tension rising vs easing vs stalling, with a secondary “toward/away from balance” only when it’s helpful.
+
+Implementation Spec
+1) Data inputs (no new APIs required)
+
+Use whatever price series you already have for RSI (weekly default; daily exists or will be added later). For this change, work with the current timeframe (whatever the app is currently using) and compute:
+
+rsiNow = latest RSI value
+
+rsiPrev = previous RSI value
+
+rsiAvg3Now = average of last 3 RSI values (or a small smoothing window you already use)
+
+rsiAvg3Prev = average of the 3 values prior to the last 3 (or simply average ending at t-1)
+
+delta = rsiAvg3Now - rsiAvg3Prev (preferred)
+If you don’t have both averages easily, fallback to rsiNow - rsiPrev.
+
+Also compute distance-to-balance for neutral-case:
+
+distNow = abs(rsiNow - 50)
+
+distPrev = abs(rsiPrev - 50) (or abs(rsiAvg3Prev - 50) if using smoothing)
+
+2) Add hysteresis / stability guardrails (to prevent flip-flops)
+
+We don’t want zone flipping when RSI kisses the boundary.
+
+Use one of these approaches (choose one, simplest is A):
+
+A) Hysteresis thresholds
+
+Enter Oversold when RSI ≤ 30, exit Oversold only when RSI ≥ 35
+
+Enter Overbought when RSI ≥ 70, exit Overbought only when RSI ≤ 65
+
+Otherwise Neutral
+
+OR B) Two-period confirmation
+
+Oversold only if RSI ≤ 30 for 2 consecutive periods
+
+Overbought only if RSI ≥ 70 for 2 consecutive periods
+
+Pick one and apply consistently.
+
+3) Stretch outputs (chips + summary) — new schema
+
+Stretch should output these fields:
+
+Chip A: Zone
+
+Oversold / Neutral / Overbought
+
+Chip B: Tension
+
+Retail-facing interpretation:
+
+In Oversold:
+
+delta > +threshold → Easing (Rebounding)
+
+delta < -threshold → Rising (Digging deeper)
+
+else → Stalling
+
+In Overbought:
+
+delta < -threshold → Easing (Cooling)
+
+delta > +threshold → Rising (Heating up)
+
+else → Stalling
+
+In Neutral:
+
+distNow < distPrev by threshold → Easing (Returning)
+
+distNow > distPrev by threshold → Rising (Moving away)
+
+else → Stalling / Drifting
+
+Set a reasonable threshold to avoid noise (e.g., 1–3 RSI points depending on timeframe). If weekly, threshold can be smaller; if daily, slightly larger.
+
+Optional Chip C (only if it fits nicely without clutter)
+
+Balance proximity: Low / Medium / High (based on distNow bands)
+This is optional; only include if it improves clarity.
+
+4) Update the Stretch quadrant visual to reflect Zone + Tension
+
+Keep the same “2x2 quadrant” visual style used in other parts of the product, but make it semantically match:
+
+X-axis: Distance from Balance (Low → High)
+
+Y-axis: Tension Direction (Easing/Returning → Rising/Away)
+
+Quadrants should be labeled like:
+
+Calm (low distance, easing)
+
+Tension Easing (high distance, easing)
+
+Tension Rising (high distance, rising)
+
+Drifting (low distance, rising/away) — or rename to something clearer
+
+The dot position:
+
+X position driven by distNow normalized
+
+Y position driven by tension direction (easing vs rising), with stalling near middle
+
+Also: add subtle tooltip/info icon definitions (consistent with the app), so users can understand dot meaning in guided view.
+
+5) Rewrite the Stretch summary to match chips (no jargon)
+
+The summary must be directly supported by chips and understandable without RSI knowledge.
+
+Examples of mapping rules:
+
+Oversold + Easing → “Price tension is high but easing — early stabilization signs.”
+
+Oversold + Rising → “Price tension is high and still rising — may need more time to stabilize.”
+
+Overbought + Rising → “Price is stretched and still heating up — strong run, but reversal risk rises if it stalls.”
+
+Overbought + Easing → “Price is stretched but cooling — momentum may be fading; consider protecting gains.”
+
+Neutral + Easing → “Near balance and stabilizing — conditions look calmer.”
+
+Neutral + Rising → “Drifting away from balance — tension is building.”
+
+Avoid “buy/sell/entry” wording. Use your house language: watch / monitor / protect / patience / stabilization.
+
+6) Guided view meaning (fix current misalignment)
+
+Guided view currently mostly hides the question but doesn’t teach the visuals.
+
+When Guided view = ON:
+
+Show a short “How to read this” helper inside the Stretch panel:
+
+what the dot means
+
+what the axes mean
+
+what “Zone” means (with the 30/70 mental model)
+
+what “Tension” means (easing vs rising)
+
+Keep it very compact (like the other sections’ guided explanations).
+
+Tooltips on chips should be more explicit in guided view.
+
+When Guided view = OFF:
+
+Hide the extra helper content, but keep core chips + summary.
+
+No user login exists, so assume “first view” every time; default guided view can be ON.
+
+Acceptance tests (must pass)
+
+Oversold scenario: RSI 28 → Zone shows Oversold; Tension reflects delta direction; summary aligns.
+
+Overbought scenario: RSI 74 → Zone shows Overbought; Tension reflects delta direction; summary aligns.
+
+Neutral drifting: RSI ~50, dist increasing vs decreasing changes Tension properly.
+
+No flip-flop: RSI bouncing 29–32 should not toggle zone every period (hysteresis/confirmation works).
+
+UI consistency: Stretch card + quadrant + right-side explanation matches the existing template layout and styling.
+
+Deliverables
+
+Update Stretch logic + chips + summary mapping as above
+
+Update Stretch quadrant visualization to reflect Zone + Tension
+
+Implement guided-view helper text + tooltips for the visual/chips in Stretch
+
+Keep everything else unchanged
