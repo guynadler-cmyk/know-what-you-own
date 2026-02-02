@@ -2008,8 +2008,8 @@ export class AlphaVantageService {
       score,
       position: { x: rsiPosition, y: 50 }, // Y is unused for horizontal band
       signals: [
-        { label: 'Zone', value: zone },
-        { label: 'Direction', value: direction }
+        { label: 'RSI', value: zone },
+        { label: 'RSI trend', value: direction }
       ],
       zone,
       direction,
@@ -2373,8 +2373,8 @@ export class AlphaVantageService {
       score,
       position: { x: xPosition, y: yPosition },
       signals: [
-        { label: 'Distance from balance', value: distanceLevel },
-        { label: 'Direction', value: directionLabel }
+        { label: 'RSI', value: distanceLevel },
+        { label: 'RSI trend', value: directionLabel }
       ]
     };
   }
