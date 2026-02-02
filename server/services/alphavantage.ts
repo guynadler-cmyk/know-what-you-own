@@ -2011,20 +2011,20 @@ export class AlphaVantageService {
       interpretation = 'Losses have dominated lately, but that pressure is easing — rebounds become more likely.';
       score = 0.4;
     } else if (isLossDominant && isHeating) {
-      // Balanced but loss-leaning, heating
-      status = 'yellow';
+      // Balanced but loss-leaning, heating (red to match quadrant zone)
+      status = 'red';
       label = 'Still sliding';
       interpretation = 'Conditions lean toward losses and pressure is intensifying — stay alert.';
       score = -0.1;
     } else if (!isLossDominant && isCooling) {
-      // Win-leaning, cooling
+      // Win-leaning, cooling (yellow to match quadrant zone)
       status = 'yellow';
       label = 'Cooling off';
       interpretation = 'Wins have dominated lately, but momentum is easing — pullback risk is rising.';
       score = 0.2;
     } else if (!isLossDominant && isHeating) {
-      // Win-leaning, heating
-      status = 'yellow';
+      // Win-leaning, heating (red to match quadrant zone)
+      status = 'red';
       label = 'Overheating';
       interpretation = 'Conditions are heating — risk of overextension increasing.';
       score = -0.1;
@@ -2038,11 +2038,13 @@ export class AlphaVantageService {
 
     // Quadrant position per spec
     // X: RSI 0-100 maps directly (RSI=50 is centered)
-    // Y: Cooling = top (25%), Flat = middle (50%), Heating = bottom (75%)
+    // Y: Frontend inverts with (100 - y), so we need:
+    //    Cooling = top → y=75 (100-75=25% from top = TOP)
+    //    Heating = bottom → y=25 (100-25=75% from top = BOTTOM)
     const xPosition = Math.max(0, Math.min(100, currentRsi));
     let yPosition = 50;
-    if (pressureShift === 'Cooling') yPosition = 25;
-    else if (pressureShift === 'Heating') yPosition = 75;
+    if (pressureShift === 'Cooling') yPosition = 75;
+    else if (pressureShift === 'Heating') yPosition = 25;
 
     return {
       status,
