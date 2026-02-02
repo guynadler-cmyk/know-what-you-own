@@ -1,0 +1,241 @@
+You are editing the existing Timing/TA stage in our app (the Trend/Momentum/Stretch tabbed layout + quadrant cards). Do not rewrite the page from scratch. Keep the current layout, styling system, components, and data flow. We are only redesigning the Stretch visualization + copy + chip logic so it becomes intuitive, consistent with the other quadrants, and faithful to RSI.
+
+Goal
+
+Rebuild Stretch so a retail investor can understand it immediately without already knowing RSI, while still being technically correct.
+
+We want Stretch to communicate:
+
+State (how one-sided price action has been lately)
+
+Hint to direction (is it becoming more one-sided or easing back toward balance)
+
+Practical investor takeaway (more “watch / prepare / consider trimming” vs vague language)
+
+Key concept (must guide UI + copy)
+
+Explain RSI like this:
+
+“RSI is a ‘who’s winning lately?’ scoreboard. Over the last ~14 periods, up moves are ‘wins’ and down moves are ‘losses’. Bigger moves score more. RSI compares the average size of wins vs losses.
+High RSI means wins have dominated lately; low RSI means losses have dominated.”
+
+Overbought / Oversold should be the primary words. Avoid “Zone”, “Softening”, “Direction: Falling”, etc.
+
+A) Stretch card — keep the quadrant pattern
+1) Layout / consistency requirements
+
+Keep the same two-column quadrant + explanation panel layout as Trend and Momentum.
+
+Keep the same “tab-like” summary cards above (Trend / Momentum / Stretch) and selection behavior.
+
+Keep the same general colors / rounded card style, same spacing, same typography.
+
+Keep “Go deeper” affordance consistent.
+
+2) Replace the current Stretch visualization with a quadrant that matches our design system
+
+We want a 2x2 quadrant (like the other sections), but with RSI-driven axes:
+
+Axes
+
+X-axis: “One-sidedness (RSI level)”
+
+Left side represents Loss-dominant conditions (RSI < 50)
+
+Right side represents Win-dominant conditions (RSI > 50)
+
+The axis should visually indicate the important landmarks:
+
+Oversold threshold: 30
+
+Balance center: 50
+
+Overbought threshold: 70
+
+Don’t show raw numbers as the main thing, but subtle tick labels “30 / 50 / 70” are ok.
+
+Y-axis: “Pressure shift (heating vs cooling)”
+
+Top = Cooling toward balance (one-sidedness is easing)
+
+Bottom = Heating away from balance (one-sidedness is intensifying)
+
+The key is relative to balance, not “RSI up/down” in isolation.
+
+Quadrant labels (must be plain English, investor-intuitive)
+
+Use these exact 4 labels (or extremely close):
+
+Top-left (Loss-dominant + Cooling): “Bounce setup”
+
+Bottom-left (Loss-dominant + Heating): “Still sliding”
+
+Top-right (Win-dominant + Cooling): “Cooling off”
+
+Bottom-right (Win-dominant + Heating): “Overheating”
+
+These labels should be visible in the quadrant the way other sections show labels (subtle but readable).
+
+Dot position
+
+The dot should reflect current RSI and current heating/cooling:
+
+X position maps from RSI value (0–100) across the quadrant width. Ensure that RSI=50 is centered.
+
+Y position maps from a “heating/cooling score” described below.
+
+Keep the dot styling consistent with other quadrants (teal ring + filled center, etc.).
+
+B) Stretch chips — make them RSI-native and meaningful
+
+Replace the current Stretch chips with exactly these two chips (and an optional third “context” chip):
+
+Chip 1: RSI Level
+
+Label: “RSI: Oversold / Balanced / Overbought”
+
+Oversold: RSI <= 30
+
+Overbought: RSI >= 70
+
+Balanced: 30 < RSI < 70
+
+Color: Oversold/Overbought should look like “attention / caution” states; Balanced should look calm/neutral.
+
+Chip 2: Pressure shift
+
+Label: “Pressure: Heating / Cooling / Flat”
+This describes whether RSI is moving toward balance (50) or away from balance (more one-sided).
+
+Optional Chip 3: Investor context
+
+Label should be something like “Investor cue” with one of:
+
+“Prepare to buy (early)” when Oversold + Cooling
+
+“Wait” when Oversold + Heating
+
+“Prepare to trim” when Overbought + Cooling
+
+“Caution” when Overbought + Heating
+
+For Balanced: usually “Neutral” unless pressure is strongly Heating or Cooling (then “Watch”).
+
+If adding this third chip makes the UI too busy, keep it for the “details panel” text instead.
+
+Important: Never use “Zone” or “Direction” terminology in Stretch.
+
+C) Compute “Heating vs Cooling” correctly (deterministic + explainable)
+
+Implement a deterministic method so results always line up with the chips and summary:
+
+Inputs
+
+RSI series (same timeframe user selected: default weekly, optional daily if already implemented)
+
+Use the standard RSI lookback already used (likely 14). Keep existing RSI calc if correct.
+
+Derived values
+
+Distance from balance: d = RSI - 50
+
+Change in distance: compare now vs a short lookback (e.g., 3 periods):
+
+d_now = RSI_now - 50
+
+d_prev = RSI_prev - 50 (prev = N periods ago, e.g., 3)
+
+delta = abs(d_now) - abs(d_prev)
+
+Classify pressure shift
+
+If delta > +threshold => Heating (moving away from balance)
+
+If delta < -threshold => Cooling (moving toward balance)
+
+Else => Flat
+
+Pick a reasonable threshold so it doesn’t flip constantly (e.g., 1–3 RSI points depending on timeframe). Weekly should be less noisy; daily might need a slightly higher threshold.
+
+Y-position mapping
+
+Use delta (or a smoothed version) to place the dot vertically:
+
+Cooling => dot above center line
+
+Heating => dot below center line
+
+Flat => near center
+
+Clamp extremes so the dot stays within the quadrant.
+
+This ensures “heating/cooling” is mathematically tied to “one-sidedness intensifying/easing”.
+
+D) Replace Stretch summary text so it can’t contradict chips
+
+The Stretch panel headline + summary sentence must be generated from chip outcomes (not ad-hoc phrasing).
+
+Title format
+
+Stretch
+Status pill should be one of:
+
+Bounce setup
+
+Still sliding
+
+Cooling off
+
+Overheating
+
+Neutral (only when very close to balance AND Flat)
+
+Summary sentence (examples; build exact mapping)
+
+Oversold + Cooling: “Losses have dominated lately, but that pressure is easing — rebounds become more likely.”
+
+Oversold + Heating: “Losses are still dominating and intensifying — patience may be warranted.”
+
+Overbought + Cooling: “Wins have dominated lately, but momentum is easing — pullback risk is rising.”
+
+Overbought + Heating: “Wins are dominating and intensifying — conditions look stretched and fragile.”
+
+Balanced + Cooling/Heating: “Conditions are near balance, but pressure is [heating/cooling] — stay alert.”
+
+No vague words like “softening”. Always connect the meaning back to wins vs losses dominance.
+
+E) Guided view needs to teach the visuals (not remove the question only)
+
+We previously mis-implemented Guided view. Fix Stretch so Guided view actually helps:
+
+When Guided view = ON
+
+Show a compact “How to read this” box inside Stretch (consistent style with the rest of the app), with 3 bullets max:
+
+RSI = scoreboard: “High = wins dominated lately. Low = losses dominated.”
+
+Left vs right: “Left = losses dominating. Right = wins dominating.”
+
+Top vs bottom: “Top = pressure easing back toward balance. Bottom = pressure intensifying.”
+
+When Guided view = OFF
+
+Hide that box entirely (keep only the quadrant + chips + summary).
+
+Do NOT remove the main question header above the card as the only Guided view change — Guided view must explain the visual encoding.
+
+F) Acceptance checks (must pass)
+
+Stretch uses the same quadrant pattern as Trend/Momentum (2x2 grid + dot + labeled regions).
+
+Chips are RSI-native: RSI Level + Pressure (and optional investor cue). No “Zone”.
+
+Summary never contradicts chips (derive from deterministic mapping).
+
+Overbought/oversold is explicitly supported:
+
+Oversold can imply “prepare to buy (early)” only when cooling.
+
+Overbought can imply “prepare to trim” only when cooling.
+
+Guided view actually teaches what the dot and axes mean.

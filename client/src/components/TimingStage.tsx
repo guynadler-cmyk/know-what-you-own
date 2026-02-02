@@ -70,25 +70,25 @@ function getChipStyle(label: string, value: string): { bg: string; text: string;
   const labelLower = label.toLowerCase();
   const valueLower = value.toLowerCase();
   
-  // RSI chip (Oversold/Neutral/Overbought) - spec: do not use word "Zone"
+  // RSI chip (Oversold/Balanced/Overbought) - spec: do not use word "Zone"
   if (labelLower === 'rsi') {
     switch (valueLower) {
       case 'oversold':
         return { bg: "bg-red-500/10", text: "text-red-700 dark:text-red-400", Icon: TrendingDown };
       case 'overbought':
         return { bg: "bg-orange-500/10", text: "text-orange-700 dark:text-orange-400", Icon: TrendingUp };
-      default: // Neutral
+      default: // Balanced
         return { bg: "bg-blue-500/10", text: "text-blue-700 dark:text-blue-400", Icon: Activity };
     }
   }
   
-  // RSI trend chip (Rising/Falling/Flat) - investor-native language
-  if (labelLower === 'rsi trend') {
+  // Pressure chip (Heating/Cooling/Flat) - investor-native language
+  if (labelLower === 'pressure') {
     switch (valueLower) {
-      case 'rising':
-        return { bg: "bg-green-500/10", text: "text-green-700 dark:text-green-400", Icon: TrendingUp };
-      case 'falling':
-        return { bg: "bg-red-500/10", text: "text-red-700 dark:text-red-400", Icon: TrendingDown };
+      case 'cooling':
+        return { bg: "bg-blue-500/10", text: "text-blue-700 dark:text-blue-400", Icon: TrendingDown };
+      case 'heating':
+        return { bg: "bg-red-500/10", text: "text-red-700 dark:text-red-400", Icon: TrendingUp };
       default: // Flat
         return { bg: "bg-yellow-500/10", text: "text-yellow-700 dark:text-yellow-400", Icon: Activity };
     }
@@ -97,7 +97,7 @@ function getChipStyle(label: string, value: string): { bg: string; text: string;
   const isPositive = valueLower.includes("improving") || valueLower.includes("strengthening") || 
                      valueLower.includes("returning") || valueLower.includes("low") || 
                      valueLower.includes("calm") || valueLower.includes("narrowing") ||
-                     valueLower.includes("easing");
+                     valueLower.includes("easing") || valueLower.includes("cooling");
   
   return isPositive 
     ? { bg: "bg-green-500/10", text: "text-green-700 dark:text-green-400", Icon: TrendingUp }
@@ -127,20 +127,22 @@ const QUADRANT_CONFIGS: Record<string, Omit<TimingQuadrantConfig, 'position' | '
       bottomLeft: { label: "Pressure Building", color: "red", tooltip: "Both time frames moving lower — pressure is intensifying." },
     },
   },
-  // Stretch quadrant: X = RSI Level (Oversold/Overbought), Y = RSI Direction (Cooling/Heating)
+  // Stretch quadrant: X = One-sidedness (RSI level), Y = Pressure shift (heating vs cooling)
+  // Left = Loss-dominant (RSI < 50), Right = Win-dominant (RSI > 50)
+  // Top = Cooling toward balance, Bottom = Heating away from balance
   stretch: {
     id: "stretch",
-    xLabel: "Oversold ← RSI Level → Overbought",
-    yLabel: "Heating ↓ RSI Direction ↑ Cooling",
+    xLabel: "One-sidedness (RSI level)",
+    yLabel: "Pressure shift (heating vs cooling)",
     zones: {
-      // Top-left: Oversold + Cooling (RSI low + falling) = Still falling
-      topLeft: { label: "Still falling", color: "red", tooltip: "Oversold and still weakening — don't front-run, wait for stabilization." },
-      // Top-right: Overbought + Cooling (RSI high + falling) = Cooling off
-      topRight: { label: "Cooling off", color: "blue", tooltip: "Overbought but cooling — pullback risk easing, profit-taking may be winding down." },
-      // Bottom-left: Oversold + Heating (RSI low + rising) = Rebound setup
-      bottomLeft: { label: "Rebound setup", color: "green", tooltip: "Oversold and improving — potential support forming, early signs of recovery." },
-      // Bottom-right: Overbought + Heating (RSI high + rising) = Overheating
-      bottomRight: { label: "Overheating", color: "yellow", tooltip: "Overbought and still heating — risk of pullback rising." },
+      // Top-left (Loss-dominant + Cooling): "Bounce setup" - rebounds more likely
+      topLeft: { label: "Bounce setup", color: "green", tooltip: "Losses have dominated lately, but pressure is easing — rebounds become more likely." },
+      // Bottom-left (Loss-dominant + Heating): "Still sliding" - patience warranted
+      bottomLeft: { label: "Still sliding", color: "red", tooltip: "Losses are still dominating and intensifying — patience may be warranted." },
+      // Top-right (Win-dominant + Cooling): "Cooling off" - pullback risk rising
+      topRight: { label: "Cooling off", color: "blue", tooltip: "Wins have dominated lately, but momentum is easing — pullback risk is rising." },
+      // Bottom-right (Win-dominant + Heating): "Overheating" - stretched and fragile
+      bottomRight: { label: "Overheating", color: "yellow", tooltip: "Wins are dominating and intensifying — conditions look stretched and fragile." },
     },
   },
 };
@@ -154,7 +156,7 @@ const METRIC_TITLES: Record<TimingMetricType, string> = {
 const METRIC_SIGNALS: Record<TimingMetricType, [string, string]> = {
   trend: ["Recent highs", "Recent lows"],
   momentum: ["Short-term", "Long-term"],
-  stretch: ["RSI", "RSI trend"],
+  stretch: ["RSI", "Pressure"],
 };
 
 function TimingIntroBlock() {
@@ -372,14 +374,14 @@ interface SignalTagProps {
 
 const STRETCH_CHIP_TOOLTIPS: Record<string, Record<string, string>> = {
   RSI: {
-    Oversold: "Price has fallen sharply and may be due for stabilization.",
-    Neutral: "Price is in balanced territory — not stretched.",
-    Overbought: "Price has risen sharply and may be extended.",
+    Oversold: "Losses have dominated lately — price may be due for stabilization.",
+    Balanced: "Neither wins nor losses have dominated — near equilibrium.",
+    Overbought: "Wins have dominated lately — price may be extended.",
   },
-  "RSI trend": {
-    Rising: "Conditions are heating — pressure is building.",
-    Falling: "Conditions are cooling — pressure is easing.",
-    Flat: "No clear directional change.",
+  Pressure: {
+    Heating: "One-sidedness is intensifying — moving away from balance.",
+    Cooling: "One-sidedness is easing — returning toward balance.",
+    Flat: "No clear pressure change — staying near current level.",
   },
 };
 
@@ -426,13 +428,21 @@ interface StretchGuidedHelperProps {
 }
 
 function StretchGuidedHelper({ rsiLevel, rsiTrend }: StretchGuidedHelperProps) {
-  // Short 2-3 lines per spec for Guided View
-  // Per spec: "Overbought/oversold shows how stretched price is. Rising/falling shows whether pressure is building or easing."
+  // "How to read this" box with 3 bullets per spec
+  // RSI = scoreboard: High = wins dominated, Low = losses dominated
+  // Left vs right: Left = losses dominating, Right = wins dominating
+  // Top vs bottom: Top = pressure easing toward balance, Bottom = pressure intensifying
   return (
-    <div className="text-sm text-muted-foreground space-y-1" data-testid="stretch-guided-helper">
-      <p>Overbought/oversold shows how stretched price is.</p>
-      <p>Rising/falling shows whether pressure is building or easing.</p>
-      <p className="italic">This helps decide patience vs action.</p>
+    <div 
+      className="bg-muted/40 rounded-lg p-4 border border-border/50 space-y-2"
+      data-testid="stretch-guided-helper"
+    >
+      <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">How to read this</p>
+      <ul className="text-sm text-muted-foreground space-y-1.5 list-disc list-inside">
+        <li><span className="font-medium text-foreground">RSI = scoreboard:</span> High = wins dominated lately. Low = losses dominated.</li>
+        <li><span className="font-medium text-foreground">Left vs right:</span> Left = losses dominating. Right = wins dominating.</li>
+        <li><span className="font-medium text-foreground">Top vs bottom:</span> Top = pressure easing toward balance. Bottom = pressure intensifying.</li>
+      </ul>
     </div>
   );
 }
@@ -451,26 +461,14 @@ function TimingDetailPanel({ type, signal, deepDive, chartData, guidedView }: Ti
   const position = signal.position || { x: 50, y: 50 };
   const apiSignals = signal.signals || [];
 
-  // Extract RSI and RSI trend for Stretch quadrant positioning
-  const stretchRsi = apiSignals.find(s => s.label === 'RSI')?.value || 'Neutral';
-  const stretchRsiTrend = apiSignals.find(s => s.label === 'RSI trend')?.value || 'Flat';
+  // Extract RSI and Pressure for Stretch quadrant positioning
+  const stretchRsi = apiSignals.find(s => s.label === 'RSI')?.value || 'Balanced';
+  const stretchPressure = apiSignals.find(s => s.label === 'Pressure')?.value || 'Flat';
   
-  // For Stretch quadrant: X = RSI Level (Oversold=left, Overbought=right), Y = RSI Direction (Rising=bottom, Falling=top)
-  // Map RSI level to X position: Oversold=25, Neutral=50, Overbought=75
-  // Map RSI trend to Y position: Rising=75 (bottom=heating), Falling=25 (top=cooling), Flat=50
-  const getStretchPosition = () => {
-    let x = 50;
-    if (stretchRsi === 'Oversold') x = 25;
-    else if (stretchRsi === 'Overbought') x = 75;
-    
-    let y = 50;
-    if (stretchRsiTrend === 'Rising') y = 75; // Heating = bottom
-    else if (stretchRsiTrend === 'Falling') y = 25; // Cooling = top
-    
-    return { x, y };
-  };
-  
-  const quadrantPosition = type === "stretch" ? getStretchPosition() : position;
+  // For Stretch quadrant: X = RSI level (0-100), Y = Pressure shift
+  // Backend sends actual RSI value as x-position (0-100), and y based on Heating/Cooling/Flat
+  // Use backend position directly for Stretch - it has the correct RSI-based coordinates
+  const quadrantPosition = position;
 
   return (
     <Card className="overflow-hidden" data-testid={`timing-detail-panel-${type}`}>
@@ -512,7 +510,7 @@ function TimingDetailPanel({ type, signal, deepDive, chartData, guidedView }: Ti
           {type === "stretch" && guidedView && (
             <StretchGuidedHelper 
               rsiLevel={stretchRsi}
-              rsiTrend={stretchRsiTrend}
+              rsiTrend={stretchPressure}
             />
           )}
           

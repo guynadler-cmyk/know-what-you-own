@@ -1913,103 +1913,146 @@ export class AlphaVantageService {
     direction: 'Rising' | 'Falling' | 'Flat';
     rsiValue: number;
   } {
-    // Direction: immediate RSI delta (current vs previous) per spec
-    const rsiDelta = currentRsi - prevRsi;
+    // RSI = "who's winning lately" scoreboard. High = wins dominated, Low = losses dominated.
+    // X-axis: One-sidedness (RSI level) - Left = Loss-dominant (<50), Right = Win-dominant (>50)
+    // Y-axis: Pressure shift - Top = Cooling (toward balance), Bottom = Heating (away from balance)
     
-    // Zone classification (simple thresholds per spec)
+    // RSI Level chip (Oversold/Balanced/Overbought) per spec
+    let rsiLevel: 'Oversold' | 'Balanced' | 'Overbought';
+    if (currentRsi <= 30) {
+      rsiLevel = 'Oversold';
+    } else if (currentRsi >= 70) {
+      rsiLevel = 'Overbought';
+    } else {
+      rsiLevel = 'Balanced';
+    }
+    
+    // For backwards compatibility, keep zone mapping
     let zone: 'Oversold' | 'Neutral' | 'Overbought';
-    if (currentRsi < 30) {
-      zone = 'Oversold';
-    } else if (currentRsi > 70) {
-      zone = 'Overbought';
+    if (currentRsi <= 30) zone = 'Oversold';
+    else if (currentRsi >= 70) zone = 'Overbought';
+    else zone = 'Neutral';
+    
+    // Calculate pressure shift: is RSI moving toward balance (cooling) or away (heating)?
+    // Use 3-period lookback for pressure change per spec
+    const lookbackPeriods = 3;
+    const recentRsi = rsiHistory.slice(-(lookbackPeriods + 1));
+    const lookbackRsi = recentRsi.length > lookbackPeriods ? recentRsi[0] : prevRsi;
+    
+    // Distance from balance (50)
+    const d_now = Math.abs(currentRsi - 50);
+    const d_prev = Math.abs(lookbackRsi - 50);
+    const delta = d_now - d_prev;
+    
+    // Threshold for flat detection (1 RSI point per spec)
+    const flatThreshold = 1;
+    
+    let pressureShift: 'Heating' | 'Cooling' | 'Flat';
+    if (delta > flatThreshold) {
+      pressureShift = 'Heating'; // Moving away from balance
+    } else if (delta < -flatThreshold) {
+      pressureShift = 'Cooling'; // Moving toward balance
     } else {
-      zone = 'Neutral';
+      pressureShift = 'Flat';
     }
     
-    // Direction classification - simple RSI slope per spec
-    // Uses 1-point threshold for "near-zero" (flat) per spec requirement
+    // Keep old direction for backwards compatibility
+    const rsiDelta = currentRsi - prevRsi;
     let direction: 'Rising' | 'Falling' | 'Flat';
-    if (rsiDelta > 1) {
-      direction = 'Rising';
-    } else if (rsiDelta < -1) {
-      direction = 'Falling';
-    } else {
-      direction = 'Flat';
-    }
+    if (rsiDelta > 1) direction = 'Rising';
+    else if (rsiDelta < -1) direction = 'Falling';
+    else direction = 'Flat';
 
-    // DETERMINISTIC MAPPING per spec: Zone × Direction → investor-friendly summary
+    // DETERMINISTIC MAPPING per spec
+    // Quadrant labels: "Bounce setup", "Still sliding", "Cooling off", "Overheating", "Neutral"
     let status: TimingSignalStatus;
     let label: string;
     let interpretation: string;
     let score: number;
+    
+    const isLossDominant = currentRsi < 50;
+    const isCooling = pressureShift === 'Cooling';
+    const isHeating = pressureShift === 'Heating';
 
-    if (zone === 'Oversold') {
-      if (direction === 'Rising') {
-        status = 'yellow';
-        label = 'Stabilizing';
-        interpretation = 'Selling pressure may be exhausting — watch for a rebound setup.';
-        score = 0.3;
-      } else if (direction === 'Falling') {
-        status = 'red';
-        label = 'Still weakening';
-        interpretation = 'Still weakening — wait for stabilization.';
-        score = -0.5;
-      } else {
-        status = 'yellow';
-        label = 'Holding low';
-        interpretation = 'Oversold and holding — watch for signs of direction.';
-        score = 0;
-      }
-    } else if (zone === 'Overbought') {
-      if (direction === 'Falling') {
-        status = 'yellow';
-        label = 'Cooling off';
-        interpretation = 'Cooling from an overheated zone — momentum may be easing.';
-        score = 0.2;
-      } else if (direction === 'Rising') {
-        status = 'red';
-        label = 'Running hot';
-        interpretation = 'Running hot — consider patience or trimming risk.';
-        score = -0.3;
-      } else {
-        status = 'yellow';
-        label = 'Holding high';
-        interpretation = 'Overbought and holding — extended conditions may persist or reverse.';
-        score = 0;
-      }
+    if (rsiLevel === 'Oversold' && isCooling) {
+      status = 'green';
+      label = 'Bounce setup';
+      interpretation = 'Losses have dominated lately, but that pressure is easing — rebounds become more likely.';
+      score = 0.5;
+    } else if (rsiLevel === 'Oversold' && isHeating) {
+      status = 'red';
+      label = 'Still sliding';
+      interpretation = 'Losses are still dominating and intensifying — patience may be warranted.';
+      score = -0.5;
+    } else if (rsiLevel === 'Oversold') {
+      status = 'yellow';
+      label = 'Bounce setup';
+      interpretation = 'Losses have dominated lately — watch for pressure to ease.';
+      score = 0.2;
+    } else if (rsiLevel === 'Overbought' && isCooling) {
+      status = 'yellow';
+      label = 'Cooling off';
+      interpretation = 'Wins have dominated lately, but momentum is easing — pullback risk is rising.';
+      score = 0.2;
+    } else if (rsiLevel === 'Overbought' && isHeating) {
+      status = 'red';
+      label = 'Overheating';
+      interpretation = 'Wins are dominating and intensifying — conditions look stretched and fragile.';
+      score = -0.3;
+    } else if (rsiLevel === 'Overbought') {
+      status = 'yellow';
+      label = 'Overheating';
+      interpretation = 'Wins have dominated lately — conditions may be extended.';
+      score = 0;
+    } else if (isLossDominant && isCooling) {
+      // Balanced but loss-leaning, cooling
+      status = 'green';
+      label = 'Bounce setup';
+      interpretation = 'Losses have dominated lately, but that pressure is easing — rebounds become more likely.';
+      score = 0.4;
+    } else if (isLossDominant && isHeating) {
+      // Balanced but loss-leaning, heating
+      status = 'yellow';
+      label = 'Still sliding';
+      interpretation = 'Conditions lean toward losses and pressure is intensifying — stay alert.';
+      score = -0.1;
+    } else if (!isLossDominant && isCooling) {
+      // Win-leaning, cooling
+      status = 'yellow';
+      label = 'Cooling off';
+      interpretation = 'Wins have dominated lately, but momentum is easing — pullback risk is rising.';
+      score = 0.2;
+    } else if (!isLossDominant && isHeating) {
+      // Win-leaning, heating
+      status = 'yellow';
+      label = 'Overheating';
+      interpretation = 'Conditions are heating — risk of overextension increasing.';
+      score = -0.1;
     } else {
-      // Neutral zone
-      if (direction === 'Rising') {
-        status = 'green';
-        label = 'Improving';
-        interpretation = 'Conditions improving — watch if momentum can sustain.';
-        score = 0.5;
-      } else if (direction === 'Falling') {
-        status = 'yellow';
-        label = 'Softening';
-        interpretation = 'Conditions softening — wait for clearer support.';
-        score = 0.1;
-      } else {
-        status = 'green';
-        label = 'Balanced';
-        interpretation = 'Holding near balance — stable conditions.';
-        score = 0.4;
-      }
+      // Balanced + Flat = Neutral
+      status = 'green';
+      label = 'Neutral';
+      interpretation = 'Conditions are near balance — neither stretched nor showing strong directional pressure.';
+      score = 0.3;
     }
 
-    // RSI band position (horizontal visual)
-    // Position represents where RSI is on the 0-100 scale, normalized to 0-100 for display
-    const rsiPosition = Math.max(0, Math.min(100, currentRsi));
+    // Quadrant position per spec
+    // X: RSI 0-100 maps directly (RSI=50 is centered)
+    // Y: Cooling = top (25%), Flat = middle (50%), Heating = bottom (75%)
+    const xPosition = Math.max(0, Math.min(100, currentRsi));
+    let yPosition = 50;
+    if (pressureShift === 'Cooling') yPosition = 25;
+    else if (pressureShift === 'Heating') yPosition = 75;
 
     return {
       status,
       label,
       interpretation,
       score,
-      position: { x: rsiPosition, y: 50 }, // Y is unused for horizontal band
+      position: { x: xPosition, y: yPosition },
       signals: [
-        { label: 'RSI', value: zone },
-        { label: 'RSI trend', value: direction }
+        { label: 'RSI', value: rsiLevel },
+        { label: 'Pressure', value: pressureShift }
       ],
       zone,
       direction,
@@ -2295,75 +2338,117 @@ export class AlphaVantageService {
   }
 
   private analyzeStretch(rsi: number, price: number, ema20: number, rsiHistory: number[]): { status: TimingSignalStatus; label: string; interpretation: string; score: number; position: { x: number; y: number }; signals: { label: string; value: string }[] } {
-    const priceDistFromEma = ((price - ema20) / ema20) * 100;
+    // RSI = "who's winning lately" scoreboard. High = wins dominated, Low = losses dominated.
+    // X-axis: One-sidedness (RSI level) - Left = Loss-dominant (<50), Right = Win-dominant (>50)
+    // Y-axis: Pressure shift - Top = Cooling (toward balance), Bottom = Heating (away from balance)
     
-    // Calculate direction: is RSI/stretch moving toward or away from equilibrium?
-    const recentRsi = rsiHistory.slice(-5);
-    const prevRsi = recentRsi.length > 1 ? recentRsi[0] : rsi;
-    const rsiChange = rsi - prevRsi;
-    const isReturningToBalance = (rsi > 50 && rsiChange < 0) || (rsi < 50 && rsiChange > 0);
-    const isMovingAway = (rsi > 50 && rsiChange > 0) || (rsi < 50 && rsiChange < 0);
-
-    // Distance from balance (normalized percentage)
-    const distanceNormalized = Math.abs(priceDistFromEma);
+    // Determine RSI Level chip (Oversold/Balanced/Overbought)
+    let rsiLevel: 'Oversold' | 'Balanced' | 'Overbought';
+    if (rsi <= 30) {
+      rsiLevel = 'Oversold';
+    } else if (rsi >= 70) {
+      rsiLevel = 'Overbought';
+    } else {
+      rsiLevel = 'Balanced';
+    }
     
-    // Distance thresholds for quadrant zones
-    const isHighDistance = distanceNormalized > 5;  // Far from balance (right side)
-    const isLowDistance = distanceNormalized <= 5;  // Near balance (left side)
+    // Calculate pressure shift: is RSI moving toward balance (cooling) or away (heating)?
+    // Use 3-period lookback for pressure change
+    const lookbackPeriods = 3;
+    const recentRsi = rsiHistory.slice(-(lookbackPeriods + 1));
+    const prevRsi = recentRsi.length > lookbackPeriods ? recentRsi[0] : (recentRsi[0] || rsi);
     
-    // Determine signal labels for display
-    const distanceLevel = distanceNormalized > 6 ? 'High' : (distanceNormalized > 3 ? 'Moderate' : 'Low');
-    const directionLabel = isReturningToBalance ? 'Returning' : (isMovingAway ? 'Moving away' : 'Stable');
-
+    // Distance from balance (50)
+    const d_now = Math.abs(rsi - 50);
+    const d_prev = Math.abs(prevRsi - 50);
+    const delta = d_now - d_prev;
+    
+    // Threshold for flat detection (1 RSI point)
+    const flatThreshold = 1;
+    
+    let pressureShift: 'Heating' | 'Cooling' | 'Flat';
+    if (delta > flatThreshold) {
+      pressureShift = 'Heating'; // Moving away from balance
+    } else if (delta < -flatThreshold) {
+      pressureShift = 'Cooling'; // Moving toward balance
+    } else {
+      pressureShift = 'Flat';
+    }
+    
+    // Determine quadrant position
+    // X: RSI 0-100 maps to 0-100% (RSI=50 is centered)
+    // Y: Cooling = top (25%), Flat = middle (50%), Heating = bottom (75%)
+    const xPosition = rsi;
+    let yPosition = 50;
+    if (pressureShift === 'Cooling') yPosition = 25;
+    else if (pressureShift === 'Heating') yPosition = 75;
+    
+    // Determine quadrant label and status
+    // Quadrant mapping (must match frontend):
+    // Top-left (Loss-dominant + Cooling): "Bounce setup" (green)
+    // Bottom-left (Loss-dominant + Heating): "Still sliding" (red)
+    // Top-right (Win-dominant + Cooling): "Cooling off" (blue)
+    // Bottom-right (Win-dominant + Heating): "Overheating" (yellow)
+    
+    const isLossDominant = rsi < 50;
+    const isCooling = pressureShift === 'Cooling';
+    const isHeating = pressureShift === 'Heating';
+    
     let status: TimingSignalStatus;
     let label: string;
     let interpretation: string;
     let score: number;
-    let xPosition: number;
-    let yPosition: number;
 
-    // Quadrant zones (must match frontend QUADRANT_CONFIGS):
-    // X-axis: Distance from Balance (left=near, right=far)
-    // Y-axis: Direction (bottom=moving away, top=returning/stable)
-    // topLeft: Calm (green) - near balance, stable/returning
-    // topRight: Tension Easing (blue) - far distance, returning
-    // bottomLeft: Drifting (neutral/yellow) - near balance, moving away
-    // bottomRight: Tension Rising (red) - far distance, moving away
-
-    if (isHighDistance && !isReturningToBalance) {
-      // Tension Rising (red) - bottomRight: far distance, moving away
-      status = 'red';
-      label = 'Tension Rising';
-      interpretation = priceDistFromEma > 0 
-        ? 'Price appears stretched above equilibrium — tension is elevated.'
-        : 'Price appears stretched below equilibrium — potential snap-back.';
-      score = -0.5;
-      xPosition = 70;
-      yPosition = 30;
-    } else if (isHighDistance && isReturningToBalance) {
-      // Tension Easing (blue) - topRight: far distance, returning
-      status = 'yellow';
-      label = 'Tension Easing';
-      interpretation = 'Price is stretched but returning toward balance — tension is cooling.';
-      score = 0.3;
-      xPosition = 70;
-      yPosition = 70;
-    } else if (isLowDistance && isMovingAway) {
-      // Drifting (neutral) - bottomLeft: near balance, moving away
-      status = 'yellow';
-      label = 'Drifting';
-      interpretation = 'Price is near balance but drifting away — low conviction movement.';
-      score = 0.1;
-      xPosition = 30;
-      yPosition = 30;
-    } else {
-      // Calm (green) - topLeft: near balance, stable/returning
+    if (rsiLevel === 'Oversold' && isCooling) {
       status = 'green';
-      label = 'Calm';
-      interpretation = 'Price is near equilibrium — balanced conditions.';
+      label = 'Bounce setup';
+      interpretation = 'Losses have dominated lately, but that pressure is easing — rebounds become more likely.';
       score = 0.5;
-      xPosition = 30;
-      yPosition = 70;
+    } else if (rsiLevel === 'Oversold' && isHeating) {
+      status = 'red';
+      label = 'Still sliding';
+      interpretation = 'Losses are still dominating and intensifying — patience may be warranted.';
+      score = -0.5;
+    } else if (rsiLevel === 'Overbought' && isCooling) {
+      status = 'yellow';
+      label = 'Cooling off';
+      interpretation = 'Wins have dominated lately, but momentum is easing — pullback risk is rising.';
+      score = 0.2;
+    } else if (rsiLevel === 'Overbought' && isHeating) {
+      status = 'red';
+      label = 'Overheating';
+      interpretation = 'Wins are dominating and intensifying — conditions look stretched and fragile.';
+      score = -0.3;
+    } else if (isLossDominant && isCooling) {
+      // Balanced-ish but loss-leaning, cooling
+      status = 'green';
+      label = 'Bounce setup';
+      interpretation = 'Losses have dominated lately, but that pressure is easing — rebounds become more likely.';
+      score = 0.4;
+    } else if (isLossDominant && isHeating) {
+      // Balanced-ish but loss-leaning, heating
+      status = 'yellow';
+      label = 'Still sliding';
+      interpretation = 'Conditions lean toward losses and pressure is intensifying — stay alert.';
+      score = -0.1;
+    } else if (!isLossDominant && isCooling) {
+      // Win-leaning, cooling
+      status = 'yellow';
+      label = 'Cooling off';
+      interpretation = 'Wins have dominated lately, but momentum is easing — pullback risk is rising.';
+      score = 0.2;
+    } else if (!isLossDominant && isHeating) {
+      // Win-leaning, heating
+      status = 'yellow';
+      label = 'Overheating';
+      interpretation = 'Conditions are heating — risk of overextension increasing.';
+      score = -0.1;
+    } else {
+      // Balanced + Flat = Neutral
+      status = 'green';
+      label = 'Neutral';
+      interpretation = 'Conditions are near balance — neither stretched nor showing strong directional pressure.';
+      score = 0.3;
     }
 
     return { 
@@ -2373,8 +2458,8 @@ export class AlphaVantageService {
       score,
       position: { x: xPosition, y: yPosition },
       signals: [
-        { label: 'RSI', value: distanceLevel },
-        { label: 'RSI trend', value: directionLabel }
+        { label: 'RSI', value: rsiLevel },
+        { label: 'Pressure', value: pressureShift }
       ]
     };
   }
