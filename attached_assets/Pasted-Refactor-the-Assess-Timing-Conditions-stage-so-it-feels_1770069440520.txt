@@ -1,0 +1,270 @@
+Refactor the Assess Timing Conditions stage so it feels identical in structure and mental model to the Valuation/Performance sections:
+
+The user selects Trend / Momentum / Stretch via horizontal tiles (no vertical scrolling between them).
+
+Each metric renders in a consistent two-panel layout:
+
+Left: small visual (quadrant)
+
+Right: title + status pill + chips + short summary + “Why this matters” + optional “Go deeper”
+
+Add a Timeframe toggle: Weekly (default) and Daily (optional).
+
+Fix the Stretch module (currently confusing) by restoring the quadrant and using investor-native language.
+
+Non-negotiables
+
+Do not use the word “Zone.”
+
+Use “Overbought” and “Oversold.”
+
+Stretch must use a quadrant (same visual grammar as Trend & Momentum).
+
+The summary must always logically follow the chips. No contradictions.
+
+1) Timeframe Toggle (Weekly default, Daily optional)
+UX placement
+
+At the top of “Assess Timing Conditions” (near Guided View toggle), add:
+
+Timeframe: Weekly | Daily (segmented control)
+
+Helper copy under it (small, subtle):
+
+Weekly (default): “Smoother, less noise — better for investing decisions.”
+
+Daily (optional): “More reactive — useful if you want earlier signals.”
+
+Behavior
+
+Default selection: Weekly
+
+Store selection in localStorage (since no user accounts).
+
+When timeframe changes:
+
+Re-fetch / recompute indicators using the chosen resolution
+
+Recompute chips + quadrant position + summary copy
+
+Keep the rest of the UI unchanged (no layout shift)
+
+Data rules
+
+Weekly uses weekly candle series / weekly indicator endpoints (or weekly aggregation if API requires).
+
+Daily uses daily candle series / daily indicator endpoints.
+
+Ensure the label “Weekly” vs “Daily” is visible somewhere in the module so users can reconcile with TradingView/broker views.
+
+2) Navigation Pattern (match Valuation/Performance)
+Replace vertical scrolling across Trend/Momentum/Stretch
+
+Currently the TA section can become “stacked cards” or scroll-y.
+
+Refactor so it matches the established pattern:
+
+A row of 3 selection tiles: Trend, Momentum, Stretch
+
+Each tile shows:
+
+Title
+
+One-line status label (e.g., “Weakening structure”, “Pressure building”, “Overbought cooling”)
+
+2–3 mini chips (compact)
+
+Clicking a tile updates the main panel below.
+
+Main panel layout (consistent)
+
+Below tiles, render ONE selected module at a time:
+
+Left: quadrant visual
+
+Right: explanation panel
+
+3) Trend Module (keep as-is, ensure chip → summary consistency)
+
+Trend is already working well conceptually. Keep the same quadrant and chips, but enforce:
+
+Chip-to-summary rule
+
+The summary sentence must be generated from the chip states using a deterministic mapping (not hardcoded phrases that can conflict).
+
+Example: if chips indicate both “Highs: Weakening” and “Lows: Weakening,” summary must be “Structure weakening / under pressure,” not something optimistic.
+
+4) Momentum Module (MACD) — fix wording mismatch
+
+The user feedback: chips can be correct, but the summary text sometimes says the opposite (“intensifying” vs “easing”).
+
+Required structure
+
+Momentum should remain:
+
+Chips:
+
+Short-term pressure (based on MACD histogram direction / momentum)
+
+Long-term baseline (MACD line vs signal / or MACD vs 0 — whichever current logic uses)
+
+Pressure gap (widening vs narrowing)
+
+Fix: deterministic mapping
+
+Write the summary to match chips exactly:
+
+If short-term = weakening, long-term = weakening, gap = widening
+→ Summary must clearly communicate pressure building / downside momentum strengthening.
+
+If short-term = weakening, long-term = weakening, gap = narrowing
+→ Summary must communicate pressure still negative, but easing / early stabilization (NOT “intensifying”).
+
+If short-term = improving while long-term = weakening
+→ “Early recovery / counter-trend bounce risk” (cautious language).
+
+If both improving and gap narrowing
+→ “Momentum aligning / improving support.”
+
+Make “Pressure building / Early recovery / Aligned” outcomes strictly derived from those states.
+
+5) Stretch Module — revert to quadrant + investor-native language
+The problem to fix
+
+Stretch became unreadable because we introduced abstract “zone/direction” language and dropped the consistent quadrant grammar.
+
+The new Stretch definition (simple + intuitive)
+
+Stretch answers:
+“Is price stretched (overbought/oversold), and is that stretch getting worse or starting to unwind?”
+
+Visual must be a quadrant
+
+Use a 2x2 quadrant, same styling as other modules.
+
+Axes (plain English)
+
+X-axis: RSI Level
+
+Left side: Oversold
+
+Middle boundary area: Neutral
+
+Right side: Overbought
+
+(You can keep the 2x2 visual while still labeling ends Oversold/Overbought; Neutral can be implied around the center line.)
+
+Y-axis: RSI Direction
+
+Top: Cooling (RSI falling)
+
+Bottom: Heating (RSI rising)
+
+Note: We are NOT teaching RSI. We’re translating it into “stretched + getting hotter/colder.”
+
+Chips (replace “Zone” with investor-native chips)
+
+Chips must be:
+
+RSI: Oversold | Neutral | Overbought
+
+RSI trend: Rising | Falling | Flat
+
+Optional third chip if useful: Intensity: Mild | Elevated (derived from distance to 30/70, but keep it simple)
+
+Quadrant labels (must be intuitive)
+
+Label the 4 areas with action-oriented language:
+
+Oversold + Rising → “Rebound setup” (potential support forming)
+
+Oversold + Falling → “Still falling” (don’t front-run)
+
+Overbought + Rising → “Overheating” (risk rising)
+
+Overbought + Falling → “Cooling off” (profit-taking risk easing)
+
+Neutral states should map to “Balanced” variants:
+
+Neutral + Rising → “Building strength”
+
+Neutral + Falling → “Softening”
+
+(If you must keep only 4 labels for strict 2x2, then treat Neutral as “near balance” and show it via dot position + chips.)
+
+Summary copy (investor meaning, not RSI theory)
+
+The summary should tie to typical investor actions:
+
+If Oversold:
+
+If rising: “Oversold and improving — early signs of support. Watch for confirmation.”
+
+If falling: “Oversold but still weakening — avoid rushing in.”
+
+If Overbought:
+
+If rising: “Overbought and still heating — risk of pullback rising.”
+
+If falling: “Overbought and cooling — pullback risk easing; consider trimming if you’re up.”
+
+If Neutral:
+
+Rising: “Not stretched — strength building.”
+
+Falling: “Not stretched — but conditions softening.”
+
+Keep “Go deeper” but don’t overload
+
+When Guided View is ON, “How to read this” must be 2–3 lines max, not a block.
+Example:
+
+“Overbought/oversold shows how stretched price is.”
+
+“Rising/falling shows whether pressure is building or easing.”
+
+“This helps decide patience vs action.”
+
+6) Guided View behavior (important)
+
+Guided View should add clarity to visuals, not remove the question prompt or hide content.
+
+When Guided View is ON:
+
+show the short “How to read this” microcopy
+
+show subtle tooltips on quadrant labels / dot if needed
+
+When Guided View is OFF:
+
+hide the “How to read this” box and tooltips
+
+keep the core visual + chips + summary
+
+Persist Guided View toggle in localStorage.
+
+7) Acceptance Tests (Replit must verify)
+
+Use ticker AI example + random tickers.
+
+Switching Weekly ↔ Daily changes results (sometimes noticeably).
+
+Stretch always uses:
+
+overbought/oversold language
+
+quadrant visual
+
+chips that match the dot and summary
+
+MACD chips never produce a contradictory summary:
+
+“gap narrowing” can’t yield “conditions intensifying” wording.
+
+Layout matches Valuation/Performance pattern:
+
+tile selection row
+
+one main module visible at a time
+
+no vertical scroll stack for the three TA metrics
