@@ -1579,7 +1579,7 @@ export class AlphaVantageService {
         lowsProgression: trendResult.lowsChip,
         distanceFromBalance: Math.round(Math.abs(currentRsi - 50) * 100) / 100,
         rsiZone: stretchResult.zone,
-        tensionDirection: stretchResult.tension,
+        rsiDirection: stretchResult.direction,
       };
 
       const analysis: TimingAnalysis = {
@@ -1799,11 +1799,11 @@ export class AlphaVantageService {
     const shortChip = shortImproving ? 'Improving' : (shortWeakening ? 'Weakening' : 'Flat');
     const longChip = longImproving ? 'Improving' : (longWeakening ? 'Weakening' : 'Flat');
     
-    // Gap chip: is pressure divergence widening or narrowing?
+    // Gap chip: is histogram magnitude widening or narrowing?
     const gapWidening = Math.abs(currentHist) > Math.abs(prevHist);
     const gapChip = gapWidening ? 'Widening' : 'Narrowing';
 
-    // DETERMINISTIC MAPPING from chips to conclusion
+    // DETERMINISTIC MAPPING per spec: Case A / B / C logic
     let status: TimingSignalStatus;
     let label: string;
     let interpretation: string;
@@ -1811,36 +1811,65 @@ export class AlphaVantageService {
     let xPosition: number;
     let yPosition: number;
 
-    if (shortImproving && longImproving) {
-      status = 'green';
-      label = 'Aligned';
-      interpretation = 'Short and long-term pressures are aligned and supportive.';
-      score = 0.7;
+    // Case A: Both weakening
+    if (shortWeakening && longWeakening) {
+      if (gapWidening) {
+        status = 'red';
+        label = 'Pressure building';
+        interpretation = 'Downside pressure is building.';
+        score = -0.5;
+      } else {
+        status = 'yellow';
+        label = 'Pressure easing';
+        interpretation = 'Downside pressure remains, but it\'s easing.';
+        score = -0.2;
+      }
+      xPosition = 30;
+      yPosition = 30;
+    }
+    // Case B: Short improving, long weakening
+    else if (shortImproving && longWeakening) {
+      if (!gapWidening) {
+        status = 'yellow';
+        label = 'Early recovery';
+        interpretation = 'Early recovery attempt — not confirmed yet.';
+        score = 0.1;
+      } else {
+        status = 'yellow';
+        label = 'Bounce fading';
+        interpretation = 'Bounce is fading — pressure reasserting.';
+        score = -0.1;
+      }
+      xPosition = 70;
+      yPosition = 30;
+    }
+    // Case C: Both improving
+    else if (shortImproving && longImproving) {
+      if (!gapWidening) {
+        status = 'green';
+        label = 'Aligned';
+        interpretation = 'Momentum is aligning — supportive.';
+        score = 0.7;
+      } else {
+        status = 'green';
+        label = 'Strong but volatile';
+        interpretation = 'Improving, but volatile — confirm with trend.';
+        score = 0.5;
+      }
       xPosition = 70;
       yPosition = 70;
-    } else if (shortWeakening && longImproving) {
+    }
+    // Short weakening, long improving (Pullback)
+    else if (shortWeakening && longImproving) {
       status = 'yellow';
       label = 'Pullback';
       interpretation = 'Short-term pressure against a strong baseline — often absorbed.';
       score = 0.3;
       xPosition = 30;
       yPosition = 70;
-    } else if (shortImproving && longWeakening && !gapWidening) {
-      // CRITICAL: Early shift ONLY when short improving, long weak, AND gap narrowing
-      status = 'yellow';
-      label = 'Early shift';
-      interpretation = 'Short-term improving while long-term still weak — early but unconfirmed.';
-      score = 0.1;
-      xPosition = 70;
-      yPosition = 30;
-    } else if (shortWeakening && longWeakening) {
-      status = 'red';
-      label = 'Pressure building';
-      interpretation = 'Both time frames under pressure — conditions are intensifying.';
-      score = -0.5;
-      xPosition = 30;
-      yPosition = 30;
-    } else {
+    }
+    // Mixed / Flat states
+    else {
       status = 'yellow';
       label = 'Mixed';
       interpretation = 'Momentum signals are mixed — no clear direction yet.';
@@ -1863,164 +1892,128 @@ export class AlphaVantageService {
     };
   }
 
-  // V2 Stretch: use RSI distance from 50 (not price distance from EMA)
+  // V2 Stretch: Simple Zone + Direction based on RSI
   /**
-   * Stretch Analysis V2 - Zone + Tension based
+   * Stretch Analysis V2 - Zone + Direction based (simplified per spec)
    * 
-   * Zone classification with hysteresis:
-   * - Enter Oversold when RSI ≤ 30, exit when RSI ≥ 35
-   * - Enter Overbought when RSI ≥ 70, exit when RSI ≤ 65
-   * - Otherwise Neutral
+   * Zone: Where are we?
+   * - Oversold: RSI < 30
+   * - Neutral: 30 ≤ RSI ≤ 70
+   * - Overbought: RSI > 70
    * 
-   * Tension direction based on zone context:
-   * - In Oversold: delta > threshold → Easing (Rebounding), delta < -threshold → Rising (Digging deeper)
-   * - In Overbought: delta < -threshold → Easing (Cooling), delta > threshold → Rising (Heating up)
-   * - In Neutral: distNow < distPrev → Easing (Returning), distNow > distPrev → Rising (Moving away)
+   * Direction: Which way is RSI moving?
+   * - Rising: RSI slope positive over last N bars
+   * - Falling: RSI slope negative
+   * - Flat: Near-zero change
    */
   private analyzeStretchV2(currentRsi: number, prevRsi: number, rsiHistory: number[]): { 
     status: TimingSignalStatus; label: string; interpretation: string; score: number; 
     position: { x: number; y: number }; signals: { label: string; value: string }[];
     zone: 'Oversold' | 'Neutral' | 'Overbought';
-    tension: 'Easing' | 'Rising' | 'Stalling';
+    direction: 'Rising' | 'Falling' | 'Flat';
+    rsiValue: number;
   } {
-    // Calculate 3-period RSI averages for smoother delta
-    const rsiAvg3Now = this.calculateRsiAverage(rsiHistory, 3, 0);
-    const rsiAvg3Prev = this.calculateRsiAverage(rsiHistory, 3, 3);
-    const delta = rsiAvg3Now - rsiAvg3Prev;
+    // Direction: immediate RSI delta (current vs previous) per spec
+    const rsiDelta = currentRsi - prevRsi;
     
-    // Distance to balance for neutral case
-    const distNow = Math.abs(currentRsi - 50);
-    const distPrev = Math.abs(prevRsi - 50);
-    
-    // Zone classification with hysteresis
-    // Use previous RSI to determine if we're exiting a zone
-    const zone = this.classifyRsiZoneWithHysteresis(currentRsi, prevRsi);
-    
-    // Tension classification based on zone context
-    const DELTA_THRESHOLD = 2; // RSI points to filter noise
-    const DIST_THRESHOLD = 2;  // Distance change threshold for neutral zone
-    
-    let tension: 'Easing' | 'Rising' | 'Stalling';
-    
-    if (zone === 'Oversold') {
-      // In oversold: positive delta = easing (rebounding), negative = rising (digging deeper)
-      if (delta > DELTA_THRESHOLD) {
-        tension = 'Easing';
-      } else if (delta < -DELTA_THRESHOLD) {
-        tension = 'Rising';
-      } else {
-        tension = 'Stalling';
-      }
-    } else if (zone === 'Overbought') {
-      // In overbought: negative delta = easing (cooling), positive = rising (heating up)
-      if (delta < -DELTA_THRESHOLD) {
-        tension = 'Easing';
-      } else if (delta > DELTA_THRESHOLD) {
-        tension = 'Rising';
-      } else {
-        tension = 'Stalling';
-      }
+    // Zone classification (simple thresholds per spec)
+    let zone: 'Oversold' | 'Neutral' | 'Overbought';
+    if (currentRsi < 30) {
+      zone = 'Oversold';
+    } else if (currentRsi > 70) {
+      zone = 'Overbought';
     } else {
-      // Neutral zone: check distance change from balance
-      if (distNow < distPrev - DIST_THRESHOLD) {
-        tension = 'Easing';
-      } else if (distNow > distPrev + DIST_THRESHOLD) {
-        tension = 'Rising';
-      } else {
-        tension = 'Stalling';
-      }
+      zone = 'Neutral';
+    }
+    
+    // Direction classification - simple RSI slope per spec
+    // Uses 1-point threshold for "near-zero" (flat) per spec requirement
+    let direction: 'Rising' | 'Falling' | 'Flat';
+    if (rsiDelta > 1) {
+      direction = 'Rising';
+    } else if (rsiDelta < -1) {
+      direction = 'Falling';
+    } else {
+      direction = 'Flat';
     }
 
-    // DETERMINISTIC MAPPING from Zone + Tension to summary
+    // DETERMINISTIC MAPPING per spec: Zone × Direction → investor-friendly summary
     let status: TimingSignalStatus;
     let label: string;
     let interpretation: string;
     let score: number;
-    let xPosition: number;
-    let yPosition: number;
 
-    // Quadrant positioning:
-    // X-axis: Distance from Balance (left=near/low, right=far/high)
-    // Y-axis: Tension Direction (bottom=rising, top=easing)
-    
     if (zone === 'Oversold') {
-      xPosition = 75; // Far from balance (right side)
-      if (tension === 'Easing') {
+      if (direction === 'Rising') {
         status = 'yellow';
         label = 'Stabilizing';
-        interpretation = 'Price tension is high but easing — early stabilization signs.';
+        interpretation = 'Selling pressure may be exhausting — watch for a rebound setup.';
         score = 0.3;
-        yPosition = 70;
-      } else if (tension === 'Rising') {
+      } else if (direction === 'Falling') {
         status = 'red';
-        label = 'Pressure building';
-        interpretation = 'Price tension is high and still rising — may need more time to stabilize.';
+        label = 'Still weakening';
+        interpretation = 'Still weakening — wait for stabilization.';
         score = -0.5;
-        yPosition = 25;
       } else {
         status = 'yellow';
         label = 'Holding low';
-        interpretation = 'Price is oversold and holding — watch for signs of stabilization.';
+        interpretation = 'Oversold and holding — watch for signs of direction.';
         score = 0;
-        yPosition = 50;
       }
     } else if (zone === 'Overbought') {
-      xPosition = 75; // Far from balance (right side)
-      if (tension === 'Easing') {
+      if (direction === 'Falling') {
         status = 'yellow';
         label = 'Cooling off';
-        interpretation = 'Price is stretched but cooling — momentum may be fading; consider protecting gains.';
+        interpretation = 'Cooling from an overheated zone — momentum may be easing.';
         score = 0.2;
-        yPosition = 70;
-      } else if (tension === 'Rising') {
+      } else if (direction === 'Rising') {
         status = 'red';
-        label = 'Overheating';
-        interpretation = 'Price is stretched and still heating up — strong run, but reversal risk rises if it stalls.';
+        label = 'Running hot';
+        interpretation = 'Running hot — consider patience or trimming risk.';
         score = -0.3;
-        yPosition = 25;
       } else {
         status = 'yellow';
         label = 'Holding high';
-        interpretation = 'Price is overbought and holding — extended conditions may persist or reverse.';
+        interpretation = 'Overbought and holding — extended conditions may persist or reverse.';
         score = 0;
-        yPosition = 50;
       }
     } else {
       // Neutral zone
-      xPosition = 25; // Near balance (left side)
-      if (tension === 'Easing') {
+      if (direction === 'Rising') {
         status = 'green';
-        label = 'Calm';
-        interpretation = 'Near balance and stabilizing — conditions look calmer.';
+        label = 'Improving';
+        interpretation = 'Conditions improving — watch if momentum can sustain.';
         score = 0.5;
-        yPosition = 70;
-      } else if (tension === 'Rising') {
+      } else if (direction === 'Falling') {
         status = 'yellow';
-        label = 'Drifting';
-        interpretation = 'Drifting away from balance — tension is building.';
+        label = 'Softening';
+        interpretation = 'Conditions softening — wait for clearer support.';
         score = 0.1;
-        yPosition = 30;
       } else {
         status = 'green';
         label = 'Balanced';
-        interpretation = 'Holding near balance — stable conditions with low tension.';
+        interpretation = 'Holding near balance — stable conditions.';
         score = 0.4;
-        yPosition = 50;
       }
     }
+
+    // RSI band position (horizontal visual)
+    // Position represents where RSI is on the 0-100 scale, normalized to 0-100 for display
+    const rsiPosition = Math.max(0, Math.min(100, currentRsi));
 
     return {
       status,
       label,
       interpretation,
       score,
-      position: { x: xPosition, y: yPosition },
+      position: { x: rsiPosition, y: 50 }, // Y is unused for horizontal band
       signals: [
         { label: 'Zone', value: zone },
-        { label: 'Tension', value: tension }
+        { label: 'Direction', value: direction }
       ],
       zone,
-      tension,
+      direction,
+      rsiValue: Math.round(currentRsi),
     };
   }
 

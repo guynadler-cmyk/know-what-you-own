@@ -492,7 +492,7 @@ export const timingDebugSchema = z.object({
   // Stretch primitives
   distanceFromBalance: z.number(), // percentage
   rsiZone: z.enum(['Oversold', 'Neutral', 'Overbought']),
-  tensionDirection: z.enum(['Easing', 'Rising', 'Stalling']),
+  rsiDirection: z.enum(['Rising', 'Falling', 'Flat']),
 });
 
 export const timingAnalysisSchema = z.object({

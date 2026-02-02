@@ -1,0 +1,240 @@
+Refactor the Timing Conditions (TA stage) so it stays in the established restnvest UI pattern (simple cards + chips + single visual), and so outputs are intuitively readable by retail investors.
+
+Key deliverables:
+
+Add timeframe switch (Weekly default, Daily optional).
+
+Fix Momentum summary text so it is logically consistent with the chips.
+
+Redesign Stretch to be immediately readable and investor-relevant (oversold/overbought + direction), removing the confusing 2x2 “Zone/Tension” construct.
+
+Keep the design consistent with Valuation/Performance sections: tabbed cards at top, not vertical scrolling.
+
+1) Timeframe toggle (Weekly default, Daily optional)
+UI
+
+Add a toggle or segmented control near the “Assess Timing Conditions” header:
+
+Weekly (Recommended) (default)
+
+Daily (More reactive)
+
+Microcopy under it:
+
+Weekly: “Smoother, less noise. Better for patient investing.”
+
+Daily: “React sooner, but shifts more often.”
+
+Behavior
+
+Switching timeframe must re-fetch/recompute the TA indicators using that timeframe’s OHLC series.
+
+Weekly should be the default for all users (no accounts / first-view experience).
+
+Indicator periods
+
+Keep the same indicator parameters (RSI 14, MACD 12/26/9), but apply them on the selected timeframe bars:
+
+Weekly = RSI-14 on weekly closes (14 weeks)
+
+Daily = RSI-14 on daily closes (14 days)
+
+Clearly label in “Go deeper” what timeframe is being used.
+
+2) Layout: match the existing restnvest template pattern
+Required layout pattern
+
+At the top of the TA section, show 3 selectable cards/tabs (not scroll):
+
+Trend
+
+Momentum
+
+Stretch
+
+Selecting a card updates the content below (visual + explanation).
+
+This should match how Growth Quality / Price Discipline etc. behave (single selected module, not stacked scrolling modules).
+
+3) Momentum: make the conclusion consistent with chips
+
+Right now, users can see:
+
+Short-term pressure: Weakening
+
+Long-term baseline: Weakening
+
+Pressure gap: Narrowing/Widening
+…but the summary text sometimes says “conditions intensifying,” which conflicts when the gap is narrowing (narrowing implies pressure is easing / convergence). Use Replit’s own MACD logic: “MACD negative but histogram narrowing → momentum shifting.”
+
+Momentum chip definitions (keep simple)
+
+Short-term pressure: based on MACD histogram sign & near-term change
+
+Long-term baseline: based on MACD line vs 0 and slope
+
+Pressure gap: based on histogram magnitude trend (widening/narrowing)
+
+Required summary mapping (deterministic)
+
+Implement a clear decision table so the narrative never contradicts chips:
+
+Case A — both weakening
+
+If short-term = Weakening AND long-term = Weakening:
+
+If gap = Widening → Summary: “Downside pressure is building.”
+
+If gap = Narrowing → Summary: “Downside pressure remains, but it’s easing.”
+
+Case B — short improves, long weak
+
+If short-term = Improving AND long-term = Weakening:
+
+gap narrowing → “Early recovery attempt — not confirmed yet.”
+
+gap widening → “Bounce is fading — pressure reasserting.”
+
+Case C — both improving
+
+If short-term = Improving AND long-term = Improving:
+
+gap narrowing → “Momentum is aligning — supportive.”
+
+gap widening (rare) → “Improving, but volatile — confirm with trend.”
+
+Make the summary text choose from these only (no freeform phrasing like “intensifying” unless it matches Case A + Widening).
+
+4) Stretch: rebuild it to be readable and in the “restnvest spirit”
+Problem
+
+Current Stretch uses a 2x2 with axes + a “How to read this” block that creates cognitive load. Even experienced users don’t recognize what action it implies.
+
+New Stretch definition (simple)
+
+Stretch = RSI translated into:
+
+Where are we? (Oversold / Neutral / Overbought)
+
+Which way is it moving? (Rising / Falling / Flat)
+
+RSI thresholds must remain standard:
+
+Oversold: RSI < 30
+
+Neutral: 30–70
+
+Overbought: RSI > 70
+
+Stretch UI (match template)
+
+Keep the module structure identical to others:
+
+Title: Stretch
+
+Status pill (primary): one of:
+
+Oversold
+
+Neutral
+
+Overbought
+
+Two chips (always visible):
+
+Zone: Oversold / Neutral / Overbought
+
+Direction: Rising / Falling / Flat
+
+Optional third chip (only if helpful and still simple):
+
+Extremity: Mild / Elevated / Extreme
+(based on distance from 30 or 70; do NOT show raw math in the main view)
+
+Stretch visual (replace the 2x2)
+
+Replace the confusing quadrant with a single horizontal “RSI band” visual:
+
+A horizontal bar segmented into 3 labeled zones:
+
+Left: Oversold
+
+Middle: Neutral
+
+Right: Overbought
+
+A dot/marker showing current RSI position.
+
+A small arrow next to the dot showing direction:
+
+Up arrow if RSI slope positive over last N bars
+
+Down arrow if negative
+
+Flat if near-zero change
+
+No axes explanation block.
+
+Optional: show the numeric RSI only inside “Go deeper” or tooltip hover.
+
+This should feel like the existing “distance from highs” / “score bar” patterns — not like a technical chart.
+
+Stretch summary text (investor language, not RSI language)
+
+Use a deterministic mapping so it implies “what to do” without sounding like trading advice:
+
+Oversold
+
+Rising → “Selling pressure may be exhausting — watch for a rebound setup.”
+
+Falling → “Still weakening — wait for stabilization.”
+
+Overbought
+
+Falling → “Cooling from an overheated zone — momentum may be easing.”
+
+Rising → “Running hot — consider patience or trimming risk.”
+
+Neutral
+
+Rising → “Conditions improving — watch if momentum can sustain.”
+
+Falling → “Conditions softening — wait for clearer support.”
+
+Important: avoid “predicting the future.” Phrase as “conditions / pressure / setup.”
+
+Guided view behavior (for Stretch)
+
+When Guided view is ON:
+
+Show 1 short helper line under the visual, max 1 sentence:
+
+Example: “Oversold + rising often means selling pressure is fading.”
+When Guided view is OFF:
+
+Hide helper line entirely.
+
+Do NOT remove the question prompt; guided view should add clarity, not delete content.
+
+5) “Go deeper” behavior
+
+Inside “Go deeper,” you may show:
+
+RSI current value and previous value(s)
+
+MACD line, signal line, histogram current value(s)
+
+Timeframe used (Weekly/Daily)
+Keep it compact and optional.
+
+Acceptance criteria (must pass)
+
+Switching Weekly/Daily clearly changes computed outputs and labels (no “fake toggle”).
+
+Momentum summary never contradicts its chips.
+
+Stretch is readable in 3 seconds by a non-technical user (band + dot + arrow).
+
+No big “How to read this” blocks in the main view; guided view uses short, inline hints only.
+
+Visual and layout match the established restnvest design language (tabs/cards + single visual panel).
