@@ -30,6 +30,25 @@ Shared Zod schemas, located in `/shared/schema.ts`, ensure type safety and data 
 
 The application features a clear, minimalist design with a monochrome palette and a teal accent. It includes a hero section, structured results page with visual clustering, strong heading hierarchies, and accessible elements like mobile-friendly tag explanations using Radix UI Popovers. Investment analysis is multi-dimensional, categorizing drivers into Strategic Themes, Competitive Moats, Market Opportunity, and Value Creation, each with visual icons and color-coded emphasis scoring. A prominent AI-powered investment thesis section summarizes how companies plan to create shareholder value. The landing page provides marketing and onboarding, while an "App page" focuses on analysis, with intuitive navigation between them. The application supports easy link sharing and PWA installation.
 
+### Timing Stage (Technical Analysis)
+
+The Timing stage uses a consistent pattern matching Valuation/Performance stages:
+- **Navigation**: Horizontal tiles for Trend/Momentum/Stretch selection
+- **Two-panel layout**: Left side shows quadrant visual, right side shows explanation panel
+- **Timeframe toggle**: Weekly (default, recommended) and Daily options with localStorage persistence
+- **Quadrant visuals**: All three modules (Trend, Momentum, Stretch) use the same quadrant grammar
+
+**Stretch Module**: Uses investor-native language:
+- X-axis: RSI Level (Oversold ← → Overbought)
+- Y-axis: RSI Direction (Heating ↓ ↑ Cooling)
+- Quadrant labels: "Still falling", "Cooling off", "Rebound setup", "Overheating"
+- Chips: "RSI" (Oversold/Neutral/Overbought) + "RSI trend" (Rising/Falling/Flat)
+
+**Momentum Module**: Deterministic Case A/B/C mapping ensures chips never contradict summaries:
+- Case A (both weakening): "Downside pressure building" or "easing"
+- Case B (short improving, long weak): "Early recovery" or "Bounce fading"
+- Case C (both improving): "Momentum aligning" or "Improving but volatile"
+
 ## External Dependencies
 
 -   **SEC EDGAR API:** For company CIK mapping, filing submissions, and 10-K document access.
