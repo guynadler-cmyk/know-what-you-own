@@ -130,19 +130,20 @@ const QUADRANT_CONFIGS: Record<string, Omit<TimingQuadrantConfig, 'position' | '
   // Stretch quadrant: X = One-sidedness (RSI level), Y = Pressure shift (heating vs cooling)
   // Left = Loss-dominant (RSI < 50), Right = Win-dominant (RSI > 50)
   // Top = Cooling toward balance, Bottom = Heating away from balance
+  // Colors aligned with verdict status: green (favorable), yellow (caution), red (unfavorable)
   stretch: {
     id: "stretch",
     xLabel: "One-sidedness (RSI level)",
     yLabel: "Pressure shift (heating vs cooling)",
     zones: {
-      // Top-left (Loss-dominant + Cooling): "Bounce setup" - rebounds more likely
+      // Top-left (Loss-dominant + Cooling): "Bounce setup" - rebounds more likely (green = favorable)
       topLeft: { label: "Bounce setup", color: "green", tooltip: "Losses have dominated lately, but pressure is easing — rebounds become more likely." },
-      // Bottom-left (Loss-dominant + Heating): "Still sliding" - patience warranted
+      // Bottom-left (Loss-dominant + Heating): "Still sliding" - patience warranted (red = unfavorable)
       bottomLeft: { label: "Still sliding", color: "red", tooltip: "Losses are still dominating and intensifying — patience may be warranted." },
-      // Top-right (Win-dominant + Cooling): "Cooling off" - pullback risk rising
-      topRight: { label: "Cooling off", color: "blue", tooltip: "Wins have dominated lately, but momentum is easing — pullback risk is rising." },
-      // Bottom-right (Win-dominant + Heating): "Overheating" - stretched and fragile
-      bottomRight: { label: "Overheating", color: "yellow", tooltip: "Wins are dominating and intensifying — conditions look stretched and fragile." },
+      // Top-right (Win-dominant + Cooling): "Cooling off" - pullback risk rising (yellow = caution)
+      topRight: { label: "Cooling off", color: "yellow", tooltip: "Wins have dominated lately, but momentum is easing — pullback risk is rising." },
+      // Bottom-right (Win-dominant + Heating): "Overheating" - stretched and fragile (red = unfavorable)
+      bottomRight: { label: "Overheating", color: "red", tooltip: "Wins are dominating and intensifying — conditions look stretched and fragile." },
     },
   },
 };
@@ -428,21 +429,38 @@ interface StretchGuidedHelperProps {
 }
 
 function StretchGuidedHelper({ rsiLevel, rsiTrend }: StretchGuidedHelperProps) {
-  // "How to read this" box with 3 bullets per spec
+  const [isOpen, setIsOpen] = useState(false);
+  
+  // "How to read this" collapsible box with 3 bullets per spec
   // RSI = scoreboard: High = wins dominated, Low = losses dominated
   // Left vs right: Left = losses dominating, Right = wins dominating
   // Top vs bottom: Top = pressure easing toward balance, Bottom = pressure intensifying
   return (
     <div 
-      className="bg-muted/40 rounded-lg p-4 border border-border/50 space-y-2"
+      className="border border-border/50 rounded-lg overflow-hidden"
       data-testid="stretch-guided-helper"
     >
-      <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">How to read this</p>
-      <ul className="text-sm text-muted-foreground space-y-1.5 list-disc list-inside">
-        <li><span className="font-medium text-foreground">RSI = scoreboard:</span> High = wins dominated lately. Low = losses dominated.</li>
-        <li><span className="font-medium text-foreground">Left vs right:</span> Left = losses dominating. Right = wins dominating.</li>
-        <li><span className="font-medium text-foreground">Top vs bottom:</span> Top = pressure easing toward balance. Bottom = pressure intensifying.</li>
-      </ul>
+      <button
+        onClick={() => setIsOpen(!isOpen)}
+        className="w-full flex items-center justify-between p-3 text-left bg-muted/40 hover-elevate"
+        data-testid="stretch-guided-helper-toggle"
+      >
+        <span className="text-xs font-medium text-muted-foreground uppercase tracking-wide">How to read this</span>
+        {isOpen ? (
+          <ChevronUp className="w-4 h-4 text-muted-foreground" />
+        ) : (
+          <ChevronDown className="w-4 h-4 text-muted-foreground" />
+        )}
+      </button>
+      {isOpen && (
+        <div className="p-3 pt-0 bg-muted/40 animate-in fade-in-50">
+          <ul className="text-sm text-muted-foreground space-y-1.5 list-disc list-inside pt-2">
+            <li><span className="font-medium text-foreground">RSI = scoreboard:</span> High = wins dominated lately. Low = losses dominated.</li>
+            <li><span className="font-medium text-foreground">Left vs right:</span> Left = losses dominating. Right = wins dominating.</li>
+            <li><span className="font-medium text-foreground">Top vs bottom:</span> Top = pressure easing toward balance. Bottom = pressure intensifying.</li>
+          </ul>
+        </div>
+      )}
     </div>
   );
 }
@@ -507,14 +525,14 @@ function TimingDetailPanel({ type, signal, deepDive, chartData, guidedView }: Ti
             </div>
           )}
           
+          <TimingInsightTag signal={signal} deepDive={deepDive} />
+          
           {type === "stretch" && guidedView && (
             <StretchGuidedHelper 
               rsiLevel={stretchRsi}
               rsiTrend={stretchPressure}
             />
           )}
-          
-          <TimingInsightTag signal={signal} deepDive={deepDive} />
           
           <Button
             variant="ghost"
