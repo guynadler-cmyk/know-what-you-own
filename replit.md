@@ -38,11 +38,13 @@ The Timing stage uses a consistent pattern matching Valuation/Performance stages
 - **Timeframe toggle**: Weekly (default, recommended) and Daily options with localStorage persistence
 - **Quadrant visuals**: All three modules (Trend, Momentum, Stretch) use the same quadrant grammar
 
-**Stretch Module**: Uses investor-native language:
-- X-axis: RSI Level (Oversold ← → Overbought)
-- Y-axis: RSI Direction (Heating ↓ ↑ Cooling)
-- Quadrant labels: "Still falling", "Cooling off", "Rebound setup", "Overheating"
-- Chips: "RSI" (Oversold/Neutral/Overbought) + "RSI trend" (Rising/Falling/Flat)
+**Stretch Module**: Uses investor-native language framing RSI as a "who's winning" scoreboard:
+- X-axis: One-sidedness (RSI level) — Left = Loss-dominant (<50), Right = Win-dominant (>50)
+- Y-axis: Pressure shift — Top = Cooling (toward balance), Bottom = Heating (away from balance)
+- Quadrant labels: "Bounce setup" (oversold+cooling), "Still sliding" (oversold+heating), "Cooling off" (overbought+cooling), "Overheating" (overbought+heating), "Neutral" (balanced+flat)
+- Chips: "RSI" (Oversold/Balanced/Overbought) + "Pressure" (Heating/Cooling/Flat)
+- Pressure calculation: Based on 3-period lookback of distance from balance (RSI=50), with 1-point flat threshold
+- "How to read this" guided helper provides 3 bullets explaining the visual
 
 **Momentum Module**: Deterministic Case A/B/C mapping ensures chips never contradict summaries:
 - Case A (both weakening): "Downside pressure building" or "easing"
