@@ -81,13 +81,13 @@ function getChipStyle(label: string, value: string): { bg: string; text: string;
     }
   }
   
-  if (labelLower === 'tension') {
+  if (labelLower === 'direction') {
     switch (valueLower) {
-      case 'easing':
-        return { bg: "bg-green-500/10", text: "text-green-700 dark:text-green-400", Icon: TrendingDown };
       case 'rising':
-        return { bg: "bg-red-500/10", text: "text-red-700 dark:text-red-400", Icon: TrendingUp };
-      default:
+        return { bg: "bg-green-500/10", text: "text-green-700 dark:text-green-400", Icon: TrendingUp };
+      case 'falling':
+        return { bg: "bg-red-500/10", text: "text-red-700 dark:text-red-400", Icon: TrendingDown };
+      default: // Flat
         return { bg: "bg-yellow-500/10", text: "text-yellow-700 dark:text-yellow-400", Icon: Activity };
     }
   }
@@ -125,15 +125,16 @@ const QUADRANT_CONFIGS: Record<string, Omit<TimingQuadrantConfig, 'position' | '
       bottomLeft: { label: "Pressure Building", color: "red", tooltip: "Both time frames moving lower — pressure is intensifying." },
     },
   },
+  // Note: Stretch now uses RSIBandVisual instead of quadrant, this config is kept for type safety but not rendered
   stretch: {
     id: "stretch",
-    xLabel: "Distance from Balance",
-    yLabel: "Tension Direction",
+    xLabel: "RSI Position",
+    yLabel: "N/A",
     zones: {
-      topLeft: { label: "Calm", color: "green", tooltip: "Near balance, stabilizing — conditions look calmer." },
-      topRight: { label: "Stabilizing", color: "blue", tooltip: "Stretched (oversold/overbought) but tension is easing — early stabilization." },
-      bottomLeft: { label: "Drifting", color: "neutral", tooltip: "Near balance but drifting away — tension is building." },
-      bottomRight: { label: "Pressure", color: "red", tooltip: "Stretched and tension still rising — may need more time to stabilize." },
+      topLeft: { label: "Neutral", color: "blue", tooltip: "RSI 30-70 — balanced territory." },
+      topRight: { label: "Overbought", color: "orange", tooltip: "RSI above 70 — extended." },
+      bottomLeft: { label: "Oversold", color: "red", tooltip: "RSI below 30 — may be due for stabilization." },
+      bottomRight: { label: "Neutral", color: "blue", tooltip: "RSI 30-70 — balanced territory." },
     },
   },
 };
@@ -147,7 +148,7 @@ const METRIC_TITLES: Record<TimingMetricType, string> = {
 const METRIC_SIGNALS: Record<TimingMetricType, [string, string]> = {
   trend: ["Recent highs", "Recent lows"],
   momentum: ["Short-term", "Long-term"],
-  stretch: ["Distance", "Direction"],
+  stretch: ["Zone", "Direction"],
 };
 
 function TimingIntroBlock() {
@@ -369,10 +370,10 @@ const STRETCH_CHIP_TOOLTIPS: Record<string, Record<string, string>> = {
     Neutral: "RSI between 30-70 — price is in balanced territory.",
     Overbought: "RSI above 70 — price has risen sharply and may be extended.",
   },
-  Tension: {
-    Easing: "Momentum is reversing toward balance — conditions may be stabilizing.",
-    Rising: "Momentum is pushing further from balance — tension is building.",
-    Stalling: "Momentum is flat — waiting for directional clarity.",
+  Direction: {
+    Rising: "RSI is moving up — conditions may be improving.",
+    Falling: "RSI is moving down — conditions may be softening.",
+    Flat: "RSI is stable — no clear directional change.",
   },
 };
 
@@ -409,34 +410,122 @@ function SignalTag({ label, value, metricType }: SignalTagProps) {
   );
 }
 
-function StretchGuidedHelper() {
+interface StretchGuidedHelperProps {
+  zone?: string;
+  direction?: string;
+}
+
+function StretchGuidedHelper({ zone, direction }: StretchGuidedHelperProps) {
+  // Short inline helper per spec - 1 sentence max based on Zone + Direction
+  const getHint = () => {
+    if (zone === 'Oversold' && direction === 'Rising') {
+      return "Oversold + rising often means selling pressure is fading.";
+    }
+    if (zone === 'Oversold' && direction === 'Falling') {
+      return "Oversold + falling suggests more weakness may come.";
+    }
+    if (zone === 'Overbought' && direction === 'Falling') {
+      return "Overbought + falling often means momentum is cooling.";
+    }
+    if (zone === 'Overbought' && direction === 'Rising') {
+      return "Overbought + rising suggests strong momentum, but extended.";
+    }
+    if (zone === 'Neutral' && direction === 'Rising') {
+      return "Neutral + rising suggests conditions are improving.";
+    }
+    if (zone === 'Neutral' && direction === 'Falling') {
+      return "Neutral + falling suggests conditions are softening.";
+    }
+    return "The bar shows where price sits relative to balance.";
+  };
+
   return (
-    <div className="bg-muted/30 rounded-lg p-4 text-sm space-y-3" data-testid="stretch-guided-helper">
-      <div className="flex items-center gap-2 text-foreground font-medium">
-        <Info className="w-4 h-4 text-primary" />
-        How to read this
+    <p className="text-sm text-muted-foreground italic" data-testid="stretch-guided-helper">
+      {getHint()}
+    </p>
+  );
+}
+
+interface RSIBandVisualProps {
+  rsiPosition: number; // 0-100
+  zone: string;
+  direction: string;
+}
+
+function RSIBandVisual({ rsiPosition, zone, direction }: RSIBandVisualProps) {
+  // Map RSI 0-100 to position percentage
+  const dotPosition = Math.max(2, Math.min(98, rsiPosition));
+  
+  // Zone colors
+  const getZoneColor = (z: string) => {
+    switch (z) {
+      case 'Oversold': return 'bg-red-500';
+      case 'Overbought': return 'bg-orange-500';
+      default: return 'bg-blue-500';
+    }
+  };
+  
+  // Direction arrow
+  const DirectionArrow = () => {
+    if (direction === 'Rising') {
+      return <TrendingUp className="w-4 h-4 text-green-600" />;
+    }
+    if (direction === 'Falling') {
+      return <TrendingDown className="w-4 h-4 text-red-600" />;
+    }
+    return <Activity className="w-4 h-4 text-yellow-600" />;
+  };
+
+  return (
+    <div className="w-full max-w-md space-y-4" data-testid="rsi-band-visual">
+      <div className="relative h-12">
+        {/* Zone bar */}
+        <div className="flex h-8 rounded-lg overflow-hidden border border-border">
+          {/* Oversold zone: 0-30 */}
+          <div 
+            className="bg-red-500/20 flex items-center justify-center text-xs font-medium text-red-700 dark:text-red-400"
+            style={{ width: '30%' }}
+          >
+            Oversold
+          </div>
+          {/* Neutral zone: 30-70 */}
+          <div 
+            className="bg-blue-500/10 flex items-center justify-center text-xs font-medium text-blue-700 dark:text-blue-400 border-x border-border/30"
+            style={{ width: '40%' }}
+          >
+            Neutral
+          </div>
+          {/* Overbought zone: 70-100 */}
+          <div 
+            className="bg-orange-500/20 flex items-center justify-center text-xs font-medium text-orange-700 dark:text-orange-400"
+            style={{ width: '30%' }}
+          >
+            Overbought
+          </div>
+        </div>
+        
+        {/* RSI dot marker */}
+        <div 
+          className="absolute top-0 transform -translate-x-1/2 flex flex-col items-center"
+          style={{ left: `${dotPosition}%` }}
+        >
+          <div className={cn(
+            "w-4 h-4 rounded-full border-2 border-white shadow-lg",
+            getZoneColor(zone)
+          )} />
+          <div className="mt-1">
+            <DirectionArrow />
+          </div>
+        </div>
       </div>
-      <div className="grid gap-2 text-muted-foreground">
-        <div className="flex gap-2">
-          <span className="w-16 shrink-0 font-medium text-foreground">The dot:</span>
-          <span>Shows where price currently sits based on distance from balance and tension direction.</span>
-        </div>
-        <div className="flex gap-2">
-          <span className="w-16 shrink-0 font-medium text-foreground">X-axis:</span>
-          <span>Distance from balance — left is near equilibrium, right is stretched.</span>
-        </div>
-        <div className="flex gap-2">
-          <span className="w-16 shrink-0 font-medium text-foreground">Y-axis:</span>
-          <span>Tension direction — top is easing/stabilizing, bottom is rising/building.</span>
-        </div>
-        <div className="flex gap-2">
-          <span className="w-16 shrink-0 font-medium text-foreground">Zone:</span>
-          <span>Oversold (below 30), Neutral (30-70), or Overbought (above 70) based on RSI.</span>
-        </div>
-        <div className="flex gap-2">
-          <span className="w-16 shrink-0 font-medium text-foreground">Tension:</span>
-          <span>Whether momentum is easing back toward balance or pushing further away.</span>
-        </div>
+      
+      {/* Scale labels */}
+      <div className="flex justify-between text-xs text-muted-foreground px-1">
+        <span>0</span>
+        <span>30</span>
+        <span>50</span>
+        <span>70</span>
+        <span>100</span>
       </div>
     </div>
   );
@@ -456,17 +545,29 @@ function TimingDetailPanel({ type, signal, deepDive, chartData, guidedView }: Ti
   const position = signal.position || { x: 50, y: 50 };
   const apiSignals = signal.signals || [];
 
+  // Extract zone and direction for Stretch RSI band visual
+  const stretchZone = apiSignals.find(s => s.label === 'Zone')?.value || 'Neutral';
+  const stretchDirection = apiSignals.find(s => s.label === 'Direction')?.value || 'Flat';
+
   return (
     <Card className="overflow-hidden" data-testid={`timing-detail-panel-${type}`}>
       <div className="grid lg:grid-cols-2 gap-0">
         <div className="p-6 lg:p-8 flex items-center justify-center bg-muted/30">
-          <TimingQuadrantChart 
-            config={{
-              ...config,
-              position,
-              guidedView
-            }} 
-          />
+          {type === "stretch" ? (
+            <RSIBandVisual 
+              rsiPosition={position.x}
+              zone={stretchZone}
+              direction={stretchDirection}
+            />
+          ) : (
+            <TimingQuadrantChart 
+              config={{
+                ...config,
+                position,
+                guidedView
+              }} 
+            />
+          )}
         </div>
         
         <div className="p-6 lg:p-8 flex flex-col justify-center space-y-5 border-t lg:border-t-0 lg:border-l border-border">
@@ -494,7 +595,10 @@ function TimingDetailPanel({ type, signal, deepDive, chartData, guidedView }: Ti
           )}
           
           {type === "stretch" && guidedView && (
-            <StretchGuidedHelper />
+            <StretchGuidedHelper 
+              zone={apiSignals.find(s => s.label === 'Zone')?.value}
+              direction={apiSignals.find(s => s.label === 'Direction')?.value}
+            />
           )}
           
           <TimingInsightTag signal={signal} deepDive={deepDive} />
@@ -697,7 +801,7 @@ function TimeframeToggle({
           >
             <span className="flex items-center gap-1.5">
               <Calendar className="w-3.5 h-3.5" />
-              Weekly
+              Weekly <span className="text-xs opacity-70">(Recommended)</span>
             </span>
           </button>
           <button
@@ -718,7 +822,9 @@ function TimeframeToggle({
         </div>
       </div>
       <p className="text-xs text-muted-foreground">
-        Weekly smooths noise. Daily reacts sooner — and may shift more often.
+        {timeframe === 'weekly' 
+          ? "Smoother, less noise. Better for patient investing."
+          : "React sooner, but shifts more often."}
       </p>
     </div>
   );
@@ -827,8 +933,8 @@ function DebugDrawer({ debug, isOpen, onToggle }: { debug: TimingAnalysis['debug
                 <span className="ml-2">{debug.rsiZone}</span>
               </div>
               <div>
-                <span className="text-muted-foreground">Tension:</span>
-                <span className="ml-2">{debug.tensionDirection}</span>
+                <span className="text-muted-foreground">Direction:</span>
+                <span className="ml-2">{debug.rsiDirection}</span>
               </div>
             </div>
           </div>
