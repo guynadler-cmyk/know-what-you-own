@@ -16,15 +16,13 @@ export function LeadPopup() {
   const [error, setError] = useState("");
   
   const timerRef = useRef<NodeJS.Timeout | null>(null);
-  const startTimeRef = useRef(Date.now());
+  const startTimeRef = useRef<number | null>(null);
+  const lastTickerRef = useRef<string | null>(null);
+  const hasShownRef = useRef(false);
 
   const getTickerFromUrl = () => {
     const params = new URLSearchParams(window.location.search);
     return params.get("ticker");
-  };
-
-  const isAnalysisPage = () => {
-    return getTickerFromUrl() !== null;
   };
 
   const hasAlreadySubmitted = () => {
@@ -35,19 +33,39 @@ export function LeadPopup() {
     // Don't show if already submitted
     if (hasAlreadySubmitted()) return;
 
-    // Start a timer that checks every second
+    // Check every second
     timerRef.current = setInterval(() => {
-      // Only show on analysis pages (has ?ticker= param)
-      if (!isAnalysisPage()) return;
+      const currentTicker = getTickerFromUrl();
+      
+      // Not on an analysis page - reset everything
+      if (!currentTicker) {
+        startTimeRef.current = null;
+        lastTickerRef.current = null;
+        return;
+      }
+      
+      // Ticker changed - reset timer
+      if (currentTicker !== lastTickerRef.current) {
+        startTimeRef.current = Date.now();
+        lastTickerRef.current = currentTicker;
+        hasShownRef.current = false;
+        return;
+      }
+      
+      // Already shown for this session
+      if (hasShownRef.current) return;
+      
+      // Timer not started yet
+      if (!startTimeRef.current) {
+        startTimeRef.current = Date.now();
+        return;
+      }
       
       const elapsed = (Date.now() - startTimeRef.current) / 1000;
       
       if (elapsed >= TRIGGER_SECONDS) {
+        hasShownRef.current = true;
         setIsVisible(true);
-        // Stop checking once shown
-        if (timerRef.current) {
-          clearInterval(timerRef.current);
-        }
       }
     }, 1000);
 
