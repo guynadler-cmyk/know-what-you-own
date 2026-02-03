@@ -3,11 +3,10 @@ import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { 
-  ChevronDown, ChevronUp, TrendingUp, TrendingDown, Activity, Info, Eye, 
+  ChevronDown, ChevronUp, TrendingUp, TrendingDown, Activity, Info, 
   AlertOctagon, RefreshCw, Compass, CheckCircle, AlertTriangle, XCircle, HelpCircle,
   Calendar, Clock, Bug
 } from "lucide-react";
@@ -562,57 +561,14 @@ function GoDeeper({ type, signal }: GoDeeperProps) {
   return null;
 }
 
-interface StretchGuidedHelperProps {
-  rsiLevel?: string;
-  rsiTrend?: string;
-}
-
-function StretchGuidedHelper({ rsiLevel, rsiTrend }: StretchGuidedHelperProps) {
-  const [isOpen, setIsOpen] = useState(false);
-  
-  // "How to read this" collapsible box with 3 bullets per spec
-  // RSI = scoreboard: High = wins dominated, Low = losses dominated
-  // Left vs right: Left = losses dominating, Right = wins dominating
-  // Top vs bottom: Top = pressure easing toward balance, Bottom = pressure intensifying
-  return (
-    <div 
-      className="border border-border/50 rounded-lg overflow-hidden"
-      data-testid="stretch-guided-helper"
-    >
-      <button
-        onClick={() => setIsOpen(!isOpen)}
-        className="w-full flex items-center justify-between p-3 text-left bg-muted/40 hover-elevate"
-        data-testid="stretch-guided-helper-toggle"
-      >
-        <span className="text-xs font-medium text-muted-foreground uppercase tracking-wide">How to read this</span>
-        {isOpen ? (
-          <ChevronUp className="w-4 h-4 text-muted-foreground" />
-        ) : (
-          <ChevronDown className="w-4 h-4 text-muted-foreground" />
-        )}
-      </button>
-      {isOpen && (
-        <div className="p-3 pt-0 bg-muted/40 animate-in fade-in-50">
-          <ul className="text-sm text-muted-foreground space-y-1.5 list-disc list-inside pt-2">
-            <li><span className="font-medium text-foreground">RSI = scoreboard:</span> High = wins dominated lately. Low = losses dominated.</li>
-            <li><span className="font-medium text-foreground">Left vs right:</span> Left = losses dominating. Right = wins dominating.</li>
-            <li><span className="font-medium text-foreground">Top vs bottom:</span> Top = pressure easing toward balance. Bottom = pressure intensifying.</li>
-          </ul>
-        </div>
-      )}
-    </div>
-  );
-}
-
 interface TimingDetailPanelProps {
   type: TimingMetricType;
   signal: TimingAnalysis["trend"]["signal"];
   deepDive: { title: string; explanation: string };
   chartData: TimingAnalysis["trend"]["chartData"] | TimingAnalysis["momentum"]["chartData"] | TimingAnalysis["stretch"]["chartData"];
-  guidedView: boolean;
 }
 
-function TimingDetailPanel({ type, signal, deepDive, chartData, guidedView }: TimingDetailPanelProps) {
+function TimingDetailPanel({ type, signal, deepDive, chartData }: TimingDetailPanelProps) {
   const [showGoDeeper, setShowGoDeeper] = useState(false);
   const config = QUADRANT_CONFIGS[type];
   const position = signal.position || { x: 50, y: 50 };
@@ -634,8 +590,7 @@ function TimingDetailPanel({ type, signal, deepDive, chartData, guidedView }: Ti
           <TimingQuadrantChart 
             config={{
               ...config,
-              position: quadrantPosition,
-              guidedView
+              position: quadrantPosition
             }} 
           />
         </div>
@@ -665,13 +620,6 @@ function TimingDetailPanel({ type, signal, deepDive, chartData, guidedView }: Ti
           )}
           
           <TimingInsightTag signal={signal} deepDive={deepDive} />
-          
-          {type === "stretch" && guidedView && (
-            <StretchGuidedHelper 
-              rsiLevel={stretchRsi}
-              rsiTrend={stretchPressure}
-            />
-          )}
           
           <Button
             variant="ghost"
@@ -998,7 +946,6 @@ function DebugDrawer({ debug, isOpen, onToggle }: { debug: TimingAnalysis['debug
 }
 
 export function TimingStage({ ticker, companyName, logoUrl }: TimingStageProps) {
-  const [guidedView, setGuidedView] = useState(true);
   const [selectedMetric, setSelectedMetric] = useState<TimingMetricType>("trend");
   const [showDebug, setShowDebug] = useState(false);
   
@@ -1106,18 +1053,6 @@ export function TimingStage({ ticker, companyName, logoUrl }: TimingStageProps) 
       <CardContent className="pb-12">
         <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4 mb-6 pb-4 border-b border-border/40">
           <TimeframeToggle timeframe={timeframe} onTimeframeChange={setTimeframe} />
-          <div className="flex items-center gap-3">
-            <div className="flex items-center gap-2">
-              <Eye className="w-4 h-4 text-muted-foreground" />
-              <span className="text-sm font-medium text-foreground">Guided view</span>
-            </div>
-            <Switch
-              checked={guidedView}
-              onCheckedChange={setGuidedView}
-              className="data-[state=checked]:bg-primary"
-              data-testid="switch-guided-view"
-            />
-          </div>
         </div>
 
         <TimingIntroBlock />
@@ -1135,7 +1070,6 @@ export function TimingStage({ ticker, companyName, logoUrl }: TimingStageProps) 
             signal={selectedSignal}
             deepDive={selectedDeepDive}
             chartData={selectedChartData}
-            guidedView={guidedView}
           />
         </div>
         
