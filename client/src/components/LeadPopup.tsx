@@ -22,10 +22,16 @@ export function LeadPopup() {
   const hasShownRef = useRef(false);
   const pageLoadTimeRef = useRef(Date.now());
   const currentUrlRef = useRef(window.location.href);
+  const lastStageRef = useRef<string | null>(null);
 
   const getTickerFromUrl = useCallback(() => {
     const params = new URLSearchParams(window.location.search);
     return params.get("ticker");
+  }, []);
+
+  const getStageFromUrl = useCallback(() => {
+    const params = new URLSearchParams(window.location.search);
+    return params.get("stage") || "0";
   }, []);
 
   const isAnalysisPage = useCallback(() => {
@@ -42,9 +48,18 @@ export function LeadPopup() {
   }, []);
 
   const checkConditionsAndShow = useCallback(() => {
-    if (hasShownRef.current) return;
     if (!isAnalysisPage()) return;
     if (hasAlreadySubmitted()) return;
+    
+    // Check if stage changed - reset timer if so
+    const currentStage = getStageFromUrl();
+    if (lastStageRef.current !== null && lastStageRef.current !== currentStage) {
+      hasShownRef.current = false;
+      pageLoadTimeRef.current = Date.now();
+    }
+    lastStageRef.current = currentStage;
+    
+    if (hasShownRef.current) return;
 
     const timeOnPage = (Date.now() - pageLoadTimeRef.current) / 1000;
     const scrollHeight = document.documentElement.scrollHeight;
@@ -70,7 +85,7 @@ export function LeadPopup() {
       hasShownRef.current = true;
       setIsVisible(true);
     }
-  }, [isAnalysisPage, hasAlreadySubmitted]);
+  }, [isAnalysisPage, hasAlreadySubmitted, getStageFromUrl]);
 
   const resetConditions = useCallback(() => {
     hasShownRef.current = false;
