@@ -625,12 +625,39 @@ function convertAPIQuadrantToLocal(apiQuadrant: APIValuationQuadrant): Valuation
     return labelMap[id] || { xLabel: "X Axis", yLabel: "Y Axis" };
   };
 
-  const getPosition = (strength: 'sensible' | 'caution' | 'risky') => {
-    switch (strength) {
-      case 'sensible': return { x: 35, y: 35 };
-      case 'caution': return { x: 55, y: 55 };
-      case 'risky': return { x: 72, y: 72 };
-    }
+  // Position must match zone layouts - each quadrant has different "good" corner
+  // Y-axis is inverted in rendering: high y = top of chart, low y = bottom
+  const getPosition = (id: string, strength: 'sensible' | 'caution' | 'risky') => {
+    // Position mappings based on where green (good) vs red (bad) zones are:
+    // price-discipline: green=bottomRight (high x, low y), red=topLeft (low x, high y)
+    // price-tag: green=bottomRight (high x, low y), red=topLeft (low x, high y)
+    // capital-discipline: green=topRight (high x, high y), red=bottomLeft (low x, low y)
+    // doubling-potential: green=bottomLeft (low x, low y), red=topRight (high x, high y)
+    
+    const positionMaps: Record<string, Record<'sensible' | 'caution' | 'risky', { x: number; y: number }>> = {
+      'price-discipline': {
+        sensible: { x: 75, y: 25 },  // bottomRight (Sunny Discount)
+        caution: { x: 50, y: 50 },   // middle
+        risky: { x: 25, y: 75 },     // topLeft (Stormy Peak)
+      },
+      'price-tag': {
+        sensible: { x: 75, y: 25 },  // bottomRight (Undervalued Opportunity)
+        caution: { x: 50, y: 50 },   // middle
+        risky: { x: 25, y: 75 },     // topLeft (Priced for Perfection)
+      },
+      'capital-discipline': {
+        sensible: { x: 75, y: 75 },  // topRight (Value Creator)
+        caution: { x: 50, y: 50 },   // middle
+        risky: { x: 25, y: 25 },     // bottomLeft (Value Destroyer)
+      },
+      'doubling-potential': {
+        sensible: { x: 25, y: 25 },  // bottomLeft (Realistic Compounder)
+        caution: { x: 50, y: 50 },   // middle
+        risky: { x: 75, y: 75 },     // topRight (Pipe Dream)
+      },
+    };
+    
+    return positionMaps[id]?.[strength] || { x: 50, y: 50 };
   };
 
   const mappedSignals = apiQuadrant.signals.slice(0, 2).map(s => ({
@@ -657,7 +684,7 @@ function convertAPIQuadrantToLocal(apiQuadrant: APIValuationQuadrant): Valuation
     xLabel: axisLabels.xLabel,
     yLabel: axisLabels.yLabel,
     zones: getDefaultZones(apiQuadrant.id),
-    position: getPosition(apiQuadrant.strength),
+    position: getPosition(apiQuadrant.id, apiQuadrant.strength),
     insight: apiQuadrant.insight,
     insightHighlight: apiQuadrant.insightHighlight,
     strength: apiQuadrant.strength,
