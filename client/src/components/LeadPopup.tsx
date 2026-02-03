@@ -50,7 +50,15 @@ export function LeadPopup() {
     const scrollHeight = document.documentElement.scrollHeight;
     const windowHeight = window.innerHeight;
     const scrollY = window.scrollY;
-    const scrollPercent = (scrollY / (scrollHeight - windowHeight)) * 100;
+    
+    // Handle edge case: if page content fits in viewport, no scroll is possible
+    const scrollableHeight = scrollHeight - windowHeight;
+    if (scrollableHeight <= 0) {
+      // Page has no scrollable content - don't show popup
+      return;
+    }
+    
+    const scrollPercent = Math.min((scrollY / scrollableHeight) * 100, 100);
     
     if (scrollPercent >= SCROLL_THRESHOLD) {
       hasShownRef.current = true;
