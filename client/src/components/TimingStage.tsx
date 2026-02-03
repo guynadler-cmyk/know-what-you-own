@@ -423,6 +423,145 @@ function SignalTag({ label, value, metricType }: SignalTagProps) {
   );
 }
 
+// Plain-English explanations for "Go deeper" section
+// Designed to be understandable by a 10-year-old, no jargon
+interface GoDeeperProps {
+  type: TimingMetricType;
+  signal: TimingAnalysis["trend"]["signal"];
+}
+
+function GoDeeper({ type, signal }: GoDeeperProps) {
+  const label = signal.label;
+  const labelNorm = label.toLowerCase().trim();
+  
+  // Explicit label-to-advice mapping for each metric type
+  // Ensures deterministic, single-message output with fallbacks
+  
+  const trendAdvice: Record<string, string> = {
+    "strengthening": "The structure is supportive. If you're already invested, this is a reason to stay patient. If you're looking to buy, conditions are cooperating.",
+    "stabilizing": "The floor is firming up, but the ceiling hasn't lifted yet. Early signs of support are forming — worth watching, but not yet confirmed.",
+    "breakout attempt": "New highs are appearing, but the foundation is shaky. Momentum without support can fade. Wait for the lows to catch up before getting confident.",
+    "weakening": "Both peaks and valleys are declining. This isn't the time to chase. Patience now can save regret later — wait for stabilization.",
+  };
+  
+  const momentumAdvice: Record<string, string> = {
+    "aligned": "Short and long-term are rowing in the same direction. This is the ideal setup — momentum is behind the move.",
+    "momentum aligning": "Short and long-term are rowing in the same direction. This is the ideal setup — momentum is behind the move.",
+    "early recovery": "Short-term is trying to improve, but long-term hasn't confirmed yet. It's early — could strengthen or fizzle. Watch for follow-through.",
+    "bounce fading": "Short-term tried to improve, but the bounce is fading. The attempted recovery may not stick. Stay cautious.",
+    "pullback": "A dip against a rising baseline. Often absorbed in healthy trends, but stay alert for deeper weakness.",
+    "improving but volatile": "Conditions are improving but choppy. Progress is uneven. Wait for more consistency before acting.",
+    "pressure building": "Both timeframes are pointing lower. Headwinds are strong. Wait for at least one to turn before expecting a recovery.",
+    "downside pressure building": "Headwinds are intensifying. Patience is key. Wait for signs of stabilization before expecting a turnaround.",
+    "downside pressure easing": "Headwinds are starting to ease. The worst may be passing, but confirmation is still needed. Watch for follow-through.",
+  };
+  
+  const stretchAdvice: Record<string, string> = {
+    "bounce setup": "Losses have dominated, but pressure is easing. The rubber band is stretched and starting to relax. Rebounds become more likely — this can be a good time to watch for entry opportunities.",
+    "still sliding": "Losses are still piling up and intensifying. The band is still stretching. Patience is wise — wait for signs that the selling is exhausting itself.",
+    "cooling off": "Wins have dominated, but the pace is slowing. The rally may be getting tired. Consider taking some profits or tightening your expectations.",
+    "overheating": "Wins keep stacking and pressure is intensifying. Conditions are stretched and fragile. Chasing here is risky — a pullback could come suddenly.",
+    "neutral": "Conditions are near balance. No extreme stretch in either direction. A stable foundation — wait for a clearer signal before acting.",
+  };
+  
+  const defaultAdvice: Record<TimingMetricType, string> = {
+    trend: "Current conditions suggest watching carefully. Let the pattern develop further before making decisions.",
+    momentum: "Current conditions are mixed. Watch for clearer direction before acting.",
+    stretch: "Current stretch conditions are transitional. Monitor for a clearer setup before making decisions.",
+  };
+  
+  // Get the appropriate advice based on type and normalized label
+  const getAdvice = (adviceMap: Record<string, string>, fallback: string): string => {
+    return adviceMap[labelNorm] || fallback;
+  };
+  
+  // Trend explanations
+  if (type === "trend") {
+    return (
+      <div className="space-y-4" data-testid="go-deeper-trend">
+        <div className="space-y-2">
+          <h4 className="font-medium text-foreground">What this measures</h4>
+          <p className="text-sm text-muted-foreground leading-relaxed">
+            Think of a bouncing ball on a hill. If each bounce goes higher than the last, the ball is climbing. If each bounce drops lower, it's rolling downhill. Trend tracks whether the stock's peaks and valleys are moving up or down over time.
+          </p>
+        </div>
+        
+        <div className="space-y-2">
+          <h4 className="font-medium text-foreground">Why it matters</h4>
+          <p className="text-sm text-muted-foreground leading-relaxed">
+            When both peaks and valleys are rising, the path of least resistance is upward. When both are falling, gravity is working against you. This tells you which way the current is flowing.
+          </p>
+        </div>
+        
+        <div className="space-y-2">
+          <h4 className="font-medium text-foreground">What to do with "{label}"</h4>
+          <p className="text-sm text-muted-foreground leading-relaxed">
+            {getAdvice(trendAdvice, defaultAdvice.trend)}
+          </p>
+        </div>
+      </div>
+    );
+  }
+  
+  // Momentum explanations
+  if (type === "momentum") {
+    return (
+      <div className="space-y-4" data-testid="go-deeper-momentum">
+        <div className="space-y-2">
+          <h4 className="font-medium text-foreground">What this measures</h4>
+          <p className="text-sm text-muted-foreground leading-relaxed">
+            Imagine a runner. Their recent speed tells you if they're sprinting or slowing down. Their average pace over the whole race tells you their baseline. Momentum compares recent speed to the longer-term pace to see if the runner is accelerating or tiring out.
+          </p>
+        </div>
+        
+        <div className="space-y-2">
+          <h4 className="font-medium text-foreground">Why it matters</h4>
+          <p className="text-sm text-muted-foreground leading-relaxed">
+            When short-term and long-term are moving together, you have wind at your back. When they're pulling apart, there's friction. Aligned momentum means the trend has conviction.
+          </p>
+        </div>
+        
+        <div className="space-y-2">
+          <h4 className="font-medium text-foreground">What to do with "{label}"</h4>
+          <p className="text-sm text-muted-foreground leading-relaxed">
+            {getAdvice(momentumAdvice, defaultAdvice.momentum)}
+          </p>
+        </div>
+      </div>
+    );
+  }
+  
+  // Stretch explanations
+  if (type === "stretch") {
+    return (
+      <div className="space-y-4" data-testid="go-deeper-stretch">
+        <div className="space-y-2">
+          <h4 className="font-medium text-foreground">What this measures</h4>
+          <p className="text-sm text-muted-foreground leading-relaxed">
+            Picture a rubber band. If you pull it too far in one direction, it wants to snap back. Stretch measures whether recent trading has been one-sided — too many wins or too many losses in a row — and whether that pressure is building or releasing.
+          </p>
+        </div>
+        
+        <div className="space-y-2">
+          <h4 className="font-medium text-foreground">Why it matters</h4>
+          <p className="text-sm text-muted-foreground leading-relaxed">
+            When conditions get extreme, reversals become more likely. But timing matters — you don't want to catch a falling knife or sell too early in a rally. This helps you sense when extremes might be ready to correct.
+          </p>
+        </div>
+        
+        <div className="space-y-2">
+          <h4 className="font-medium text-foreground">What to do with "{label}"</h4>
+          <p className="text-sm text-muted-foreground leading-relaxed">
+            {getAdvice(stretchAdvice, defaultAdvice.stretch)}
+          </p>
+        </div>
+      </div>
+    );
+  }
+  
+  return null;
+}
+
 interface StretchGuidedHelperProps {
   rsiLevel?: string;
   rsiTrend?: string;
@@ -558,24 +697,7 @@ function TimingDetailPanel({ type, signal, deepDive, chartData, guidedView }: Ti
       
       {showGoDeeper && (
         <div className="border-t border-border p-6 space-y-4 animate-in fade-in-50" data-testid={`deep-dive-${type}`}>
-          <div className="h-40 w-full bg-muted/30 rounded-lg p-4">
-            {type === "trend" && (
-              <TrendChart data={chartData as TimingAnalysis["trend"]["chartData"]} status={signal.status} timeHorizon="~6 months" />
-            )}
-            {type === "momentum" && (
-              <MomentumChart data={chartData as TimingAnalysis["momentum"]["chartData"]} status={signal.status} showOverlay={false} />
-            )}
-            {type === "stretch" && (
-              <StretchChart data={chartData as TimingAnalysis["stretch"]["chartData"]} status={signal.status} showOverlay={false} />
-            )}
-          </div>
-          
-          <div className="bg-muted/30 rounded-lg p-4">
-            <h4 className="font-medium text-foreground mb-2">{deepDive.title}</h4>
-            <p className="text-sm text-muted-foreground leading-relaxed">
-              {deepDive.explanation}
-            </p>
-          </div>
+          <GoDeeper type={type} signal={signal} />
         </div>
       )}
     </Card>
