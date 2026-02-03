@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -7,9 +7,6 @@ import { apiRequest } from "@/lib/queryClient";
 
 const STORAGE_KEY = "rn_popup_submitted";
 const TRIGGER_SECONDS = 10;
-const TRIGGER_SECONDS_SHORT_PAGE = 20; // Longer time for pages with little scrollable content
-const SCROLL_THRESHOLD = 15;
-const MIN_SCROLLABLE_HEIGHT = 200; // If less than this, treat as "short page"
 
 export function LeadPopup() {
   const [isVisible, setIsVisible] = useState(false);
@@ -19,129 +16,47 @@ export function LeadPopup() {
   const [error, setError] = useState("");
   
   const timerRef = useRef<NodeJS.Timeout | null>(null);
-  const hasShownRef = useRef(false);
-  const pageLoadTimeRef = useRef(Date.now());
-  const currentUrlRef = useRef(window.location.href);
-  const lastStageRef = useRef<string | null>(null);
+  const startTimeRef = useRef(Date.now());
 
-  const getTickerFromUrl = useCallback(() => {
+  const getTickerFromUrl = () => {
     const params = new URLSearchParams(window.location.search);
     return params.get("ticker");
-  }, []);
+  };
 
-  const getStageFromUrl = useCallback(() => {
-    const params = new URLSearchParams(window.location.search);
-    return params.get("stage") || "0";
-  }, []);
-
-  const isAnalysisPage = useCallback(() => {
+  const isAnalysisPage = () => {
     return getTickerFromUrl() !== null;
-  }, [getTickerFromUrl]);
+  };
 
-  const hasAlreadySubmitted = useCallback(() => {
+  const hasAlreadySubmitted = () => {
     return localStorage.getItem(STORAGE_KEY) === "true";
-  }, []);
-
-  const getPageDepth = useCallback(() => {
-    const path = window.location.pathname;
-    return path.split("/").filter(Boolean).length;
-  }, []);
-
-  const checkConditionsAndShow = useCallback(() => {
-    if (!isAnalysisPage()) return;
-    if (hasAlreadySubmitted()) return;
-    
-    // Check if stage changed - reset timer if so
-    const currentStage = getStageFromUrl();
-    if (lastStageRef.current !== null && lastStageRef.current !== currentStage) {
-      hasShownRef.current = false;
-      pageLoadTimeRef.current = Date.now();
-    }
-    lastStageRef.current = currentStage;
-    
-    if (hasShownRef.current) return;
-
-    const timeOnPage = (Date.now() - pageLoadTimeRef.current) / 1000;
-    const scrollHeight = document.documentElement.scrollHeight;
-    const windowHeight = window.innerHeight;
-    const scrollY = window.scrollY;
-    const scrollableHeight = scrollHeight - windowHeight;
-    
-    // For short pages (little or no scrollable content), use time-only trigger with longer delay
-    if (scrollableHeight <= MIN_SCROLLABLE_HEIGHT) {
-      if (timeOnPage >= TRIGGER_SECONDS_SHORT_PAGE) {
-        hasShownRef.current = true;
-        setIsVisible(true);
-      }
-      return;
-    }
-    
-    // For normal pages, require both time AND scroll conditions
-    if (timeOnPage < TRIGGER_SECONDS) return;
-    
-    const scrollPercent = Math.min((scrollY / scrollableHeight) * 100, 100);
-    
-    if (scrollPercent >= SCROLL_THRESHOLD) {
-      hasShownRef.current = true;
-      setIsVisible(true);
-    }
-  }, [isAnalysisPage, hasAlreadySubmitted, getStageFromUrl]);
-
-  const resetConditions = useCallback(() => {
-    hasShownRef.current = false;
-    pageLoadTimeRef.current = Date.now();
-    setIsVisible(false);
-    setIsSubmitted(false);
-    setEmail("");
-    setError("");
-  }, []);
-
-  const handleUrlChange = useCallback(() => {
-    const newUrl = window.location.href;
-    if (newUrl !== currentUrlRef.current) {
-      currentUrlRef.current = newUrl;
-      resetConditions();
-    }
-  }, [resetConditions]);
+  };
 
   useEffect(() => {
+    // Don't show if already submitted
     if (hasAlreadySubmitted()) return;
 
-    const handleScroll = () => {
-      checkConditionsAndShow();
-    };
-
+    // Start a timer that checks every second
     timerRef.current = setInterval(() => {
-      checkConditionsAndShow();
+      // Only show on analysis pages (has ?ticker= param)
+      if (!isAnalysisPage()) return;
+      
+      const elapsed = (Date.now() - startTimeRef.current) / 1000;
+      
+      if (elapsed >= TRIGGER_SECONDS) {
+        setIsVisible(true);
+        // Stop checking once shown
+        if (timerRef.current) {
+          clearInterval(timerRef.current);
+        }
+      }
     }, 1000);
-
-    window.addEventListener("scroll", handleScroll, { passive: true });
-
-    const originalPushState = history.pushState;
-    const originalReplaceState = history.replaceState;
-
-    history.pushState = function (...args) {
-      originalPushState.apply(this, args);
-      handleUrlChange();
-    };
-
-    history.replaceState = function (...args) {
-      originalReplaceState.apply(this, args);
-      handleUrlChange();
-    };
-
-    window.addEventListener("popstate", handleUrlChange);
 
     return () => {
       if (timerRef.current) {
         clearInterval(timerRef.current);
       }
-      window.removeEventListener("scroll", handleScroll);
-      window.removeEventListener("popstate", handleUrlChange);
-      history.pushState = originalPushState;
-      history.replaceState = originalReplaceState;
     };
-  }, [checkConditionsAndShow, handleUrlChange, hasAlreadySubmitted]);
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -159,9 +74,7 @@ export function LeadPopup() {
         email,
         ticker: getTickerFromUrl(),
         path: window.location.pathname,
-        depth: getPageDepth(),
-        triggerSeconds: TRIGGER_SECONDS,
-        ts: pageLoadTimeRef.current,
+        ts: startTimeRef.current,
       });
 
       localStorage.setItem(STORAGE_KEY, "true");
