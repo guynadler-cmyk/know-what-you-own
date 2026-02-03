@@ -1,0 +1,70 @@
+Build Lead Capture Popup for Analysis Pages
+Goal: Create a lightweight lead capture popup that appears on analysis pages to collect user emails along with the stock ticker they're viewing.
+
+Backend Requirements
+1. Schema (in shared/schema.ts):
+
+export const leadSchema = z.object({
+  email: z.string().email(),
+  ticker: z.string().nullable(),
+  path: z.string(),
+  depth: z.number(),
+  triggerSeconds: z.number(),
+  ts: z.number(),
+});
+export type Lead = z.infer<typeof leadSchema>;
+2. Storage (in-memory, in server/storage.ts):
+
+Add leads: Lead[] array to storage
+Add addLead(lead: Lead): void method
+Add getLeads(): Lead[] method
+3. API Routes (in server/routes.ts):
+
+POST /api/lead - Accepts lead data, validates with Zod schema, stores in memory
+GET /api/leads - Returns all collected leads (for admin viewing)
+Frontend Requirements
+4. LeadPopup Component (client/src/components/LeadPopup.tsx):
+
+Create a popup component with these behaviors:
+
+Trigger Conditions (BOTH must be met):
+
+User has been on page for 15+ seconds
+User has scrolled 25%+ down the page
+Display Rules:
+
+Only show on analysis pages (when URL has ?ticker= parameter)
+Never show if user has already submitted their email (check localStorage key rn_popup_submitted)
+If user dismisses popup, it will still reappear on the NEXT analysis page (no 7-day wait)
+Once email is submitted, never show again (set localStorage rn_popup_submitted = "true")
+Navigation Handling:
+
+Reset time and scroll conditions when user navigates to a new analysis page
+Track URL changes via history.pushState, history.replaceState, and popstate event
+UI Design:
+
+Fixed position: bottom-right corner (fixed bottom-4 right-4 z-50 max-w-sm)
+Use Card component with shadow
+Header: "Sign up for our advanced 10K analysis"
+Body text: "We are hard at work on our next version and would love to share it with you first"
+Email input field
+Submit button: "Notify me"
+Close button (X icon) in top-right
+Success state: "Thanks — you're on the early access list."
+Data Captured on Submit:
+
+email: User's email
+ticker: Current stock ticker from URL params
+path: Current pathname
+depth: Page depth based on URL structure
+triggerSeconds: 15 (the threshold used)
+ts: Page load timestamp
+5. Integration (in App.tsx):
+
+Import and render <LeadPopup /> as a sibling to <Toaster /> (outside routing)
+Key Implementation Details
+Use useCallback for scroll and timer functions to prevent re-renders
+Use useRef for timer references and hasShown flag
+Scroll percentage calculation: (scrollY / (scrollHeight - windowHeight)) * 100
+Clean up event listeners and timers on unmount
+The component handles its own visibility - no props needed
