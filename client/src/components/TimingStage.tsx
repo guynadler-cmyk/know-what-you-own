@@ -1075,11 +1075,13 @@ export function TimingStage({ ticker, companyName, logoUrl }: TimingStageProps) 
         
         <TimingScorecard metrics={metrics} />
         
-        <DebugDrawer 
-          debug={data.debug} 
-          isOpen={showDebug} 
-          onToggle={() => setShowDebug(!showDebug)} 
-        />
+        {import.meta.env.DEV && (
+          <DebugDrawer 
+            debug={data.debug} 
+            isOpen={showDebug} 
+            onToggle={() => setShowDebug(!showDebug)} 
+          />
+        )}
       </CardContent>
     </Card>
   );
