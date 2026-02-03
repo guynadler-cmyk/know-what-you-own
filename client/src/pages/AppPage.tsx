@@ -155,6 +155,9 @@ export default function AppPage() {
   const handleStageChange = (stage: number) => {
     setCurrentStage(stage);
     
+    // Scroll to top when changing stages
+    window.scrollTo(0, 0);
+    
     analytics.trackStageViewed(stage, STAGE_NAMES[stage - 1] || 'Unknown', currentTicker);
 
     // Update URL with stage
