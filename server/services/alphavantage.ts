@@ -1404,20 +1404,45 @@ export class AlphaVantageService {
     // Handle missing/invalid P/E (negative earnings companies) - neutral caution
     if (peRatio <= 0) return 'caution';
     
-    // Handle missing growth data - evaluate based on P/E only
+    // Handle missing growth data - be conservative, evaluate based on P/E only
     if (!earningsGrowthComputable) {
-      return peRatio <= 15 ? 'caution' : peRatio > 25 ? 'risky' : 'caution';
+      // Without growth data, very high P/E is risky, low P/E is caution, otherwise caution
+      return peRatio > 25 ? 'risky' : 'caution';
     }
     
-    const isHighPE = peRatio > 25;
+    // Define thresholds
+    const isVeryHighPE = peRatio > 30;
+    const isHighPE = peRatio > 20;
+    const isModeratePE = peRatio > 15 && peRatio <= 20;
     const isLowPE = peRatio <= 15;
     const isHighGrowth = earningsGrowthRate > 15;
+    const isModerateGrowth = earningsGrowthRate > 8 && earningsGrowthRate <= 15;
     const isLowGrowth = earningsGrowthRate <= 5;
 
+    // Best case: Low P/E with high growth = sensible (undervalued opportunity)
     if (isLowPE && isHighGrowth) return 'sensible';
+    
+    // Low P/E with moderate growth = sensible
+    if (isLowPE && isModerateGrowth) return 'sensible';
+    
+    // Low P/E but low/no growth = caution (cheap for a reason)
     if (isLowPE && isLowGrowth) return 'caution';
-    if (isHighPE && isHighGrowth) return 'caution';
-    if (isHighPE && isLowGrowth) return 'risky';
+    
+    // Very high P/E is risky unless growth is exceptional
+    if (isVeryHighPE && isHighGrowth) return 'caution'; // Growth premium
+    if (isVeryHighPE) return 'risky'; // Too expensive
+    
+    // High P/E (20-30) needs strong growth to justify
+    if (isHighPE && isHighGrowth) return 'caution'; // Growth premium - justified
+    if (isHighPE && isModerateGrowth) return 'caution'; // Expensive but some growth justifies caution not risky
+    if (isHighPE) return 'risky'; // Expensive with low/no growth
+    
+    // Moderate P/E (15-20) with high growth = sensible
+    if (isModeratePE && isHighGrowth) return 'sensible';
+    
+    // Moderate P/E with moderate or low growth = caution
+    if (isModeratePE) return 'caution';
+    
     return 'caution';
   }
 
