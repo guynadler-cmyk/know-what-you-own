@@ -34,6 +34,9 @@ export interface QuadrantData {
   position: { x: number; y: number };
   insight: string;
   signalDirections: [boolean, boolean];
+  // For inverse metrics (Debt, CapEx): true means show down arrow when good
+  // e.g., low debt is good but shows DOWN arrow since debt decreased
+  invertedSignals?: [boolean, boolean];
   strength: SignalStrength;
 }
 
@@ -77,9 +80,10 @@ export const QUADRANT_DATA: QuadrantData[] = [
   {
     id: "debt-safety",
     title: "Debt Safety",
-    verdict: "Financially Resilient",
+    verdict: "Low Debt Burden",
     signals: ["Debt", "Earnings"],
-    signalDirections: [false, true],
+    signalDirections: [true, true], // Default: debt is low (good), earnings up
+    invertedSignals: [true, false], // Debt is inverted: down arrow = good (low debt)
     xLabel: "Return / Earnings Strength",
     yLabel: "Debt Levels",
     zones: {
@@ -98,6 +102,7 @@ export const QUADRANT_DATA: QuadrantData[] = [
     verdict: "Smart Allocation",
     signals: ["CapEx", "ROIC"],
     signalDirections: [true, true],
+    invertedSignals: [true, false], // CapEx is inverted: up spending = caution context
     xLabel: "Capital Expenditure",
     yLabel: "Return on Capital",
     zones: {
@@ -311,24 +316,32 @@ function SummaryCardRow({
               {quadrant.verdict}
             </p>
             <div className="flex flex-wrap gap-1.5">
-              {quadrant.signals.map((signal, idx) => (
-                <span 
-                  key={idx} 
-                  className={cn(
-                    "inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full",
-                    quadrant.signalDirections[idx] 
-                      ? "bg-green-500/10 text-green-700 dark:text-green-400" 
-                      : "bg-red-500/10 text-red-700 dark:text-red-400"
-                  )}
-                >
-                  {quadrant.signalDirections[idx] ? (
-                    <TrendingUp className="w-3 h-3" />
-                  ) : (
-                    <TrendingDown className="w-3 h-3" />
-                  )}
-                  {signal}
-                </span>
-              ))}
+              {quadrant.signals.map((signal, idx) => {
+                const isGood = quadrant.signalDirections[idx];
+                const isInverted = quadrant.invertedSignals?.[idx] ?? false;
+                // Color based on good/bad: green for good, red for bad
+                // Arrow: for inverted metrics (Debt), good means DOWN arrow (debt decreased)
+                const showUpArrow = isInverted ? !isGood : isGood;
+                
+                return (
+                  <span 
+                    key={idx} 
+                    className={cn(
+                      "inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full",
+                      isGood 
+                        ? "bg-green-500/10 text-green-700 dark:text-green-400" 
+                        : "bg-red-500/10 text-red-700 dark:text-red-400"
+                    )}
+                  >
+                    {showUpArrow ? (
+                      <TrendingUp className="w-3 h-3" />
+                    ) : (
+                      <TrendingDown className="w-3 h-3" />
+                    )}
+                    {signal}
+                  </span>
+                );
+              })}
             </div>
           </button>
         );
@@ -584,26 +597,33 @@ export function QuadrantExplorer({ financialMetrics, balanceSheetMetrics }: Quad
             </div>
             
             <div className="flex flex-wrap gap-3">
-              {selectedQuadrant.signals.map((signal, idx) => (
-                <div 
-                  key={idx}
-                  className={cn(
-                    "flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium",
-                    selectedQuadrant.signalDirections[idx] 
-                      ? "bg-green-500/10 text-green-700 dark:text-green-400" 
-                      : "bg-red-500/10 text-red-700 dark:text-red-400"
-                  )}
-                  data-testid={`signal-${idx}`}
-                >
-                  {selectedQuadrant.signalDirections[idx] ? (
-                    <TrendingUp className="w-4 h-4" />
-                  ) : (
-                    <TrendingDown className="w-4 h-4" />
-                  )}
-                  <TermWithTooltip term={signal} />
-                  {selectedQuadrant.signalDirections[idx] ? "↑" : "↓"}
-                </div>
-              ))}
+              {selectedQuadrant.signals.map((signal, idx) => {
+                const isGood = selectedQuadrant.signalDirections[idx];
+                const isInverted = selectedQuadrant.invertedSignals?.[idx] ?? false;
+                // Color based on good/bad, arrow inverted for metrics like Debt
+                const showUpArrow = isInverted ? !isGood : isGood;
+                
+                return (
+                  <div 
+                    key={idx}
+                    className={cn(
+                      "flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium",
+                      isGood 
+                        ? "bg-green-500/10 text-green-700 dark:text-green-400" 
+                        : "bg-red-500/10 text-red-700 dark:text-red-400"
+                    )}
+                    data-testid={`signal-${idx}`}
+                  >
+                    {showUpArrow ? (
+                      <TrendingUp className="w-4 h-4" />
+                    ) : (
+                      <TrendingDown className="w-4 h-4" />
+                    )}
+                    <TermWithTooltip term={signal} />
+                    {showUpArrow ? "↑" : "↓"}
+                  </div>
+                );
+              })}
             </div>
             
             <p 
