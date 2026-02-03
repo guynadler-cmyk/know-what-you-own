@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { sql } from 'drizzle-orm';
+import { sql } from "drizzle-orm";
 import {
   pgTable,
   text,
@@ -101,10 +101,12 @@ export const performanceMetricSchema = z.object({
   name: z.string(),
   value: z.string(),
   explanation: z.string(),
-  chartData: z.array(z.object({
-    year: z.string(),
-    value: z.number(),
-  })),
+  chartData: z.array(
+    z.object({
+      year: z.string(),
+      value: z.number(),
+    }),
+  ),
 });
 
 // Years to doubling data schema
@@ -112,10 +114,12 @@ export const yearsToDoublingSchema = z.object({
   years: z.number(),
   currentValue: z.string(),
   projectedValue: z.string(),
-  chartData: z.array(z.object({
-    year: z.number(),
-    value: z.number(),
-  })),
+  chartData: z.array(
+    z.object({
+      year: z.number(),
+      value: z.number(),
+    }),
+  ),
 });
 
 // Stock performance schema
@@ -261,7 +265,9 @@ export const sessions = pgTable(
 
 // User storage table (required for Replit Auth)
 export const users = pgTable("users", {
-  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  id: varchar("id")
+    .primaryKey()
+    .default(sql`gen_random_uuid()`),
   email: varchar("email").unique(),
   firstName: varchar("first_name"),
   lastName: varchar("last_name"),
@@ -316,13 +322,17 @@ export const combinedFinancialMetricsSchema = incomeMetricsSchema.extend({
   balanceSheet: balanceSheetMetricsSchema.optional(),
 });
 
-export type CombinedFinancialMetrics = z.infer<typeof combinedFinancialMetricsSchema>;
+export type CombinedFinancialMetrics = z.infer<
+  typeof combinedFinancialMetricsSchema
+>;
 export type UpsertUser = typeof users.$inferInsert;
 export type User = typeof users.$inferSelect;
 
 // Waitlist signups table for marketing
 export const waitlistSignups = pgTable("waitlist_signups", {
-  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  id: varchar("id")
+    .primaryKey()
+    .default(sql`gen_random_uuid()`),
   email: varchar("email", { length: 255 }).notNull(),
   stageName: varchar("stage_name", { length: 100 }).notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
@@ -339,12 +349,16 @@ export type WaitlistSignup = typeof waitlistSignups.$inferSelect;
 
 // Scheduled checkup emails table for reminder tracking
 export const scheduledCheckupEmails = pgTable("scheduled_checkup_emails", {
-  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  id: varchar("id")
+    .primaryKey()
+    .default(sql`gen_random_uuid()`),
   email: varchar("email", { length: 255 }).notNull(),
   ticker: varchar("ticker", { length: 10 }).notNull(),
   selectedCheckins: jsonb("selected_checkins").notNull().$type<string[]>(),
   customMessage: varchar("custom_message", { length: 500 }),
-  reminderDates: jsonb("reminder_dates").notNull().$type<{ type: string; date: string }[]>(),
+  reminderDates: jsonb("reminder_dates")
+    .notNull()
+    .$type<{ type: string; date: string }[]>(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
@@ -352,15 +366,21 @@ export const scheduledCheckupEmails = pgTable("scheduled_checkup_emails", {
 export const insertScheduledCheckupSchema = z.object({
   email: z.string().email("Please enter a valid email address"),
   ticker: z.string().min(1, "Ticker is required").max(10),
-  selectedCheckins: z.array(z.string()).min(1, "Select at least one check-in type"),
+  selectedCheckins: z
+    .array(z.string())
+    .min(1, "Select at least one check-in type"),
   customMessage: z.string().max(500).optional(),
-  reminderDates: z.array(z.object({
-    type: z.string(),
-    date: z.string(),
-  })),
+  reminderDates: z.array(
+    z.object({
+      type: z.string(),
+      date: z.string(),
+    }),
+  ),
 });
 
-export type InsertScheduledCheckup = z.infer<typeof insertScheduledCheckupSchema>;
+export type InsertScheduledCheckup = z.infer<
+  typeof insertScheduledCheckupSchema
+>;
 export type ScheduledCheckupEmail = typeof scheduledCheckupEmails.$inferSelect;
 
 // Valuation Metrics (Magic Formula)
@@ -388,7 +408,7 @@ export const valuationMetricsSchema = z.object({
   companyName: z.string(),
   fiscalYear: z.string(),
   sector: z.string().optional(),
-  
+
   // Core Magic Formula inputs
   marketCap: z.number(),
   marketCapFormatted: z.string(),
@@ -396,27 +416,27 @@ export const valuationMetricsSchema = z.object({
   ebitFormatted: z.string(),
   enterpriseValue: z.number(),
   enterpriseValueFormatted: z.string(),
-  
+
   // Magic Formula outputs
   earningsYield: z.number(), // EBIT / EV as percentage
   earningsYieldFormatted: z.string(),
   returnOnCapital: z.number(), // EBIT / (Net Working Capital + Net Fixed Assets) as percentage
   returnOnCapitalFormatted: z.string(),
-  
+
   // Additional context
   priceToEarnings: z.number().optional(),
   priceToEarningsFormatted: z.string().optional(),
   distanceFromHigh: z.number().optional(), // percentage below 52-week high
   distanceFromHighFormatted: z.string().optional(),
-  
+
   // Share structure
   sharesOutstanding: z.number().optional(),
   shareChange: z.number().optional(), // positive = dilution, negative = buybacks
   shareChangeFormatted: z.string().optional(),
-  
+
   // Computed quadrant data
   quadrants: z.array(valuationQuadrantSchema),
-  
+
   // Overall assessment
   overallStrength: z.enum(["sensible", "caution", "risky"]),
   summaryVerdict: z.string(),
@@ -434,24 +454,34 @@ export const timingSignalSchema = z.object({
   label: z.string(),
   interpretation: z.string(),
   score: z.number().min(-1).max(1), // Normalized score from -1 to +1
-  position: z.object({
-    x: z.number().min(0).max(100), // Quadrant X position (0-100)
-    y: z.number().min(0).max(100), // Quadrant Y position (0-100)
-  }).optional(),
-  signals: z.array(z.object({
-    label: z.string(),
-    value: z.string(),
-  })).optional(),
+  position: z
+    .object({
+      x: z.number().min(0).max(100), // Quadrant X position (0-100)
+      y: z.number().min(0).max(100), // Quadrant Y position (0-100)
+    })
+    .optional(),
+  signals: z
+    .array(
+      z.object({
+        label: z.string(),
+        value: z.string(),
+      }),
+    )
+    .optional(),
 });
 
 // Chart data for visual representations
 export const trendChartDataSchema = z.object({
   prices: z.array(z.number()), // Smoothed price series
   baseline: z.array(z.number()), // Long-term EMA (optional baseline)
-  structurePoints: z.array(z.object({
-    index: z.number(),
-    type: z.enum(["high", "low"]),
-  })).optional(),
+  structurePoints: z
+    .array(
+      z.object({
+        index: z.number(),
+        type: z.enum(["high", "low"]),
+      }),
+    )
+    .optional(),
 });
 
 export const momentumChartDataSchema = z.object({
@@ -472,30 +502,30 @@ export const timingDebugSchema = z.object({
   timeframe: timingTimeframeSchema,
   lastBarDate: z.string(),
   seriesType: z.string(), // "adjusted" or "unadjusted"
-  
+
   // RSI primitives
   rsiLatest: z.number(),
   rsiPrevious: z.number(),
   rsiDistanceFrom50: z.number(), // abs(rsi - 50)
-  
+
   // MACD primitives
   macdLine: z.number(),
   macdSignal: z.number(),
   macdHist: z.number(),
   macdHistPrev: z.number(),
-  
+
   // EMA slopes used for classification
   shortEmaSlope: z.number(), // percentage change over period
   longEmaSlope: z.number(),
-  
+
   // Trend primitives
   highsProgression: z.string(), // "strengthening" | "weakening" | "mixed"
   lowsProgression: z.string(),
-  
+
   // Stretch primitives
   distanceFromBalance: z.number(), // percentage
-  rsiZone: z.enum(['Oversold', 'Neutral', 'Overbought']),
-  rsiDirection: z.enum(['Rising', 'Falling', 'Flat']),
+  rsiZone: z.enum(["Oversold", "Neutral", "Overbought"]),
+  rsiDirection: z.enum(["Rising", "Falling", "Flat"]),
 });
 
 export const timingAnalysisSchema = z.object({
@@ -503,17 +533,17 @@ export const timingAnalysisSchema = z.object({
   companyName: z.string().optional(),
   lastUpdated: z.string(),
   timeframe: timingTimeframeSchema.optional(), // "weekly" or "daily"
-  
+
   // Debug data for internal QA
   debug: timingDebugSchema.optional(),
-  
+
   // Overall verdict
   verdict: z.object({
     message: z.string(), // Human-readable verdict
     subtitle: z.string(), // Disclaimer/context
     alignmentScore: z.number().min(-1).max(1), // Combined alignment
   }),
-  
+
   // Three signal dimensions
   trend: z.object({
     signal: timingSignalSchema,
@@ -523,7 +553,7 @@ export const timingAnalysisSchema = z.object({
       explanation: z.string(),
     }),
   }),
-  
+
   momentum: z.object({
     signal: timingSignalSchema,
     chartData: momentumChartDataSchema,
@@ -532,7 +562,7 @@ export const timingAnalysisSchema = z.object({
       explanation: z.string(),
     }),
   }),
-  
+
   stretch: z.object({
     signal: timingSignalSchema,
     chartData: stretchChartDataSchema,
@@ -550,7 +580,6 @@ export type MomentumChartData = z.infer<typeof momentumChartDataSchema>;
 export type StretchChartData = z.infer<typeof stretchChartDataSchema>;
 export type TimingAnalysis = z.infer<typeof timingAnalysisSchema>;
 export type TimingDebug = z.infer<typeof timingDebugSchema>;
-
 
 //
 
@@ -590,3 +619,15 @@ export const aiFootnotesAnalysis = pgTable("ai_footnotes_analysis", {
   result: jsonb("result").notNull(),
   createdAt: timestamp("created_at").defaultNow(),
 });
+
+// Lead capture schema for in-memory storage
+export const leadSchema = z.object({
+  email: z.string().email(),
+  ticker: z.string().nullable(),
+  path: z.string(),
+  depth: z.number(),
+  triggerSeconds: z.number(),
+  ts: z.number(),
+});
+
+export type Lead = z.infer<typeof leadSchema>;
