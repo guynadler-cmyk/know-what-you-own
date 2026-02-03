@@ -7,6 +7,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { HelmetProvider } from "react-helmet-async";
 import { initGA } from "./lib/analytics";
 import { useAnalytics } from "./hooks/use-analytics";
+import { LeadPopup } from "@/components/LeadPopup";
 
 const LandingPage = lazy(() => import("@/pages/LandingPage"));
 const AppPage = lazy(() => import("@/pages/AppPage"));
@@ -44,6 +45,7 @@ function App() {
       <QueryClientProvider client={queryClient}>
         <TooltipProvider>
           <Toaster />
+          <LeadPopup />
           <Router />
         </TooltipProvider>
       </QueryClientProvider>
