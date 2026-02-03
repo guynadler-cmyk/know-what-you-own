@@ -6,8 +6,10 @@ import { X, CheckCircle } from "lucide-react";
 import { apiRequest } from "@/lib/queryClient";
 
 const STORAGE_KEY = "rn_popup_submitted";
-const TRIGGER_SECONDS = 15;
-const SCROLL_THRESHOLD = 25;
+const TRIGGER_SECONDS = 10;
+const TRIGGER_SECONDS_SHORT_PAGE = 20; // Longer time for pages with little scrollable content
+const SCROLL_THRESHOLD = 15;
+const MIN_SCROLLABLE_HEIGHT = 200; // If less than this, treat as "short page"
 
 export function LeadPopup() {
   const [isVisible, setIsVisible] = useState(false);
@@ -45,18 +47,22 @@ export function LeadPopup() {
     if (hasAlreadySubmitted()) return;
 
     const timeOnPage = (Date.now() - pageLoadTimeRef.current) / 1000;
-    if (timeOnPage < TRIGGER_SECONDS) return;
-
     const scrollHeight = document.documentElement.scrollHeight;
     const windowHeight = window.innerHeight;
     const scrollY = window.scrollY;
-    
-    // Handle edge case: if page content fits in viewport, no scroll is possible
     const scrollableHeight = scrollHeight - windowHeight;
-    if (scrollableHeight <= 0) {
-      // Page has no scrollable content - don't show popup
+    
+    // For short pages (little or no scrollable content), use time-only trigger with longer delay
+    if (scrollableHeight <= MIN_SCROLLABLE_HEIGHT) {
+      if (timeOnPage >= TRIGGER_SECONDS_SHORT_PAGE) {
+        hasShownRef.current = true;
+        setIsVisible(true);
+      }
       return;
     }
+    
+    // For normal pages, require both time AND scroll conditions
+    if (timeOnPage < TRIGGER_SECONDS) return;
     
     const scrollPercent = Math.min((scrollY / scrollableHeight) * 100, 100);
     
