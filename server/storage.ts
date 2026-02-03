@@ -9,9 +9,13 @@ import {
   type WaitlistSignup,
   type InsertScheduledCheckup,
   type ScheduledCheckupEmail,
+  type Lead,
 } from "@shared/schema";
 import { internalDb } from "./internalDb";
 import { eq } from "drizzle-orm";
+
+// In-memory lead storage
+const leads: Lead[] = [];
 
 // Storage interface
 export interface IStorage {
@@ -26,6 +30,10 @@ export interface IStorage {
   // Scheduled checkup operations
   createScheduledCheckup(data: InsertScheduledCheckup): Promise<ScheduledCheckupEmail>;
   getScheduledCheckups(): Promise<ScheduledCheckupEmail[]>;
+  
+  // Lead operations (in-memory)
+  addLead(lead: Lead): void;
+  getLeads(): Lead[];
 }
 
 // Database storage implementation
@@ -75,6 +83,15 @@ export class DatabaseStorage implements IStorage {
 
   async getScheduledCheckups(): Promise<ScheduledCheckupEmail[]> {
     return await internalDb.select().from(scheduledCheckupEmails);
+  }
+
+  // Lead operations (in-memory)
+  addLead(lead: Lead): void {
+    leads.push(lead);
+  }
+
+  getLeads(): Lead[] {
+    return [...leads];
   }
 }
 
