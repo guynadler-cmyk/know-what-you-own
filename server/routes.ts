@@ -2019,6 +2019,139 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.post("/api/strategy-email", async (req: any, res) => {
+    try {
+      const { email, plan } = req.body;
+
+      if (!email || !plan) {
+        return res.status(400).json({
+          error: "Missing required fields",
+          message: "Please provide email and plan data.",
+        });
+      }
+
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(email)) {
+        return res.status(400).json({
+          error: "Invalid email",
+          message: "Please provide a valid email address.",
+        });
+      }
+
+      const { Resend } = await import("resend");
+      const resend = new Resend(process.env.replit_email_resend);
+
+      const triggerLabels: Record<string, string> = {
+        now: "Now / soon",
+        earnings: "After next earnings",
+        "30days": "In 30 days",
+        recheck: "After I re-check fundamentals",
+        manual: "Manual / I'll decide",
+      };
+
+      const tranchesHtml = plan.tranches
+        .map(
+          (t: any) => `
+          <tr>
+            <td style="padding: 12px; border-bottom: 1px solid #eee;">Tranche ${t.index}</td>
+            <td style="padding: 12px; border-bottom: 1px solid #eee; font-weight: 600;">$${t.amount.toLocaleString()}</td>
+            <td style="padding: 12px; border-bottom: 1px solid #eee;">${triggerLabels[t.trigger] || t.trigger}</td>
+          </tr>
+        `,
+        )
+        .join("");
+
+      const htmlContent = `
+        <!DOCTYPE html>
+        <html>
+        <head>
+          <meta charset="utf-8">
+          <title>Your ${plan.ticker} Strategy Plan</title>
+        </head>
+        <body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; color: #333;">
+          <h1 style="color: #0d9488; margin-bottom: 8px;">Your ${plan.ticker} Strategy Plan</h1>
+          <p style="color: #666; margin-top: 0;">Created on ${new Date(plan.createdAt).toLocaleDateString()}</p>
+          
+          <div style="background: #f8f9fa; padding: 16px; border-radius: 8px; margin: 24px 0;">
+            <h3 style="margin-top: 0; margin-bottom: 12px;">Research Snapshot</h3>
+            <p style="margin: 4px 0;"><strong>Fundamentals:</strong> ${plan.snapshot.fundamentals}</p>
+            <p style="margin: 4px 0;"><strong>Valuation:</strong> ${plan.snapshot.valuation}</p>
+            <p style="margin: 4px 0;"><strong>Timing:</strong> ${plan.snapshot.timing}</p>
+          </div>
+
+          <h3>Your Plan</h3>
+          <p><strong>Conviction:</strong> ${plan.convictionLabel} (${plan.convictionValue}/100)</p>
+          <p><strong>Total Amount:</strong> $${plan.totalAmount.toLocaleString()}</p>
+
+          <table style="width: 100%; border-collapse: collapse; margin: 16px 0;">
+            <thead>
+              <tr style="background: #f1f5f9;">
+                <th style="padding: 12px; text-align: left;">Tranche</th>
+                <th style="padding: 12px; text-align: left;">Amount</th>
+                <th style="padding: 12px; text-align: left;">Check-in Trigger</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${tranchesHtml}
+            </tbody>
+          </table>
+
+          ${
+            plan.imWrongIf
+              ? `
+            <div style="background: #fef3c7; padding: 16px; border-radius: 8px; margin: 24px 0;">
+              <h3 style="margin-top: 0; margin-bottom: 8px;">I'm wrong if...</h3>
+              <p style="margin: 0;">${plan.imWrongIf}</p>
+            </div>
+          `
+              : ""
+          }
+
+          <hr style="border: none; border-top: 1px solid #eee; margin: 32px 0;">
+          <p style="font-size: 12px; color: #888;">
+            This is a copy of your saved plan. restnvest provides research tools and planning structure, not investment advice.
+          </p>
+        </body>
+        </html>
+      `;
+
+      const { data, error } = await resend.emails.send({
+        from: "Know What You Own <product@restnvest.com>",
+        to: email,
+        subject: `Your ${plan.ticker} Strategy Plan`,
+        html: htmlContent,
+      });
+
+      if (error) {
+        console.error("Resend error:", error);
+        return res.status(500).json({
+          error: "Failed to send email",
+          message: "Unable to send email. Please try again.",
+        });
+      }
+
+      try {
+        await storage.createWaitlistSignup({
+          email,
+          stageName: `Strategy Plan: ${plan.ticker}`,
+        });
+      } catch (dbError) {
+        console.warn("Failed to store email in DB, continuing:", dbError);
+      }
+
+      console.log(
+        `Strategy email sent to ${email} for ${plan.ticker}, ID: ${data?.id}`,
+      );
+      res.json({ success: true, emailId: data?.id });
+    } catch (error: any) {
+      console.error("Strategy email error:", error);
+      res.status(500).json({
+        error: "Failed to send email",
+        message: "Unable to send strategy email. Please try again.",
+      });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }

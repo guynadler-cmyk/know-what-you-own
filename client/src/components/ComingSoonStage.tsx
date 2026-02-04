@@ -3,8 +3,13 @@ import { useMutation } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Construction, CheckCircle, AlertCircle, Loader2 } from "lucide-react";
+import { Construction, CheckCircle, AlertCircle, Loader2, Shield, Map, type LucideIcon } from "lucide-react";
 import { apiRequest } from "@/lib/queryClient";
+
+const iconMap: Record<string, LucideIcon> = {
+  shield: Shield,
+  map: Map,
+};
 
 interface ComingSoonStageProps {
   stageTitle: string;
@@ -52,7 +57,14 @@ export function ComingSoonStage({ stageTitle, icon, hook, summary, cta }: Coming
       <CardHeader className="text-center pt-8 pb-4">
         <div className="flex justify-center mb-4">
           <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center">
-            <span className="text-3xl">{icon}</span>
+            {iconMap[icon] ? (
+              (() => {
+                const IconComponent = iconMap[icon];
+                return <IconComponent className="w-8 h-8 text-primary" />;
+              })()
+            ) : (
+              <span className="text-3xl text-primary">{icon.charAt(0).toUpperCase()}</span>
+            )}
           </div>
         </div>
         <CardTitle className="text-2xl mb-2">{stageTitle}</CardTitle>
