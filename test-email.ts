@@ -5,10 +5,10 @@ const resend = new Resend(process.env.replit_email_resend);
 async function sendTestEmail() {
   try {
     const { data, error } = await resend.emails.send({
-      from: 'onboarding@resend.dev',
+      from: 'Know What You Own <product@restnvest.com>',
       to: 'product@restnvest.com',
       subject: 'Hello World',
-      html: '<p>Congrats on sending your <strong>first email</strong>!</p>'
+      html: '<p>Congrats on sending your <strong>first email</strong> from product@restnvest.com!</p>'
     });
 
     if (error) {
