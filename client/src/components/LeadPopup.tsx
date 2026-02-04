@@ -29,6 +29,12 @@ export function LeadPopup() {
     return localStorage.getItem(STORAGE_KEY) === "true";
   };
 
+  const isPageLoading = () => {
+    // Check if loading spinner is present (analysis still loading)
+    const loadingIndicator = document.querySelector('[data-testid="analysis-loading"]');
+    return loadingIndicator !== null;
+  };
+
   useEffect(() => {
     // Don't show if already submitted
     if (hasAlreadySubmitted()) return;
@@ -44,6 +50,12 @@ export function LeadPopup() {
         return;
       }
       
+      // Page still loading - don't start timer yet
+      if (isPageLoading()) {
+        startTimeRef.current = null;
+        return;
+      }
+      
       // Ticker changed - reset timer
       if (currentTicker !== lastTickerRef.current) {
         startTimeRef.current = Date.now();
@@ -55,7 +67,7 @@ export function LeadPopup() {
       // Already shown for this session
       if (hasShownRef.current) return;
       
-      // Timer not started yet
+      // Timer not started yet (page just finished loading)
       if (!startTimeRef.current) {
         startTimeRef.current = Date.now();
         return;
