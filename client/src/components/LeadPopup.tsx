@@ -117,21 +117,25 @@ export function LeadPopup() {
   return (
     <div className="fixed bottom-4 right-4 z-50 max-w-sm animate-in slide-in-from-bottom-4 fade-in duration-300" data-testid="lead-popup">
       <Card className="shadow-lg border-border">
-        <CardHeader className="pb-3 relative">
-          <Button
-            variant="ghost"
-            size="icon"
-            className="absolute top-2 right-2"
-            onClick={handleDismiss}
-            data-testid="button-close-lead-popup"
-          >
-            <X className="h-4 w-4" />
-          </Button>
-          <CardTitle className="text-lg pr-6" data-testid="lead-popup-title">
-            {isSubmitted ? "You're on the list!" : "Sign up for our advanced 10K analysis"}
-          </CardTitle>
+        <CardHeader className="px-4 pt-4 pb-2">
+          <div className="flex items-start justify-between gap-3">
+            <CardTitle className="text-lg leading-snug" data-testid="lead-popup-title">
+              {isSubmitted ? "You're on the list!" : "Get sensible stock analysis"}
+            </CardTitle>
+
+            <Button
+              variant="ghost"
+              size="icon"
+              className="-mt-1 h-8 w-8 shrink-0"
+              onClick={handleDismiss}
+              data-testid="button-close-lead-popup"
+              aria-label="Close"
+            >
+              <X className="h-4 w-4" />
+            </Button>
+          </div>
         </CardHeader>
-        <CardContent>
+        <CardContent className="px-4 pt-0 pb-4">
           {isSubmitted ? (
             <div className="flex items-center gap-2 text-sm text-muted-foreground" data-testid="lead-popup-success">
               <CheckCircle className="h-5 w-5 text-green-500" />
@@ -140,7 +144,7 @@ export function LeadPopup() {
           ) : (
             <form onSubmit={handleSubmit} className="space-y-3">
               <p className="text-sm text-muted-foreground" data-testid="lead-popup-description">
-                We are hard at work on our next version and would love to share it with you first
+                Be first to try our next version - clear insights, no hype.
               </p>
               <Input
                 type="email"
