@@ -3,6 +3,7 @@ import { SummaryCard } from "@/components/SummaryCard";
 import { ComingSoonStage } from "@/components/ComingSoonStage";
 import { ProtectStage } from "@/components/ProtectStage";
 import { TimingStage } from "@/components/TimingStage";
+import { StrategyStage } from "@/components/StrategyStage";
 import { QuadrantExplorer, generateQuadrantData } from "@/components/QuadrantExplorer";
 import { FinancialScorecard } from "@/components/FinancialScorecard";
 import { ValuationExplorer, VALUATION_QUADRANT_DATA, type ValuationQuadrantData } from "@/components/ValuationExplorer";
@@ -25,16 +26,9 @@ interface StageContentProps {
 }
 
 const COMING_SOON_STAGES = {
-  5: {
-    stageTitle: "Plan Your Investment",
-    icon: "🗺️",
-    hook: "No more winging it. Invest with a plan.",
-    summary: "What's your goal? How much should you invest — and when? This step helps you create a calm, intentional strategy that makes emotional blowups less likely.",
-    cta: "Coming soon: your personal investing playbook. Join the waitlist to be the first in."
-  },
   6: {
     stageTitle: "Protect What You Own",
-    icon: "🛡️",
+    icon: "shield",
     hook: "Don't just buy smart. Hold smart.",
     summary: "Every investor eventually hits doubt. This step gives you the tools to stay steady when it matters — with check-ins, exit rules, and guardrails that protect your peace and your portfolio.",
     cta: "Build resilience into your portfolio. Join the waitlist for early access."
@@ -97,6 +91,36 @@ export function StageContent({ stage, summaryData, financialMetrics, balanceShee
 
   // State for valuation quadrant data from API
   const [valuationQuadrantData, setValuationQuadrantData] = useState<ValuationQuadrantData[]>(VALUATION_QUADRANT_DATA);
+
+  if (stage === 5) {
+    const getLogoUrl = (homepage: string) => {
+      try {
+        const url = new URL(homepage);
+        return `/api/logo/${url.hostname}`;
+      } catch {
+        return null;
+      }
+    };
+    const logoUrl = summaryData?.metadata?.homepage ? getLogoUrl(summaryData.metadata.homepage) : null;
+
+    const strongCount = quadrantData.filter(q => q.strength === "strong").length;
+    const fundamentalsScore = quadrantData.length > 0 
+      ? `${strongCount}/${quadrantData.length} strong` 
+      : undefined;
+
+    const valuationData = valuationQuadrantData.find(q => q.id === "fair-value");
+    const valuationLabel = valuationData?.verdict || undefined;
+
+    return (
+      <StrategyStage 
+        ticker={ticker}
+        companyName={summaryData?.companyName}
+        logoUrl={logoUrl || undefined}
+        fundamentalsScore={fundamentalsScore}
+        valuationLabel={valuationLabel}
+      />
+    );
+  }
 
   if (stage === 6) {
     return <ProtectStage ticker={ticker} />;
