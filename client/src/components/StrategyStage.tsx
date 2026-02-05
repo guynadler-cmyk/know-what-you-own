@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from "react";
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQuery } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -169,13 +169,29 @@ function TrancheCard({
   );
 }
 
+interface TimingAnalysisResponse {
+  verdict?: {
+    message: string;
+  };
+}
+
+interface ValuationQuadrantItem {
+  id: string;
+  verdict: string;
+}
+
+interface ValuationMetricsResponse {
+  quadrants?: ValuationQuadrantItem[];
+  summaryVerdict?: string;
+}
+
 export function StrategyStage({ 
   ticker = "", 
   companyName,
   logoUrl,
   fundamentalsScore,
-  valuationLabel,
-  timingVerdict,
+  valuationLabel: valuationLabelProp,
+  timingVerdict: timingVerdictProp,
 }: StrategyStageProps) {
   const { toast } = useToast();
   const [convictionValue, setConvictionValue] = useState(50);
@@ -185,6 +201,20 @@ export function StrategyStage({
   const [emailModalOpen, setEmailModalOpen] = useState(false);
   const [emailAddress, setEmailAddress] = useState("");
   const [emailError, setEmailError] = useState("");
+
+  const { data: timingData } = useQuery<TimingAnalysisResponse>({
+    queryKey: [`/api/timing/${ticker}`],
+    enabled: !!ticker && !timingVerdictProp,
+  });
+
+  const { data: valuationData } = useQuery<ValuationMetricsResponse>({
+    queryKey: [`/api/valuation/${ticker}`],
+    enabled: !!ticker && !valuationLabelProp,
+  });
+
+  const timingVerdict = timingVerdictProp || timingData?.verdict?.message;
+  const priceTagQuadrant = valuationData?.quadrants?.find(q => q.id === "price-tag");
+  const valuationLabel = valuationLabelProp || priceTagQuadrant?.verdict || valuationData?.summaryVerdict;
 
   const totalAmount = useMemo(() => parseCurrencyInput(amountInput) || 10000, [amountInput]);
   const convictionLabel = useMemo(() => getConvictionLabel(convictionValue), [convictionValue]);

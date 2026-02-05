@@ -108,7 +108,7 @@ export function StageContent({ stage, summaryData, financialMetrics, balanceShee
       ? `${strongCount}/${quadrantData.length} strong` 
       : undefined;
 
-    const valuationData = valuationQuadrantData.find(q => q.id === "fair-value");
+    const valuationData = valuationQuadrantData.find(q => q.id === "price-tag");
     const valuationLabel = valuationData?.verdict || undefined;
 
     return (
