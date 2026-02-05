@@ -1,4 +1,5 @@
 import express, { type Request, Response, NextFunction } from "express";
+import "dotenv/config";
 import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
 
@@ -130,4 +131,4 @@ app.use((req, res, next) => {
     console.error('Failed to start server:', error);
     process.exit(1);
   }
-})();
+})(); //this is the index.ts file please check and let me know

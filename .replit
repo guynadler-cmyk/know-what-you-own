@@ -3,13 +3,13 @@ run = "npm run dev"
 hidden = [".config", ".git", "generated-icon.png", "node_modules", "dist"]
 
 [nix]
-channel = "stable-24_05"
+channel = "stable-25_05"
 packages = ["imagemagick"]
 
 [deployment]
 deploymentTarget = "autoscale"
 build = ["npm", "run", "build"]
-run = ["npm", "run", "start"]
+run = ["node", "./dist/index.cjs"]
 
 [[ports]]
 localPort = 5000
@@ -40,9 +40,17 @@ args = "npm run dev"
 waitForPort = 5000
 
 [agent]
+<<<<<<< HEAD
 integrations = ["github:1.0.0", "javascript_log_in_with_replit:1.0.0", "javascript_google_analytics:1.0.0", "javascript_database:1.0.0"]
+=======
+integrations = ["github:1.0.0", "javascript_log_in_with_replit:1.0.0"]
+expertMode = true
+>>>>>>> sec_ai_db_upstream/main
 
 [userenv]
 
 [userenv.shared]
+<<<<<<< HEAD
 VITE_GA_MEASUREMENT_ID = "G-6CLK9XVV2K"
+=======
+>>>>>>> sec_ai_db_upstream/main
