@@ -12,10 +12,11 @@ import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 import { 
-  Save, Mail, Target, Clock, AlertCircle, 
-  Loader2, DollarSign
+  Save, Mail, AlertCircle, 
+  Loader2, ChevronDown, BarChart3, DollarSign, Activity
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 
 interface StrategyStageProps {
   ticker?: string;
@@ -95,38 +96,142 @@ function parseCurrencyInput(value: string): number {
   return Math.round(parsed);
 }
 
-function SnapshotStrip({ 
-  fundamentals, 
-  valuation, 
-  timing 
-}: { 
-  fundamentals: string; 
-  valuation: string; 
-  timing: string;
-}) {
+type TakeawayTone = "positive" | "mixed" | "negative";
+
+interface TakeawayData {
+  title: string;
+  score: string;
+  summary: string;
+  tone: TakeawayTone;
+  icon: typeof BarChart3;
+}
+
+function getPerformanceTakeaway(strongCount: number): TakeawayData {
+  const tone: TakeawayTone = strongCount === 4 ? "positive" : strongCount >= 2 ? "mixed" : "negative";
+  const summaries: Record<TakeawayTone, string> = {
+    positive: "Financially strong. Likely a solid foundation for a long-term investment.",
+    mixed: "Mixed signals. Worth considering with caution or deeper conviction.",
+    negative: "Financial picture is weak. Unless you have strong conviction, this may not be the right fit.",
+  };
+  return {
+    title: "Performance",
+    score: `${strongCount}/4 strong`,
+    summary: summaries[tone],
+    tone,
+    icon: BarChart3,
+  };
+}
+
+function getValuationTakeaway(sensibleCount: number): TakeawayData {
+  const tone: TakeawayTone = sensibleCount === 4 ? "positive" : sensibleCount >= 2 ? "mixed" : "negative";
+  const summaries: Record<TakeawayTone, string> = {
+    positive: "All valuation signals look sensible. You're not obviously overpaying.",
+    mixed: "Mixed signals. The valuation looks reasonable in some areas, but a few signals are worth a closer look.",
+    negative: "Multiple valuation signals suggest caution. Consider waiting for a better entry point.",
+  };
+  return {
+    title: "Valuation",
+    score: `${sensibleCount}/4 sensible`,
+    summary: summaries[tone],
+    tone,
+    icon: DollarSign,
+  };
+}
+
+function getTimingTakeaway(supportiveCount: number, total: number): TakeawayData {
+  const ratio = total > 0 ? supportiveCount / total : 0;
+  const tone: TakeawayTone = ratio >= 0.8 ? "positive" : ratio >= 0.4 ? "mixed" : "negative";
+  const summaries: Record<TakeawayTone, string> = {
+    positive: "Timing conditions are aligned. Market structure looks supportive for patient investors.",
+    mixed: "Mixed timing signals. Some conditions are supportive, others suggest caution.",
+    negative: "Timing conditions are challenging. Unless you have strong conviction, patience may be warranted.",
+  };
+  return {
+    title: "Timing",
+    score: `${supportiveCount}/${total} supportive`,
+    summary: summaries[tone],
+    tone,
+    icon: Activity,
+  };
+}
+
+function TakeawayBlock({ takeaway }: { takeaway: TakeawayData }) {
+  const Icon = takeaway.icon;
   return (
-    <div className="mb-8">
-      <div className="flex flex-wrap gap-3 justify-center mb-3">
-        <div className="flex items-center gap-2 px-4 py-2 bg-muted/50 rounded-lg border border-border/50">
-          <Target className="w-4 h-4 text-muted-foreground" />
-          <span className="text-sm font-medium">Fundamentals:</span>
-          <span className="text-sm text-muted-foreground">{fundamentals || "—"}</span>
-        </div>
-        <div className="flex items-center gap-2 px-4 py-2 bg-muted/50 rounded-lg border border-border/50">
-          <DollarSign className="w-4 h-4 text-muted-foreground" />
-          <span className="text-sm font-medium">Valuation:</span>
-          <span className="text-sm text-muted-foreground">{valuation || "—"}</span>
-        </div>
-        <div className="flex items-center gap-2 px-4 py-2 bg-muted/50 rounded-lg border border-border/50">
-          <Clock className="w-4 h-4 text-muted-foreground" />
-          <span className="text-sm font-medium">Timing:</span>
-          <span className="text-sm text-muted-foreground">{timing || "—"}</span>
-        </div>
+    <div
+      className={cn(
+        "p-4 rounded-lg border",
+        takeaway.tone === "positive" && "bg-green-500/5 border-green-500/20",
+        takeaway.tone === "mixed" && "bg-yellow-500/5 border-yellow-500/20",
+        takeaway.tone === "negative" && "bg-red-500/5 border-red-500/20"
+      )}
+      data-testid={`takeaway-${takeaway.title.toLowerCase()}`}
+    >
+      <div className="flex items-center gap-2 mb-2">
+        <Icon className="w-4 h-4 text-muted-foreground" />
+        <span className="font-medium text-sm">{takeaway.title}</span>
+        <Badge variant="outline" className="ml-auto text-xs">
+          {takeaway.score}
+        </Badge>
       </div>
-      <p className="text-xs text-muted-foreground text-center">
-        This snapshot is read-only. Your strategy choices won't change these results.
+      <p className="text-sm text-muted-foreground leading-relaxed">
+        {takeaway.summary}
       </p>
     </div>
+  );
+}
+
+function ReadOnlyTakeaways({ 
+  performanceStrong,
+  valuationSensible,
+  timingSupported,
+  timingTotal,
+  isLoading,
+}: { 
+  performanceStrong: number;
+  valuationSensible: number;
+  timingSupported: number;
+  timingTotal: number;
+  isLoading: boolean;
+}) {
+  const [isOpen, setIsOpen] = useState(false);
+  
+  const performanceTakeaway = getPerformanceTakeaway(performanceStrong);
+  const valuationTakeaway = getValuationTakeaway(valuationSensible);
+  const timingTakeaway = getTimingTakeaway(timingSupported, timingTotal);
+
+  return (
+    <Collapsible open={isOpen} onOpenChange={setIsOpen} className="mb-8">
+      <CollapsibleTrigger asChild>
+        <Button 
+          variant="outline" 
+          className="w-full justify-between gap-2 h-auto py-3"
+          data-testid="button-takeaways-toggle"
+        >
+          <span className="text-sm font-medium">Read-only takeaways from prior stages</span>
+          <ChevronDown className={cn(
+            "w-4 h-4 transition-transform",
+            isOpen && "rotate-180"
+          )} />
+        </Button>
+      </CollapsibleTrigger>
+      <CollapsibleContent className="pt-4">
+        {isLoading ? (
+          <div className="flex items-center justify-center py-8">
+            <Loader2 className="w-5 h-5 animate-spin text-muted-foreground" />
+          </div>
+        ) : (
+          <div className="space-y-3">
+            <TakeawayBlock takeaway={performanceTakeaway} />
+            <TakeawayBlock takeaway={valuationTakeaway} />
+            <TakeawayBlock takeaway={timingTakeaway} />
+          </div>
+        )}
+        <p className="text-xs text-muted-foreground text-center mt-4">
+          These takeaways are read-only. Your strategy choices won't change these results.
+        </p>
+      </CollapsibleContent>
+    </Collapsible>
   );
 }
 
@@ -169,10 +274,17 @@ function TrancheCard({
   );
 }
 
+interface TimingSignal {
+  status: "green" | "yellow" | "red";
+}
+
 interface TimingAnalysisResponse {
   verdict?: {
     message: string;
   };
+  trend?: { signal: TimingSignal };
+  momentum?: { signal: TimingSignal };
+  stretch?: { signal: TimingSignal };
 }
 
 interface ValuationQuadrantItem {
@@ -204,26 +316,39 @@ export function StrategyStage({
   const [emailAddress, setEmailAddress] = useState("");
   const [emailError, setEmailError] = useState("");
 
-  const { data: timingData } = useQuery<TimingAnalysisResponse>({
+  const { data: timingData, isLoading: timingLoading } = useQuery<TimingAnalysisResponse>({
     queryKey: [`/api/timing/${ticker}`],
-    enabled: !!ticker && !timingVerdictProp,
+    enabled: !!ticker,
   });
 
-  const { data: valuationData } = useQuery<ValuationMetricsResponse>({
+  const { data: valuationData, isLoading: valuationLoading } = useQuery<ValuationMetricsResponse>({
     queryKey: [`/api/valuation/${ticker}`],
-    enabled: !!ticker && !valuationLabelProp,
+    enabled: !!ticker,
   });
 
-  const timingVerdict = timingVerdictProp || timingData?.verdict?.message;
-  
-  const valuationLabel = useMemo(() => {
-    if (valuationLabelProp) return valuationLabelProp;
-    if (!valuationData?.quadrants?.length) return undefined;
-    
-    const sensibleCount = valuationData.quadrants.filter(q => q.strength === "sensible").length;
-    const total = valuationData.quadrants.length;
-    return `${sensibleCount}/${total} sensible`;
-  }, [valuationLabelProp, valuationData]);
+  const takeawaysLoading = timingLoading || valuationLoading;
+
+  const performanceStrong = useMemo(() => {
+    if (!fundamentalsScore) return 0;
+    const match = fundamentalsScore.match(/^(\d+)/);
+    return match ? parseInt(match[1], 10) : 0;
+  }, [fundamentalsScore]);
+
+  const valuationSensible = useMemo(() => {
+    if (!valuationData?.quadrants?.length) return 0;
+    return valuationData.quadrants.filter(q => q.strength === "sensible").length;
+  }, [valuationData]);
+
+  const { timingSupported, timingTotal } = useMemo(() => {
+    if (!timingData) return { timingSupported: 0, timingTotal: 3 };
+    const signals = [
+      timingData.trend?.signal,
+      timingData.momentum?.signal,
+      timingData.stretch?.signal,
+    ].filter(Boolean);
+    const supportive = signals.filter(s => s?.status === "green").length;
+    return { timingSupported: supportive, timingTotal: signals.length || 3 };
+  }, [timingData]);
 
   const totalAmount = useMemo(() => parseCurrencyInput(amountInput) || 10000, [amountInput]);
   const convictionLabel = useMemo(() => getConvictionLabel(convictionValue), [convictionValue]);
@@ -274,8 +399,8 @@ export function StrategyStage({
     imWrongIf,
     snapshot: {
       fundamentals: fundamentalsScore || "—",
-      valuation: valuationLabel || "—",
-      timing: timingVerdict || "—",
+      valuation: `${valuationSensible}/4 sensible`,
+      timing: `${timingSupported}/${timingTotal} supportive`,
     },
     createdAt: new Date().toISOString(),
   });
@@ -377,10 +502,12 @@ export function StrategyStage({
       </CardHeader>
       
       <CardContent className="pb-12 space-y-8">
-        <SnapshotStrip 
-          fundamentals={fundamentalsScore || ""} 
-          valuation={valuationLabel || ""} 
-          timing={timingVerdict || ""} 
+        <ReadOnlyTakeaways 
+          performanceStrong={performanceStrong}
+          valuationSensible={valuationSensible}
+          timingSupported={timingSupported}
+          timingTotal={timingTotal}
+          isLoading={takeawaysLoading}
         />
 
         <div className="max-w-2xl mx-auto space-y-8">
