@@ -178,11 +178,13 @@ interface TimingAnalysisResponse {
 interface ValuationQuadrantItem {
   id: string;
   verdict: string;
+  strength: "sensible" | "caution" | "risky";
 }
 
 interface ValuationMetricsResponse {
   quadrants?: ValuationQuadrantItem[];
   summaryVerdict?: string;
+  overallStrength?: "sensible" | "caution" | "risky";
 }
 
 export function StrategyStage({ 
@@ -213,8 +215,15 @@ export function StrategyStage({
   });
 
   const timingVerdict = timingVerdictProp || timingData?.verdict?.message;
-  const priceTagQuadrant = valuationData?.quadrants?.find(q => q.id === "price-tag");
-  const valuationLabel = valuationLabelProp || priceTagQuadrant?.verdict || valuationData?.summaryVerdict;
+  
+  const valuationLabel = useMemo(() => {
+    if (valuationLabelProp) return valuationLabelProp;
+    if (!valuationData?.quadrants?.length) return undefined;
+    
+    const sensibleCount = valuationData.quadrants.filter(q => q.strength === "sensible").length;
+    const total = valuationData.quadrants.length;
+    return `${sensibleCount}/${total} sensible`;
+  }, [valuationLabelProp, valuationData]);
 
   const totalAmount = useMemo(() => parseCurrencyInput(amountInput) || 10000, [amountInput]);
   const convictionLabel = useMemo(() => getConvictionLabel(convictionValue), [convictionValue]);
