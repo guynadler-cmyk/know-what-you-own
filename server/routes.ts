@@ -982,6 +982,7 @@ import {
 
 import { alphaVantageService } from "./services/alphavantage";
 import { storage } from "./storage";
+import { z } from "zod";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // --------------------------------------------------------------------------
@@ -2019,146 +2020,80 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  const strategyEmailSchema = z.object({
+    email: z.string().email(),
+    plan: z.object({
+      ticker: z.string().min(1).max(10).regex(/^[A-Za-z0-9.\-]+$/),
+      companyName: z.string().max(200).optional(),
+      convictionValue: z.number().min(0).max(100),
+      convictionLabel: z.string().max(50),
+      trancheCount: z.number().min(1).max(10),
+      totalAmount: z.number().min(0),
+      tranches: z.array(z.object({
+        index: z.number(),
+        amount: z.number().min(0),
+        when: z.any().optional(),
+        trigger: z.string().optional(),
+        gate: z.object({ type: z.string() }).optional(),
+        gateEnabled: z.boolean().optional(),
+        manual: z.boolean().optional(),
+      })).min(1).max(10),
+      imWrongIf: z.string().max(2000).default(""),
+      snapshot: z.object({
+        fundamentals: z.string().max(500),
+        valuation: z.string().max(500),
+        timing: z.string().max(500),
+      }),
+      takeawayTexts: z.object({
+        performance: z.string().max(1000),
+        valuation: z.string().max(1000),
+        timing: z.string().max(1000),
+      }).optional(),
+      createdAt: z.string(),
+    }),
+  });
+
   app.post("/api/strategy-email", async (req: any, res) => {
     try {
-      const { email, plan } = req.body;
+      const parsed = strategyEmailSchema.safeParse(req.body);
 
-      if (!email || !plan) {
+      if (!parsed.success) {
         return res.status(400).json({
-          error: "Missing required fields",
-          message: "Please provide email and plan data.",
-        });
-      }
+          error: "Invalid request",
+          message: "Please provide valid email and plan data.",
+          issues: parsed.error.issues,
+          });
+          }
 
-      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-      if (!emailRegex.test(email)) {
-        return res.status(400).json({
-          error: "Invalid email",
-          message: "Please provide a valid email address.",
-        });
-      }
+          const { email, plan } = parsed.data;
+
 
       const { Resend } = await import("resend");
       const resend = new Resend(process.env.replit_email_resend);
 
-      const gateLabels: Record<string, string> = {
-        none: "",
-        fundamentals_ok: "Fundamentals still look healthy",
-        not_wrong_if: "My 'I'm wrong if...' conditions are NOT true",
-        reread_takeaways: "I've re-read the takeaways",
-        manual: "Manual check (I'll decide)",
-      };
+      const { renderStrategyEmail } = await import("./emailTemplate");
 
-      const formatWhen = (w: any): string => {
-        if (!w || typeof w !== "object") {
-          const legacyLabels: Record<string, string> = {
-            now: "Now / soon",
-            earnings: "After next earnings",
-            "30days": "In 30 days",
-            recheck: "After I re-check fundamentals",
-            manual: "Manual / I'll decide",
-          };
-          return legacyLabels[w] || String(w);
-        }
-        switch (w.type) {
-          case "now":
-            return "Now / soon";
-          case "earnings":
-            return "After next earnings";
-          case "days":
-            return `In ${w.days || 30} days`;
-          case "date":
-            return w.dateISO
-              ? new Date(w.dateISO).toLocaleDateString("en-US", {
-                  month: "short",
-                  day: "numeric",
-                  year: "numeric",
-                })
-              : "Specific date";
-          case "manual":
-            return "Manual / I'll decide";
-          default:
-            return String(w.type);
-        }
-      };
+  const baseUrl =
+    process.env.PUBLIC_APP_URL ||
+    (process.env.REPLIT_DOMAINS
+      ? `https://${process.env.REPLIT_DOMAINS.split(",")[0]}`
+      : null) ||
+    (process.env.REPLIT_DEV_DOMAIN
+      ? `https://${process.env.REPLIT_DEV_DOMAIN}`
+      : null) ||
+    "http://localhost:5000";
 
-      const tranchesHtml = plan.tranches
-        .map((t: any) => {
-          const whenLabel = t.when ? formatWhen(t.when) : formatWhen(t.trigger);
-          const gateLabel =
-            t.gateEnabled && t.gate?.type && t.gate.type !== "none"
-              ? gateLabels[t.gate.type] || ""
-              : "";
-          return `
+  const ticker = plan.ticker;
+  const analysisUrl = `${baseUrl}/app?ticker=${encodeURIComponent(ticker)}`;
+  const strategyUrl = `${baseUrl}/app?ticker=${encodeURIComponent(ticker)}&stage=5`;
 
-          <tr>
-            <td style="padding: 12px; border-bottom: 1px solid #eee;">Tranche ${t.index}</td>
-            <td style="padding: 12px; border-bottom: 1px solid #eee; font-weight: 600;">$${t.amount.toLocaleString()}</td>
-            <td style="padding: 12px; border-bottom: 1px solid #eee;">${whenLabel}${gateLabel ? `<br><span style="font-size: 12px; color: #666;">Condition: ${gateLabel}</span>` : ""}</td>
-          </tr>
-          `;
-        })
+  const htmlContent = renderStrategyEmail(plan, { analysisUrl, strategyUrl });
 
-        .join("");
-
-      const htmlContent = `
-        <!DOCTYPE html>
-        <html>
-        <head>
-          <meta charset="utf-8">
-          <title>Your ${plan.ticker} Strategy Plan</title>
-        </head>
-        <body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; color: #333;">
-          <h1 style="color: #0d9488; margin-bottom: 8px;">Your ${plan.ticker} Strategy Plan</h1>
-          <p style="color: #666; margin-top: 0;">Created on ${new Date(plan.createdAt).toLocaleDateString()}</p>
-          
-          <div style="background: #f8f9fa; padding: 16px; border-radius: 8px; margin: 24px 0;">
-            <h3 style="margin-top: 0; margin-bottom: 12px;">Research Snapshot</h3>
-            <p style="margin: 4px 0;"><strong>Fundamentals:</strong> ${plan.snapshot.fundamentals}</p>
-            <p style="margin: 4px 0;"><strong>Valuation:</strong> ${plan.snapshot.valuation}</p>
-            <p style="margin: 4px 0;"><strong>Timing:</strong> ${plan.snapshot.timing}</p>
-          </div>
-
-          <h3>Your Plan</h3>
-          <p><strong>Conviction:</strong> ${plan.convictionLabel} (${plan.convictionValue}/100)</p>
-          <p><strong>Total Amount:</strong> $${plan.totalAmount.toLocaleString()}</p>
-
-          <table style="width: 100%; border-collapse: collapse; margin: 16px 0;">
-            <thead>
-              <tr style="background: #f1f5f9;">
-                <th style="padding: 12px; text-align: left;">Tranche</th>
-                <th style="padding: 12px; text-align: left;">Amount</th>
-                <th style="padding: 12px; text-align: left;">Revisit</th>
-              </tr>
-            </thead>
-            <tbody>
-              ${tranchesHtml}
-            </tbody>
-          </table>
-
-          ${
-            plan.imWrongIf
-              ? `
-            <div style="background: #fef3c7; padding: 16px; border-radius: 8px; margin: 24px 0;">
-              <h3 style="margin-top: 0; margin-bottom: 8px;">I'm wrong if...</h3>
-              <p style="margin: 0;">${plan.imWrongIf}</p>
-            </div>
-          `
-              : ""
-          }
-
-          <hr style="border: none; border-top: 1px solid #eee; margin: 32px 0;">
-          <p style="font-size: 12px; color: #888;">
-            This is a copy of your saved plan. restnvest provides research tools and planning structure, not investment advice.
-          </p>
-        </body>
-        </html>
-      `;
 
       const { data, error } = await resend.emails.send({
-        from: "Know What You Own <product@restnvest.com>",
+        from: "restnvest <product@restnvest.com>",
         to: email,
-        subject: `Your ${plan.ticker} Strategy Plan`,
+        subject: `Your ${ticker} Strategy Plan`,
         html: htmlContent,
       });
 
