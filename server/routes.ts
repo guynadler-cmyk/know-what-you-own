@@ -2063,9 +2063,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/strategy-email", async (req: any, res) => {
     try {
+      console.log("[strategy-email] Request received");
       const parsed = strategyEmailSchema.safeParse(req.body);
 
       if (!parsed.success) {
+        console.error("[strategy-email] Validation failed:", JSON.stringify(parsed.error.issues));
         return res.status(400).json({
           error: "Invalid request",
           message: "Please provide valid email and plan data.",
@@ -2075,9 +2077,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
           const { email, plan } = parsed.data;
 
+      const { email, plan } = parsed.data;
+      console.log(`[strategy-email] Validated. Sending to ${email} for ${plan.ticker}`);
+
+      const apiKey = process.env.replit_email_resend;
+      if (!apiKey) {
+        console.error("[strategy-email] No Resend API key found (replit_email_resend secret is missing)");
+        return res.status(500).json({
+          error: "Email service not configured",
+          message: "Email sending is not set up. Please contact support.",
+        });
+      }
+      console.log(`[strategy-email] API key found, length: ${apiKey.length}, starts with: ${apiKey.substring(0, 5)}...`);
 
       const { Resend } = await import("resend");
-      const resend = new Resend(process.env.replit_email_resend);
+      const resend = new Resend(apiKey);
 
       const { renderStrategyEmail } = await import("./emailTemplate");
 
@@ -2097,7 +2111,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   const htmlContent = renderStrategyEmail(plan, { analysisUrl, strategyUrl });
 
+      const htmlContent = renderStrategyEmail(plan, { analysisUrl, strategyUrl });
+      console.log(`[strategy-email] HTML rendered, length: ${htmlContent.length}`);
 
+      console.log(`[strategy-email] Calling Resend API...`);
       const { data, error } = await resend.emails.send({
         from: "restnvest <product@restnvest.com>",
         to: email,
@@ -2106,7 +2123,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
 
       if (error) {
-        console.error("Resend error:", error);
+        console.error("[strategy-email] Resend API error:", JSON.stringify(error));
         return res.status(500).json({
           error: "Failed to send email",
           message: "Unable to send email. Please try again.",
@@ -2119,12 +2136,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
           stageName: `Strategy Plan: ${plan.ticker}`,
         });
       } catch (dbError) {
-        console.warn("Failed to store email in DB, continuing:", dbError);
+        console.warn("[strategy-email] Failed to store email in DB, continuing:", dbError);
       }
 
-      console.log(
-        `Strategy email sent to ${email} for ${plan.ticker}, ID: ${data?.id}`,
-      );
+      console.log(`[strategy-email] Email sent successfully to ${email} for ${plan.ticker}, ID: ${data?.id}`);
+
       res.json({ success: true, emailId: data?.id });
     } catch (error: any) {
       console.error("Strategy email error:", error);
