@@ -14,7 +14,7 @@ import { Calendar } from "@/components/ui/calendar";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 import { 
-  Save, Mail, AlertCircle, Loader2, ChevronRight,
+  Mail, AlertCircle, Loader2, ChevronRight,
   BarChart3, DollarSign, Activity, Lock, Unlock,
   RotateCcw, Equal, Wrench, Plus, X, ArrowUp, ArrowDown,
   CalendarIcon, ShieldCheck
@@ -919,15 +919,6 @@ export function StrategyStage({
     createdAt: new Date().toISOString(),
   });
 
-  const handleSave = () => {
-    const plan = buildStrategyPlan();
-    localStorage.setItem(`strategyPlan:${ticker}`, JSON.stringify(plan));
-    toast({
-      title: "Strategy saved",
-      description: "Your strategy has been saved on this device.",
-    });
-  };
-
   const emailMutation = useMutation({
     mutationFn: async (data: { email: string; plan: StrategyPlan }) => {
       const response = await apiRequest("POST", "/api/strategy-email", data);
@@ -1107,11 +1098,8 @@ export function StrategyStage({
         </div>
       </div>
 
-      <div className="flex flex-col sm:flex-row gap-3 mt-6">
-        <Button onClick={handleSave} className="flex-1" data-testid="button-save-strategy">
-          <Save className="w-4 h-4 mr-2" /> Save strategy
-        </Button>
-        <Button variant="outline" onClick={() => setEmailModalOpen(true)} className="flex-1" data-testid="button-email-strategy">
+      <div className="flex justify-center mt-6">
+        <Button onClick={() => setEmailModalOpen(true)} className="w-full sm:w-auto sm:min-w-[280px]" data-testid="button-email-strategy">
           <Mail className="w-4 h-4 mr-2" /> Email me this plan
         </Button>
       </div>
