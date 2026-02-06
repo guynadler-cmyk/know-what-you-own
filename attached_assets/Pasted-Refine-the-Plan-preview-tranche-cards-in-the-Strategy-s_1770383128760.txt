@@ -1,0 +1,130 @@
+Refine the Plan preview tranche cards in the Strategy stage to separate time from research condition without increasing friction.
+
+Goal
+
+Right now the single dropdown mixes time (“In 30 days”) with research actions (“After I re-check fundamentals”). Replace that with:
+
+WHEN (required): scheduling / check-in timing
+
+GATE (optional): a condition that must be true before adding
+
+This is user-authored planning, not recommendations. Keep it clean and fast.
+
+Changes to implement
+1) Replace the existing “trigger” dropdown with WHEN (required)
+
+On each tranche card, rename the existing dropdown to:
+
+When will you revisit this? (or shorter: When)
+
+Dropdown options (time-only):
+
+“Now / soon”
+
+“After next earnings”
+
+“In 30 days”
+
+“On a specific date…” (opens a date picker inline or modal)
+
+“Manual / I’ll decide”
+
+Default:
+
+Tranche 1: “Now / soon”
+
+Others: “In 30 days” (or “After next earnings” — pick one consistent default)
+
+2) Add GATE (optional) with progressive disclosure
+
+Do NOT show a second dropdown by default. Instead:
+
+Show a small link/button on each tranche: “+ Add a condition”
+
+When clicked, reveal the Gate dropdown for that tranche.
+
+Gate can also be removed with an “x” or “Remove condition”.
+
+Label:
+Only add if… (or shorter: Condition)
+
+Gate options (neutral, non-advice):
+
+“None” (default)
+
+“Fundamentals still look healthy”
+
+“My ‘I’m wrong if…’ conditions are NOT true”
+
+“I’ve re-read the takeaways”
+
+“Manual check (I’ll decide)”
+
+Notes:
+
+Gate options must NOT reference price targets, returns, or specific buy/sell advice.
+
+Gate options are just user reminders / self-checks.
+
+3) Data model changes
+
+Update tranche object structure to include:
+
+type Tranche = {
+  index: number;
+  amount: number;
+  amountMode: "auto" | "manual";
+  when:
+    | { type: "now" }
+    | { type: "earnings" }
+    | { type: "days"; days: 30 }
+    | { type: "date"; dateISO: string }
+    | { type: "manual" };
+  gate:
+    | { type: "none" }
+    | { type: "fundamentals_ok" }
+    | { type: "not_wrong_if" }
+    | { type: "reread_takeaways" }
+    | { type: "manual" };
+  gateEnabled: boolean; // controls if gate UI is shown
+};
+
+
+If you prefer a simpler shape, you may store whenKey and gateKey as strings plus optional dateISO.
+
+4) Email + Save payload updates
+
+Include the new fields in:
+
+localStorage saved plan
+
+/api/strategy-email payload + email template
+
+Email rendering example per tranche:
+
+“Tranche 2: $3,300 — Revisit: In 30 days — Condition: Fundamentals still look healthy”
+If no condition, omit it.
+
+5) UI polish (premium feel)
+
+Keep tranche card height compact.
+
+Place WHEN dropdown next to amount.
+
+Gate appears below WHEN as a secondary row when enabled (subtle, smaller text).
+
+Make the “+ Add a condition” link light and unobtrusive.
+
+Acceptance criteria
+
+Users can pick a time-based “When” for each tranche.
+
+Users can optionally add a “Gate” condition without cluttering the default UI.
+
+Existing plans migrate gracefully: map old trigger values:
+
+If old value was time-like → set when accordingly, gate = none
+
+If old value was “re-check fundamentals” → set when = manual (or “In 30 days”) and gate = fundamentals_ok
+
+No recommendations or analysis changes.
