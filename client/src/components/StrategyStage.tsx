@@ -54,6 +54,7 @@ interface TrancheData {
 
 interface StrategyPlan {
   ticker: string;
+  companyName?: string;
   convictionValue: number;
   convictionLabel: string;
   trancheCount: number;
@@ -898,6 +899,7 @@ export function StrategyStage({
 
   const buildStrategyPlan = (): StrategyPlan => ({
     ticker,
+    companyName: companyName || undefined,
     convictionValue,
     convictionLabel,
     trancheCount,
