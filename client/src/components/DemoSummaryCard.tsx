@@ -9,13 +9,6 @@ interface Product {
   description: string;
 }
 
-interface Leader {
-  name: string;
-  role: string;
-  initials: string;
-  twitter?: string;
-}
-
 interface VideoResource {
   title: string;
   channel: string;
@@ -27,7 +20,6 @@ interface DemoSummaryCardProps {
   ticker: string;
   tagline: string;
   products: Product[];
-  leaders: Leader[];
   metadata: {
     homepage: string;
     videos: VideoResource[];
@@ -39,12 +31,8 @@ export function DemoSummaryCard({
   ticker,
   tagline,
   products,
-  leaders,
   metadata
 }: DemoSummaryCardProps) {
-  // Find CEO from leaders
-  const ceo = leaders.find(l => l.role.toLowerCase().includes('ceo') || l.role.toLowerCase().includes('chief executive'));
-  
   // Get first video
   const firstVideo = metadata.videos[0];
 
@@ -99,21 +87,6 @@ export function DemoSummaryCard({
           </div>
         </div>
       </div>
-
-      {/* CEO Section */}
-      {ceo && (
-        <div className="border-2 border-border rounded-lg">
-          <div className="bg-muted px-8 py-4 border-b-2 border-border">
-            <h2 className="text-2xl font-bold text-center uppercase tracking-wide">Leadership</h2>
-          </div>
-          <div className="bg-muted/20 p-8">
-            <div className="max-w-2xl mx-auto text-center space-y-2">
-              <p className="text-lg font-semibold" data-testid="demo-ceo-name">{ceo.name}</p>
-              <p className="text-base text-muted-foreground">{ceo.role}</p>
-            </div>
-          </div>
-        </div>
-      )}
 
       {/* Video Section */}
       {firstVideo && (

@@ -43,12 +43,6 @@ export default function SummaryCardExample() {
           { name: "Microsoft", focus: "Software, cloud services & Surface" },
           { name: "Amazon", focus: "E-commerce & cloud services" }
         ]}
-        leaders={[
-          { name: "Tim Cook", role: "Chief Executive Officer", initials: "TC", twitter: "tim_cook" },
-          { name: "Luca Maestri", role: "Chief Financial Officer", initials: "LM" },
-          { name: "Jeff Williams", role: "Chief Operating Officer", initials: "JW" },
-          { name: "Katherine Adams", role: "General Counsel", initials: "KA" }
-        ]}
         metrics={[
           { label: "Annual Revenue", value: "$383B", trend: "up" },
           { label: "Net Income", value: "$97B", trend: "up" },

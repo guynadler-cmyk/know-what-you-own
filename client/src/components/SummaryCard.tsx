@@ -2,12 +2,12 @@ import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { Calendar, Building2, MapPin, Users, TrendingUp, Briefcase, Award, DollarSign, ExternalLink, Youtube, Newspaper, Globe, ChevronDown, Building, Shield, Target, Coins } from "lucide-react";
 import { LucideIcon } from "lucide-react";
-import { SiX, SiYoutube } from "react-icons/si";
+import { SiYoutube } from "react-icons/si";
 import { useQuery } from "@tanstack/react-query";
 import { InvestmentTheme, Moat, MarketOpportunity, ValueCreation, TemporalAnalysis as TemporalAnalysisType, FinePrintAnalysis as FinePrintAnalysisType } from "@shared/schema";
 import { TagWithTooltip } from "@/components/TagWithTooltip";
@@ -18,13 +18,6 @@ interface Product {
   name: string;
   icon: LucideIcon;
   description: string;
-}
-
-interface Leader {
-  name: string;
-  role: string;
-  initials: string;
-  twitter?: string;
 }
 
 interface Competitor {
@@ -78,7 +71,6 @@ interface SummaryCardProps {
   };
   
   competitors: Competitor[];
-  leaders: Leader[];
   metrics: Metric[];
   
   metadata: {
@@ -179,7 +171,6 @@ export function SummaryCard({
   products,
   operations,
   competitors,
-  leaders,
   metrics,
   metadata,
   cik,
@@ -553,11 +544,11 @@ export function SummaryCard({
           <h2 className="text-2xl font-bold text-center uppercase tracking-wide">Market Context</h2>
         </div>
         <div className="bg-muted/20 p-8 sm:p-12">
-          <div className="grid gap-12 md:grid-cols-2 max-w-5xl mx-auto">
+          <div className="max-w-5xl mx-auto">
             {/* Competition */}
             <section className="space-y-6">
               <h3 className="text-2xl font-bold pb-3 border-b border-border">Competition</h3>
-              <div className="space-y-4">
+              <div className="grid gap-4 md:grid-cols-2">
                 {competitors.map((competitor, index) => (
                   competitor.ticker ? (
                     <Collapsible
@@ -606,39 +597,6 @@ export function SummaryCard({
                       <p className="text-base text-muted-foreground">{competitor.focus}</p>
                     </div>
                   )
-                ))}
-              </div>
-            </section>
-
-            {/* Leadership */}
-            <section className="space-y-6">
-              <h3 className="text-2xl font-bold pb-3 border-b border-border">Leadership</h3>
-              <div className="space-y-4">
-                {leaders.map((leader, index) => (
-                  <div key={index} className="flex items-center gap-4 py-2">
-                    <Avatar className="h-12 w-12 shrink-0">
-                      <AvatarFallback className="bg-background text-foreground font-semibold">
-                        {leader.initials}
-                      </AvatarFallback>
-                    </Avatar>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2">
-                        <p className="font-semibold">{leader.name}</p>
-                        {leader.twitter && (
-                          <a 
-                            href={`https://x.com/${leader.twitter}`}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="text-muted-foreground hover:text-foreground transition-colors"
-                            data-testid={`link-twitter-${leader.twitter}`}
-                          >
-                            <SiX className="h-3.5 w-3.5" />
-                          </a>
-                        )}
-                      </div>
-                      <p className="text-sm text-muted-foreground">{leader.role}</p>
-                    </div>
-                  </div>
                 ))}
               </div>
             </section>
