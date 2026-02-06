@@ -55,6 +55,22 @@ The Timing stage uses a consistent pattern matching Valuation/Performance stages
 - Case B (short improving, long weak): "Early recovery" or "Bounce fading"
 - Case C (both improving): "Momentum aligning" or "Improving but volatile"
 
+### Strategy Stage (Investment Planning)
+
+The Strategy stage (stage 5) is a user-authored planning tool (no investment advice). Key features:
+- **Two-column layout**: Left = Conviction slider + Amount input + "I'm wrong if" builder; Right = Plan preview with editable tranches
+- **Takeaways**: Expanded by default, compact cards showing Performance/Valuation/Timing summaries with "View details" links that navigate back to the respective stage
+- **Weighted tranche sizing**: Non-linear allocation by conviction tier:
+  - Exploring (5 tranches): [0.12, 0.18, 0.20, 0.25, 0.25]
+  - Interested (3 tranches): [0.35, 0.33, 0.32]
+  - High conviction (2 tranches): [0.60, 0.40]
+  - Rounding remainder goes to tranche 1
+- **Manual overrides**: Each tranche has editable amount with auto/manual lock icon; Reset to auto-split and Even split controls; Remaining/Over indicator with Fix button
+- **Amount formatting**: Displayed with Intl.NumberFormat commas, digit-only input sanitization, numeric state storage
+- **Guided "I'm wrong if" builder**: 3 chip groups (Area, Change, Threshold), preview sentence, add/delete/reorder statements, final editable textarea
+- **Neutral language**: All takeaway summaries use factual, non-advisory wording (no "consider waiting", "worth considering", etc.)
+- **Save/Email payload**: Includes conviction, total amount, tranches (with manual/auto flag), "I'm wrong if" text, snapshot scores, and displayed takeaway texts
+
 ## External Dependencies
 
 -   **SEC EDGAR API:** For company CIK mapping, filing submissions, and 10-K document access.

@@ -23,6 +23,7 @@ interface StageContentProps {
   financialMetrics?: FinancialMetrics;
   balanceSheetMetrics?: BalanceSheetMetrics;
   ticker?: string;
+  onStageChange?: (stage: number) => void;
 }
 
 const COMING_SOON_STAGES = {
@@ -82,7 +83,7 @@ function ValuationIntroBlock() {
 }
 
 
-export function StageContent({ stage, summaryData, financialMetrics, balanceSheetMetrics, ticker }: StageContentProps) {
+export function StageContent({ stage, summaryData, financialMetrics, balanceSheetMetrics, ticker, onStageChange }: StageContentProps) {
   // Generate quadrant data based on real financial metrics
   const quadrantData = useMemo(
     () => generateQuadrantData(financialMetrics, balanceSheetMetrics),
@@ -120,6 +121,7 @@ export function StageContent({ stage, summaryData, financialMetrics, balanceShee
         logoUrl={logoUrl || undefined}
         fundamentalsScore={fundamentalsScore}
         valuationLabel={valuationLabel}
+        onStageChange={onStageChange}
       />
     );
   }
