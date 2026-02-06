@@ -1989,15 +1989,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Lead capture endpoints
+  // Lead capture endpoints - saves to waitlist_signups database table
   app.post("/api/lead", async (req: any, res) => {
     try {
-      const validated = leadSchema.parse(req.body);
-      storage.addLead(validated);
-      console.log(
-        `Lead captured: ${validated.email} for ticker ${validated.ticker || "none"}`,
-      );
-      res.json({ success: true });
+  const validated = leadSchema.parse(req.body);
+
+  const stageName = validated.ticker
+    ? `Popup - ${validated.ticker}`
+    : `Popup - ${validated.path || "unknown"}`;
+
+  const signup = await storage.createWaitlistSignup({
+    email: validated.email,
+    stageName,
+  });
+
+  console.log(`Lead captured to DB: ${validated.email} (${stageName})`);
+  res.json({ success: true, id: signup.id });
+
     } catch (error: any) {
       console.error("Lead capture error:", error);
       res.status(400).json({
@@ -2009,8 +2017,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.get("/api/leads", async (_req: any, res) => {
     try {
-      const allLeads = storage.getLeads();
-      res.json(allLeads);
+      const signups = await storage.getWaitlistSignups();
+      res.json(signups);
     } catch (error: any) {
       console.error("Get leads error:", error);
       res.status(500).json({
