@@ -2041,24 +2041,64 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const { Resend } = await import("resend");
       const resend = new Resend(process.env.replit_email_resend);
 
-      const triggerLabels: Record<string, string> = {
-        now: "Now / soon",
-        earnings: "After next earnings",
-        "30days": "In 30 days",
-        recheck: "After I re-check fundamentals",
-        manual: "Manual / I'll decide",
+      const gateLabels: Record<string, string> = {
+        none: "",
+        fundamentals_ok: "Fundamentals still look healthy",
+        not_wrong_if: "My 'I'm wrong if...' conditions are NOT true",
+        reread_takeaways: "I've re-read the takeaways",
+        manual: "Manual check (I'll decide)",
+      };
+
+      const formatWhen = (w: any): string => {
+        if (!w || typeof w !== "object") {
+          const legacyLabels: Record<string, string> = {
+            now: "Now / soon",
+            earnings: "After next earnings",
+            "30days": "In 30 days",
+            recheck: "After I re-check fundamentals",
+            manual: "Manual / I'll decide",
+          };
+          return legacyLabels[w] || String(w);
+        }
+        switch (w.type) {
+          case "now":
+            return "Now / soon";
+          case "earnings":
+            return "After next earnings";
+          case "days":
+            return `In ${w.days || 30} days`;
+          case "date":
+            return w.dateISO
+              ? new Date(w.dateISO).toLocaleDateString("en-US", {
+                  month: "short",
+                  day: "numeric",
+                  year: "numeric",
+                })
+              : "Specific date";
+          case "manual":
+            return "Manual / I'll decide";
+          default:
+            return String(w.type);
+        }
       };
 
       const tranchesHtml = plan.tranches
-        .map(
-          (t: any) => `
+        .map((t: any) => {
+          const whenLabel = t.when ? formatWhen(t.when) : formatWhen(t.trigger);
+          const gateLabel =
+            t.gateEnabled && t.gate?.type && t.gate.type !== "none"
+              ? gateLabels[t.gate.type] || ""
+              : "";
+          return `
+
           <tr>
             <td style="padding: 12px; border-bottom: 1px solid #eee;">Tranche ${t.index}</td>
             <td style="padding: 12px; border-bottom: 1px solid #eee; font-weight: 600;">$${t.amount.toLocaleString()}</td>
-            <td style="padding: 12px; border-bottom: 1px solid #eee;">${triggerLabels[t.trigger] || t.trigger}</td>
+            <td style="padding: 12px; border-bottom: 1px solid #eee;">${whenLabel}${gateLabel ? `<br><span style="font-size: 12px; color: #666;">Condition: ${gateLabel}</span>` : ""}</td>
           </tr>
-        `,
-        )
+          `;
+        })
+
         .join("");
 
       const htmlContent = `
@@ -2088,7 +2128,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
               <tr style="background: #f1f5f9;">
                 <th style="padding: 12px; text-align: left;">Tranche</th>
                 <th style="padding: 12px; text-align: left;">Amount</th>
-                <th style="padding: 12px; text-align: left;">Check-in Trigger</th>
+                <th style="padding: 12px; text-align: left;">Revisit</th>
               </tr>
             </thead>
             <tbody>

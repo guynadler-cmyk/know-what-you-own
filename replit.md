@@ -65,6 +65,12 @@ The Strategy stage (stage 5) is a user-authored planning tool (no investment adv
   - Interested (3 tranches): [0.35, 0.33, 0.32]
   - High conviction (2 tranches): [0.60, 0.40]
   - Rounding remainder goes to tranche 1
+- **When/Gate tranche scheduling**: Each tranche has two fields:
+  - **When** (required): Time-only scheduling — Now/soon, After next earnings, In 30 days, On a specific date (date picker), Manual
+  - **Gate** (optional, progressive disclosure): Self-check condition — "Fundamentals still look healthy", "My 'I'm wrong if...' conditions are NOT true", "I've re-read the takeaways", "Manual check"
+  - Gate hidden by default, revealed via "+ Add a condition" button, removable with X
+  - Default: Tranche 1 = "Now / soon", others = "In 30 days"
+- **Legacy migration**: Old `trigger` field auto-migrated via `migrateLegacyTranche()` — "recheck" → when=manual + gate=fundamentals_ok
 - **Manual overrides**: Each tranche has editable amount with auto/manual lock icon; Reset to auto-split and Even split controls; Remaining/Over indicator with Fix button
 - **Amount formatting**: Displayed with Intl.NumberFormat commas, digit-only input sanitization, numeric state storage
 - **Guided "I'm wrong if" builder**: 3 chip groups (Area, Change, Threshold), preview sentence, add/delete/reorder statements, final editable textarea
