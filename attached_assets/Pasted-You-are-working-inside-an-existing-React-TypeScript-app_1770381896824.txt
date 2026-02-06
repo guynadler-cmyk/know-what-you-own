@@ -1,0 +1,162 @@
+You are working inside an existing React + TypeScript app (restnvest / Know What You Own). Refine the existing Strategy stage UI to feel more premium (“expensive”), reduce scrolling, and improve planning interactions—without changing any research outputs or giving recommendations.
+
+Core rules
+
+Do not modify analysis results or recompute fundamentals/valuation/timing.
+
+Do not give investment advice (“buy/sell/hold”, “consider waiting”, “better entry point”). Strategy is user-authored planning only.
+
+All computed values are arithmetic based on user inputs.
+
+Keep it fast: minimal fields, minimal friction, minimal scroll.
+
+Changes to implement
+1) Takeaways expanded by default (no one should miss them)
+
+The Read-only takeaways from prior stages section must be expanded on initial load (defaultOpen / defaultValue). Add subtle helper text: “Click any takeaway to view details.”
+
+2) Layout: Premium Option B + reduce scrolling
+
+Implement Option B: two-column layout and aim to keep most content above the fold on standard laptop screens.
+
+Layout spec
+
+Use a single centered container (consistent width) for everything: max-w-5xl (or similar).
+
+Structure:
+
+Top (full width): Read-only takeaways (expanded), but compact (tight spacing, 1–2 lines each).
+
+Main (2 columns):
+
+Left column: Conviction slider + Amount input + “I’m wrong if…” builder
+
+Right column: Plan preview (tranches), with editable amounts + reset controls
+
+Bottom (full width): Save + Email buttons row
+
+Reduce scrolling tactics
+
+Keep takeaway cards compact (truncate to 1–2 lines with “View details” link).
+
+Keep tranche cards compact (no oversized padding).
+
+Use responsive behavior:
+
+On desktop: 2 columns
+
+On mobile: stack (fine if mobile scrolls more)
+
+Avoid large vertical whitespace between sections.
+
+3) Conviction → Non-linear tranche sizing (not equal split)
+
+Replace equal tranche splits with weight-based allocations by conviction tier:
+
+Exploring (5 tranches) weights: [0.12, 0.18, 0.20, 0.25, 0.25]
+
+Interested (3 tranches) weights: [0.35, 0.33, 0.32]
+
+High conviction (2 tranches) weights: [0.60, 0.40]
+
+Allocate rounding remainder to tranche 1 (or last—pick one and be consistent).
+
+Important: This is a deterministic transformation of user choices (not advice).
+
+4) Amount formatting (10,000)
+
+Format the amount input using Intl.NumberFormat("en-US") so it displays 10,000.
+
+Accept raw digit typing; sanitize non-digits.
+
+Store numeric value in state; render formatted value in UI.
+
+Default remains 10000 if empty.
+
+5) Manual overwrite tranche amounts + Reset
+
+Each tranche card must support:
+
+Editable amount input (currency formatted)
+
+“Auto/Manual” lock icon behavior:
+
+If user edits, mark tranche as Manual
+
+Auto tranches recalc when conviction/total changes
+
+Manual tranches keep their value unless user resets
+
+Add controls above Plan Preview:
+
+Reset to auto-split (restores weights-based allocations)
+
+Even split (optional but nice)
+
+Show “Remaining” or “Over by” if tranche sum differs from total
+
+Add “Fix” button to adjust the last tranche to make totals match.
+
+6) Takeaway cards link back to stage details
+
+Each takeaway card must include a “View details →” link that navigates the user back to the relevant stage:
+
+Performance → Understand Performance stage
+
+Valuation → Evaluate the Stock stage
+
+Timing → Timing stage (wherever it lives)
+
+Use existing navigation patterns (route param or scroll anchor). Preserve Strategy state so user can return without losing edits.
+
+Also remove recommendation-y wording from displayed takeaways where possible (avoid “consider waiting”, etc.). Rephrase to neutral context if the app currently generates advice-like sentences.
+
+7) Make “I’m wrong if…” easier (Guided builder)
+
+Replace the plain textarea with a guided statement builder:
+
+3 groups of selectable chips:
+
+Area: Revenue, Margins, Debt, Cash flow, Competition, Strategy narrative, Management execution
+
+Change: stalls, declines, rises, deteriorates, compresses, breaks
+
+Time/threshold: “for 2+ quarters”, “by >10%”, “without recovery”, “below prior level”
+
+Flow:
+
+User selects one from each group → preview sentence
+
+Button: Add statement
+
+Statements appear in a list below (delete + reorder via up/down buttons; drag-and-drop optional)
+
+Auto-generate the final combined output string (still editable in a small textarea below the builder)
+
+Saved/emailed value should be the final combined string.
+
+Deliverables
+
+Updated Strategy page with premium 2-column layout, reduced scroll, expanded takeaways.
+
+Weight-based tranches with manual overrides + reset.
+
+Proper amount formatting.
+
+Stage detail links from takeaways.
+
+Guided “I’m wrong if…” builder.
+
+Do UI changes first, then wire state logic, then ensure save/email payload includes:
+
+conviction value + label
+
+total amount
+
+tranches (amount + trigger + manual/auto flag)
+
+“I’m wrong if…” final output
+
+read-only snapshot/takeaway texts (as displayed)
+
+No recommendations. No analysis changes.
