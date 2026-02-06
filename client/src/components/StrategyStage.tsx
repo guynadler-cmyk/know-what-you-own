@@ -9,15 +9,19 @@ import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Calendar } from "@/components/ui/calendar";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 import { 
   Save, Mail, AlertCircle, Loader2, ChevronRight,
   BarChart3, DollarSign, Activity, Lock, Unlock,
-  RotateCcw, Equal, Wrench, Plus, X, ArrowUp, ArrowDown
+  RotateCcw, Equal, Wrench, Plus, X, ArrowUp, ArrowDown,
+  CalendarIcon, ShieldCheck
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import { format } from "date-fns";
 
 interface StrategyStageProps {
   ticker?: string;
@@ -29,10 +33,22 @@ interface StrategyStageProps {
   onStageChange?: (stage: number) => void;
 }
 
+interface TrancheWhen {
+  type: "now" | "earnings" | "days" | "date" | "manual";
+  days?: number;
+  dateISO?: string;
+}
+
+interface TrancheGate {
+  type: "none" | "fundamentals_ok" | "not_wrong_if" | "reread_takeaways" | "manual";
+}
+
 interface TrancheData {
   index: number;
   amount: number;
-  trigger: string;
+  when: TrancheWhen;
+  gate: TrancheGate;
+  gateEnabled: boolean;
   manual: boolean;
 }
 
@@ -57,13 +73,87 @@ interface StrategyPlan {
   createdAt: string;
 }
 
-const TRIGGER_OPTIONS = [
+const WHEN_OPTIONS: { value: string; label: string }[] = [
   { value: "now", label: "Now / soon" },
   { value: "earnings", label: "After next earnings" },
-  { value: "30days", label: "In 30 days" },
-  { value: "recheck", label: "After I re-check fundamentals" },
+  { value: "days", label: "In 30 days" },
+  { value: "date", label: "On a specific date..." },
   { value: "manual", label: "Manual / I'll decide" },
 ];
+
+const GATE_OPTIONS: { value: string; label: string }[] = [
+  { value: "none", label: "None" },
+  { value: "fundamentals_ok", label: "Fundamentals still look healthy" },
+  { value: "not_wrong_if", label: "My 'I'm wrong if...' conditions are NOT true" },
+  { value: "reread_takeaways", label: "I've re-read the takeaways" },
+  { value: "manual", label: "Manual check (I'll decide)" },
+];
+
+function whenToKey(w: TrancheWhen): string {
+  if (w.type === "days") return "days";
+  if (w.type === "date") return "date";
+  return w.type;
+}
+
+function whenToLabel(w: TrancheWhen): string {
+  switch (w.type) {
+    case "now": return "Now / soon";
+    case "earnings": return "After next earnings";
+    case "days": return `In ${w.days || 30} days`;
+    case "date": return w.dateISO ? format(new Date(w.dateISO), "MMM d, yyyy") : "Pick a date";
+    case "manual": return "Manual / I'll decide";
+  }
+}
+
+function gateToLabel(g: TrancheGate): string {
+  const opt = GATE_OPTIONS.find(o => o.value === g.type);
+  return opt?.label || g.type;
+}
+
+function migrateLegacyTranche(t: any): TrancheData {
+  if (t.when && typeof t.when === "object") {
+    return {
+      index: t.index,
+      amount: t.amount,
+      when: t.when,
+      gate: t.gate || { type: "none" },
+      gateEnabled: t.gateEnabled || false,
+      manual: t.manual || false,
+    };
+  }
+  const trigger: string = t.trigger || "manual";
+  let when: TrancheWhen;
+  let gate: TrancheGate = { type: "none" };
+  let gateEnabled = false;
+
+  switch (trigger) {
+    case "now":
+      when = { type: "now" };
+      break;
+    case "earnings":
+      when = { type: "earnings" };
+      break;
+    case "30days":
+      when = { type: "days", days: 30 };
+      break;
+    case "recheck":
+      when = { type: "manual" };
+      gate = { type: "fundamentals_ok" };
+      gateEnabled = true;
+      break;
+    default:
+      when = { type: "manual" };
+  }
+
+  return {
+    index: t.index,
+    amount: t.amount,
+    when,
+    gate,
+    gateEnabled,
+    manual: t.manual || false,
+  };
+}
 
 const CONVICTION_WEIGHTS: Record<string, number[]> = {
   "Exploring": [0.12, 0.18, 0.20, 0.25, 0.25],
@@ -105,7 +195,9 @@ function buildWeightedTranches(total: number, label: string): TrancheData[] {
   return rawAmounts.map((amount, i) => ({
     index: i + 1,
     amount,
-    trigger: i === 0 ? "now" : "recheck",
+    when: i === 0 ? { type: "now" as const } : { type: "days" as const, days: 30 },
+    gate: { type: "none" as const },
+    gateEnabled: false,
     manual: false,
   }));
 }
@@ -278,16 +370,21 @@ function ReadOnlyTakeaways({
 
 function TrancheCard({ 
   tranche, 
-  onTriggerChange,
+  onWhenChange,
+  onGateChange,
+  onGateToggle,
   onAmountChange,
   onToggleManual,
 }: { 
   tranche: TrancheData;
-  onTriggerChange: (trigger: string) => void;
+  onWhenChange: (when: TrancheWhen) => void;
+  onGateChange: (gate: TrancheGate) => void;
+  onGateToggle: (enabled: boolean) => void;
   onAmountChange: (amount: number) => void;
   onToggleManual: () => void;
 }) {
   const [localValue, setLocalValue] = useState(formatNumber(tranche.amount));
+  const [datePickerOpen, setDatePickerOpen] = useState(false);
 
   useEffect(() => {
     if (!tranche.manual) {
@@ -302,49 +399,149 @@ function TrancheCard({
     onAmountChange(num);
   };
 
+  const handleWhenSelect = (key: string) => {
+    switch (key) {
+      case "now": onWhenChange({ type: "now" }); break;
+      case "earnings": onWhenChange({ type: "earnings" }); break;
+      case "days": onWhenChange({ type: "days", days: 30 }); break;
+      case "date": {
+        const defaultDate = new Date();
+        defaultDate.setDate(defaultDate.getDate() + 7);
+        onWhenChange({ type: "date", dateISO: tranche.when.dateISO || defaultDate.toISOString() });
+        setDatePickerOpen(true);
+        break;
+      }
+      case "manual": onWhenChange({ type: "manual" }); break;
+    }
+  };
+
+  const handleDateSelect = (date: Date | undefined) => {
+    if (date) {
+      onWhenChange({ type: "date", dateISO: date.toISOString() });
+      setDatePickerOpen(false);
+    }
+  };
+
   return (
     <div 
-      className="flex items-center gap-3 p-3 bg-muted/30 rounded-md border border-border/50"
+      className="p-3 bg-muted/30 rounded-md border border-border/50 space-y-2"
       data-testid={`tranche-card-${tranche.index}`}
     >
-      <div className="w-6 h-6 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
-        <span className="text-xs font-semibold text-primary">{tranche.index}</span>
-      </div>
-      <div className="flex-1 min-w-0">
-        <div className="flex items-center gap-2">
-          <div className="relative flex-1">
-            <DollarSign className="absolute left-2 top-1/2 -translate-y-1/2 w-3 h-3 text-muted-foreground" />
-            <Input
-              value={localValue}
-              onChange={(e) => handleAmountChange(e.target.value)}
-              className="pl-6 text-sm font-medium"
-              data-testid={`input-tranche-amount-${tranche.index}`}
-            />
-          </div>
-          <Button
-            variant="ghost"
-            size="icon"
-            className="flex-shrink-0"
-            onClick={onToggleManual}
-            title={tranche.manual ? "Manual (click to auto)" : "Auto (click to lock)"}
-            data-testid={`button-lock-${tranche.index}`}
-          >
-            {tranche.manual ? <Lock className="w-3 h-3" /> : <Unlock className="w-3 h-3 text-muted-foreground" />}
-          </Button>
+      <div className="flex items-center gap-3">
+        <div className="w-6 h-6 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
+          <span className="text-xs font-semibold text-primary">{tranche.index}</span>
         </div>
-        <div className="mt-1.5">
-          <Select value={tranche.trigger} onValueChange={onTriggerChange}>
-            <SelectTrigger className="text-xs" data-testid={`select-trigger-${tranche.index}`}>
-              <SelectValue placeholder="When?" />
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-2">
+            <div className="relative flex-1">
+              <DollarSign className="absolute left-2 top-1/2 -translate-y-1/2 w-3 h-3 text-muted-foreground" />
+              <Input
+                value={localValue}
+                onChange={(e) => handleAmountChange(e.target.value)}
+                className="pl-6 text-sm font-medium"
+                data-testid={`input-tranche-amount-${tranche.index}`}
+              />
+            </div>
+            <Select value={whenToKey(tranche.when)} onValueChange={handleWhenSelect}>
+              <SelectTrigger className="text-xs flex-1" data-testid={`select-when-${tranche.index}`}>
+                <SelectValue placeholder="When?" />
+              </SelectTrigger>
+              <SelectContent>
+                {WHEN_OPTIONS.map((opt) => (
+                  <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="flex-shrink-0"
+              onClick={onToggleManual}
+              title={tranche.manual ? "Manual (click to auto)" : "Auto (click to lock)"}
+              data-testid={`button-lock-${tranche.index}`}
+            >
+              {tranche.manual ? <Lock className="w-3 h-3" /> : <Unlock className="w-3 h-3 text-muted-foreground" />}
+            </Button>
+          </div>
+        </div>
+      </div>
+
+      {tranche.when.type === "date" && (
+        <div className="ml-9">
+          <Popover open={datePickerOpen} onOpenChange={setDatePickerOpen}>
+            <PopoverTrigger asChild>
+              <Button
+                variant="outline"
+                size="sm"
+                className={cn(
+                  "text-xs gap-1.5 font-normal",
+                  !tranche.when.dateISO && "text-muted-foreground"
+                )}
+                data-testid={`button-date-picker-${tranche.index}`}
+              >
+                <CalendarIcon className="w-3 h-3" />
+                {tranche.when.dateISO
+                  ? format(new Date(tranche.when.dateISO), "MMM d, yyyy")
+                  : "Pick a date"}
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-auto p-0" align="start">
+              <Calendar
+                mode="single"
+                selected={tranche.when.dateISO ? new Date(tranche.when.dateISO) : undefined}
+                onSelect={handleDateSelect}
+                disabled={(date) => date < new Date()}
+                initialFocus
+              />
+            </PopoverContent>
+          </Popover>
+        </div>
+      )}
+
+      {tranche.gateEnabled ? (
+        <div className="ml-9 flex items-center gap-2">
+          <ShieldCheck className="w-3 h-3 text-muted-foreground flex-shrink-0" />
+          <Select value={tranche.gate.type} onValueChange={(v) => onGateChange({ type: v as TrancheGate["type"] })}>
+            <SelectTrigger className="text-xs flex-1" data-testid={`select-gate-${tranche.index}`}>
+              <SelectValue placeholder="Condition" />
             </SelectTrigger>
             <SelectContent>
-              {TRIGGER_OPTIONS.map((opt) => (
+              {GATE_OPTIONS.filter(o => o.value !== "none").map((opt) => (
                 <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>
               ))}
             </SelectContent>
           </Select>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="flex-shrink-0"
+            onClick={() => {
+              onGateToggle(false);
+              onGateChange({ type: "none" });
+            }}
+            title="Remove condition"
+            data-testid={`button-remove-gate-${tranche.index}`}
+          >
+            <X className="w-3 h-3" />
+          </Button>
         </div>
-      </div>
+      ) : (
+        <div className="ml-9">
+          <Button
+            variant="ghost"
+            size="sm"
+            className="text-xs text-muted-foreground gap-1"
+            onClick={() => {
+              onGateToggle(true);
+              onGateChange({ type: "fundamentals_ok" });
+            }}
+            data-testid={`button-add-gate-${tranche.index}`}
+          >
+            <Plus className="w-3 h-3" />
+            Add a condition
+          </Button>
+        </div>
+      )}
     </div>
   );
 }
@@ -576,12 +773,14 @@ export function StrategyStage({
   const convictionLabel = useMemo(() => getConvictionLabel(convictionValue), [convictionValue]);
   const trancheCount = useMemo(() => getTrancheCount(convictionValue), [convictionValue]);
 
-  const rebuildAutoTranches = useCallback((total: number, label: string, preserveTriggers = true) => {
+  const rebuildAutoTranches = useCallback((total: number, label: string, preserveWhenGate = true) => {
     const newTranches = buildWeightedTranches(total, label);
     setTranches(prev => {
       return newTranches.map((t, i) => ({
         ...t,
-        trigger: preserveTriggers && prev[i]?.trigger ? prev[i].trigger : t.trigger,
+        when: preserveWhenGate && prev[i]?.when ? prev[i].when : t.when,
+        gate: preserveWhenGate && prev[i]?.gate ? prev[i].gate : t.gate,
+        gateEnabled: preserveWhenGate && prev[i] ? prev[i].gateEnabled : t.gateEnabled,
       }));
     });
   }, []);
@@ -592,14 +791,18 @@ export function StrategyStage({
       if (prev.length !== newTranches.length) {
         return newTranches.map((t, i) => ({
           ...t,
-          trigger: prev[i]?.trigger || t.trigger,
+          when: prev[i]?.when || t.when,
+          gate: prev[i]?.gate || t.gate,
+          gateEnabled: prev[i]?.gateEnabled || t.gateEnabled,
         }));
       }
       return prev.map((existing, i) => {
         if (existing.manual) return existing;
         return {
           ...newTranches[i],
-          trigger: existing.trigger,
+          when: existing.when,
+          gate: existing.gate,
+          gateEnabled: existing.gateEnabled,
         };
       });
     });
@@ -610,13 +813,13 @@ export function StrategyStage({
       const saved = localStorage.getItem(`strategyPlan:${ticker}`);
       if (saved) {
         try {
-          const plan: StrategyPlan = JSON.parse(saved);
+          const plan = JSON.parse(saved);
           setConvictionValue(plan.convictionValue);
           setTotalAmountRaw(plan.totalAmount);
           setAmountDisplay(formatNumber(plan.totalAmount));
           setImWrongIf(plan.imWrongIf);
           if (plan.tranches?.length) {
-            setTranches(plan.tranches.map(t => ({ ...t, manual: t.manual || false })));
+            setTranches(plan.tranches.map((t: any) => migrateLegacyTranche(t)));
           }
         } catch (e) {
           console.error("Failed to load saved strategy:", e);
@@ -632,8 +835,16 @@ export function StrategyStage({
     setAmountDisplay(digits ? formatNumber(num) : "");
   };
 
-  const handleTriggerChange = (index: number, trigger: string) => {
-    setTranches(prev => prev.map(t => t.index === index ? { ...t, trigger } : t));
+  const handleWhenChange = (index: number, when: TrancheWhen) => {
+    setTranches(prev => prev.map(t => t.index === index ? { ...t, when } : t));
+  };
+
+  const handleGateChange = (index: number, gate: TrancheGate) => {
+    setTranches(prev => prev.map(t => t.index === index ? { ...t, gate } : t));
+  };
+
+  const handleGateToggle = (index: number, enabled: boolean) => {
+    setTranches(prev => prev.map(t => t.index === index ? { ...t, gateEnabled: enabled } : t));
   };
 
   const handleTrancheAmountChange = (index: number, amount: number) => {
@@ -859,7 +1070,9 @@ export function StrategyStage({
                   <TrancheCard
                     key={tranche.index}
                     tranche={tranche}
-                    onTriggerChange={(trigger) => handleTriggerChange(tranche.index, trigger)}
+                    onWhenChange={(when) => handleWhenChange(tranche.index, when)}
+                    onGateChange={(gate) => handleGateChange(tranche.index, gate)}
+                    onGateToggle={(enabled) => handleGateToggle(tranche.index, enabled)}
                     onAmountChange={(amount) => handleTrancheAmountChange(tranche.index, amount)}
                     onToggleManual={() => handleToggleManual(tranche.index)}
                   />
