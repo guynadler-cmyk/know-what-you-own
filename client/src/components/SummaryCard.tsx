@@ -5,9 +5,9 @@ import { Button } from "@/components/ui/button";
 
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
-import { Calendar, Building2, MapPin, Users, TrendingUp, Briefcase, Award, DollarSign, ExternalLink, Youtube, Newspaper, Globe, ChevronDown, Building, Shield, Target, Coins } from "lucide-react";
+import { Calendar, Building2, MapPin, Users, TrendingUp, Briefcase, Award, DollarSign, ExternalLink, Globe, ChevronDown, Building, Shield, Target, Coins } from "lucide-react";
 import { LucideIcon } from "lucide-react";
-import { SiYoutube } from "react-icons/si";
+
 import { useQuery } from "@tanstack/react-query";
 import { InvestmentTheme, Moat, MarketOpportunity, ValueCreation, TemporalAnalysis as TemporalAnalysisType, FinePrintAnalysis as FinePrintAnalysisType } from "@shared/schema";
 import { TagWithTooltip } from "@/components/TagWithTooltip";
@@ -37,18 +37,6 @@ interface Metric {
   trend?: "up" | "down" | "stable";
 }
 
-interface NewsItem {
-  title: string;
-  source: string;
-  date: string;
-  url: string;
-}
-
-interface VideoResource {
-  title: string;
-  channel: string;
-  url: string;
-}
 
 interface SummaryCardProps {
   companyName: string;
@@ -76,8 +64,6 @@ interface SummaryCardProps {
   metadata: {
     homepage: string;
     investorRelations?: string;
-    news: NewsItem[];
-    videos: VideoResource[];
   };
   
   cik?: string;
@@ -604,72 +590,6 @@ export function SummaryCard({
         </div>
       </div>
 
-
-      {/* RESOURCES CLUSTER */}
-      <div className="border-2 border-border rounded-2xl">
-        <div className="bg-muted px-8 py-4 border-b-2 border-border">
-          <h2 className="text-2xl font-bold text-center uppercase tracking-wide">Resources</h2>
-        </div>
-        <div className="bg-muted/20 p-8 sm:p-12">
-          <div className="grid gap-12 md:grid-cols-2 max-w-5xl mx-auto">
-            <section className="space-y-6">
-              <h3 className="text-2xl font-bold pb-3 border-b border-border">News</h3>
-              <div className="space-y-3">
-                {metadata.news.map((item, index) => (
-                  <a 
-                    key={index}
-                    href={item.url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="flex items-start gap-4 p-4 bg-background border border-border rounded-lg hover-elevate active-elevate-2 transition-all group"
-                    data-testid={`link-news-${index}`}
-                  >
-                    <div className="shrink-0 mt-1">
-                      <Newspaper className="h-6 w-6 text-muted-foreground group-hover:text-primary transition-colors" />
-                    </div>
-                    <div className="flex-1 min-w-0 space-y-1">
-                      <p className="font-medium group-hover:text-primary transition-colors">
-                        {item.title}
-                      </p>
-                      <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                        <span>{item.source}</span>
-                        <span>•</span>
-                        <span>{item.date}</span>
-                      </div>
-                    </div>
-                  </a>
-                ))}
-              </div>
-            </section>
-
-            <section className="space-y-6">
-              <h3 className="text-2xl font-bold pb-3 border-b border-border">Videos</h3>
-              <div className="space-y-3">
-                {metadata.videos.map((video, index) => (
-                  <a 
-                    key={index}
-                    href={video.url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="flex items-start gap-4 p-4 bg-background border border-border rounded-lg hover-elevate active-elevate-2 transition-all group"
-                    data-testid={`link-video-${index}`}
-                  >
-                    <div className="shrink-0 mt-1">
-                      <SiYoutube className="h-6 w-6 text-[#FF0000] group-hover:text-[#CC0000] transition-colors" />
-                    </div>
-                    <div className="flex-1 min-w-0 space-y-1">
-                      <p className="font-medium group-hover:text-primary transition-colors">
-                        {video.title}
-                      </p>
-                      <p className="text-sm text-muted-foreground">{video.channel}</p>
-                    </div>
-                  </a>
-                ))}
-              </div>
-            </section>
-          </div>
-        </div>
-      </div>
 
       {/* Footer */}
       <div className="text-center pt-8 border-t border-border">
