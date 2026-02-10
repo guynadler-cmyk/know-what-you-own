@@ -1620,6 +1620,347 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // --------------------------------------------------------------------------
+  // VALUATION METRICS (Magic Formula)
+  // --------------------------------------------------------------------------
+  app.get("/api/valuation/:ticker", async (req: any, res) => {
+    try {
+      const { ticker } = req.params;
+
+      if (!ticker || !/^[A-Z]{1,5}$/i.test(ticker)) {
+        return res.status(400).json({
+          error: "Invalid ticker format",
+          message: "Please provide 1-5 letter ticker symbol."
+        });
+      }
+
+      const metrics = await alphaVantageService.getValuationMetrics(ticker.toUpperCase());
+      const validatedMetrics = valuationMetricsSchema.parse(metrics);
+
+      res.json(validatedMetrics);
+    } catch (error: any) {
+      console.error("Valuation metrics error:", error);
+
+      if (error.message?.includes("not found")) {
+        return res.status(404).json({
+          error: "Company Not Found",
+          message: `Could not find valuation data for "${req.params.ticker.toUpperCase()}".`
+        });
+      }
+
+      if (error.message?.includes("Insufficient") || error.message?.includes("No income") || error.message?.includes("No balance")) {
+        return res.status(404).json({
+          error: "Insufficient Data",
+          message: error.message
+        });
+      }
+
+      if (error.message?.includes("rate limit") || error.message?.includes("Try again")) {
+        return res.status(429).json({
+          error: "Rate Limited",
+          message: "Too many requests. Please wait a minute and try again."
+        });
+      }
+
+      if (error.message?.includes("temporarily unavailable") || error.message?.includes("Unable to retrieve")) {
+        return res.status(503).json({
+          error: "Service Unavailable",
+          message: "The data service is temporarily unavailable. Please try again shortly."
+        });
+      }
+
+      if (error.message?.includes("timed out")) {
+        return res.status(503).json({
+          error: "Service Timeout",
+          message: "Valuation data service timed out."
+        });
+      }
+
+      return res.status(500).json({
+        error: "Data Retrieval Failed",
+        message: "Unable to retrieve valuation metrics."
+      });
+    }
+  });
+
+  // --------------------------------------------------------------------------
+  // TIMING ANALYSIS (Technical Signals)
+  // --------------------------------------------------------------------------
+  app.get("/api/timing/:ticker", async (req: any, res) => {
+    try {
+      const { ticker } = req.params;
+      const timeframe = (req.query.timeframe === 'daily') ? 'daily' : 'weekly'; // default to weekly
+
+      if (!ticker || !/^[A-Z]{1,5}$/i.test(ticker)) {
+        return res.status(400).json({
+          error: "Invalid ticker format",
+          message: "Please provide 1-5 letter ticker symbol."
+        });
+      }
+
+      const analysis = await alphaVantageService.getTimingAnalysis(ticker.toUpperCase(), timeframe);
+      const validated = timingAnalysisSchema.parse(analysis);
+
+      res.json(validated);
+    } catch (error: any) {
+      console.error("Timing analysis error:", error);
+
+      if (error.message?.includes("not found")) {
+        return res.status(404).json({
+          error: "Company Not Found",
+          message: `Could not find market data for "${req.params.ticker.toUpperCase()}".`
+        });
+      }
+
+      if (error.message?.includes("Insufficient")) {
+        return res.status(404).json({
+          error: "Insufficient Data",
+          message: "Not enough historical data to analyze market conditions."
+        });
+      }
+
+      if (error.message?.includes("rate limit") || error.message?.includes("Try again")) {
+        return res.status(429).json({
+          error: "Rate Limited",
+          message: "Too many requests. Please wait a moment and try again."
+        });
+      }
+
+      if (error.message?.includes("timed out")) {
+        return res.status(503).json({
+          error: "Service Timeout",
+          message: "Market data service timed out."
+        });
+      }
+
+      return res.status(500).json({
+        error: "Analysis Failed",
+        message: "Unable to analyze timing conditions. Please try again."
+      });
+    }
+  });
+
+  // --------------------------------------------------------------------------
+  // LOGO PROXY (Clearbit)
+  // --------------------------------------------------------------------------
+  const logoCache = new Map<string, { data: Buffer; contentType: string; timestamp: number }>();
+  const LOGO_CACHE_TTL = 24 * 60 * 60 * 1000; // 24 hours
+
+  app.get("/api/logo/:domain", async (req: any, res) => {
+    try {
+      let { domain } = req.params;
+
+      if (!domain || !/^[a-z0-9.-]+\.[a-z]{2,}$/i.test(domain)) {
+        return res.status(400).json({ error: "Invalid domain format" });
+      }
+
+      // Strip www. prefix - Clearbit works better with root domains
+      domain = domain.replace(/^www\./i, '');
+
+      const cacheKey = domain.toLowerCase();
+      const cached = logoCache.get(cacheKey);
+      
+      // Return cached logo if fresh
+      if (cached && Date.now() - cached.timestamp < LOGO_CACHE_TTL) {
+        res.set("Content-Type", cached.contentType);
+        res.set("Cache-Control", "public, max-age=86400");
+        return res.send(cached.data);
+      }
+
+      // Fetch from Google's favicon service (more reliable than Clearbit)
+      const response = await fetch(`https://www.google.com/s2/favicons?domain=${domain}&sz=128`, {
+        headers: {
+          "User-Agent": "KnowWhatYouOwn/1.0"
+        },
+        redirect: 'follow'
+      });
+
+      if (!response.ok) {
+        return res.status(404).json({ error: "Logo not found" });
+      }
+
+      const contentType = response.headers.get("content-type") || "image/png";
+      const arrayBuffer = await response.arrayBuffer();
+      const buffer = Buffer.from(arrayBuffer);
+
+      // Cache the result
+      logoCache.set(cacheKey, {
+        data: buffer,
+        contentType,
+        timestamp: Date.now()
+      });
+
+      res.set("Content-Type", contentType);
+      res.set("Cache-Control", "public, max-age=86400");
+      res.send(buffer);
+    } catch (error: any) {
+      console.error("Logo fetch error:", error.message);
+      return res.status(500).json({ error: "Failed to fetch logo" });
+    }
+  });
+
+  // --------------------------------------------------------------------------
+  // WAITLIST SIGNUP
+  // --------------------------------------------------------------------------
+  app.post("/api/waitlist", async (req: any, res) => {
+    try {
+      const validatedData = insertWaitlistSignupSchema.parse(req.body);
+      
+      const signup = await storage.createWaitlistSignup(validatedData);
+      
+      console.log(`Waitlist signup: ${validatedData.email} for "${validatedData.stageName}"`);
+      
+      res.status(201).json({ 
+        success: true, 
+        message: "You're on the list! We'll notify you when this feature launches.",
+        id: signup.id 
+      });
+    } catch (error: any) {
+      console.error("Waitlist signup error:", error);
+      
+      if (error.name === "ZodError") {
+        return res.status(400).json({
+          error: "Invalid input",
+          message: error.errors[0]?.message || "Please check your email address."
+        });
+      }
+      
+      res.status(500).json({
+        error: "Signup failed",
+        message: "Something went wrong. Please try again."
+      });
+    }
+  });
+
+  // Get all waitlist signups (for admin/marketing use)
+  app.get("/api/waitlist", async (req: any, res) => {
+    try {
+      const signups = await storage.getWaitlistSignups();
+      res.json(signups);
+    } catch (error: any) {
+      console.error("Error fetching waitlist:", error);
+      res.status(500).json({
+        error: "Failed to fetch waitlist",
+        message: "Could not retrieve waitlist data."
+      });
+    }
+  });
+
+  // --------------------------------------------------------------------------
+  // SCHEDULED CHECKUP EMAILS
+  // --------------------------------------------------------------------------
+  app.post("/api/scheduled-checkups", async (req: any, res) => {
+    try {
+      const validated = insertScheduledCheckupSchema.parse(req.body);
+      const checkup = await storage.createScheduledCheckup(validated);
+      console.log(`Scheduled checkup created for ${validated.ticker} (${validated.email})`);
+      res.status(201).json(checkup);
+    } catch (error: any) {
+      console.error("Scheduled checkup error:", error);
+      if (error.name === "ZodError") {
+        return res.status(400).json({
+          error: "Validation Error",
+          message: error.errors?.[0]?.message || "Invalid request data."
+        });
+      }
+      res.status(500).json({
+        error: "Failed to create checkup",
+        message: "Could not save your reminder. Please try again."
+      });
+    }
+  });
+
+  app.get("/api/scheduled-checkups", async (req: any, res) => {
+    try {
+      const checkups = await storage.getScheduledCheckups();
+      res.json(checkups);
+    } catch (error: any) {
+      console.error("Error fetching scheduled checkups:", error);
+      res.status(500).json({
+        error: "Failed to fetch checkups",
+        message: "Could not retrieve scheduled checkups."
+      });
+    }
+  });
+
+  // --------------------------------------------------------------------------
+  // EARNINGS CALENDAR (Finnhub)
+  // --------------------------------------------------------------------------
+  app.get("/api/earnings/:ticker", async (req: any, res) => {
+    try {
+      const { ticker } = req.params;
+      
+      if (!ticker || !/^[A-Z]{1,5}$/i.test(ticker)) {
+        return res.status(400).json({ 
+          error: "Invalid ticker format",
+          message: "Please provide 1-5 letter ticker symbol." 
+        });
+      }
+
+      const apiKey = process.env.FINNHUB_API_KEY;
+      if (!apiKey) {
+        return res.status(503).json({
+          error: "Earnings data unavailable",
+          message: "Earnings calendar service is not configured."
+        });
+      }
+
+      const today = new Date();
+      const futureDate = new Date(today);
+      futureDate.setMonth(futureDate.getMonth() + 6);
+
+      const fromDate = today.toISOString().split('T')[0];
+      const toDate = futureDate.toISOString().split('T')[0];
+
+      const url = `https://finnhub.io/api/v1/calendar/earnings?symbol=${ticker.toUpperCase()}&from=${fromDate}&to=${toDate}&token=${apiKey}`;
+      
+      const response = await fetch(url, {
+        headers: { "User-Agent": "KnowWhatYouOwn/1.0" }
+      });
+
+      if (!response.ok) {
+        if (response.status === 429) {
+          return res.status(429).json({
+            error: "Rate limited",
+            message: "Too many requests to earnings API. Please try again later."
+          });
+        }
+        throw new Error(`Finnhub API error: ${response.status}`);
+      }
+
+      const data = await response.json();
+      
+      const earningsCalendar = data.earningsCalendar || [];
+      const upcomingEarnings = earningsCalendar
+        .filter((e: any) => new Date(e.date) >= today)
+        .sort((a: any, b: any) => new Date(a.date).getTime() - new Date(b.date).getTime());
+
+      if (upcomingEarnings.length === 0) {
+        return res.json({
+          ticker: ticker.toUpperCase(),
+          nextEarningsDate: null,
+          hour: null,
+          message: "No upcoming earnings date found"
+        });
+      }
+
+      const next = upcomingEarnings[0];
+      res.json({
+        ticker: ticker.toUpperCase(),
+        nextEarningsDate: next.date,
+        hour: next.hour || null,
+        epsEstimate: next.epsEstimate,
+        revenueEstimate: next.revenueEstimate
+      });
+    } catch (error: any) {
+      console.error("Earnings fetch error:", error);
+      res.status(500).json({
+        error: "Earnings lookup failed",
+        message: "Unable to fetch earnings date. Please try again later."
+      });
+    }
+  });
+  
   const httpServer = createServer(app);
   return httpServer;
 }
