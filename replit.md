@@ -26,6 +26,10 @@ The application uses a dual database architecture:
 
 Zod schema validation ensures data quality, with incomplete AI responses resulting in errors.
 
+### GA4 Conversion Tracking
+
+A single `new_lead` GA4 event fires via Firebase Analytics when a user's email is written to the database for the **first time**. Deduplication checks both `waitlist_signups` and `scheduled_checkup_emails` tables (case-insensitive, normalized to lowercase on insert). All four write endpoints (`/api/lead`, `/api/waitlist`, `/api/strategy-email`, `/api/scheduled-checkups`) return `isNewLead: true/false` in their response. The frontend fires the event only when `isNewLead` is true. Event parameters include `lead_source` (popup/strategy_email/reminder), `ticker`, `stage`, and `company_name` for GA4 analysis. In Google Ads, this single event should be marked as a conversion.
+
 ### Type Safety & Validation
 
 Shared Zod schemas, located in `/shared/schema.ts`, ensure type safety and data consistency across both frontend and backend. These schemas define the structure for various data entities and enable runtime validation.

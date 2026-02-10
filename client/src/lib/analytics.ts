@@ -125,4 +125,20 @@ export const analytics = {
   trackCtaClicked: (ctaName: string) => {
     trackEvent('cta_clicked', 'engagement', ctaName);
   },
+
+  trackNewLead: (params: {
+    lead_source: 'popup' | 'strategy_email' | 'reminder';
+    ticker?: string;
+    stage?: number;
+    company_name?: string;
+  }) => {
+    if (firebaseAnalytics) {
+      logEvent(firebaseAnalytics, 'new_lead', {
+        lead_source: params.lead_source,
+        ticker: params.ticker || '',
+        stage: params.stage ?? 0,
+        company_name: params.company_name || '',
+      });
+    }
+  },
 };

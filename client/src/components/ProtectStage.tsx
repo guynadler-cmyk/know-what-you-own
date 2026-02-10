@@ -306,13 +306,23 @@ export function ProtectStage({ ticker: initialTicker }: ProtectStageProps) {
     }));
 
     try {
-      await saveCheckupMutation.mutateAsync({
+      const result = await saveCheckupMutation.mutateAsync({
         email,
         ticker: ticker.trim().toUpperCase(),
         selectedCheckins: selectedTypes.filter((id) => !CHECK_IN_TYPES.find((t) => t.id === id)?.disabled),
         customMessage: userMessage || undefined,
         reminderDates,
       });
+
+      if (result?.isNewLead) {
+        import("@/lib/analytics").then(({ analytics }) => {
+          analytics.trackNewLead({
+            lead_source: 'reminder',
+            ticker: ticker.trim().toUpperCase() || undefined,
+            stage: 6,
+          });
+        });
+      }
 
       const events = generateEvents();
       

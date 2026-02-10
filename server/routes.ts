@@ -1823,18 +1823,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/waitlist", async (req: any, res) => {
     try {
       const validatedData = insertWaitlistSignupSchema.parse(req.body);
+  const isNewLead = await storage.isEmailNew(validatedData.email);
+  const signup = await storage.createWaitlistSignup(validatedData);
 
-      const signup = await storage.createWaitlistSignup(validatedData);
+  console.log(
+    `Waitlist signup: ${validatedData.email} for "${validatedData.stageName}" (isNewLead: ${isNewLead})`,
+  );
 
-      console.log(
-        `Waitlist signup: ${validatedData.email} for "${validatedData.stageName}"`,
-      );
+  res.status(201).json({
+    success: true,
+    message: "You're on the list! We'll notify you when this feature launches.",
+    id: signup.id,
+    isNewLead,
 
-      res.status(201).json({
-        success: true,
-        message:
-          "You're on the list! We'll notify you when this feature launches.",
-        id: signup.id,
       });
     } catch (error: any) {
       console.error("Waitlist signup error:", error);
@@ -1874,11 +1875,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/scheduled-checkups", async (req: any, res) => {
     try {
       const validated = insertScheduledCheckupSchema.parse(req.body);
+      const isNewLead = await storage.isEmailNew(validated.email);
       const checkup = await storage.createScheduledCheckup(validated);
-      console.log(
-        `Scheduled checkup created for ${validated.ticker} (${validated.email})`,
-      );
-      res.status(201).json(checkup);
+  console.log(
+    `Scheduled checkup created for ${validated.ticker} (${validated.email}) (isNewLead: ${isNewLead})`,
+  );
+  res.status(201).json({ ...checkup, isNewLead });
+
     } catch (error: any) {
       console.error("Scheduled checkup error:", error);
       if (error.name === "ZodError") {
@@ -1998,13 +2001,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
     ? `Popup - ${validated.ticker}`
     : `Popup - ${validated.path || "unknown"}`;
 
+  const isNewLead = await storage.isEmailNew(validated.email);
+
   const signup = await storage.createWaitlistSignup({
     email: validated.email,
     stageName,
   });
 
-  console.log(`Lead captured to DB: ${validated.email} (${stageName})`);
-  res.json({ success: true, id: signup.id });
+  console.log(
+    `Lead captured to DB: ${validated.email} (${stageName}) (isNewLead: ${isNewLead})`,
+  );
+  res.json({ success: true, id: signup.id, isNewLead });
 
     } catch (error: any) {
       console.error("Lead capture error:", error);
@@ -2130,7 +2137,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
 
+      let isNewLead = false;
       try {
+        isNewLead = await storage.isEmailNew(email);
         await storage.createWaitlistSignup({
           email,
           stageName: `Strategy Plan: ${plan.ticker}`,
@@ -2139,9 +2148,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
         console.warn("[strategy-email] Failed to store email in DB, continuing:", dbError);
       }
 
-      console.log(`[strategy-email] Email sent successfully to ${email} for ${plan.ticker}, ID: ${data?.id}`);
+  console.log(
+    `[strategy-email] Email sent successfully to ${email} for ${plan.ticker}, ID: ${data?.id} (isNewLead: ${isNewLead})`,
+  );
+  res.json({ success: true, emailId: data?.id, isNewLead });
 
-      res.json({ success: true, emailId: data?.id });
     } catch (error: any) {
       console.error("Strategy email error:", error);
       res.status(500).json({

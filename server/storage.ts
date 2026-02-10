@@ -11,8 +11,9 @@ import {
   type ScheduledCheckupEmail,
   type Lead,
 } from "@shared/schema";
-import { internalDb } from "./internalDb";
-import { eq } from "drizzle-orm";
+  import { db } from "./db";
+  import { eq, or } from "drizzle-orm";
+
 
 // In-memory lead storage
 const leads: Lead[] = [];
@@ -30,6 +31,9 @@ export interface IStorage {
   // Scheduled checkup operations
   createScheduledCheckup(data: InsertScheduledCheckup): Promise<ScheduledCheckupEmail>;
   getScheduledCheckups(): Promise<ScheduledCheckupEmail[]>;
+  
+  // Email deduplication
+  isEmailNew(email: string): Promise<boolean>;
   
   // Lead operations (in-memory)
   addLead(lead: Lead): void;
@@ -63,7 +67,7 @@ export class DatabaseStorage implements IStorage {
   async createWaitlistSignup(data: InsertWaitlistSignup): Promise<WaitlistSignup> {
     const [signup] = await internalDb
       .insert(waitlistSignups)
-      .values(data)
+      .values({ ...data, email: data.email.toLowerCase().trim() })
       .returning();
     return signup;
   }
@@ -76,13 +80,32 @@ export class DatabaseStorage implements IStorage {
   async createScheduledCheckup(data: InsertScheduledCheckup): Promise<ScheduledCheckupEmail> {
     const [checkup] = await internalDb
       .insert(scheduledCheckupEmails)
-      .values(data)
+      .values({ ...data, email: data.email.toLowerCase().trim() })
       .returning();
     return checkup;
   }
 
   async getScheduledCheckups(): Promise<ScheduledCheckupEmail[]> {
     return await internalDb.select().from(scheduledCheckupEmails);
+  }
+
+  async isEmailNew(email: string): Promise<boolean> {
+    const normalizedEmail = email.toLowerCase().trim();
+    const [waitlistMatch] = await db
+      .select({ email: waitlistSignups.email })
+      .from(waitlistSignups)
+      .where(eq(waitlistSignups.email, normalizedEmail))
+      .limit(1);
+    if (waitlistMatch) return false;
+
+    const [checkupMatch] = await db
+      .select({ email: scheduledCheckupEmails.email })
+      .from(scheduledCheckupEmails)
+      .where(eq(scheduledCheckupEmails.email, normalizedEmail))
+      .limit(1);
+    if (checkupMatch) return false;
+
+    return true;
   }
 
   // Lead operations (in-memory)

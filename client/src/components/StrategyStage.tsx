@@ -924,7 +924,17 @@ export function StrategyStage({
       const response = await apiRequest("POST", "/api/strategy-email", data);
       return response.json();
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
+      if (data?.isNewLead) {
+        import("@/lib/analytics").then(({ analytics }) => {
+          analytics.trackNewLead({
+            lead_source: 'strategy_email',
+            ticker: ticker || undefined,
+            stage: 5,
+            company_name: companyName || undefined,
+          });
+        });
+      }
       toast({ title: "Email sent", description: "Your strategy plan has been emailed to you." });
       setEmailModalOpen(false);
       setEmailAddress("");
