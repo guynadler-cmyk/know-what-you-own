@@ -100,12 +100,22 @@ export function LeadPopup() {
     setIsSubmitting(true);
 
     try {
-      await apiRequest("POST", "/api/lead", {
+      const response = await apiRequest("POST", "/api/lead", {
         email,
         ticker: getTickerFromUrl(),
         path: window.location.pathname,
         ts: startTimeRef.current,
       });
+      const result = await response.json();
+
+      if (result.isNewLead) {
+        const { analytics } = await import("@/lib/analytics");
+        analytics.trackNewLead({
+          lead_source: 'popup',
+          ticker: getTickerFromUrl() || undefined,
+          stage: 0,
+        });
+      }
 
       localStorage.setItem(STORAGE_KEY, "true");
       setIsSubmitted(true);
