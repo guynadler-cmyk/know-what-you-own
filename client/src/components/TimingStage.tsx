@@ -17,6 +17,7 @@ import { TrendChart } from "./timing/TrendChart";
 import { MomentumChart } from "./timing/MomentumChart";
 import { StretchChart } from "./timing/StretchChart";
 
+
 const TIMEFRAME_STORAGE_KEY = 'timing-timeframe';
 
 interface TimingStageProps {
