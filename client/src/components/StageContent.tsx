@@ -11,6 +11,7 @@ import { ValuationScorecard } from "@/components/ValuationScorecard";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Smartphone, Laptop, Tablet, Watch, Car, Zap, Battery, Server, Cloud, Gamepad2, Package, Code, Globe, Music, Video, Tv, Search, Cpu, Info } from "lucide-react";
 import { CompanySummary, FinancialMetrics, BalanceSheetMetrics } from "@shared/schema";
+import { CompanyLogo } from "@/components/CompanyLogo";
 
 const iconMap: Record<string, any> = {
   Smartphone, Laptop, Tablet, Watch, Car, Zap, Battery, Server, 
@@ -94,16 +95,6 @@ export function StageContent({ stage, summaryData, financialMetrics, balanceShee
   const [valuationQuadrantData, setValuationQuadrantData] = useState<ValuationQuadrantData[]>(VALUATION_QUADRANT_DATA);
 
   if (stage === 5) {
-    const getLogoUrl = (homepage: string) => {
-      try {
-        const url = new URL(homepage);
-        return `/api/logo/${url.hostname}`;
-      } catch {
-        return null;
-      }
-    };
-    const logoUrl = summaryData?.metadata?.homepage ? getLogoUrl(summaryData.metadata.homepage) : null;
-
     const strongCount = quadrantData.filter(q => q.strength === "strong").length;
     const fundamentalsScore = quadrantData.length > 0 
       ? `${strongCount}/${quadrantData.length} strong` 
@@ -118,7 +109,7 @@ export function StageContent({ stage, summaryData, financialMetrics, balanceShee
       <StrategyStage 
         ticker={ticker}
         companyName={summaryData?.companyName}
-        logoUrl={logoUrl || undefined}
+        homepage={summaryData?.metadata?.homepage}
         fundamentalsScore={fundamentalsScore}
         valuationLabel={valuationLabel}
         onStageChange={onStageChange}
@@ -142,46 +133,17 @@ export function StageContent({ stage, summaryData, financialMetrics, balanceShee
   }
 
   if (stage === 2) {
-    const getLogoUrl = (homepage: string) => {
-      try {
-        const url = new URL(homepage);
-        return `/api/logo/${url.hostname}`;
-      } catch {
-        return null;
-      }
-    };
-    const logoUrl = summaryData?.metadata?.homepage ? getLogoUrl(summaryData.metadata.homepage) : null;
-
     return (
       <Card data-testid="stage-2-content">
         <CardHeader className="text-center pb-6">
           {summaryData && (
             <div className="flex items-center justify-center gap-4 mb-6">
-              <div className="relative">
-                {logoUrl ? (
-                  <img 
-                    src={logoUrl}
-                    alt={`${summaryData.companyName} logo`}
-                    className="w-16 h-16 rounded-lg object-contain bg-white p-2 shadow-sm"
-                    onError={(e) => {
-                      e.currentTarget.style.display = 'none';
-                      const fallback = e.currentTarget.nextElementSibling as HTMLElement;
-                      if (fallback) fallback.style.display = 'flex';
-                    }}
-                    onLoad={(e) => {
-                      const img = e.currentTarget;
-                      if (img.naturalWidth < 64 || img.naturalHeight < 64) {
-                        img.style.display = 'none';
-                        const fallback = img.nextElementSibling as HTMLElement;
-                        if (fallback) fallback.style.display = 'flex';
-                      }
-                    }}
-                  />
-                ) : null}
-                <div className={`${logoUrl ? 'hidden' : 'flex'} w-16 h-16 rounded-lg bg-primary/10 items-center justify-center shadow-sm`}>
-                  <span className="text-2xl font-bold text-primary">{summaryData.ticker.charAt(0)}</span>
-                </div>
-              </div>
+              <CompanyLogo
+                homepage={summaryData.metadata?.homepage}
+                companyName={summaryData.companyName}
+                ticker={summaryData.ticker}
+                size="md"
+              />
               <div className="text-left">
                 <h2 className="text-2xl font-bold">{summaryData.companyName}</h2>
                 <p className="text-sm text-muted-foreground">{summaryData.ticker}</p>
@@ -205,46 +167,17 @@ export function StageContent({ stage, summaryData, financialMetrics, balanceShee
   }
 
   if (stage === 3) {
-    const getLogoUrl = (homepage: string) => {
-      try {
-        const url = new URL(homepage);
-        return `/api/logo/${url.hostname}`;
-      } catch {
-        return null;
-      }
-    };
-    const logoUrl = summaryData?.metadata?.homepage ? getLogoUrl(summaryData.metadata.homepage) : null;
-
     return (
       <Card data-testid="stage-3-content">
         <CardHeader className="text-center pb-6">
           {summaryData && (
             <div className="flex items-center justify-center gap-4 mb-6">
-              <div className="relative">
-                {logoUrl ? (
-                  <img 
-                    src={logoUrl}
-                    alt={`${summaryData.companyName} logo`}
-                    className="w-16 h-16 rounded-lg object-contain bg-white p-2 shadow-sm"
-                    onError={(e) => {
-                      e.currentTarget.style.display = 'none';
-                      const fallback = e.currentTarget.nextElementSibling as HTMLElement;
-                      if (fallback) fallback.style.display = 'flex';
-                    }}
-                    onLoad={(e) => {
-                      const img = e.currentTarget;
-                      if (img.naturalWidth < 64 || img.naturalHeight < 64) {
-                        img.style.display = 'none';
-                        const fallback = img.nextElementSibling as HTMLElement;
-                        if (fallback) fallback.style.display = 'flex';
-                      }
-                    }}
-                  />
-                ) : null}
-                <div className={`${logoUrl ? 'hidden' : 'flex'} w-16 h-16 rounded-lg bg-primary/10 items-center justify-center shadow-sm`}>
-                  <span className="text-2xl font-bold text-primary">{summaryData.ticker.charAt(0)}</span>
-                </div>
-              </div>
+              <CompanyLogo
+                homepage={summaryData.metadata?.homepage}
+                companyName={summaryData.companyName}
+                ticker={summaryData.ticker}
+                size="md"
+              />
               <div className="text-left">
                 <h2 className="text-2xl font-bold">{summaryData.companyName}</h2>
                 <p className="text-sm text-muted-foreground">{summaryData.ticker}</p>
@@ -265,21 +198,11 @@ export function StageContent({ stage, summaryData, financialMetrics, balanceShee
   }
 
   if (stage === 4) {
-    const getLogoUrl = (homepage: string) => {
-      try {
-        const url = new URL(homepage);
-        return `/api/logo/${url.hostname}`;
-      } catch {
-        return null;
-      }
-    };
-    const logoUrl = summaryData?.metadata?.homepage ? getLogoUrl(summaryData.metadata.homepage) : null;
-
     return (
       <TimingStage 
         ticker={ticker}
         companyName={summaryData?.companyName}
-        logoUrl={logoUrl || undefined}
+        homepage={summaryData?.metadata?.homepage}
       />
     );
   }
