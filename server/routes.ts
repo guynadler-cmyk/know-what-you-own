@@ -1818,24 +1818,109 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // --------------------------------------------------------------------------
+
+  // LOGO PROXY (Clearbit)
+  // --------------------------------------------------------------------------
+  const logoCache = new Map<
+    string,
+    { data: Buffer; contentType: string; timestamp: number }
+  >();
+  const LOGO_CACHE_TTL = 24 * 60 * 60 * 1000; // 24 hours
+
+  app.get("/api/logo/:domain", async (req: any, res) => {
+    try {
+      let { domain } = req.params;
+
+      if (!domain || !/^[a-z0-9.-]+\.[a-z]{2,}$/i.test(domain)) {
+        return res.status(400).json({ error: "Invalid domain format" });
+      }
+
+      // Strip www. prefix - Clearbit works better with root domains
+      domain = domain.replace(/^www\./i, "");
+
+      const cacheKey = domain.toLowerCase();
+      const cached = logoCache.get(cacheKey);
+
+      // Return cached logo if fresh
+      if (cached && Date.now() - cached.timestamp < LOGO_CACHE_TTL) {
+        res.set("Content-Type", cached.contentType);
+        res.set("Cache-Control", "public, max-age=86400");
+        return res.send(cached.data);
+      }
+
+      let buffer: Buffer | null = null;
+      let contentType = "image/png";
+
+      try {
+        const clearbitResponse = await fetch(
+          `https://logo.clearbit.com/${domain}?size=256`,
+          {
+            headers: { "User-Agent": "KnowWhatYouOwn/1.0" },
+            redirect: "follow",
+            signal: AbortSignal.timeout(5000),
+          },
+        );
+        if (clearbitResponse.ok) {
+          const tempBuf = Buffer.from(await clearbitResponse.arrayBuffer());
+          if (tempBuf.length > 1024) {
+            contentType =
+              clearbitResponse.headers.get("content-type") || "image/png";
+            buffer = tempBuf;
+          }
+        }
+      } catch (e) {}
+
+      if (!buffer) {
+        const googleResponse = await fetch(
+          `https://www.google.com/s2/favicons?domain=${domain}&sz=256`,
+          {
+            headers: { "User-Agent": "KnowWhatYouOwn/1.0" },
+            redirect: "follow",
+          },
+        );
+        if (!googleResponse.ok) {
+          return res.status(404).json({ error: "Logo not found" });
+        }
+        contentType = googleResponse.headers.get("content-type") || "image/png";
+        buffer = Buffer.from(await googleResponse.arrayBuffer());
+      }
+
+      // Cache the result
+      logoCache.set(cacheKey, {
+        data: buffer,
+        contentType,
+        timestamp: Date.now(),
+      });
+
+      res.set("Content-Type", contentType);
+      res.set("Cache-Control", "public, max-age=86400");
+      res.send(buffer);
+    } catch (error: any) {
+      console.error("Logo fetch error:", error.message);
+      return res.status(500).json({ error: "Failed to fetch logo" });
+    }
+  });
+
+  // --------------------------------------------------------------------------
+
   // WAITLIST SIGNUP
   // --------------------------------------------------------------------------
   app.post("/api/waitlist", async (req: any, res) => {
     try {
       const validatedData = insertWaitlistSignupSchema.parse(req.body);
-  const isNewLead = await storage.isEmailNew(validatedData.email);
-  const signup = await storage.createWaitlistSignup(validatedData);
+      const isNewLead = await storage.isEmailNew(validatedData.email);
+      const signup = await storage.createWaitlistSignup(validatedData);
 
-  console.log(
-    `Waitlist signup: ${validatedData.email} for "${validatedData.stageName}" (isNewLead: ${isNewLead})`,
-  );
+      console.log(
+        `Waitlist signup: ${validatedData.email} for "${validatedData.stageName}" (isNewLead: ${isNewLead})`,
+      );
 
-  res.status(201).json({
-    success: true,
-    message: "You're on the list! We'll notify you when this feature launches.",
-    id: signup.id,
-    isNewLead,
-
+      res.status(201).json({
+        success: true,
+        message:
+          "You're on the list! We'll notify you when this feature launches.",
+        id: signup.id,
+        isNewLead,
       });
     } catch (error: any) {
       console.error("Waitlist signup error:", error);
@@ -1877,11 +1962,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const validated = insertScheduledCheckupSchema.parse(req.body);
       const isNewLead = await storage.isEmailNew(validated.email);
       const checkup = await storage.createScheduledCheckup(validated);
-  console.log(
-    `Scheduled checkup created for ${validated.ticker} (${validated.email}) (isNewLead: ${isNewLead})`,
-  );
-  res.status(201).json({ ...checkup, isNewLead });
-
+      console.log(
+        `Scheduled checkup created for ${validated.ticker} (${validated.email}) (isNewLead: ${isNewLead})`,
+      );
+      res.status(201).json({ ...checkup, isNewLead });
     } catch (error: any) {
       console.error("Scheduled checkup error:", error);
       if (error.name === "ZodError") {
@@ -1995,24 +2079,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Lead capture endpoints - saves to waitlist_signups database table
   app.post("/api/lead", async (req: any, res) => {
     try {
-  const validated = leadSchema.parse(req.body);
+      const validated = leadSchema.parse(req.body);
 
-  const stageName = validated.ticker
-    ? `Popup - ${validated.ticker}`
-    : `Popup - ${validated.path || "unknown"}`;
+      const stageName = validated.ticker
+        ? `Popup - ${validated.ticker}`
+        : `Popup - ${validated.path || "unknown"}`;
 
-  const isNewLead = await storage.isEmailNew(validated.email);
+      const isNewLead = await storage.isEmailNew(validated.email);
 
-  const signup = await storage.createWaitlistSignup({
-    email: validated.email,
-    stageName,
-  });
+      const signup = await storage.createWaitlistSignup({
+        email: validated.email,
+        stageName,
+      });
 
-  console.log(
-    `Lead captured to DB: ${validated.email} (${stageName}) (isNewLead: ${isNewLead})`,
-  );
-  res.json({ success: true, id: signup.id, isNewLead });
-
+      console.log(
+        `Lead captured to DB: ${validated.email} (${stageName}) (isNewLead: ${isNewLead})`,
+      );
+      res.json({ success: true, id: signup.id, isNewLead });
     } catch (error: any) {
       console.error("Lead capture error:", error);
       res.status(400).json({
@@ -2038,32 +2121,43 @@ export async function registerRoutes(app: Express): Promise<Server> {
   const strategyEmailSchema = z.object({
     email: z.string().email(),
     plan: z.object({
-      ticker: z.string().min(1).max(10).regex(/^[A-Za-z0-9.\-]+$/),
+      ticker: z
+        .string()
+        .min(1)
+        .max(10)
+        .regex(/^[A-Za-z0-9.\-]+$/),
       companyName: z.string().max(200).optional(),
       convictionValue: z.number().min(0).max(100),
       convictionLabel: z.string().max(50),
       trancheCount: z.number().min(1).max(10),
       totalAmount: z.number().min(0),
-      tranches: z.array(z.object({
-        index: z.number(),
-        amount: z.number().min(0),
-        when: z.any().optional(),
-        trigger: z.string().optional(),
-        gate: z.object({ type: z.string() }).optional(),
-        gateEnabled: z.boolean().optional(),
-        manual: z.boolean().optional(),
-      })).min(1).max(10),
+      tranches: z
+        .array(
+          z.object({
+            index: z.number(),
+            amount: z.number().min(0),
+            when: z.any().optional(),
+            trigger: z.string().optional(),
+            gate: z.object({ type: z.string() }).optional(),
+            gateEnabled: z.boolean().optional(),
+            manual: z.boolean().optional(),
+          }),
+        )
+        .min(1)
+        .max(10),
       imWrongIf: z.string().max(2000).default(""),
       snapshot: z.object({
         fundamentals: z.string().max(500),
         valuation: z.string().max(500),
         timing: z.string().max(500),
       }),
-      takeawayTexts: z.object({
-        performance: z.string().max(1000),
-        valuation: z.string().max(1000),
-        timing: z.string().max(1000),
-      }).optional(),
+      takeawayTexts: z
+        .object({
+          performance: z.string().max(1000),
+          valuation: z.string().max(1000),
+          timing: z.string().max(1000),
+        })
+        .optional(),
       createdAt: z.string(),
     }),
   });
@@ -2074,52 +2168,69 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const parsed = strategyEmailSchema.safeParse(req.body);
 
       if (!parsed.success) {
-        console.error("[strategy-email] Validation failed:", JSON.stringify(parsed.error.issues));
+        console.error(
+          "[strategy-email] Validation failed:",
+          JSON.stringify(parsed.error.issues),
+        );
         return res.status(400).json({
           error: "Invalid request",
           message: "Please provide valid email and plan data.",
           issues: parsed.error.issues,
-          });
-          }
-
-          const { email, plan } = parsed.data;
+        });
+      }
 
       const { email, plan } = parsed.data;
-      console.log(`[strategy-email] Validated. Sending to ${email} for ${plan.ticker}`);
+
+      const { email, plan } = parsed.data;
+      console.log(
+        `[strategy-email] Validated. Sending to ${email} for ${plan.ticker}`,
+      );
 
       const apiKey = process.env.replit_email_resend;
       if (!apiKey) {
-        console.error("[strategy-email] No Resend API key found (replit_email_resend secret is missing)");
+        console.error(
+          "[strategy-email] No Resend API key found (replit_email_resend secret is missing)",
+        );
         return res.status(500).json({
           error: "Email service not configured",
           message: "Email sending is not set up. Please contact support.",
         });
       }
-      console.log(`[strategy-email] API key found, length: ${apiKey.length}, starts with: ${apiKey.substring(0, 5)}...`);
+      console.log(
+        `[strategy-email] API key found, length: ${apiKey.length}, starts with: ${apiKey.substring(0, 5)}...`,
+      );
 
       const { Resend } = await import("resend");
       const resend = new Resend(apiKey);
 
       const { renderStrategyEmail } = await import("./emailTemplate");
 
-  const baseUrl =
-    process.env.PUBLIC_APP_URL ||
-    (process.env.REPLIT_DOMAINS
-      ? `https://${process.env.REPLIT_DOMAINS.split(",")[0]}`
-      : null) ||
-    (process.env.REPLIT_DEV_DOMAIN
-      ? `https://${process.env.REPLIT_DEV_DOMAIN}`
-      : null) ||
-    "http://localhost:5000";
+      const baseUrl =
+        process.env.PUBLIC_APP_URL ||
+        (process.env.REPLIT_DOMAINS
+          ? `https://${process.env.REPLIT_DOMAINS.split(",")[0]}`
+          : null) ||
+        (process.env.REPLIT_DEV_DOMAIN
+          ? `https://${process.env.REPLIT_DEV_DOMAIN}`
+          : null) ||
+        "http://localhost:5000";
 
-  const ticker = plan.ticker;
-  const analysisUrl = `${baseUrl}/app?ticker=${encodeURIComponent(ticker)}`;
-  const strategyUrl = `${baseUrl}/app?ticker=${encodeURIComponent(ticker)}&stage=5`;
+      const ticker = plan.ticker;
+      const analysisUrl = `${baseUrl}/app?ticker=${encodeURIComponent(ticker)}`;
+      const strategyUrl = `${baseUrl}/app?ticker=${encodeURIComponent(ticker)}&stage=5`;
 
-  const htmlContent = renderStrategyEmail(plan, { analysisUrl, strategyUrl });
+      const htmlContent = renderStrategyEmail(plan, {
+        analysisUrl,
+        strategyUrl,
+      });
 
-      const htmlContent = renderStrategyEmail(plan, { analysisUrl, strategyUrl });
-      console.log(`[strategy-email] HTML rendered, length: ${htmlContent.length}`);
+      const htmlContent = renderStrategyEmail(plan, {
+        analysisUrl,
+        strategyUrl,
+      });
+      console.log(
+        `[strategy-email] HTML rendered, length: ${htmlContent.length}`,
+      );
 
       console.log(`[strategy-email] Calling Resend API...`);
       const { data, error } = await resend.emails.send({
@@ -2130,7 +2241,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
 
       if (error) {
-        console.error("[strategy-email] Resend API error:", JSON.stringify(error));
+        console.error(
+          "[strategy-email] Resend API error:",
+          JSON.stringify(error),
+        );
         return res.status(500).json({
           error: "Failed to send email",
           message: "Unable to send email. Please try again.",
@@ -2145,14 +2259,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
           stageName: `Strategy Plan: ${plan.ticker}`,
         });
       } catch (dbError) {
-        console.warn("[strategy-email] Failed to store email in DB, continuing:", dbError);
+        console.warn(
+          "[strategy-email] Failed to store email in DB, continuing:",
+          dbError,
+        );
       }
 
-  console.log(
-    `[strategy-email] Email sent successfully to ${email} for ${plan.ticker}, ID: ${data?.id} (isNewLead: ${isNewLead})`,
-  );
-  res.json({ success: true, emailId: data?.id, isNewLead });
-
+      console.log(
+        `[strategy-email] Email sent successfully to ${email} for ${plan.ticker}, ID: ${data?.id} (isNewLead: ${isNewLead})`,
+      );
+      res.json({ success: true, emailId: data?.id, isNewLead });
     } catch (error: any) {
       console.error("Strategy email error:", error);
       res.status(500).json({
