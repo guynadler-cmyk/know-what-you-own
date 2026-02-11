@@ -930,3 +930,37 @@ export type TimingDebug = z.infer<typeof timingDebugSchema>;
 
 /* ============================
    SEC CACHING TABLES
+   ============================ */
+
+export const aiBusinessAnalysis = pgTable("ai_business_analysis", {
+  id: bigserial("id", { mode: "number" }).primaryKey(),
+  cacheKey: text("cache_key").notNull().unique(),
+  companyName: text("company_name").notNull(),
+  ticker: text("ticker").notNull(),
+  cik: text("cik"),
+  fiscalYear: text("fiscal_year").notNull(),
+  filingDate: text("filing_date").notNull(),
+  result: jsonb("result").notNull(),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export const aiTemporalAnalysis = pgTable("ai_temporal_analysis", {
+  id: bigserial("id", { mode: "number" }).primaryKey(),
+  cacheKey: text("cache_key").notNull().unique(),
+  companyName: text("company_name").notNull(),
+  ticker: text("ticker").notNull(),
+  yearsAnalyzed: text("years_analyzed").array().notNull(),
+  result: jsonb("result").notNull(),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export const aiFootnotesAnalysis = pgTable("ai_footnotes_analysis", {
+  id: bigserial("id", { mode: "number" }).primaryKey(),
+  cacheKey: text("cache_key").notNull().unique(),
+  companyName: text("company_name").notNull(),
+  ticker: text("ticker").notNull(),
+  fiscalYear: text("fiscal_year").notNull(),
+  filingDate: text("filing_date").notNull(),
+  result: jsonb("result").notNull(),
+  createdAt: timestamp("created_at").defaultNow(),
+});
