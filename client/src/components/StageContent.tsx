@@ -168,6 +168,14 @@ export function StageContent({ stage, summaryData, financialMetrics, balanceShee
                       const fallback = e.currentTarget.nextElementSibling as HTMLElement;
                       if (fallback) fallback.style.display = 'flex';
                     }}
+                    onLoad={(e) => {
+                      const img = e.currentTarget;
+                      if (img.naturalWidth < 64 || img.naturalHeight < 64) {
+                        img.style.display = 'none';
+                        const fallback = img.nextElementSibling as HTMLElement;
+                        if (fallback) fallback.style.display = 'flex';
+                      }
+                    }}
                   />
                 ) : null}
                 <div className={`${logoUrl ? 'hidden' : 'flex'} w-16 h-16 rounded-lg bg-primary/10 items-center justify-center shadow-sm`}>
@@ -222,6 +230,14 @@ export function StageContent({ stage, summaryData, financialMetrics, balanceShee
                       e.currentTarget.style.display = 'none';
                       const fallback = e.currentTarget.nextElementSibling as HTMLElement;
                       if (fallback) fallback.style.display = 'flex';
+                    }}
+                    onLoad={(e) => {
+                      const img = e.currentTarget;
+                      if (img.naturalWidth < 64 || img.naturalHeight < 64) {
+                        img.style.display = 'none';
+                        const fallback = img.nextElementSibling as HTMLElement;
+                        if (fallback) fallback.style.display = 'flex';
+                      }
                     }}
                   />
                 ) : null}

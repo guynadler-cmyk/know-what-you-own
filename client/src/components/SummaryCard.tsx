@@ -225,6 +225,12 @@ export function SummaryCard({
               alt={`${companyName} logo`}
               className="h-20 w-20 object-contain rounded-lg"
               onError={() => setLogoFailed(true)}
+              onLoad={(e) => {
+                const img = e.currentTarget;
+                if (img.naturalWidth < 64 || img.naturalHeight < 64) {
+                  setLogoFailed(true);
+                }
+              }}
               data-testid="company-logo"
             />
           ) : (
