@@ -5,12 +5,13 @@ import { Button } from "@/components/ui/button";
 
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
-import { Calendar, Building2, MapPin, Users, TrendingUp, Briefcase, Award, DollarSign, ExternalLink, Globe, ChevronDown, Building, Shield, Target, Coins } from "lucide-react";
+import { Calendar, Building2, MapPin, Users, TrendingUp, Briefcase, Award, DollarSign, ExternalLink, Globe, ChevronDown, Shield, Target, Coins } from "lucide-react";
 import { LucideIcon } from "lucide-react";
 
 import { useQuery } from "@tanstack/react-query";
 import { InvestmentTheme, Moat, MarketOpportunity, ValueCreation, TemporalAnalysis as TemporalAnalysisType, FinePrintAnalysis as FinePrintAnalysisType } from "@shared/schema";
 import { TagWithTooltip } from "@/components/TagWithTooltip";
+import { CompanyLogo } from "@/components/CompanyLogo";
 import { TemporalAnalysis } from "@/components/TemporalAnalysis";
 import { FinePrintAnalysis } from "@/components/FinePrintAnalysis";
 
@@ -163,7 +164,6 @@ export function SummaryCard({
   temporalAnalysis
 }: SummaryCardProps) {
   const [expandedCompetitor, setExpandedCompetitor] = useState<string | null>(null);
-  const [logoFailed, setLogoFailed] = useState(false);
 
   // Fetch fine print analysis - custom queryFn to handle 404s gracefully
   const { data: finePrintAnalysis } = useQuery<FinePrintAnalysisType | null>({
@@ -188,16 +188,6 @@ export function SummaryCard({
     retry: false,
   });
 
-  // Extract domain from homepage for logo (via backend proxy)
-  const getLogoUrl = (homepage: string) => {
-    try {
-      const url = new URL(homepage);
-      return `/api/logo/${url.hostname}`;
-    } catch {
-      return null;
-    }
-  };
-
   // Get badge classes based on emphasis level
   const getThemeBadgeClasses = (emphasis: "high" | "medium" | "low") => {
     switch (emphasis) {
@@ -210,8 +200,6 @@ export function SummaryCard({
     }
   };
 
-  const logoUrl = getLogoUrl(metadata.homepage);
-
   return (
     <TooltipProvider>
     <div className="w-full max-w-6xl mx-auto space-y-16 pb-16 animate-fade-in">
@@ -219,28 +207,12 @@ export function SummaryCard({
       <div className="text-center space-y-6 py-8 border-b-2 border-border pb-12">
         {/* Company Logo */}
         <div className="flex justify-center mb-6">
-          {logoUrl && !logoFailed ? (
-            <img 
-              src={logoUrl} 
-              alt={`${companyName} logo`}
-              className="h-20 w-20 object-contain rounded-lg"
-              onError={() => setLogoFailed(true)}
-              onLoad={(e) => {
-                const img = e.currentTarget;
-                if (img.naturalWidth < 64 || img.naturalHeight < 64) {
-                  setLogoFailed(true);
-                }
-              }}
-              data-testid="company-logo"
-            />
-          ) : (
-            <div 
-              className="h-20 w-20 rounded-lg bg-muted flex items-center justify-center"
-              data-testid="company-logo-fallback"
-            >
-              <Building className="h-10 w-10 text-muted-foreground" />
-            </div>
-          )}
+          <CompanyLogo
+            homepage={metadata.homepage}
+            companyName={companyName}
+            ticker={ticker}
+            size="lg"
+          />
         </div>
         
         <h1 className="text-5xl sm:text-6xl md:text-7xl font-bold tracking-tight">{companyName}</h1>

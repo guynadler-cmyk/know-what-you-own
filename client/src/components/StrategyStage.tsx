@@ -21,12 +21,13 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import { CompanyLogo } from "@/components/CompanyLogo";
 import { format } from "date-fns";
 
 interface StrategyStageProps {
   ticker?: string;
   companyName?: string;
-  logoUrl?: string;
+  homepage?: string;
   fundamentalsScore?: string;
   valuationLabel?: string;
   timingVerdict?: string;
@@ -723,7 +724,7 @@ interface ValuationMetricsResponse {
 export function StrategyStage({ 
   ticker = "", 
   companyName,
-  logoUrl,
+  homepage,
   fundamentalsScore,
   onStageChange,
 }: StrategyStageProps) {
@@ -966,23 +967,12 @@ export function StrategyStage({
     <div className="max-w-5xl mx-auto" data-testid="strategy-stage">
       {companyName && (
         <div className="flex items-center gap-3 mb-6">
-          <div className="relative">
-            {logoUrl ? (
-              <img 
-                src={logoUrl}
-                alt={`${companyName} logo`}
-                className="w-10 h-10 rounded-md object-contain bg-white p-1 shadow-sm"
-                onError={(e) => {
-                  e.currentTarget.style.display = 'none';
-                  const fallback = e.currentTarget.nextElementSibling as HTMLElement;
-                  if (fallback) fallback.style.display = 'flex';
-                }}
-              />
-            ) : null}
-            <div className={`${logoUrl ? 'hidden' : 'flex'} w-10 h-10 rounded-md bg-primary/10 items-center justify-center`}>
-              <span className="text-lg font-bold text-primary">{ticker.charAt(0)}</span>
-            </div>
-          </div>
+          <CompanyLogo
+            homepage={homepage}
+            companyName={companyName}
+            ticker={ticker}
+            size="sm"
+          />
           <div>
             <h2 className="text-xl font-bold">{companyName}</h2>
             <p className="text-xs text-muted-foreground">{ticker} &middot; Strategy</p>

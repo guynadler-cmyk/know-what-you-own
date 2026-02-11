@@ -11,6 +11,7 @@ import {
   Calendar, Clock, Bug
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { CompanyLogo } from "@/components/CompanyLogo";
 import type { TimingAnalysis, TimingSignalStatus, TimingTimeframe } from "@shared/schema";
 import { TimingQuadrantChart, type TimingQuadrantConfig } from "./timing/TimingQuadrantChart";
 import { TrendChart } from "./timing/TrendChart";
@@ -23,7 +24,7 @@ const TIMEFRAME_STORAGE_KEY = 'timing-timeframe';
 interface TimingStageProps {
   ticker?: string;
   companyName?: string;
-  logoUrl?: string;
+  homepage?: string;
 }
 
 type TimingMetricType = "trend" | "momentum" | "stretch";
@@ -946,7 +947,7 @@ function DebugDrawer({ debug, isOpen, onToggle }: { debug: TimingAnalysis['debug
   );
 }
 
-export function TimingStage({ ticker, companyName, logoUrl }: TimingStageProps) {
+export function TimingStage({ ticker, companyName, homepage }: TimingStageProps) {
   const [selectedMetric, setSelectedMetric] = useState<TimingMetricType>("trend");
   const [showDebug, setShowDebug] = useState(false);
   
@@ -1014,30 +1015,14 @@ export function TimingStage({ ticker, companyName, logoUrl }: TimingStageProps) 
   return (
     <Card data-testid="timing-stage-content">
       <CardHeader className="text-center pb-6">
-        {(companyName || logoUrl) && (
+        {(companyName || ticker) && (
           <div className="flex items-center justify-center gap-4 mb-6">
-            {logoUrl && (
-              <div className="relative">
-                <img 
-                  src={logoUrl}
-                  alt={`${companyName || ticker} logo`}
-                  className="w-16 h-16 rounded-lg object-contain bg-white p-2 shadow-sm"
-                  onError={(e) => {
-                    e.currentTarget.style.display = 'none';
-                    const fallback = e.currentTarget.nextElementSibling as HTMLElement;
-                    if (fallback) fallback.style.display = 'flex';
-                  }}
-                />
-                <div className="hidden w-16 h-16 rounded-lg bg-primary/10 items-center justify-center shadow-sm">
-                  <span className="text-2xl font-bold text-primary">{ticker?.charAt(0)}</span>
-                </div>
-              </div>
-            )}
-            {!logoUrl && (
-              <div className="w-16 h-16 rounded-lg bg-primary/10 flex items-center justify-center shadow-sm">
-                <span className="text-2xl font-bold text-primary">{ticker?.charAt(0)}</span>
-              </div>
-            )}
+            <CompanyLogo
+              homepage={homepage}
+              companyName={companyName || data.companyName || ""}
+              ticker={ticker || ""}
+              size="md"
+            />
             <div className="text-left">
               <h2 className="text-2xl font-bold">{companyName || data.companyName}</h2>
               <p className="text-sm text-muted-foreground">{ticker}</p>
