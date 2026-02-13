@@ -20,7 +20,11 @@ The backend uses Node.js and Express.js with TypeScript, exposing a RESTful API,
 
 ### Data Storage & Security
 
-The application operates as a fully public API without authentication. Company analysis data is not persisted, instead, it's fetched in real-time from the SEC EDGAR API. Zod schema validation ensures data quality, with incomplete AI responses resulting in errors.
+The application uses a dual database architecture:
+- **External Database** (`EXTERNAL_DATABASE_URL`): Google Cloud SQL PostgreSQL for SEC analysis caching (business analysis, temporal analysis, footnotes analysis). Configured with SSL CA certificate (`PG_CA_CERT`) and `checkServerIdentity` disabled for Cloud SQL proxy compatibility. Connection defined in `server/db.ts`, used by repositories in `server/repositories/`.
+- **Internal Database** (`DATABASE_URL`): Replit-managed PostgreSQL for app data — users, sessions, waitlist signups, and scheduled checkup emails. Connection defined in `server/internalDb.ts`, used by `server/storage.ts` and `connect-pg-simple` session store.
+
+Zod schema validation ensures data quality, with incomplete AI responses resulting in errors.
 
 ### Type Safety & Validation
 
