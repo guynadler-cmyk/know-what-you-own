@@ -2,7 +2,8 @@ import { SiteLayout } from "@/components/SiteLayout";
 import { Button } from "@/components/ui/button";
 import { Link } from "wouter";
 import { Helmet } from "react-helmet-async";
-import { Search, ArrowRight } from "lucide-react";
+import { Search, ArrowRight, Copy, Check } from "lucide-react";
+import { useState } from "react";
 import {
   Accordion,
   AccordionContent,
@@ -90,6 +91,13 @@ const faqSections = [
 ];
 
 export default function FAQPage() {
+  const [copied, setCopied] = useState(false);
+
+  const copyEmail = () => {
+    navigator.clipboard.writeText("product@restnvest.com");
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
   return (
     <SiteLayout>
       <Helmet>
@@ -173,10 +181,9 @@ export default function FAQPage() {
                 Try It Free
               </Button>
             </Link>
-            <Button variant="outline" size="lg" className="rounded-full" asChild data-testid="button-faq-contact">
-              <a href="mailto:product@restnvest.com" target="_blank" rel="noopener noreferrer">
-                Contact Us
-              </a>
+            <Button variant="outline" size="lg" className="rounded-full" onClick={copyEmail} data-testid="button-faq-contact">
+              {copied ? <Check className="h-4 w-4 mr-2" /> : <Copy className="h-4 w-4 mr-2" />}
+              {copied ? "Copied!" : "Contact Us"}
             </Button>
           </div>
         </div>
