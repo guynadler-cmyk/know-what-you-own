@@ -11,6 +11,13 @@ import { LeadPopup } from "@/components/LeadPopup";
 
 const LandingPage = lazy(() => import("@/pages/LandingPage"));
 const AppPage = lazy(() => import("@/pages/AppPage"));
+const ProductPage = lazy(() => import("@/pages/ProductPage"));
+const HowItWorksPage = lazy(() => import("@/pages/HowItWorksPage"));
+const PricingPage = lazy(() => import("@/pages/PricingPage"));
+const AboutPage = lazy(() => import("@/pages/AboutPage"));
+const FAQPage = lazy(() => import("@/pages/FAQPage"));
+const TermsPage = lazy(() => import("@/pages/TermsPage"));
+const PrivacyPage = lazy(() => import("@/pages/PrivacyPage"));
 const NotFound = lazy(() => import("@/pages/not-found"));
 
 function LoadingFallback() {
@@ -29,6 +36,13 @@ function Router() {
       <Switch>
         <Route path="/" component={LandingPage} />
         <Route path="/app" component={AppPage} />
+        <Route path="/product" component={ProductPage} />
+        <Route path="/how-it-works" component={HowItWorksPage} />
+        <Route path="/pricing" component={PricingPage} />
+        <Route path="/about" component={AboutPage} />
+        <Route path="/faq" component={FAQPage} />
+        <Route path="/terms" component={TermsPage} />
+        <Route path="/privacy" component={PrivacyPage} />
         <Route component={NotFound} />
       </Switch>
     </Suspense>

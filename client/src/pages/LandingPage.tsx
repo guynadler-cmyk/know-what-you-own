@@ -1,5 +1,5 @@
+import { SiteLayout } from "@/components/SiteLayout";
 import { Button } from "@/components/ui/button";
-import { ThemeToggle } from "@/components/ThemeToggle";
 import { Search } from "lucide-react";
 import { Link } from "wouter";
 import { Helmet } from "react-helmet-async";
@@ -9,12 +9,6 @@ import changesImg from "@assets/Changes_Over_Time_1766161245320.png";
 import competitionImg from "@assets/Competition_1766161245321.png";
 import performanceImg from "@assets/Understand_Performance_1766161245322.png";
 import technicalImg from "@assets/technical_analysis_1766161245321.png";
-import headerLogo from "@assets/ChatGPT_Image_Jan_22,_2026,_12_16_06_PM_1769109403610.png";
-import wordmarkWithTagline from "@assets/ChatGPT_Image_Jan_12,_2026,_06_06_56_PM_1769108399893.png";
-
-import ChatGPT_Image_Jan_22__2026__01_22_13_PM from "@assets/ChatGPT Image Jan 22, 2026, 01_22_13 PM.png";
-
-import ChatGPT_Image_Jan_22__2026__01_43_07_PM_cropped from "@assets/ChatGPT Image Jan 22, 2026, 01_43_07 PM_cropped.png";
 
 interface FeatureSection {
   headline: string;
@@ -67,7 +61,7 @@ const BRIDGE_PADDING = "py-12 sm:py-16";
 
 export default function LandingPage() {
   return (
-    <div className="flex min-h-screen flex-col bg-background">
+    <SiteLayout>
       <Helmet>
         <title>Restnvest – Smarter Investing</title>
         <meta name="description" content="Understand the businesses you invest in. Get plain-English summaries of SEC 10-K filings powered by AI. Research stocks with confidence." />
@@ -81,20 +75,6 @@ export default function LandingPage() {
         <meta name="twitter:description" content="Understand the businesses you invest in. Get plain-English summaries of SEC 10-K filings powered by AI." />
         <link rel="canonical" href="https://restnvest.com/" />
       </Helmet>
-      {/* Sticky Header */}
-      <header className="fixed top-0 left-0 right-0 z-50 bg-[#f8f9fa] dark:bg-background/95 backdrop-blur border-b border-[#e0e0e0] dark:border-border">
-        <div className="flex justify-between items-center px-4 sm:px-8 h-20 max-w-[1200px] mx-auto">
-          <Link href="/" data-testid="link-logo" className="flex items-center">
-            <img 
-              src={ChatGPT_Image_Jan_22__2026__01_43_07_PM_cropped} 
-              alt="Restnvest - Informed investing, built to last" 
-              className="h-14 md:h-16 w-auto object-contain"
-            />
-          </Link>
-          <ThemeToggle />
-        </div>
-      </header>
-      <main className="flex-1 pt-20">
         {/* Hero Section */}
         <section 
           id="hero" 
@@ -284,24 +264,6 @@ export default function LandingPage() {
             </div>
           </div>
         </section>
-      </main>
-      {/* Minimal Footer */}
-      <footer className="border-t border-border bg-background" data-testid="footer">
-        <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8 py-12">
-          <div className="text-center space-y-6">
-            <div className="flex justify-center" data-testid="text-footer-brand">
-              <img 
-                src={wordmarkWithTagline} 
-                alt="Restnvest - Informed investing, built to last" 
-                className="h-24 sm:h-32 object-contain dark:brightness-110"
-              />
-            </div>
-            <p className="text-xs text-muted-foreground" data-testid="text-footer-disclaimer">
-              For informational purposes only. Not investment advice.
-            </p>
-          </div>
-        </div>
-      </footer>
-    </div>
+    </SiteLayout>
   );
 }
