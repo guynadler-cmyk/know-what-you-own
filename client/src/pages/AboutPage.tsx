@@ -133,11 +133,11 @@ export default function AboutPage() {
             Have feedback, ideas, or just want to say hello? We'd love to hear from you. We read every message.
           </p>
           <div className="mt-6">
-            <a href="mailto:product@restnvest.com">
-              <Button variant="outline" size="lg" className="rounded-full" data-testid="button-contact-email">
+            <Button variant="outline" size="lg" className="rounded-full" asChild data-testid="button-contact-email">
+              <a href="mailto:product@restnvest.com">
                 product@restnvest.com
-              </Button>
-            </a>
+              </a>
+            </Button>
           </div>
         </div>
       </section>
