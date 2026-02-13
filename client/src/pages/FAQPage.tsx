@@ -173,7 +173,7 @@ export default function FAQPage() {
                 Try It Free
               </Button>
             </Link>
-            <a href="mailto:hello@restnvest.com">
+            <a href="mailto:product@restnvest.com">
               <Button variant="outline" size="lg" className="rounded-full" data-testid="button-faq-contact">
                 Contact Us
               </Button>

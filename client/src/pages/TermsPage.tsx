@@ -94,8 +94,8 @@ export default function TermsPage() {
               <h2 className="text-lg font-semibold text-foreground">9. Contact</h2>
               <p>
                 If you have questions about these Terms, please contact us at{" "}
-                <a href="mailto:hello@restnvest.com" className="text-primary hover:underline">
-                  hello@restnvest.com
+                <a href="mailto:product@restnvest.com" className="text-primary hover:underline">
+                  product@restnvest.com
                 </a>.
               </p>
             </div>
