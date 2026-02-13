@@ -134,7 +134,7 @@ export default function AboutPage() {
           </p>
           <div className="mt-6">
             <Button variant="outline" size="lg" className="rounded-full" asChild data-testid="button-contact-email">
-              <a href="mailto:product@restnvest.com">
+              <a href="mailto:product@restnvest.com" target="_blank" rel="noopener noreferrer">
                 product@restnvest.com
               </a>
             </Button>
