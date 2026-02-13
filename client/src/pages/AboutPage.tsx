@@ -133,9 +133,9 @@ export default function AboutPage() {
             Have feedback, ideas, or just want to say hello? We'd love to hear from you. We read every message.
           </p>
           <div className="mt-6">
-            <a href="mailto:hello@restnvest.com">
+            <a href="mailto:product@restnvest.com">
               <Button variant="outline" size="lg" className="rounded-full" data-testid="button-contact-email">
-                hello@restnvest.com
+                product@restnvest.com
               </Button>
             </a>
           </div>
