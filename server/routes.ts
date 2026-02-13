@@ -2277,6 +2277,75 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
     }
   });
+  
+  const contactSchema = z.object({
+    name: z.string().min(1).max(200),
+    email: z.string().email().max(200),
+    message: z.string().min(1).max(5000),
+  });
+
+  app.post("/api/contact", async (req: any, res) => {
+    try {
+      const parsed = contactSchema.safeParse(req.body);
+      if (!parsed.success) {
+        return res.status(400).json({
+          error: "Invalid request",
+          message: "Please fill in all fields with valid information.",
+        });
+      }
+
+      const { name, email, message } = parsed.data;
+      console.log(`[contact] Message from ${name} (${email})`);
+
+      const esc = (s: string) => s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+      const safeName = esc(name);
+      const safeEmail = esc(email);
+      const safeMessage = esc(message);
+      const safeSubject = name.replace(/[\r\n]/g, " ").slice(0, 100);
+
+      const apiKey = process.env.replit_email_resend;
+      if (!apiKey) {
+        console.error("[contact] No Resend API key found");
+        return res.status(500).json({
+          error: "Email service not configured",
+          message: "Unable to send message right now. Please try again later.",
+        });
+      }
+
+      const { Resend } = await import("resend");
+      const resend = new Resend(apiKey);
+
+      const { data, error } = await resend.emails.send({
+        from: "restnvest <product@restnvest.com>",
+        to: "product@restnvest.com",
+        replyTo: email,
+        subject: `Contact form: ${safeSubject}`,
+        html: `<div style="font-family: sans-serif; max-width: 600px;">
+          <h2 style="margin-bottom: 4px;">New contact form message</h2>
+          <p style="color: #666; margin-top: 0;"><strong>From:</strong> ${safeName} &lt;${safeEmail}&gt;</p>
+          <hr style="border: none; border-top: 1px solid #eee;" />
+          <p style="white-space: pre-wrap; line-height: 1.6;">${safeMessage}</p>
+        </div>`,
+      });
+
+      if (error) {
+        console.error("[contact] Resend API error:", JSON.stringify(error));
+        return res.status(500).json({
+          error: "Failed to send message",
+          message: "Unable to send your message. Please try again.",
+        });
+      }
+
+      console.log(`[contact] Message sent successfully, ID: ${data?.id}`);
+      res.json({ success: true });
+    } catch (error: any) {
+      console.error("[contact] Error:", error);
+      res.status(500).json({
+        error: "Failed to send message",
+        message: "Something went wrong. Please try again.",
+      });
+    }
+  });
 
   const httpServer = createServer(app);
   return httpServer;
