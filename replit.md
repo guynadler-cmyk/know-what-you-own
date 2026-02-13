@@ -10,6 +10,7 @@ The site has a full marketing presence with shared SiteHeader (nav + mobile menu
 - `/product` - Deep dive into 5 analysis stages
 - `/how-it-works` - 3-step walkthrough (search, analyze, plan)
 - `/pricing` - Free tier + Pro (coming soon) tier
+- `/advisors` - Financial advisors landing page (use cases, benefits, "Book a Demo" CTA)
 - `/about` - Mission, values, contact
 - `/faq` - Accordion-based FAQ with sections
 - `/terms` - Terms of Service
