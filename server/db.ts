@@ -29,10 +29,10 @@ import * as schema from "@shared/schema";
 
 const { Pool } = pkg;
 
-const rawDbUrl = process.env.EXTERNAL_DATABASE_URL || process.env.DATABASE_URL;
+const rawDbUrl = process.env.EXTERNAL_DATABASE_URL;
 
 if (!rawDbUrl) {
-  throw new Error("EXTERNAL_DATABASE_URL or DATABASE_URL must be set");
+  throw new Error("EXTERNAL_DATABASE_URL must be set for external database connection");
 }
 
 const parsedUrl = new URL(rawDbUrl);
