@@ -10,7 +10,7 @@ import {
   type InsertScheduledCheckup,
   type ScheduledCheckupEmail,
 } from "@shared/schema";
-import { db } from "./db";
+import { internalDb } from "./internalDb";
 import { eq } from "drizzle-orm";
 
 // Storage interface
@@ -32,12 +32,12 @@ export interface IStorage {
 export class DatabaseStorage implements IStorage {
   // User operations (required for Replit Auth)
   async getUser(id: string): Promise<User | undefined> {
-    const [user] = await db.select().from(users).where(eq(users.id, id));
+    const [user] = await internalDb.select().from(users).where(eq(users.id, id));
     return user;
   }
 
   async upsertUser(userData: UpsertUser): Promise<User> {
-    const [user] = await db
+    const [user] = await internalDb
       .insert(users)
       .values(userData)
       .onConflictDoUpdate({
@@ -53,7 +53,7 @@ export class DatabaseStorage implements IStorage {
 
   // Waitlist operations
   async createWaitlistSignup(data: InsertWaitlistSignup): Promise<WaitlistSignup> {
-    const [signup] = await db
+    const [signup] = await internalDb
       .insert(waitlistSignups)
       .values(data)
       .returning();
@@ -61,12 +61,12 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getWaitlistSignups(): Promise<WaitlistSignup[]> {
-    return await db.select().from(waitlistSignups);
+    return await internalDb.select().from(waitlistSignups);
   }
 
   // Scheduled checkup operations
   async createScheduledCheckup(data: InsertScheduledCheckup): Promise<ScheduledCheckupEmail> {
-    const [checkup] = await db
+    const [checkup] = await internalDb
       .insert(scheduledCheckupEmails)
       .values(data)
       .returning();
@@ -74,7 +74,7 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getScheduledCheckups(): Promise<ScheduledCheckupEmail[]> {
-    return await db.select().from(scheduledCheckupEmails);
+    return await internalDb.select().from(scheduledCheckupEmails);
   }
 }
 
