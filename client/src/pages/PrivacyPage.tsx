@@ -128,8 +128,8 @@ export default function PrivacyPage() {
               <h2 className="text-lg font-semibold text-foreground">Contact</h2>
               <p>
                 If you have questions about this Privacy Policy or want to exercise your rights, please contact us at{" "}
-                <a href="mailto:hello@restnvest.com" className="text-primary hover:underline">
-                  hello@restnvest.com
+                <a href="mailto:product@restnvest.com" className="text-primary hover:underline">
+                  product@restnvest.com
                 </a>.
               </p>
             </div>
