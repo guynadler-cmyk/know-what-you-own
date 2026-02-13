@@ -3,8 +3,9 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Link } from "wouter";
 import { Helmet } from "react-helmet-async";
-import { Search, ArrowRight, Shield, Eye, Lightbulb, Heart, Copy, Check } from "lucide-react";
+import { Search, ArrowRight, Shield, Eye, Lightbulb, Heart, Mail } from "lucide-react";
 import { useState } from "react";
+import { ContactFormDialog } from "@/components/ContactFormDialog";
 
 const values = [
   {
@@ -34,13 +35,7 @@ const values = [
 ];
 
 export default function AboutPage() {
-  const [copied, setCopied] = useState(false);
-
-  const copyEmail = () => {
-    navigator.clipboard.writeText("product@restnvest.com");
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
-  };
+  const [contactOpen, setContactOpen] = useState(false);
   return (
     <SiteLayout>
       <Helmet>
@@ -141,11 +136,12 @@ export default function AboutPage() {
             Have feedback, ideas, or just want to say hello? We'd love to hear from you. We read every message.
           </p>
           <div className="mt-6">
-            <Button variant="outline" size="lg" className="rounded-full" onClick={copyEmail} data-testid="button-contact-email">
-              {copied ? <Check className="h-4 w-4 mr-2" /> : <Copy className="h-4 w-4 mr-2" />}
-              {copied ? "Copied!" : "product@restnvest.com"}
+            <Button variant="outline" size="lg" className="rounded-full" onClick={() => setContactOpen(true)} data-testid="button-contact-email">
+              <Mail className="h-4 w-4 mr-2" />
+              Send us a message
             </Button>
           </div>
+          <ContactFormDialog open={contactOpen} onOpenChange={setContactOpen} />
         </div>
       </section>
 
