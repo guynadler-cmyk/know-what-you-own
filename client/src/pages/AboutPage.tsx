@@ -141,7 +141,7 @@ export default function AboutPage() {
               Send us a message
             </Button>
           </div>
-          <ContactFormDialog open={contactOpen} onOpenChange={setContactOpen} />
+          <ContactFormDialog open={contactOpen} onOpenChange={setContactOpen} source="About Page" />
         </div>
       </section>
 

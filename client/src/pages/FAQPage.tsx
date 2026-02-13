@@ -180,7 +180,7 @@ export default function FAQPage() {
               <Mail className="h-4 w-4 mr-2" />
               Contact Us
             </Button>
-            <ContactFormDialog open={contactOpen} onOpenChange={setContactOpen} />
+            <ContactFormDialog open={contactOpen} onOpenChange={setContactOpen} source="FAQ Page" />
           </div>
         </div>
       </section>
