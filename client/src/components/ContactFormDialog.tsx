@@ -17,16 +17,17 @@ import { Send, CheckCircle2, AlertCircle } from "lucide-react";
 interface ContactFormDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  source?: string;
 }
 
-export function ContactFormDialog({ open, onOpenChange }: ContactFormDialogProps) {
+export function ContactFormDialog({ open, onOpenChange, source }: ContactFormDialogProps) {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [message, setMessage] = useState("");
   const [sent, setSent] = useState(false);
 
   const mutation = useMutation({
-    mutationFn: async (data: { name: string; email: string; message: string }) => {
+    mutationFn: async (data: { name: string; email: string; message: string; source?: string }) => {
       const res = await apiRequest("POST", "/api/contact", data);
       return res.json();
     },
@@ -38,7 +39,7 @@ export function ContactFormDialog({ open, onOpenChange }: ContactFormDialogProps
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!name.trim() || !email.trim() || !message.trim()) return;
-    mutation.mutate({ name: name.trim(), email: email.trim(), message: message.trim() });
+    mutation.mutate({ name: name.trim(), email: email.trim(), message: message.trim(), source });
   };
 
   const handleClose = (isOpen: boolean) => {

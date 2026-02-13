@@ -2282,6 +2282,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     name: z.string().min(1).max(200),
     email: z.string().email().max(200),
     message: z.string().min(1).max(5000),
+    source: z.string().max(100).optional(),
   });
 
   app.post("/api/contact", async (req: any, res) => {
@@ -2294,14 +2295,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
 
-      const { name, email, message } = parsed.data;
-      console.log(`[contact] Message from ${name} (${email})`);
+      const { name, email, message, source } = parsed.data;
+      console.log(`[contact] Message from ${name} (${email}) via ${source || "unknown"}`);
 
       const esc = (s: string) => s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
       const safeName = esc(name);
       const safeEmail = esc(email);
       const safeMessage = esc(message);
+      const safeSource = source ? esc(source) : null;
       const safeSubject = name.replace(/[\r\n]/g, " ").slice(0, 100);
+      const subjectPrefix = source ? `[${source.replace(/[\r\n]/g, " ").slice(0, 50)}]` : "[Contact]";
 
       const apiKey = process.env.replit_email_resend;
       if (!apiKey) {
@@ -2319,9 +2322,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
         from: "restnvest <product@restnvest.com>",
         to: "product@restnvest.com",
         replyTo: email,
-        subject: `Contact form: ${safeSubject}`,
+        subject: `${subjectPrefix} ${safeSubject}`,
         html: `<div style="font-family: sans-serif; max-width: 600px;">
           <h2 style="margin-bottom: 4px;">New contact form message</h2>
+          ${safeSource ? `<p style="color: #888; margin-top: 0; margin-bottom: 4px; font-size: 13px;"><strong>Source:</strong> ${safeSource}</p>` : ""}
           <p style="color: #666; margin-top: 0;"><strong>From:</strong> ${safeName} &lt;${safeEmail}&gt;</p>
           <hr style="border: none; border-top: 1px solid #eee;" />
           <p style="white-space: pre-wrap; line-height: 1.6;">${safeMessage}</p>
