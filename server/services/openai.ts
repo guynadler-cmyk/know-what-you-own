@@ -1,10 +1,29 @@
+
 import OpenAI from "openai";
 import { CompanySummary, TemporalAnalysis, FinePrintAnalysis } from "@shared/schema";
+import { MemoryCache } from "./caching";
+import crypto from "node:crypto";
+
+import {
+  getBusinessByCacheKey,
+  insertBusinessAnalysis,
+} from "../repositories/businessAnalysis.repo";
+
+import {
+  getTemporalByCacheKey,
+  saveTemporalAnalysis,
+} from "../repositories/temporalAnalysis.repo";
+
+import {
+  getFootnotesByCacheKey,
+  saveFootnotesAnalysis,
+} from "../repositories/footnotesAnalysis.repo";
 
 const openai = new OpenAI({
-  apiKey: process.env.AI_INTEGRATIONS_OPENAI_API_KEY,
-  baseURL: process.env.AI_INTEGRATIONS_OPENAI_BASE_URL,
+  apiKey: process.env.OPENAI_API_KEY || process.env.AI_INTEGRATIONS_OPENAI_API_KEY,
+  baseURL: process.env.AI_INTEGRATIONS_OPENAI_BASE_URL || undefined,
 });
+
 
 async function retryWithBackoff<T>(
   fn: () => Promise<T>,
@@ -87,6 +106,68 @@ function mapIconName(productName: string): string {
 }
 
 export class OpenAIService {
+    private businessCache = new MemoryCache(24 * 60 * 60 * 1000); // 24h
+    private temporalCache = new MemoryCache(24 * 60 * 60 * 1000);
+    private footnotesCache = new MemoryCache(24 * 60 * 60 * 1000);
+
+    private makeBusinessCacheKey(
+          companyName: string,
+          ticker: string,
+          fiscalYear: string,
+          filingDate: string,
+          businessSection: string
+        ): string {
+          return crypto
+            .createHash("sha256")
+            .update([
+              "BUSINESS",
+              companyName,
+              ticker,
+              fiscalYear,
+              filingDate,
+              businessSection.slice(0, 5000)
+            ].join("|"))
+            .digest("hex");
+        }
+    private makeTemporalCacheKey(
+              companyName: string,
+              ticker: string,
+              yearlyData: Array<{
+                fiscalYear: string;
+                filingDate: string;
+                businessSection: string;
+              }>
+            ): string {
+              const normalized = yearlyData
+                .map(y => `${y.fiscalYear}:${y.filingDate}:${y.businessSection.slice(0, 3000)}`)
+                .join("||");
+
+              return crypto
+                .createHash("sha256")
+                .update(["TEMPORAL", companyName, ticker, normalized].join("|"))
+                .digest("hex");
+            }
+    private makeFootnotesCacheKey(
+                  companyName: string,
+                  ticker: string,
+                  fiscalYear: string,
+                  filingDate: string,
+                  footnotesSection: string
+                ): string {
+                  return crypto
+                    .createHash("sha256")
+                    .update([
+                      "FOOTNOTES",
+                      companyName,
+                      ticker,
+                      fiscalYear,
+                      filingDate,
+                      footnotesSection.slice(0, 5000)
+                    ].join("|"))
+                    .digest("hex");
+                }
+
+
   async analyzeBusiness(
     companyName: string,
     ticker: string,
@@ -95,6 +176,23 @@ export class OpenAIService {
     fiscalYear: string,
     cik: string
   ): Promise<CompanySummary> {
+      const cacheKey = this.makeBusinessCacheKey(
+                          companyName,
+                          ticker,
+                          fiscalYear,
+                          filingDate,
+                          businessSection
+                          );
+
+  const cached = await getBusinessByCacheKey(cacheKey);
+    if (cached) {
+      console.log("[DB CACHE] BUSINESS HIT:", ticker, fiscalYear);
+      return cached;
+    }
+
+
+    console.log("[AI CACHE] BUSINESS MISS:", ticker, fiscalYear);
+
     const prompt = `You are analyzing a company's 10-K filing. Extract structured information from the business description below.
 
 Company: ${companyName} (${ticker})
@@ -243,6 +341,15 @@ Requirements:
       },
       cik,
     };
+    await insertBusinessAnalysis({
+      cacheKey,
+      companyName,
+      ticker,
+      cik,
+      fiscalYear,
+      filingDate,
+      result: summary,
+    });
 
     return summary;
   }
@@ -257,7 +364,17 @@ Requirements:
     }>
   ): Promise<TemporalAnalysis> {
     const yearsAnalyzed = yearlyData.map(d => d.fiscalYear).sort();
-    
+    const cacheKey = this.makeTemporalCacheKey(companyName, ticker, yearlyData);
+
+    const cached = await getTemporalByCacheKey(cacheKey);
+    if (cached) {
+      console.log("[DB CACHE] TEMPORAL HIT:", ticker);
+      return cached;
+    }
+
+    console.log("[DB CACHE] TEMPORAL MISS:", ticker);
+
+
     // Truncate each business section to avoid token limits and timeouts
     const MAX_CHARS_PER_YEAR = 8000;
     
@@ -535,6 +652,13 @@ Additional Guidelines:
       evolved,
       newProducts,
     };
+    await saveTemporalAnalysis({
+          cacheKey,
+          companyName,
+          ticker,
+          yearsAnalyzed,
+          result: temporalAnalysis,
+        });
 
     return temporalAnalysis;
   }
@@ -546,6 +670,22 @@ Additional Guidelines:
     fiscalYear: string,
     filingDate: string
   ): Promise<FinePrintAnalysis> {
+
+      const cacheKey = this.makeFootnotesCacheKey(
+          companyName,
+          ticker,
+          fiscalYear,
+          filingDate,
+          footnotesSection
+        );
+    const cached = await getFootnotesByCacheKey(cacheKey);
+    if (cached) {
+      console.log("[DB CACHE] FOOTNOTES HIT:", ticker, fiscalYear);
+      return cached;
+    }
+
+    console.log("[DB CACHE] FOOTNOTES MISS:", ticker, fiscalYear);
+
     const prompt = `You are analyzing footnotes from a company's 10-K filing. Extract and categorize key information that investors should know.
 
 Company: ${companyName} (${ticker})
@@ -645,8 +785,7 @@ Requirements:
         item.details.length > 0
       );
     };
-
-    return {
+    const resp:FinePrintAnalysis  = {
       fiscalYear,
       filingDate,
       criticalRisks: sanitizeItems(result.criticalRisks || []),
@@ -655,6 +794,16 @@ Requirements:
       relatedPartyTransactions: sanitizeItems(result.relatedPartyTransactions || []),
       otherMaterialDisclosures: sanitizeItems(result.otherMaterialDisclosures || []),
     };
+    await saveFootnotesAnalysis({
+          cacheKey,
+          companyName,
+          ticker,
+          fiscalYear,
+          filingDate,
+          result: resp,
+        });
+
+    return resp
   }
 }
 
