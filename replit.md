@@ -4,6 +4,18 @@
 
 "Know What You Own" is a free web application providing AI-powered, plain-English summaries of SEC 10-K filings to help investors understand public companies. It aims to demystify financial reports and make investment research accessible, offering immediate access to comprehensive analyses without requiring sign-up. This project serves as a proof-of-concept for Restnvest, a platform focused on fostering sensible investing through deeper business understanding.
 
+### Marketing Site Pages (February 2026)
+The site has a full marketing presence with shared SiteHeader (nav + mobile menu) and SiteFooter (multi-column links) components wrapped via SiteLayout. Pages:
+- `/` - Landing page (hero, feature sections, CTAs)
+- `/product` - Deep dive into 5 analysis stages
+- `/how-it-works` - 3-step walkthrough (search, analyze, plan)
+- `/pricing` - Free tier + Pro (coming soon) tier
+- `/about` - Mission, values, contact
+- `/faq` - Accordion-based FAQ with sections
+- `/terms` - Terms of Service
+- `/privacy` - Privacy Policy
+- `/app` - Main analysis tool (unchanged)
+
 ## User Preferences
 
 Preferred communication style: Simple, everyday language.
