@@ -11,6 +11,7 @@ The site has a full marketing presence with shared SiteHeader (nav + mobile menu
 - `/how-it-works` - 3-step walkthrough (search, analyze, plan)
 - `/pricing` - Free tier + Pro (coming soon) tier
 - `/advisors` - Financial advisors landing page (use cases, benefits, "Book a Demo" CTA)
+- `/institutions` - Institutions landing page (embedded/co-branded offering, "Book a Demo" CTA)
 - `/about` - Mission, values, contact
 - `/faq` - Accordion-based FAQ with sections
 - `/terms` - Terms of Service
