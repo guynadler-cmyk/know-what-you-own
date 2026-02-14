@@ -20,7 +20,9 @@ export function LeadPopup() {
   const lastTickerRef = useRef<string | null>(null);
   const hasShownRef = useRef(false);
 
-  const getTickerFromUrl = () => {
+  const getActiveTicker = () => {
+    const el = document.querySelector('[data-active-ticker]');
+    if (el) return el.getAttribute('data-active-ticker');
     const params = new URLSearchParams(window.location.search);
     return params.get("ticker");
   };
@@ -29,34 +31,20 @@ export function LeadPopup() {
     return localStorage.getItem(STORAGE_KEY) === "true";
   };
 
-  const isPageLoading = () => {
-    // Check if loading spinner is present (analysis still loading)
-    const loadingIndicator = document.querySelector('[data-testid="analysis-loading"]');
-    return loadingIndicator !== null;
-  };
-
   useEffect(() => {
     // Don't show if already submitted
     if (hasAlreadySubmitted()) return;
 
     // Check every second
     timerRef.current = setInterval(() => {
-      const currentTicker = getTickerFromUrl();
+      const currentTicker = getActiveTicker();
       
-      // Not on an analysis page - reset everything
       if (!currentTicker) {
         startTimeRef.current = null;
         lastTickerRef.current = null;
         return;
       }
       
-      // Page still loading - don't start timer yet
-      if (isPageLoading()) {
-        startTimeRef.current = null;
-        return;
-      }
-      
-      // Ticker changed - reset timer
       if (currentTicker !== lastTickerRef.current) {
         startTimeRef.current = Date.now();
         lastTickerRef.current = currentTicker;
@@ -64,10 +52,8 @@ export function LeadPopup() {
         return;
       }
       
-      // Already shown for this session
       if (hasShownRef.current) return;
       
-      // Timer not started yet (page just finished loading)
       if (!startTimeRef.current) {
         startTimeRef.current = Date.now();
         return;
@@ -100,9 +86,10 @@ export function LeadPopup() {
     setIsSubmitting(true);
 
     try {
+      const ticker = getActiveTicker();
       const response = await apiRequest("POST", "/api/lead", {
         email,
-        ticker: getTickerFromUrl(),
+        ticker,
         path: window.location.pathname,
         ts: startTimeRef.current,
       });
@@ -112,7 +99,7 @@ export function LeadPopup() {
         const { analytics } = await import("@/lib/analytics");
         analytics.trackNewLead({
           lead_source: 'popup',
-          ticker: getTickerFromUrl() || undefined,
+          ticker: ticker || undefined,
           stage: 0,
         });
       }
