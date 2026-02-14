@@ -11,8 +11,9 @@ import {
   type ScheduledCheckupEmail,
   type Lead,
 } from "@shared/schema";
-  import { db } from "./db";
-  import { eq, or } from "drizzle-orm";
+import { db } from "./db";
+import { internalDb } from "./internalDb";
+import { eq, or } from "drizzle-orm";
 
 
 // In-memory lead storage
@@ -91,14 +92,14 @@ export class DatabaseStorage implements IStorage {
 
   async isEmailNew(email: string): Promise<boolean> {
     const normalizedEmail = email.toLowerCase().trim();
-    const [waitlistMatch] = await db
+    const [waitlistMatch] = await internalDb
       .select({ email: waitlistSignups.email })
       .from(waitlistSignups)
       .where(eq(waitlistSignups.email, normalizedEmail))
       .limit(1);
     if (waitlistMatch) return false;
 
-    const [checkupMatch] = await db
+    const [checkupMatch] = await internalDb
       .select({ email: scheduledCheckupEmails.email })
       .from(scheduledCheckupEmails)
       .where(eq(scheduledCheckupEmails.email, normalizedEmail))
