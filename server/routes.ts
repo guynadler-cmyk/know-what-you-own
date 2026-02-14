@@ -978,11 +978,20 @@ import {
   insertScheduledCheckupSchema,
   valuationMetricsSchema,
   timingAnalysisSchema,
+  leadSchema,
 } from "@shared/schema";
 
 import { alphaVantageService } from "./services/alphavantage";
 import { storage } from "./storage";
 import { z } from "zod";
+import {
+  getBusinessByCacheKey,
+  insertBusinessAnalysis,
+} from "./repositories/businessAnalysis.repo";
+import {
+  getFootnotesByCacheKey,
+  saveFootnotesAnalysis,
+} from "./repositories/footnotesAnalysis.repo";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // --------------------------------------------------------------------------
@@ -1017,6 +1026,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/analyze/:ticker", async (req: any, res) => {
     try {
       const { ticker } = req.params;
+      const upperTicker = ticker?.toUpperCase();
 
       if (!ticker || !/^[A-Z]{1,5}$/i.test(ticker)) {
         return res.status(400).json({
@@ -1025,13 +1035,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
 
-      const { cik, name } = await secService.getCompanyInfo(
-        ticker.toUpperCase(),
-      );
+      const { cik, name } = await secService.getCompanyInfo(upperTicker);
 
-      const start = performance.now();
       const { accessionNumber, filingDate, fiscalYear } =
         await secService.getLatest10K(cik);
+
+      const routeCacheKey = `route:${upperTicker}:${fiscalYear}`;
+
+      try {
+        const cached = await getBusinessByCacheKey(routeCacheKey);
+        if (cached) {
+          console.log(`[ROUTE CACHE HIT] ${upperTicker} FY${fiscalYear} — returning instantly`);
+          return res.json(cached);
+        }
+      } catch (dbErr) {
+        console.warn("Route cache read failed, will run live:", dbErr);
+      }
+
+      console.log(`[ROUTE CACHE MISS] Running live analysis for ${upperTicker} (FY${fiscalYear})`);
+
+      const start = performance.now();
 
       const businessSection = await secService.get10KBusinessSection(
         cik,
@@ -1040,7 +1063,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       const summary = await openaiService.analyzeBusiness(
         name,
-        ticker.toUpperCase(),
+        upperTicker,
         businessSection,
         filingDate,
         fiscalYear,
@@ -1048,16 +1071,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
       );
 
       const end = performance.now();
-      console.log(`getLatest10K took ${(end - start).toFixed(2)} ms`);
+      console.log(`Live analysis took ${(end - start).toFixed(2)} ms`);
 
-      // Fetch 5 years of data for temporal analysis with timeout
       let temporalAnalysis;
       try {
         const yearlyData = await secService.get5YearsBusinessSections(cik);
 
         if (yearlyData.length >= 2) {
           console.log(
-            `Starting temporal analysis for ${ticker} with ${yearlyData.length} years of data`,
+            `Starting temporal analysis for ${upperTicker} with ${yearlyData.length} years of data`,
           );
 
           const timeoutPromise = new Promise((_, reject) =>
@@ -1069,7 +1091,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
           const analysisPromise = openaiService.analyzeTemporalChanges(
             name,
-            ticker.toUpperCase(),
+            upperTicker,
             yearlyData,
           );
 
@@ -1077,7 +1099,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             analysisPromise,
             timeoutPromise,
           ])) as any;
-          console.log(`Temporal analysis completed for ${ticker}`);
+          console.log(`Temporal analysis completed for ${upperTicker}`);
         }
       } catch (temporalError) {
         console.warn(
@@ -1090,6 +1112,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
         ...summary,
         ...(temporalAnalysis ? { temporalAnalysis } : {}),
       });
+
+      try {
+        await insertBusinessAnalysis({
+          cacheKey: routeCacheKey,
+          companyName: name,
+          ticker: upperTicker,
+          cik,
+          fiscalYear,
+          filingDate,
+          result: validated,
+        });
+        console.log(`[ROUTE CACHE WRITE] Saved full result for ${upperTicker} (FY${fiscalYear})`);
+      } catch (dbErr) {
+        console.warn("Route cache write failed (non-fatal):", dbErr);
+      }
 
       res.json(validated);
     } catch (error: any) {
@@ -1168,6 +1205,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/analyze/:ticker/fine-print", async (req: any, res) => {
     try {
       const { ticker } = req.params;
+      const upperTicker = ticker?.toUpperCase();
 
       if (!ticker || !/^[A-Z]{1,5}$/i.test(ticker)) {
         return res.status(400).json({
@@ -1176,11 +1214,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
 
-      const { cik, name } = await secService.getCompanyInfo(
-        ticker.toUpperCase(),
-      );
+      const { cik, name } = await secService.getCompanyInfo(upperTicker);
       const { accessionNumber, filingDate, fiscalYear } =
         await secService.getLatest10K(cik);
+
+      const routeFootnotesCacheKey = `route:footnotes:${upperTicker}:${fiscalYear}`;
+
+      try {
+        const cached = await getFootnotesByCacheKey(routeFootnotesCacheKey);
+        if (cached) {
+          console.log(`[ROUTE CACHE HIT] Footnotes for ${upperTicker} FY${fiscalYear} — returning instantly`);
+          return res.json(cached);
+        }
+      } catch (dbErr) {
+        console.warn("Route cache read failed for footnotes, will run live:", dbErr);
+      }
+
+      console.log(`[ROUTE CACHE MISS] Running live footnotes for ${upperTicker} (FY${fiscalYear})`);
 
       const footnotesSection = await secService.get10KFootnotesSection(
         cik,
@@ -1189,13 +1239,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       const finePrintAnalysis = await openaiService.analyzeFootnotes(
         name,
-        ticker.toUpperCase(),
+        upperTicker,
         footnotesSection,
         fiscalYear,
         filingDate,
       );
 
       const validated = finePrintAnalysisSchema.parse(finePrintAnalysis);
+
+      try {
+        await saveFootnotesAnalysis({
+          cacheKey: routeFootnotesCacheKey,
+          companyName: name,
+          ticker: upperTicker,
+          fiscalYear,
+          filingDate,
+          result: validated,
+        });
+        console.log(`[ROUTE CACHE WRITE] Saved footnotes for ${upperTicker} (FY${fiscalYear})`);
+      } catch (dbErr) {
+        console.warn("Route cache write failed for footnotes (non-fatal):", dbErr);
+      }
 
       res.json(validated);
     } catch (error: any) {
@@ -1441,64 +1505,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // --------------------------------------------------------------------------
-  // LOGO PROXY
-  // --------------------------------------------------------------------------
-  const logoCache = new Map<
-    string,
-    { data: Buffer; contentType: string; timestamp: number }
-  >();
-  const LOGO_CACHE_TTL = 24 * 60 * 60 * 1000;
-
-  app.get("/api/logo/:domain", async (req: any, res) => {
-    try {
-      let { domain } = req.params;
-
-      if (!domain || !/^[a-z0-9.-]+\.[a-z]{2,}$/i.test(domain)) {
-        return res.status(400).json({ error: "Invalid domain format" });
-      }
-
-      domain = domain.replace(/^www\./i, "");
-
-      const cacheKey = domain.toLowerCase();
-      const cached = logoCache.get(cacheKey);
-
-      if (cached && Date.now() - cached.timestamp < LOGO_CACHE_TTL) {
-        res.set("Content-Type", cached.contentType);
-        res.set("Cache-Control", "public, max-age=86400");
-        return res.send(cached.data);
-      }
-
-      const response = await fetch(
-        `https://www.google.com/s2/favicons?domain=${domain}&sz=128`,
-        {
-          headers: { "User-Agent": "KnowWhatYouOwn/1.0" },
-          redirect: "follow",
-        },
-      );
-
-      if (!response.ok) {
-        return res.status(404).json({ error: "Logo not found" });
-      }
-
-      const contentType = response.headers.get("content-type") || "image/png";
-      const arrayBuffer = await response.arrayBuffer();
-      const buffer = Buffer.from(arrayBuffer);
-
-      logoCache.set(cacheKey, {
-        data: buffer,
-        contentType,
-        timestamp: Date.now(),
-      });
-
-      res.set("Content-Type", contentType);
-      res.set("Cache-Control", "public, max-age=86400");
-      res.send(buffer);
-    } catch (error: any) {
-      console.error("Logo fetch error:", error.message);
-      return res.status(500).json({ error: "Failed to fetch logo" });
-    }
-  });
 
   // --------------------------------------------------------------------------
   // WAITLIST SIGNUP (FIXED stageName ERROR)
@@ -1819,87 +1825,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // --------------------------------------------------------------------------
 
-  // LOGO PROXY (Clearbit)
-  // --------------------------------------------------------------------------
-  const logoCache = new Map<
-    string,
-    { data: Buffer; contentType: string; timestamp: number }
-  >();
-  const LOGO_CACHE_TTL = 24 * 60 * 60 * 1000; // 24 hours
-
-  app.get("/api/logo/:domain", async (req: any, res) => {
-    try {
-      let { domain } = req.params;
-
-      if (!domain || !/^[a-z0-9.-]+\.[a-z]{2,}$/i.test(domain)) {
-        return res.status(400).json({ error: "Invalid domain format" });
-      }
-
-      // Strip www. prefix - Clearbit works better with root domains
-      domain = domain.replace(/^www\./i, "");
-
-      const cacheKey = domain.toLowerCase();
-      const cached = logoCache.get(cacheKey);
-
-      // Return cached logo if fresh
-      if (cached && Date.now() - cached.timestamp < LOGO_CACHE_TTL) {
-        res.set("Content-Type", cached.contentType);
-        res.set("Cache-Control", "public, max-age=86400");
-        return res.send(cached.data);
-      }
-
-      let buffer: Buffer | null = null;
-      let contentType = "image/png";
-
-      try {
-        const clearbitResponse = await fetch(
-          `https://logo.clearbit.com/${domain}?size=256`,
-          {
-            headers: { "User-Agent": "KnowWhatYouOwn/1.0" },
-            redirect: "follow",
-            signal: AbortSignal.timeout(5000),
-          },
-        );
-        if (clearbitResponse.ok) {
-          const tempBuf = Buffer.from(await clearbitResponse.arrayBuffer());
-          if (tempBuf.length > 1024) {
-            contentType =
-              clearbitResponse.headers.get("content-type") || "image/png";
-            buffer = tempBuf;
-          }
-        }
-      } catch (e) {}
-
-      if (!buffer) {
-        const googleResponse = await fetch(
-          `https://www.google.com/s2/favicons?domain=${domain}&sz=256`,
-          {
-            headers: { "User-Agent": "KnowWhatYouOwn/1.0" },
-            redirect: "follow",
-          },
-        );
-        if (!googleResponse.ok) {
-          return res.status(404).json({ error: "Logo not found" });
-        }
-        contentType = googleResponse.headers.get("content-type") || "image/png";
-        buffer = Buffer.from(await googleResponse.arrayBuffer());
-      }
-
-      // Cache the result
-      logoCache.set(cacheKey, {
-        data: buffer,
-        contentType,
-        timestamp: Date.now(),
-      });
-
-      res.set("Content-Type", contentType);
-      res.set("Cache-Control", "public, max-age=86400");
-      res.send(buffer);
-    } catch (error: any) {
-      console.error("Logo fetch error:", error.message);
-      return res.status(500).json({ error: "Failed to fetch logo" });
-    }
-  });
 
   // --------------------------------------------------------------------------
 
@@ -2180,8 +2105,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       const { email, plan } = parsed.data;
-
-      const { email, plan } = parsed.data;
       console.log(
         `[strategy-email] Validated. Sending to ${email} for ${plan.ticker}`,
       );
@@ -2218,11 +2141,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const ticker = plan.ticker;
       const analysisUrl = `${baseUrl}/app?ticker=${encodeURIComponent(ticker)}`;
       const strategyUrl = `${baseUrl}/app?ticker=${encodeURIComponent(ticker)}&stage=5`;
-
-      const htmlContent = renderStrategyEmail(plan, {
-        analysisUrl,
-        strategyUrl,
-      });
 
       const htmlContent = renderStrategyEmail(plan, {
         analysisUrl,
