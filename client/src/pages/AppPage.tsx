@@ -23,6 +23,7 @@ import {
   getStoredEmail,
   unlockPaywall,
   skipPaywall,
+  getSkippedStage,
   shouldShowPaywall,
 } from "@/lib/abTest";
 
@@ -44,24 +45,33 @@ export default function AppPage() {
 
   useEffect(() => {
     if (!currentTicker) return;
+    const tickerAtStart = currentTicker;
     const localState = getPaywallState(currentTicker);
     if (localState === "unlocked") {
       setPaywallState("unlocked");
       return;
+    }
+    if (localState === "skipped") {
+      const persisted = getSkippedStage(currentTicker);
+      if (persisted !== null) setLastSkippedStage(persisted);
     }
     const storedEmail = getStoredEmail();
     if (storedEmail) {
       fetch(`/api/waitlist/check?email=${encodeURIComponent(storedEmail)}`)
         .then(r => r.json())
         .then(data => {
+          if (tickerAtStart !== currentTicker) return;
           if (data.exists) {
-            unlockPaywall(currentTicker);
+            unlockPaywall(tickerAtStart);
             setPaywallState("unlocked");
           } else {
             setPaywallState(localState);
           }
         })
-        .catch(() => setPaywallState(localState));
+        .catch(() => {
+          if (tickerAtStart !== currentTicker) return;
+          setPaywallState(localState);
+        });
     } else {
       setPaywallState(localState);
     }
@@ -72,7 +82,7 @@ export default function AppPage() {
     if (paywallState === "unlocked") { setShowFloatingModal(false); return; }
     if (paywallState === "locked") { setShowFloatingModal(true); return; }
     if (paywallState === "skipped") {
-      if (lastSkippedStage !== null && lastSkippedStage === currentStage) {
+      if (lastSkippedStage !== null && currentStage <= lastSkippedStage) {
         setShowFloatingModal(false);
       } else {
         setShowFloatingModal(true);
@@ -86,7 +96,8 @@ export default function AppPage() {
   };
 
   const handlePaywallSkipped = () => {
-    skipPaywall(currentTicker);
+    if (!currentTicker) return;
+    skipPaywall(currentTicker, currentStage);
     setPaywallState("skipped");
     setLastSkippedStage(currentStage);
     setShowFloatingModal(false);
@@ -350,17 +361,6 @@ export default function AppPage() {
               }
 
               if (paywallState === "skipped" && !showFloatingModal) {
-                if (currentStage >= 5) {
-                  return (
-                    <div className="flex items-center justify-center py-16">
-                      <EmailPaywall
-                        ticker={currentTicker}
-                        onUnlocked={handlePaywallUnlocked}
-                        mode="action_gate"
-                      />
-                    </div>
-                  );
-                }
                 return (
                   <>
                     <InlineEmailCapture

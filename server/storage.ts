@@ -28,6 +28,7 @@ export interface IStorage {
   // Waitlist operations
   createWaitlistSignup(data: InsertWaitlistSignup): Promise<WaitlistSignup>;
   getWaitlistSignups(): Promise<WaitlistSignup[]>;
+  checkWaitlistEmail(email: string): Promise<boolean>;
   
   // Scheduled checkup operations
   createScheduledCheckup(data: InsertScheduledCheckup): Promise<ScheduledCheckupEmail>;
@@ -75,6 +76,16 @@ export class DatabaseStorage implements IStorage {
 
   async getWaitlistSignups(): Promise<WaitlistSignup[]> {
     return await internalDb.select().from(waitlistSignups);
+  }
+
+  async checkWaitlistEmail(email: string): Promise<boolean> {
+    const normalizedEmail = email.toLowerCase().trim();
+    const [match] = await internalDb
+      .select({ email: waitlistSignups.email })
+      .from(waitlistSignups)
+      .where(eq(waitlistSignups.email, normalizedEmail))
+      .limit(1);
+    return !!match;
   }
 
   // Scheduled checkup operations

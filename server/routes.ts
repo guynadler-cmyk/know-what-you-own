@@ -1561,10 +1561,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     const email = ((req.query.email as string) || "").toLowerCase().trim();
     if (!email) return res.json({ exists: false });
     try {
-      const signups = await storage.getWaitlistSignups();
-      const exists = signups.some(
-        (s) => s.email.toLowerCase().trim() === email,
-      );
+      const exists = await storage.checkWaitlistEmail(email);
       res.json({ exists });
     } catch (error) {
       res.json({ exists: false });
