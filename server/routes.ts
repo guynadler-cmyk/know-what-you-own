@@ -1557,6 +1557,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.get("/api/waitlist/check", async (req: any, res) => {
+    const email = ((req.query.email as string) || "").toLowerCase().trim();
+    if (!email) return res.json({ exists: false });
+    try {
+      const signups = await storage.getWaitlistSignups();
+      const exists = signups.some(
+        (s) => s.email.toLowerCase().trim() === email,
+      );
+      res.json({ exists });
+    } catch (error) {
+      res.json({ exists: false });
+    }
+  });
+
   // --------------------------------------------------------------------------
   // SCHEDULED CHECKUP EMAILS
   // --------------------------------------------------------------------------

@@ -95,6 +95,20 @@ The Strategy stage (stage 5) is a user-authored planning tool (no investment adv
 - **Neutral language**: All takeaway summaries use factual, non-advisory wording (no "consider waiting", "worth considering", etc.)
 - **Save/Email payload**: Includes conviction, total amount, tranches (with manual/auto flag), "I'm wrong if" text, snapshot scores, and displayed takeaway texts
 
+### Paywall / Email Gate (February 2026)
+
+Three-state paywall (`locked` | `skipped` | `unlocked`) gating analysis stages 4-6 behind email capture with a "Friday Report → Monday Actions" value proposition:
+- **State management**: `client/src/lib/abTest.ts` — per-ticker localStorage keys (`rn_unlocked_TICKER`, `rn_skipped_TICKER`, `rn_user_email`).
+- **Auto-unlock**: On page load, if `rn_user_email` exists, `GET /api/waitlist/check?email=` verifies against `waitlist_signups` table. If found, marks ticker as unlocked.
+- **Stage 4 (locked)**: Blurred content + floating `EmailPaywall` modal (mode=`friday_report`) with skip option.
+- **Stage 4 (skipped)**: Full content visible + `InlineEmailCapture` compact dismissible banner at top.
+- **Stage 5+ (locked)**: Blurred content + floating `EmailPaywall` modal (mode=`action_gate`, two signup paths: Friday Report / Restnvest Waitlist). No skip.
+- **Stage 5+ (skipped)**: Hard gate — `EmailPaywall` action_gate modal only, no content behind.
+- **Unlocked**: Full content, no paywall.
+- **Email submissions**: POST to `/api/waitlist` with descriptive `stageName` (e.g., "Paywall Gate - PLTR", "Action Gate (waitlist) - PLTR").
+- **Analytics**: `paywall_viewed`, `paywall_email_submitted`, `paywall_email_success`, `paywall_email_error`, `paywall_skipped` events via `trackEvent`.
+- **Components**: `EmailPaywall.tsx` (floating modal), `InlineEmailCapture.tsx` (inline banner).
+
 ## External Dependencies
 
 -   **SEC EDGAR API:** For company CIK mapping, filing submissions, and 10-K document access.

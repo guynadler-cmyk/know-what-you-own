@@ -11,10 +11,20 @@ import { ErrorState } from "@/components/ErrorState";
 import { JourneyNarrative } from "@/components/JourneyNarrative";
 import { StageNavigation } from "@/components/StageNavigation";
 import { StageContent } from "@/components/StageContent";
+import { EmailPaywall } from "@/components/EmailPaywall";
+import { InlineEmailCapture } from "@/components/InlineEmailCapture";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, ArrowRight } from "lucide-react";
 import { CompanySummary, FinancialMetrics, BalanceSheetMetrics } from "@shared/schema";
 import { analytics } from "@/lib/analytics";
+import {
+  type PaywallState,
+  getPaywallState,
+  getStoredEmail,
+  unlockPaywall,
+  skipPaywall,
+  shouldShowPaywall,
+} from "@/lib/abTest";
 
 type ViewState = "input" | "loading" | "success" | "error";
 
@@ -27,6 +37,60 @@ export default function AppPage() {
   const [errorInfo, setErrorInfo] = useState({ title: "", message: "" });
   const [financialMetrics, setFinancialMetrics] = useState<FinancialMetrics | null>(null);
   const [balanceSheetMetrics, setBalanceSheetMetrics] = useState<BalanceSheetMetrics | null>(null);
+
+  const [paywallState, setPaywallState] = useState<PaywallState>("locked");
+  const [showFloatingModal, setShowFloatingModal] = useState(false);
+  const [lastSkippedStage, setLastSkippedStage] = useState<number | null>(null);
+
+  useEffect(() => {
+    if (!currentTicker) return;
+    const localState = getPaywallState(currentTicker);
+    if (localState === "unlocked") {
+      setPaywallState("unlocked");
+      return;
+    }
+    const storedEmail = getStoredEmail();
+    if (storedEmail) {
+      fetch(`/api/waitlist/check?email=${encodeURIComponent(storedEmail)}`)
+        .then(r => r.json())
+        .then(data => {
+          if (data.exists) {
+            unlockPaywall(currentTicker);
+            setPaywallState("unlocked");
+          } else {
+            setPaywallState(localState);
+          }
+        })
+        .catch(() => setPaywallState(localState));
+    } else {
+      setPaywallState(localState);
+    }
+  }, [currentTicker]);
+
+  useEffect(() => {
+    if (!shouldShowPaywall(currentStage)) { setShowFloatingModal(false); return; }
+    if (paywallState === "unlocked") { setShowFloatingModal(false); return; }
+    if (paywallState === "locked") { setShowFloatingModal(true); return; }
+    if (paywallState === "skipped") {
+      if (lastSkippedStage !== null && lastSkippedStage === currentStage) {
+        setShowFloatingModal(false);
+      } else {
+        setShowFloatingModal(true);
+      }
+    }
+  }, [currentStage, paywallState, lastSkippedStage]);
+
+  const handlePaywallUnlocked = () => {
+    setPaywallState("unlocked");
+    setShowFloatingModal(false);
+  };
+
+  const handlePaywallSkipped = () => {
+    skipPaywall(currentTicker);
+    setPaywallState("skipped");
+    setLastSkippedStage(currentStage);
+    setShowFloatingModal(false);
+  };
 
   const fetchFinancialMetrics = async (ticker: string) => {
     const requestedTicker = ticker.toUpperCase();
@@ -267,37 +331,97 @@ export default function AppPage() {
               currentStage={currentStage} 
               onStageChange={handleStageChange} 
             />
-            <StageContent 
-              stage={currentStage} 
-              summaryData={summaryData}
-              financialMetrics={financialMetrics}
-              balanceSheetMetrics={balanceSheetMetrics}
-              ticker={currentTicker}
-              onStageChange={handleStageChange}
-            />
+
+            {(() => {
+              const isGated = shouldShowPaywall(currentStage);
+              const isUnlocked = paywallState === "unlocked";
+
+              const stageContentProps = {
+                stage: currentStage,
+                summaryData: summaryData,
+                financialMetrics: financialMetrics ?? undefined,
+                balanceSheetMetrics: balanceSheetMetrics ?? undefined,
+                ticker: currentTicker,
+                onStageChange: handleStageChange,
+              };
+
+              if (!isGated || isUnlocked) {
+                return <StageContent {...stageContentProps} />;
+              }
+
+              if (paywallState === "skipped" && !showFloatingModal) {
+                if (currentStage >= 5) {
+                  return (
+                    <div className="flex items-center justify-center py-16">
+                      <EmailPaywall
+                        ticker={currentTicker}
+                        onUnlocked={handlePaywallUnlocked}
+                        mode="action_gate"
+                      />
+                    </div>
+                  );
+                }
+                return (
+                  <>
+                    <InlineEmailCapture
+                      ticker={currentTicker}
+                      onUnlocked={handlePaywallUnlocked}
+                    />
+                    <StageContent {...stageContentProps} />
+                  </>
+                );
+              }
+
+              return (
+                <div className="relative" style={{ display: "grid" }}>
+                  <div
+                    className="select-none"
+                    style={{ gridArea: "1 / 1", filter: "blur(5px)", pointerEvents: "none" }}
+                    aria-hidden="true"
+                  >
+                    <StageContent {...stageContentProps} />
+                  </div>
+                  <div
+                    className="pointer-events-none"
+                    style={{ gridArea: "1 / 1", position: "sticky", top: "25vh", zIndex: 40, height: 0 }}
+                  >
+                    <div className="pointer-events-auto mx-auto max-w-lg">
+                      <EmailPaywall
+                        ticker={currentTicker}
+                        onUnlocked={handlePaywallUnlocked}
+                        onSkipped={currentStage < 5 ? handlePaywallSkipped : undefined}
+                        mode={currentStage < 5 ? "friday_report" : "action_gate"}
+                      />
+                    </div>
+                  </div>
+                </div>
+              );
+            })()}
             
-            <div className="mt-8 flex items-center justify-between gap-4">
-              {buttonText.previous && (
-                <Button
-                  variant="outline"
-                  onClick={handlePreviousStage}
-                  className="h-12 px-8"
-                  data-testid="button-previous-stage"
-                >
-                  {buttonText.previous}
-                </Button>
-              )}
-              <div className="flex-1" />
-              {buttonText.next && (
-                <Button
-                  onClick={handleNextStage}
-                  className="h-12 px-8"
-                  data-testid="button-next-stage"
-                >
-                  {buttonText.next}
-                </Button>
-              )}
-            </div>
+            {(!shouldShowPaywall(currentStage) || paywallState === "unlocked") && (
+              <div className="mt-8 flex items-center justify-between gap-4">
+                {buttonText.previous && (
+                  <Button
+                    variant="outline"
+                    onClick={handlePreviousStage}
+                    className="h-12 px-8"
+                    data-testid="button-previous-stage"
+                  >
+                    {buttonText.previous}
+                  </Button>
+                )}
+                <div className="flex-1" />
+                {buttonText.next && (
+                  <Button
+                    onClick={handleNextStage}
+                    className="h-12 px-8"
+                    data-testid="button-next-stage"
+                  >
+                    {buttonText.next}
+                  </Button>
+                )}
+              </div>
+            )}
           </div>
         )}
 
