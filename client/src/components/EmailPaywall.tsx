@@ -24,7 +24,7 @@ export function EmailPaywall({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
   const [error, setError] = useState("");
-  const [selectedOption, setSelectedOption] = useState<"friday_report" | "waitlist">("friday_report");
+  const [selectedOption, setSelectedOption] = useState<"friday_report" | "waitlist">("waitlist");
 
   useEffect(() => {
     trackEvent("paywall_viewed", "paywall", `${ticker}|variant=${mode}`);
