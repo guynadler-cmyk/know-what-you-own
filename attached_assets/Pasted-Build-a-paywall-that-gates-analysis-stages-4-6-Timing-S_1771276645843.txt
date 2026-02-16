@@ -1,0 +1,204 @@
+Build a paywall that gates analysis stages 4-6 (Timing, Strategy, Protection) behind an email capture system with a "Friday Report → Monday Actions" value proposition. The paywall is shown to ALL users who have not yet signed up. No A/B testing — every visitor sees the gate until they provide their email. Here is the complete specification:
+
+OVERVIEW: Three-state paywall with two-tier gating
+
+States: locked (default), skipped (user dismissed the initial modal), unlocked (email verified in database).
+
+Stages 1-3: No paywall, always accessible.
+Stage 4 (locked): Blurred content + floating "Friday Report" modal with skip option.
+Stage 4 (skipped): Full content visible + compact dismissible email banner at top.
+Stage 5+ (locked): Blurred content + floating "action gate" modal with TWO signup paths (Friday Report or Restnvest Waitlist). No skip option.
+Stage 5+ (skipped): Hard gate — action gate modal only, no content behind. User must sign up or go back to earlier stages.
+Any stage (unlocked): Full content, no paywall at all.
+Unlock check: On page load, if rn_user_email exists in localStorage, call GET /api/waitlist/check?email={email} to verify the email exists in waitlist_signups. If verified, mark the ticker as unlocked. If not verified (or no stored email), show the paywall.
+
+STEP 1: Create client/src/lib/abTest.ts — Paywall state management (no A/B logic).
+
+const PAYWALL_UNLOCK_PREFIX = "rn_unlocked_";
+const PAYWALL_SKIPPED_PREFIX = "rn_skipped_";
+const USER_EMAIL_KEY = "rn_user_email";
+export type PaywallState = "locked" | "skipped" | "unlocked";
+export function getPaywallState(ticker: string): PaywallState {
+  const key = ticker.toUpperCase();
+  if (localStorage.getItem(`${PAYWALL_UNLOCK_PREFIX}${key}`) === "true") return "unlocked";
+  if (localStorage.getItem(`${PAYWALL_SKIPPED_PREFIX}${key}`) === "true") return "skipped";
+  return "locked";
+}
+export function isPaywallUnlocked(ticker?: string): boolean {
+  if (!ticker) return false;
+  return getPaywallState(ticker) === "unlocked";
+}
+export function unlockPaywall(ticker: string): void {
+  const key = ticker.toUpperCase();
+  localStorage.setItem(`${PAYWALL_UNLOCK_PREFIX}${key}`, "true");
+  localStorage.removeItem(`${PAYWALL_SKIPPED_PREFIX}${key}`);
+}
+export function unlockAllTickers(): void {
+  // Called after verifying email exists in database — unlock any ticker
+  // The next getPaywallState call for any ticker with rn_unlocked_ set will return "unlocked"
+}
+export function skipPaywall(ticker: string): void {
+  const key = ticker.toUpperCase();
+  localStorage.setItem(`${PAYWALL_SKIPPED_PREFIX}${key}`, "true");
+}
+export function shouldShowPaywall(stage: number): boolean {
+  return stage >= 4;
+}
+export function getStoredEmail(): string | null {
+  return localStorage.getItem(USER_EMAIL_KEY);
+}
+export function setStoredEmail(email: string): void {
+  localStorage.setItem(USER_EMAIL_KEY, email.toLowerCase().trim());
+}
+STEP 2: Add backend endpoint GET /api/waitlist/check?email={email}
+
+Add a new route that checks if the given email exists in the waitlist_signups table (case-insensitive). Returns { exists: true/false }. This is used on page load to auto-unlock returning users.
+
+// In routes.ts, add:
+app.get("/api/waitlist/check", async (req, res) => {
+  const email = (req.query.email as string || "").toLowerCase().trim();
+  if (!email) return res.json({ exists: false });
+  
+  try {
+    const [match] = await db
+      .select({ email: waitlistSignups.email })
+      .from(waitlistSignups)
+      .where(eq(waitlistSignups.email, email))
+      .limit(1);
+    res.json({ exists: !!match });
+  } catch (error) {
+    res.json({ exists: false });
+  }
+});
+STEP 3: Create client/src/components/EmailPaywall.tsx — The main paywall modal with two modes.
+
+Props: ticker: string, onUnlocked: () => void, onSkipped?: () => void, mode?: "friday_report" | "action_gate" (defaults to "friday_report").
+
+friday_report mode (used on stage 4):
+
+Card with shadow-2xl border-2 and boxShadow: "0 8px 40px rgba(0,0,0,0.2)" for a strong floating look.
+Mail icon + heading: "Friday Report → Monday Actions"
+Subtext: "Get a quick weekly note for {TICKER}: what changed, what matters, and what to do next."
+Three bullet points:
+What changed: earnings / filings / news that move the thesis
+What it means: fundamentals + valuation in plain English
+Monday actions: hold / add / wait + 1 thing to watch
+Email input + "Send my Friday report" button
+Footer: "No spam. Ever. Just your weekly report and your saved analysis link."
+Skip link (only when onSkipped is provided): "Not now — continue with limited view"
+action_gate mode (used on stage 5+):
+
+Same card styling.
+Heading: "Ready to plan your entry?"
+Subtext: "You've explored the analysis for {TICKER}. Sign up to unlock the strategy builder and create your action plan."
+Two selectable option cards side by side:
+Friday Report (Mail icon): "Weekly note: what changed, what it means, and what to do Monday."
+Restnvest Waitlist (Rocket icon): "Be first to access the full platform when it launches."
+Selected card gets border-primary bg-primary/5, unselected gets border-muted.
+Email input + dynamic submit button: "Send my Friday report" or "Join the waitlist" depending on selection.
+No skip option.
+Footer: "Without signing up, you can still browse the analysis stages — but the strategy builder stays locked."
+Both modes' submit behavior:
+
+Submit to POST /api/waitlist with { email, stageName }.
+stageName = "Paywall Gate - {TICKER}" for friday_report, or "Action Gate ({option}) - {TICKER}" for action_gate.
+On success: call setStoredEmail(email), call unlockPaywall(ticker), show a success card with green checkmark + "You're in! Loading your full analysis...", then call onUnlocked() after 1200ms.
+Client-side email validation before submit.
+Analytics events (via existing trackEvent):
+
+paywall_viewed on mount: label {ticker}|variant={mode}
+paywall_email_submitted on submit: label {ticker}|variant={mode} (+ |option={selectedOption} for action_gate)
+paywall_email_success on success: same pattern
+paywall_email_error on error: same pattern + |error={message}
+paywall_skipped on skip: label {ticker}|variant=friday_report
+STEP 4: Create client/src/components/InlineEmailCapture.tsx — Compact dismissible banner for stage 4 after skipping.
+
+Props: ticker: string, onUnlocked: () => void.
+
+Single-line banner layout in a rounded-md border bg-muted/50 px-4 py-3 container:
+
+Left: "Get the Friday report for {TICKER} — weekly insights, straight to your inbox."
+Right: inline email input + small "Send" button + X dismiss button.
+Dismissible via local dismissed state (returns null when dismissed).
+Submits to POST /api/waitlist with stageName: "Paywall Gate - {TICKER}".
+On success: call setStoredEmail(email), unlockPaywall(ticker), show green confirmation banner, call onUnlocked() after 800ms.
+Analytics tagged with source=inline.
+STEP 5: Update AppPage.tsx — Wire up the gating logic.
+
+New state variables:
+
+const [paywallState, setPaywallState] = useState<PaywallState>("locked");
+const [showFloatingModal, setShowFloatingModal] = useState(false);
+const [lastSkippedStage, setLastSkippedStage] = useState<number | null>(null);
+Auto-unlock on page load — Add a useEffect that runs when currentTicker changes:
+
+useEffect(() => {
+  if (!currentTicker) return;
+  // First check localStorage
+  const localState = getPaywallState(currentTicker);
+  if (localState === "unlocked") {
+    setPaywallState("unlocked");
+    return;
+  }
+  // Then check if stored email exists in database
+  const storedEmail = getStoredEmail();
+  if (storedEmail) {
+    fetch(`/api/waitlist/check?email=${encodeURIComponent(storedEmail)}`)
+      .then(r => r.json())
+      .then(data => {
+        if (data.exists) {
+          unlockPaywall(currentTicker);
+          setPaywallState("unlocked");
+        } else {
+          setPaywallState(localState); // "locked" or "skipped"
+        }
+      })
+      .catch(() => setPaywallState(localState));
+  } else {
+    setPaywallState(localState);
+  }
+}, [currentTicker]);
+Control floating modal visibility:
+
+useEffect(() => {
+  if (!shouldShowPaywall(currentStage)) { setShowFloatingModal(false); return; }
+  if (paywallState === "unlocked") { setShowFloatingModal(false); return; }
+  if (paywallState === "locked") { setShowFloatingModal(true); return; }
+  if (paywallState === "skipped") {
+    // Re-show modal when switching to a different gated stage
+    if (lastSkippedStage !== null && lastSkippedStage === currentStage) {
+      setShowFloatingModal(false);
+    } else {
+      setShowFloatingModal(true);
+    }
+  }
+}, [currentStage, paywallState, lastSkippedStage]);
+Handler functions:
+
+const handlePaywallUnlocked = () => { setPaywallState("unlocked"); setShowFloatingModal(false); };
+const handlePaywallSkipped = () => { setPaywallState("skipped"); setLastSkippedStage(currentStage); setShowFloatingModal(false); };
+renderGatedContent() function — replaces direct <StageContent> rendering for stages 4+:
+
+Not gated (stage < 4) or unlocked → render <StageContent> normally
+Skipped + no floating modal + stage >= 5 → render <EmailPaywall mode="action_gate" onUnlocked={handlePaywallUnlocked} /> in a centered wrapper (hard gate, no content behind)
+Skipped + no floating modal + stage 4 → render <InlineEmailCapture> banner above full <StageContent> (full content + gentle nudge)
+Locked (or skipped with floating modal re-showing) → CSS grid stacking: blurred <StageContent> behind floating <EmailPaywall>:
+Background: filter: blur(5px), pointerEvents: none, select-none, aria-hidden="true"
+Foreground: pointer-events-none wrapper → sticky div at top: 25vh, z-40 → pointer-events-auto inner wrapper (max-w-lg) containing <EmailPaywall>
+For stage < 5: pass onSkipped={handlePaywallSkipped}, mode="friday_report"
+For stage >= 5: pass no onSkipped, mode="action_gate"
+Hide nav buttons when on a gated stage that isn't unlocked:
+
+const showNavButtons = !shouldShowPaywall(currentStage) || paywallState === "unlocked";
+Key behaviors to verify after building:
+
+Stages 1-3: No paywall, always accessible
+Stage 4 (locked): Blurred content + floating Friday Report modal with skip option
+Stage 4 (skipped): Full content + compact dismissible banner at top
+Stage 5+ (locked): Blurred content + floating action gate modal (two options, no skip)
+Stage 5+ (skipped): Hard gate — action gate only, no content shown
+Any stage (unlocked): Full content, no paywall
+Modal reappears when switching between gated stages after skipping one
+Per-ticker persistence via localStorage keys rn_unlocked_{TICKER} and rn_skipped_{TICKER}
+Returning users auto-unlock if their stored email is in waitlist_signups table
+All email submissions save to waitlist_signups with descriptive stageName (e.g., "Paywall Gate - PLTR" or "Action Gate (waitlist) - PLTR")
