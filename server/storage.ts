@@ -13,7 +13,7 @@ import {
 } from "@shared/schema";
 import { db } from "./db";
 import { internalDb } from "./internalDb";
-import { eq, or } from "drizzle-orm";
+import { eq, or, and, like } from "drizzle-orm";
 
 
 // In-memory lead storage
@@ -29,6 +29,7 @@ export interface IStorage {
   createWaitlistSignup(data: InsertWaitlistSignup): Promise<WaitlistSignup>;
   getWaitlistSignups(): Promise<WaitlistSignup[]>;
   checkWaitlistEmail(email: string): Promise<boolean>;
+  checkEmailTickerFollowed(email: string, ticker: string): Promise<boolean>;
   
   // Scheduled checkup operations
   createScheduledCheckup(data: InsertScheduledCheckup): Promise<ScheduledCheckupEmail>;
@@ -84,6 +85,22 @@ export class DatabaseStorage implements IStorage {
       .select({ email: waitlistSignups.email })
       .from(waitlistSignups)
       .where(eq(waitlistSignups.email, normalizedEmail))
+      .limit(1);
+    return !!match;
+  }
+
+  async checkEmailTickerFollowed(email: string, ticker: string): Promise<boolean> {
+    const normalizedEmail = email.toLowerCase().trim();
+    const upperTicker = ticker.toUpperCase();
+    const [match] = await internalDb
+      .select({ id: waitlistSignups.id })
+      .from(waitlistSignups)
+      .where(
+        and(
+          eq(waitlistSignups.email, normalizedEmail),
+          like(waitlistSignups.stageName, `%${upperTicker}%`)
+        )
+      )
       .limit(1);
     return !!match;
   }

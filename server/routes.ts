@@ -1568,6 +1568,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.get("/api/waitlist/check-ticker", async (req: any, res) => {
+    const email = ((req.query.email as string) || "").toLowerCase().trim();
+    const ticker = ((req.query.ticker as string) || "").toUpperCase().trim();
+    if (!email || !ticker) return res.json({ followed: false });
+    try {
+      const followed = await storage.checkEmailTickerFollowed(email, ticker);
+      res.json({ followed });
+    } catch (error) {
+      res.json({ followed: false });
+    }
+  });
+
   // --------------------------------------------------------------------------
   // SCHEDULED CHECKUP EMAILS
   // --------------------------------------------------------------------------

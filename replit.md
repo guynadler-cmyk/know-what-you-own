@@ -109,6 +109,7 @@ Three-state paywall (`locked` | `skipped` | `unlocked`) gating analysis stages 4
 - **Analytics**: `paywall_viewed`, `paywall_email_submitted`, `paywall_email_success`, `paywall_email_error`, `paywall_skipped` events via `trackEvent`.
 - **Components**: `EmailPaywall.tsx` (floating modal), `InlineEmailCapture.tsx` (inline banner).
 - **Defensive guards**: All abTest helpers guard against empty/undefined ticker to prevent runtime crashes.
+- **Returning user follow**: `TickerFollowPrompt.tsx` — compact one-tap banner for unlocked users who haven't signed up for the current ticker. Posts to `/api/waitlist` with `stageName: "Friday Report (returning) - TICKER"` to distinguish returning users. Checked via `GET /api/waitlist/check-ticker?email=&ticker=` (direct DB query with `LIKE`). Fires `ticker_followed` analytics event with `returning_user=true`.
 
 ## External Dependencies
 

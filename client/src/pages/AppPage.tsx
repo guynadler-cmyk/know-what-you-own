@@ -13,6 +13,7 @@ import { StageNavigation } from "@/components/StageNavigation";
 import { StageContent } from "@/components/StageContent";
 import { EmailPaywall } from "@/components/EmailPaywall";
 import { InlineEmailCapture } from "@/components/InlineEmailCapture";
+import { TickerFollowPrompt } from "@/components/TickerFollowPrompt";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, ArrowRight } from "lucide-react";
 import { CompanySummary, FinancialMetrics, BalanceSheetMetrics } from "@shared/schema";
@@ -42,13 +43,25 @@ export default function AppPage() {
   const [paywallState, setPaywallState] = useState<PaywallState>("locked");
   const [showFloatingModal, setShowFloatingModal] = useState(false);
   const [lastSkippedStage, setLastSkippedStage] = useState<number | null>(null);
+  const [tickerFollowed, setTickerFollowed] = useState(true);
 
   useEffect(() => {
     if (!currentTicker) return;
     const tickerAtStart = currentTicker;
+    setTickerFollowed(true);
     const localState = getPaywallState(currentTicker);
     if (localState === "unlocked") {
       setPaywallState("unlocked");
+      const storedEmail = getStoredEmail();
+      if (storedEmail) {
+        fetch(`/api/waitlist/check-ticker?email=${encodeURIComponent(storedEmail)}&ticker=${encodeURIComponent(currentTicker)}`)
+          .then(r => r.json())
+          .then(data => {
+            if (tickerAtStart !== currentTicker) return;
+            setTickerFollowed(!!data.followed);
+          })
+          .catch(() => {});
+      }
       return;
     }
     if (localState === "skipped") {
@@ -64,6 +77,13 @@ export default function AppPage() {
           if (data.exists) {
             unlockPaywall(tickerAtStart);
             setPaywallState("unlocked");
+            fetch(`/api/waitlist/check-ticker?email=${encodeURIComponent(storedEmail!)}&ticker=${encodeURIComponent(tickerAtStart)}`)
+              .then(r => r.json())
+              .then(d => {
+                if (tickerAtStart !== currentTicker) return;
+                setTickerFollowed(!!d.followed);
+              })
+              .catch(() => {});
           } else {
             setPaywallState(localState);
           }
@@ -357,7 +377,18 @@ export default function AppPage() {
               };
 
               if (!isGated || isUnlocked) {
-                return <StageContent {...stageContentProps} />;
+                const showFollowPrompt = isGated && isUnlocked && !tickerFollowed;
+                return (
+                  <>
+                    {showFollowPrompt && (
+                      <TickerFollowPrompt
+                        ticker={currentTicker}
+                        onFollowed={() => setTickerFollowed(true)}
+                      />
+                    )}
+                    <StageContent {...stageContentProps} />
+                  </>
+                );
               }
 
               if (paywallState === "skipped" && !showFloatingModal) {
