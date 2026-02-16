@@ -106,8 +106,8 @@ Three-state paywall (`locked` | `skipped` | `unlocked`) gating analysis stages 4
 - **Stage 5+ (skipped)**: Blurred content + floating `EmailPaywall` action_gate modal (user prefers blurred background as it's more compelling to enter email).
 - **Unlocked**: Full content, no paywall.
 - **Email submissions**: POST to `/api/waitlist` with descriptive `stageName` (e.g., "Paywall Gate - PLTR", "Action Gate (waitlist) - PLTR").
-- **Analytics**: `paywall_viewed`, `paywall_email_submitted`, `paywall_email_success`, `paywall_email_error`, `paywall_skipped` events via `trackEvent`.
-- **Components**: `EmailPaywall.tsx` (floating modal), `InlineEmailCapture.tsx` (inline banner).
+- **Analytics**: `paywall_viewed`, `paywall_email_submitted`, `paywall_email_success`, `paywall_email_error`, `paywall_skipped` events via `trackEvent`. The `new_lead` GA4 conversion event fires from `EmailPaywall` (lead_source=`paywall_gate`) and `InlineEmailCapture` (lead_source=`inline_gate`) when `isNewLead` is true in the API response — replacing the removed timed `LeadPopup`.
+- **Components**: `EmailPaywall.tsx` (floating modal), `InlineEmailCapture.tsx` (inline banner). The timed `LeadPopup.tsx` has been removed — email capture now happens exclusively through the paywall gate.
 - **Defensive guards**: All abTest helpers guard against empty/undefined ticker to prevent runtime crashes.
 - **Returning user follow**: `TickerFollowPrompt.tsx` — compact one-tap banner for unlocked users who haven't signed up for the current ticker. Posts to `/api/waitlist` with `stageName: "Friday Report (returning) - TICKER"` to distinguish returning users. Checked via `GET /api/waitlist/check-ticker?email=&ticker=` (direct DB query with `LIKE`). Fires `ticker_followed` analytics event with `returning_user=true`.
 

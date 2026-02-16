@@ -54,7 +54,17 @@ export function EmailPaywall({
           ? `Paywall Gate - ${ticker}`
           : `Action Gate (${selectedOption}) - ${ticker}`;
 
-      await apiRequest("POST", "/api/waitlist", { email, stageName });
+      const response = await apiRequest("POST", "/api/waitlist", { email, stageName });
+      const result = await response.json();
+
+      if (result.isNewLead) {
+        const { analytics } = await import("@/lib/analytics");
+        analytics.trackNewLead({
+          lead_source: 'paywall_gate',
+          ticker: ticker || undefined,
+          stage: mode === "friday_report" ? 4 : 5,
+        });
+      }
 
       setStoredEmail(email);
       unlockPaywall(ticker);

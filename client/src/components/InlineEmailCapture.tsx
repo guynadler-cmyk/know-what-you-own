@@ -33,10 +33,20 @@ export function InlineEmailCapture({ ticker, onUnlocked }: InlineEmailCapturePro
     trackEvent("paywall_email_submitted", "paywall", `${ticker}|variant=friday_report|source=inline`);
 
     try {
-      await apiRequest("POST", "/api/waitlist", {
+      const response = await apiRequest("POST", "/api/waitlist", {
         email,
         stageName: `Paywall Gate - ${ticker.toUpperCase()}`,
       });
+      const result = await response.json();
+
+      if (result.isNewLead) {
+        const { analytics } = await import("@/lib/analytics");
+        analytics.trackNewLead({
+          lead_source: 'inline_gate',
+          ticker: ticker || undefined,
+          stage: 4,
+        });
+      }
 
       setStoredEmail(email);
       unlockPaywall(ticker);
