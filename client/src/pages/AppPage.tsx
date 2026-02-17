@@ -265,6 +265,21 @@ export default function AppPage() {
     if (stage === 2 && currentTicker && !financialMetrics) {
       fetchFinancialMetrics(currentTicker);
     }
+
+    if (stage === 2 && currentTicker) {
+      queryClient.prefetchQuery({
+        queryKey: [`/api/valuation/${currentTicker}`],
+      });
+      const tf = (typeof window !== 'undefined' && localStorage.getItem('timing-timeframe') === 'daily') ? 'daily' : 'weekly';
+      queryClient.prefetchQuery({
+        queryKey: ['/api/timing', currentTicker, tf],
+        queryFn: async () => {
+          const res = await fetch(`/api/timing/${currentTicker}?timeframe=${tf}`);
+          if (!res.ok) throw new Error('Prefetch failed');
+          return res.json();
+        },
+      });
+    }
   };
 
   const handleNextStage = () => {
