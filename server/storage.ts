@@ -3,6 +3,7 @@ import {
   users,
   waitlistSignups,
   scheduledCheckupEmails,
+  watchlistItems,
   type User,
   type UpsertUser,
   type InsertWaitlistSignup,
@@ -10,10 +11,12 @@ import {
   type InsertScheduledCheckup,
   type ScheduledCheckupEmail,
   type Lead,
+  type WatchlistItem,
+  type WatchlistSnapshot,
 } from "@shared/schema";
 import { db } from "./db";
 import { internalDb } from "./internalDb";
-import { eq, or, and, like } from "drizzle-orm";
+import { eq, or, and, like, desc } from "drizzle-orm";
 
 
 // In-memory lead storage
@@ -37,6 +40,13 @@ export interface IStorage {
   
   // Email deduplication
   isEmailNew(email: string): Promise<boolean>;
+  
+  // Watchlist operations
+  getWatchlistItems(userId: string): Promise<WatchlistItem[]>;
+  addWatchlistItem(userId: string, data: { ticker: string; companyName: string; notes?: string | null; snapshot: WatchlistSnapshot }): Promise<WatchlistItem>;
+  updateWatchlistNotes(id: string, userId: string, notes: string | null): Promise<WatchlistItem | undefined>;
+  removeWatchlistItem(id: string, userId: string): Promise<boolean>;
+  getWatchlistItem(userId: string, ticker: string): Promise<WatchlistItem | undefined>;
   
   // Lead operations (in-memory)
   addLead(lead: Lead): void;
@@ -135,6 +145,55 @@ export class DatabaseStorage implements IStorage {
     if (checkupMatch) return false;
 
     return true;
+  }
+
+  // Watchlist operations
+  async getWatchlistItems(userId: string): Promise<WatchlistItem[]> {
+    return await internalDb
+      .select()
+      .from(watchlistItems)
+      .where(eq(watchlistItems.userId, userId))
+      .orderBy(desc(watchlistItems.createdAt));
+  }
+
+  async addWatchlistItem(userId: string, data: { ticker: string; companyName: string; notes?: string | null; snapshot: WatchlistSnapshot }): Promise<WatchlistItem> {
+    const [item] = await internalDb
+      .insert(watchlistItems)
+      .values({
+        userId,
+        ticker: data.ticker.toUpperCase(),
+        companyName: data.companyName,
+        notes: data.notes || null,
+        snapshot: data.snapshot,
+      })
+      .returning();
+    return item;
+  }
+
+  async updateWatchlistNotes(id: string, userId: string, notes: string | null): Promise<WatchlistItem | undefined> {
+    const [item] = await internalDb
+      .update(watchlistItems)
+      .set({ notes, updatedAt: new Date() })
+      .where(and(eq(watchlistItems.id, id), eq(watchlistItems.userId, userId)))
+      .returning();
+    return item;
+  }
+
+  async removeWatchlistItem(id: string, userId: string): Promise<boolean> {
+    const result = await internalDb
+      .delete(watchlistItems)
+      .where(and(eq(watchlistItems.id, id), eq(watchlistItems.userId, userId)))
+      .returning();
+    return result.length > 0;
+  }
+
+  async getWatchlistItem(userId: string, ticker: string): Promise<WatchlistItem | undefined> {
+    const [item] = await internalDb
+      .select()
+      .from(watchlistItems)
+      .where(and(eq(watchlistItems.userId, userId), eq(watchlistItems.ticker, ticker.toUpperCase())))
+      .limit(1);
+    return item;
   }
 
   // Lead operations (in-memory)

@@ -620,6 +620,64 @@ export const aiFootnotesAnalysis = pgTable("ai_footnotes_analysis", {
   createdAt: timestamp("created_at").defaultNow(),
 });
 
+// Watchlist table for saved stock analyses
+export const watchlistItems = pgTable("watchlist_items", {
+  id: varchar("id")
+    .primaryKey()
+    .default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull(),
+  ticker: varchar("ticker", { length: 10 }).notNull(),
+  companyName: varchar("company_name", { length: 255 }).notNull(),
+  notes: text("notes"),
+  snapshot: jsonb("snapshot").notNull().$type<WatchlistSnapshot>(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+export interface WatchlistSnapshot {
+  performance?: {
+    fundamentalsScore?: string;
+    revenueGrowth?: string;
+    earningsGrowth?: string;
+    revenueChangePercent?: number;
+    earningsChangePercent?: number;
+  };
+  valuation?: {
+    sensibleCount?: number;
+    totalQuadrants?: number;
+    earningsYieldFormatted?: string;
+    returnOnCapitalFormatted?: string;
+    verdict?: string;
+  };
+  timing?: {
+    supportiveCount?: number;
+    totalSignals?: number;
+    trendLabel?: string;
+    momentumLabel?: string;
+  };
+  strategy?: {
+    convictionValue?: number;
+    convictionLabel?: string;
+    totalAmount?: number;
+    tranches?: any[];
+    imWrongIf?: string;
+  };
+  reminders?: {
+    selectedCheckins?: string[];
+    reminderDates?: { type: string; date: string }[];
+  };
+}
+
+export const insertWatchlistItemSchema = z.object({
+  ticker: z.string().min(1).max(10),
+  companyName: z.string().min(1).max(255),
+  notes: z.string().max(2000).optional().nullable(),
+  snapshot: z.any(),
+});
+
+export type InsertWatchlistItem = z.infer<typeof insertWatchlistItemSchema>;
+export type WatchlistItem = typeof watchlistItems.$inferSelect;
+
 // Lead capture schema for in-memory storage
 export const leadSchema = z.object({
   email: z.string().email(),

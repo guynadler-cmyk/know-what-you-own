@@ -14,9 +14,10 @@ import { StageContent } from "@/components/StageContent";
 import { EmailPaywall } from "@/components/EmailPaywall";
 import { InlineEmailCapture } from "@/components/InlineEmailCapture";
 import { TickerFollowPrompt } from "@/components/TickerFollowPrompt";
+import { SaveToWatchlist } from "@/components/SaveToWatchlist";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, ArrowRight } from "lucide-react";
-import { CompanySummary, FinancialMetrics, BalanceSheetMetrics } from "@shared/schema";
+import { CompanySummary, FinancialMetrics, BalanceSheetMetrics, WatchlistSnapshot } from "@shared/schema";
 import { analytics } from "@/lib/analytics";
 import {
   type PaywallState,
@@ -317,6 +318,72 @@ export default function AppPage() {
 
   const buttonText = getStageButtonText();
 
+  const getWatchlistSnapshot = (): WatchlistSnapshot => {
+    const snapshot: WatchlistSnapshot = {};
+
+    if (financialMetrics) {
+      snapshot.performance = {
+        fundamentalsScore: undefined,
+        revenueGrowth: financialMetrics.revenueGrowth,
+        earningsGrowth: financialMetrics.earningsGrowth,
+        revenueChangePercent: financialMetrics.revenueChangePercent,
+        earningsChangePercent: financialMetrics.earningsChangePercent,
+      };
+    }
+
+    const valuationData = queryClient.getQueryData([`/api/valuation/${currentTicker}`]) as any;
+    if (valuationData) {
+      const sensibleCount = valuationData.quadrants?.filter((q: any) => q.strength === "sensible").length ?? 0;
+      const totalQuadrants = valuationData.quadrants?.length ?? 0;
+      snapshot.valuation = {
+        sensibleCount,
+        totalQuadrants,
+        earningsYieldFormatted: valuationData.earningsYieldFormatted,
+        returnOnCapitalFormatted: valuationData.returnOnCapitalFormatted,
+        verdict: valuationData.verdict,
+      };
+    }
+
+    const tf = (typeof window !== 'undefined' && localStorage.getItem('timing-timeframe') === 'daily') ? 'daily' : 'weekly';
+    const timingData = queryClient.getQueryData(['/api/timing', currentTicker, tf]) as any;
+    if (timingData) {
+      const modules = timingData.modules || {};
+      let supportive = 0;
+      let total = 0;
+      Object.values(modules).forEach((m: any) => {
+        if (m?.quadrant) {
+          total++;
+          if (["bullish", "improving", "bounce_setup", "momentum_aligning"].includes(m.quadrant)) supportive++;
+        }
+      });
+      snapshot.timing = {
+        supportiveCount: supportive,
+        totalSignals: total,
+        trendLabel: modules.trend?.label,
+        momentumLabel: modules.momentum?.label,
+      };
+    }
+
+    const strategyKey = `strategyPlan:${currentTicker}`;
+    if (typeof window !== 'undefined') {
+      try {
+        const saved = localStorage.getItem(strategyKey);
+        if (saved) {
+          const plan = JSON.parse(saved);
+          snapshot.strategy = {
+            convictionValue: plan.convictionValue,
+            convictionLabel: plan.convictionLabel,
+            totalAmount: plan.totalAmount,
+            tranches: plan.tranches,
+            imWrongIf: plan.imWrongIf,
+          };
+        }
+      } catch {}
+    }
+
+    return snapshot;
+  };
+
   const pageTitle = summaryData 
     ? `${summaryData.companyName} (${currentTicker}) Analysis | Restnvest`
     : "Analyze Stocks | Restnvest";
@@ -360,7 +427,7 @@ export default function AppPage() {
 
         {viewState === "success" && summaryData && (
           <div className="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8" data-active-ticker={currentTicker}>
-            <div className="mb-12 text-center">
+            <div className="mb-12 flex items-center justify-center gap-3 flex-wrap">
               <Button 
                 variant="outline" 
                 onClick={handleBack}
@@ -370,6 +437,11 @@ export default function AppPage() {
                 <ArrowLeft className="mr-2 h-4 w-4" />
                 New Search
               </Button>
+              <SaveToWatchlist
+                ticker={currentTicker}
+                companyName={summaryData.companyName}
+                getSnapshot={getWatchlistSnapshot}
+              />
             </div>
             
             <JourneyNarrative />

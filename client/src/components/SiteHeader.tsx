@@ -1,7 +1,9 @@
 import { useState } from "react";
 import { Link, useLocation } from "wouter";
+import { useQuery } from "@tanstack/react-query";
 import { ThemeToggle } from "./ThemeToggle";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import {
@@ -12,8 +14,9 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Menu, Search, X, LogIn, LogOut, User } from "lucide-react";
+import { Menu, Search, X, LogIn, LogOut, User, Bookmark } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
+import { getQueryFn } from "@/lib/queryClient";
 import ChatGPT_Image_Jan_22__2026__01_43_07_PM_cropped from "@assets/ChatGPT Image Jan 22, 2026, 01_43_07 PM_cropped.png";
 
 const navLinks = [
@@ -27,6 +30,14 @@ const navLinks = [
 
 function UserMenu() {
   const { user, isLoading, isAuthenticated } = useAuth();
+
+  const { data: watchlistItems } = useQuery<any[]>({
+    queryKey: ["/api/watchlist"],
+    queryFn: getQueryFn({ on401: "returnNull" }),
+    enabled: isAuthenticated,
+    staleTime: 60 * 1000,
+  });
+  const watchlistCount = watchlistItems?.length ?? 0;
 
   if (isLoading) {
     return <div className="h-9 w-9 rounded-full bg-muted animate-pulse" />;
@@ -73,6 +84,15 @@ function UserMenu() {
         </DropdownMenuLabel>
         <DropdownMenuSeparator />
         <DropdownMenuItem asChild>
+          <Link href="/watchlist" className="cursor-pointer" data-testid="link-watchlist">
+            <Bookmark className="mr-2 h-4 w-4" />
+            My Watchlist
+            {watchlistCount > 0 && (
+              <Badge variant="secondary" className="ml-auto text-xs no-default-active-elevate">{watchlistCount}</Badge>
+            )}
+          </Link>
+        </DropdownMenuItem>
+        <DropdownMenuItem asChild>
           <a href="/api/logout" className="cursor-pointer" data-testid="button-sign-out">
             <LogOut className="mr-2 h-4 w-4" />
             Sign out
@@ -87,6 +107,14 @@ export function SiteHeader() {
   const [location] = useLocation();
   const [mobileOpen, setMobileOpen] = useState(false);
   const { user, isAuthenticated } = useAuth();
+
+  const { data: watchlistData } = useQuery<any[]>({
+    queryKey: ["/api/watchlist"],
+    queryFn: getQueryFn({ on401: "returnNull" }),
+    enabled: isAuthenticated,
+    staleTime: 60 * 1000,
+  });
+  const mobileWatchlistCount = watchlistData?.length ?? 0;
 
   return (
     <header
@@ -207,17 +235,33 @@ export function SiteHeader() {
                     </div>
                   ) : null}
                   {isAuthenticated ? (
-                    <a href="/api/logout">
-                      <Button
-                        variant="outline"
-                        className="w-full gap-2"
-                        onClick={() => setMobileOpen(false)}
-                        data-testid="button-mobile-sign-out"
-                      >
-                        <LogOut className="h-4 w-4" />
-                        Sign out
-                      </Button>
-                    </a>
+                    <>
+                      <Link href="/watchlist">
+                        <Button
+                          variant="ghost"
+                          className={`w-full justify-start gap-2 ${location === "/watchlist" ? "bg-muted text-foreground" : "text-muted-foreground"}`}
+                          onClick={() => setMobileOpen(false)}
+                          data-testid="link-mobile-watchlist"
+                        >
+                          <Bookmark className="h-4 w-4" />
+                          My Watchlist
+                          {mobileWatchlistCount > 0 && (
+                            <Badge variant="secondary" className="ml-auto text-xs no-default-active-elevate">{mobileWatchlistCount}</Badge>
+                          )}
+                        </Button>
+                      </Link>
+                      <a href="/api/logout">
+                        <Button
+                          variant="outline"
+                          className="w-full gap-2"
+                          onClick={() => setMobileOpen(false)}
+                          data-testid="button-mobile-sign-out"
+                        >
+                          <LogOut className="h-4 w-4" />
+                          Sign out
+                        </Button>
+                      </a>
+                    </>
                   ) : (
                     <a href="/api/login">
                       <Button

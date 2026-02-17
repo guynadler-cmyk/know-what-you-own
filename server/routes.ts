@@ -976,6 +976,7 @@ import {
   finePrintAnalysisSchema,
   insertWaitlistSignupSchema,
   insertScheduledCheckupSchema,
+  insertWatchlistItemSchema,
   valuationMetricsSchema,
   timingAnalysisSchema,
   leadSchema,
@@ -983,6 +984,7 @@ import {
 
 import { alphaVantageService } from "./services/alphavantage";
 import { storage } from "./storage";
+import { isAuthenticated } from "./replitAuth";
 import { z } from "zod";
 import {
   getBusinessByCacheKey,
@@ -2289,6 +2291,88 @@ export async function registerRoutes(app: Express): Promise<Server> {
         error: "Failed to send message",
         message: "Something went wrong. Please try again.",
       });
+    }
+  });
+
+  // --------------------------------------------------------------------------
+  // WATCHLIST
+  // --------------------------------------------------------------------------
+  app.get("/api/watchlist", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user?.claims?.sub;
+      if (!userId) return res.status(401).json({ message: "Unauthorized" });
+      const items = await storage.getWatchlistItems(userId);
+      res.json(items);
+    } catch (error: any) {
+      console.error("[watchlist] Error fetching:", error);
+      res.status(500).json({ error: "Failed to fetch watchlist" });
+    }
+  });
+
+  app.get("/api/watchlist/check/:ticker", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user?.claims?.sub;
+      if (!userId) return res.status(401).json({ message: "Unauthorized" });
+      const item = await storage.getWatchlistItem(userId, req.params.ticker);
+      res.json({ saved: !!item, item: item || null });
+    } catch (error: any) {
+      console.error("[watchlist] Error checking:", error);
+      res.status(500).json({ error: "Failed to check watchlist" });
+    }
+  });
+
+  app.post("/api/watchlist", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user?.claims?.sub;
+      if (!userId) return res.status(401).json({ message: "Unauthorized" });
+
+      const parsed = insertWatchlistItemSchema.safeParse(req.body);
+      if (!parsed.success) {
+        return res.status(400).json({ error: "Invalid data", details: parsed.error.flatten() });
+      }
+
+      const existing = await storage.getWatchlistItem(userId, parsed.data.ticker);
+      if (existing) {
+        return res.status(409).json({ error: "Already in watchlist", item: existing });
+      }
+
+      const item = await storage.addWatchlistItem(userId, {
+        ticker: parsed.data.ticker,
+        companyName: parsed.data.companyName,
+        notes: parsed.data.notes,
+        snapshot: parsed.data.snapshot,
+      });
+      res.status(201).json(item);
+    } catch (error: any) {
+      console.error("[watchlist] Error adding:", error);
+      res.status(500).json({ error: "Failed to add to watchlist" });
+    }
+  });
+
+  app.patch("/api/watchlist/:id/notes", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user?.claims?.sub;
+      if (!userId) return res.status(401).json({ message: "Unauthorized" });
+      const { notes } = req.body;
+      const item = await storage.updateWatchlistNotes(req.params.id, userId, notes ?? null);
+      if (!item) return res.status(404).json({ error: "Not found" });
+      res.json(item);
+    } catch (error: any) {
+      console.error("[watchlist] Error updating notes:", error);
+      res.status(500).json({ error: "Failed to update notes" });
+    }
+  });
+
+  app.delete("/api/watchlist/:id", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user?.claims?.sub;
+      if (!userId) return res.status(401).json({ message: "Unauthorized" });
+      const removed = await storage.removeWatchlistItem(req.params.id, userId);
+      if (!removed) return res.status(404).json({ error: "Not found" });
+      res.json({ success: true });
+    } catch (error: any) {
+      console.error("[watchlist] Error removing:", error);
+      res.status(500).json({ error: "Failed to remove from watchlist" });
     }
   });
 
