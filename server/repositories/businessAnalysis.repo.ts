@@ -1,4 +1,4 @@
-import { db } from "../db";
+import { analysisDb } from "../db/analysisDb";
 import { aiBusinessAnalysis } from "@shared/schema";
 import { eq } from "drizzle-orm";
 import type { CompanySummary } from "@shared/schema";
@@ -6,7 +6,7 @@ import type { CompanySummary } from "@shared/schema";
 export async function getBusinessByCacheKey(
   cacheKey: string
 ): Promise<CompanySummary | null> {
-  const rows = await db
+  const rows = await analysisDb
     .select({ result: aiBusinessAnalysis.result })
     .from(aiBusinessAnalysis)
     .where(eq(aiBusinessAnalysis.cacheKey, cacheKey))
@@ -24,7 +24,7 @@ export async function insertBusinessAnalysis(params: {
   filingDate: string;
   result: CompanySummary;
 }) {
-  await db
+  await analysisDb
     .insert(aiBusinessAnalysis)
     .values({
       cacheKey: params.cacheKey,

@@ -374,6 +374,10 @@
 
 //       const businessSection = await secService.get10KBusinessSection(cik, accessionNumber);
 
+<<<<<<< Updated upstream
+=======
+
+>>>>>>> Stashed changes
 //       const summary = await openaiService.analyzeBusiness(
 //         name,
 //         ticker.toUpperCase(),
@@ -739,6 +743,10 @@
 //   }
 // });
 
+<<<<<<< Updated upstream
+=======
+
+>>>>>>> Stashed changes
 //   // --------------------------------------------------------------------------
 //   // LOGO PROXY (Clearbit)
 //   // --------------------------------------------------------------------------
@@ -809,8 +817,13 @@
 
 //       console.log(`Waitlist signup: ${validatedData.email} for "${validatedData.stageName}"`);
 
+<<<<<<< Updated upstream
 //       res.status(201).json({
 //         success: true,
+=======
+//       res.status(201).json({ 
+//         success: true, 
+>>>>>>> Stashed changes
 //         message: "You're on the list! We'll notify you when this feature launches.",
 //         id: signup.id
 //       });
@@ -1011,6 +1024,190 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // // --------------------------------------------------------------------------
+  // // ANALYZE ENDPOINT
+  // // --------------------------------------------------------------------------
+  // app.get("/api/analyze/:ticker", async (req: any, res) => {
+  //   try {
+  //     const { ticker } = req.params;
+
+  //     if (!ticker || !/^[A-Z]{1,5}$/i.test(ticker)) {
+  //       return res.status(400).json({
+  //         error: "Invalid ticker format. Please provide 1-5 letter ticker symbol."
+  //       });
+  //     }
+
+  //     const { cik, name } = await secService.getCompanyInfo(ticker.toUpperCase());
+
+  //     const start = performance.now();
+  //     const { accessionNumber, filingDate, fiscalYear } = await secService.getLatest10K(cik);
+
+  //     const businessSection = await secService.get10KBusinessSection(cik, accessionNumber);
+
+  //     const summary = await openaiService.analyzeBusiness(
+  //       name,
+  //       ticker.toUpperCase(),
+  //       businessSection,
+  //       filingDate,
+  //       fiscalYear,
+  //       cik
+  //     );
+
+  //     const end = performance.now();
+  //     console.log(`getLatest10K took ${(end - start).toFixed(2)} ms`);
+
+  //     // Fetch 5 years of data for temporal analysis with timeout
+  //     let temporalAnalysis;
+  //     try {
+  //       const yearlyData = await secService.get5YearsBusinessSections(cik);
+
+  //       if (yearlyData.length >= 2) {
+  //         console.log(`Starting temporal analysis for ${ticker} with ${yearlyData.length} years of data`);
+
+  //         const timeoutPromise = new Promise((_, reject) =>
+  //           setTimeout(() => reject(new Error("Temporal analysis timeout")), 30000)
+  //         );
+
+  //         const analysisPromise = openaiService.analyzeTemporalChanges(
+  //           name,
+  //           ticker.toUpperCase(),
+  //           yearlyData
+  //         );
+
+  //         temporalAnalysis = await Promise.race([analysisPromise, timeoutPromise]) as any;
+  //         console.log(`Temporal analysis completed for ${ticker}`);
+  //       }
+  //     } catch (temporalError) {
+  //       console.warn("Temporal analysis failed, continuing without it:", temporalError);
+  //     }
+
+  //     const validated = companySummarySchema.parse({
+  //       ...summary,
+  //       ...(temporalAnalysis ? { temporalAnalysis } : {})
+  //     });
+
+  //     res.json(validated);
+
+  //   } catch (error: any) {
+  //     console.error("Analysis error:", error);
+
+  //     if (error.message?.includes("not found")) {
+  //       return res.status(404).json({
+  //         error: "Company Not Found",
+  //         message: `We couldn't find "${req.params.ticker.toUpperCase()}" in our database. Double-check the ticker symbol and try again.`
+  //       });
+  //     }
+
+  //     if (error.message?.includes("No 10-K")) {
+  //       return res.status(404).json({
+  //         error: "No 10-K Available",
+  //         message: `${req.params.ticker.toUpperCase()} doesn't have a 10-K filing available yet.`
+  //       });
+  //     }
+
+  //     if (error.message?.includes("business section") || error.message?.includes("business description")) {
+  //       return res.status(500).json({
+  //         error: "Filing Format Error",
+  //         message: "We had trouble reading this company's 10-K filing."
+  //       });
+  //     }
+
+  //     if (error.status === 429) {
+  //       return res.status(429).json({
+  //         error: "Too Many Requests",
+  //         message: "Our AI service is experiencing high demand. Please wait a moment and try again."
+  //       });
+  //     }
+
+  //     if (error.status >= 500 || error.code === "ECONNRESET" || error.code === "ETIMEDOUT") {
+  //       return res.status(503).json({
+  //         error: "Service Temporarily Unavailable",
+  //         message: "Our analysis service is temporarily unavailable. Please try again in a few moments."
+  //       });
+  //     }
+
+  //     if (error.response?.status === 429) {
+  //       return res.status(429).json({
+  //         error: "Rate Limited",
+  //         message: "We're receiving too many requests right now. Please wait a minute and try again."
+  //       });
+  //     }
+
+  //     if (error.response?.status >= 500) {
+  //       return res.status(503).json({
+  //         error: "SEC Database Unavailable",
+  //         message: "The SEC's database is temporarily unavailable."
+  //       });
+  //     }
+
+  //     res.status(500).json({
+  //       error: "Analysis Failed",
+  //       message: "Something went wrong while analyzing this company. Please try again."
+  //     });
+  //   }
+  // });
+
+  // --------------------------------------------------------------------------
+  // FINE PRINT ANALYSIS
+  // --------------------------------------------------------------------------
+  app.get("/api/analyze/:ticker/fine-print", async (req: any, res) => {
+    try {
+      const { ticker } = req.params;
+
+      if (!ticker || !/^[A-Z]{1,5}$/i.test(ticker)) {
+        return res.status(400).json({
+          error: "Invalid ticker format. Please provide 1-5 letter ticker symbol."
+        });
+      }
+
+      const { cik, name } = await secService.getCompanyInfo(ticker.toUpperCase());
+      const { accessionNumber, filingDate, fiscalYear } = await secService.getLatest10K(cik);
+
+      const footnotesSection = await secService.get10KFootnotesSection(cik, accessionNumber);
+
+      const finePrintAnalysis = await openaiService.analyzeFootnotes(
+        name,
+        ticker.toUpperCase(),
+        footnotesSection,
+        fiscalYear,
+        filingDate
+      );
+
+      const validated = finePrintAnalysisSchema.parse(finePrintAnalysis);
+
+      res.json(validated);
+
+    } catch (error: any) {
+      console.error("Fine print analysis error:", error);
+
+      if (error.message?.includes("not found")) {
+        return res.status(404).json({
+          error: "Ticker not found",
+          message: `Could not find company information for ticker "${req.params.ticker}"`
+        });
+      }
+
+      if (error.message?.includes("No 10-K")) {
+        res.status(404).json({
+          error: "No Annual Filing Available",
+          message: "No 10-K / 20-F / 40-F filing found for this company.",
+        });
+      }
+
+      if (error.message?.includes("Could not extract footnotes")) {
+        return res.status(404).json({
+          error: "Footnotes not found",
+          message: "Could not extract footnotes section from the 10-K filing"
+        });
+      }
+
+      res.status(500).json({
+        error: "Analysis failed",
+        message: "Unable to analyze footnotes. Please try again later."
+      });
+    }
+  });
+
   // --------------------------------------------------------------------------
   // ANALYZE ENDPOINT
   // --------------------------------------------------------------------------
@@ -1162,6 +1359,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+<<<<<<< Updated upstream
   // --------------------------------------------------------------------------
   // FINE PRINT ANALYSIS
   // --------------------------------------------------------------------------
@@ -1228,6 +1426,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
     }
   });
+=======
+>>>>>>> Stashed changes
 
   // --------------------------------------------------------------------------
   // FINANCIAL METRICS
@@ -1444,12 +1644,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // --------------------------------------------------------------------------
   // LOGO PROXY
   // --------------------------------------------------------------------------
+<<<<<<< Updated upstream
   const logoCache = new Map<
     string,
     { data: Buffer; contentType: string; timestamp: number }
   >();
   const LOGO_CACHE_TTL = 24 * 60 * 60 * 1000;
 
+=======
+>>>>>>> Stashed changes
   app.get("/api/logo/:domain", async (req: any, res) => {
     try {
       let { domain } = req.params;
@@ -1908,6 +2111,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/waitlist", async (req: any, res) => {
     try {
       const validatedData = insertWaitlistSignupSchema.parse(req.body);
+<<<<<<< Updated upstream
       const isNewLead = await storage.isEmailNew(validatedData.email);
       const signup = await storage.createWaitlistSignup(validatedData);
 
@@ -1921,6 +2125,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
           "You're on the list! We'll notify you when this feature launches.",
         id: signup.id,
         isNewLead,
+=======
+
+      const signup = await storage.createWaitlistSignup(validatedData);
+
+      console.log(`Waitlist signup: ${validatedData.email} for "${validatedData.stageName}"`);
+
+      res.status(201).json({
+        success: true,
+        message: "You're on the list! We'll notify you when this feature launches.",
+        id: signup.id
+>>>>>>> Stashed changes
       });
     } catch (error: any) {
       console.error("Waitlist signup error:", error);
@@ -2004,7 +2219,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (!ticker || !/^[A-Z]{1,5}$/i.test(ticker)) {
         return res.status(400).json({
           error: "Invalid ticker format",
+<<<<<<< Updated upstream
           message: "Please provide 1-5 letter ticker symbol.",
+=======
+          message: "Please provide 1-5 letter ticker symbol."
+>>>>>>> Stashed changes
         });
       }
 
@@ -2277,6 +2496,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
     }
   });
+<<<<<<< Updated upstream
   
   const contactSchema = z.object({
     name: z.string().min(1).max(200),
@@ -2350,6 +2570,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
     }
   });
+=======
+>>>>>>> Stashed changes
 
   const httpServer = createServer(app);
   return httpServer;

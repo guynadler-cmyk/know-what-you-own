@@ -11,12 +11,17 @@ import {
   type ScheduledCheckupEmail,
   type Lead,
 } from "@shared/schema";
+<<<<<<< Updated upstream
   import { db } from "./db";
   import { eq, or } from "drizzle-orm";
 
 
 // In-memory lead storage
 const leads: Lead[] = [];
+=======
+import { appDb } from "./db/appDb";
+import { eq } from "drizzle-orm";
+>>>>>>> Stashed changes
 
 // Storage interface
 export interface IStorage {
@@ -44,12 +49,20 @@ export interface IStorage {
 export class DatabaseStorage implements IStorage {
   // User operations (required for Replit Auth)
   async getUser(id: string): Promise<User | undefined> {
+<<<<<<< Updated upstream
     const [user] = await internalDb.select().from(users).where(eq(users.id, id));
+=======
+    const [user] = await appDb.select().from(users).where(eq(users.id, id));
+>>>>>>> Stashed changes
     return user;
   }
 
   async upsertUser(userData: UpsertUser): Promise<User> {
+<<<<<<< Updated upstream
     const [user] = await internalDb
+=======
+    const [user] = await appDb
+>>>>>>> Stashed changes
       .insert(users)
       .values(userData)
       .onConflictDoUpdate({
@@ -65,7 +78,11 @@ export class DatabaseStorage implements IStorage {
 
   // Waitlist operations
   async createWaitlistSignup(data: InsertWaitlistSignup): Promise<WaitlistSignup> {
+<<<<<<< Updated upstream
     const [signup] = await internalDb
+=======
+    const [signup] = await appDb
+>>>>>>> Stashed changes
       .insert(waitlistSignups)
       .values({ ...data, email: data.email.toLowerCase().trim() })
       .returning();
@@ -73,12 +90,20 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getWaitlistSignups(): Promise<WaitlistSignup[]> {
+<<<<<<< Updated upstream
     return await internalDb.select().from(waitlistSignups);
+=======
+    return await appDb.select().from(waitlistSignups);
+>>>>>>> Stashed changes
   }
 
   // Scheduled checkup operations
   async createScheduledCheckup(data: InsertScheduledCheckup): Promise<ScheduledCheckupEmail> {
+<<<<<<< Updated upstream
     const [checkup] = await internalDb
+=======
+    const [checkup] = await appDb
+>>>>>>> Stashed changes
       .insert(scheduledCheckupEmails)
       .values({ ...data, email: data.email.toLowerCase().trim() })
       .returning();
@@ -86,6 +111,7 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getScheduledCheckups(): Promise<ScheduledCheckupEmail[]> {
+<<<<<<< Updated upstream
     return await internalDb.select().from(scheduledCheckupEmails);
   }
 
@@ -115,6 +141,9 @@ export class DatabaseStorage implements IStorage {
 
   getLeads(): Lead[] {
     return [...leads];
+=======
+    return await appDb.select().from(scheduledCheckupEmails);
+>>>>>>> Stashed changes
   }
 }
 

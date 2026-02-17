@@ -202,6 +202,44 @@ export const finePrintAnalysisSchema = z.object({
   otherMaterialDisclosures: z.array(finePrintItemSchema),
 });
 
+export const aiBusinessAnalysis = pgTable("ai_business_analysis", {
+  cacheKey: text("cache_key").primaryKey(),
+  companyName: text("company_name").notNull(),
+  ticker: text("ticker").notNull(),
+  cik: text("cik"),
+  fiscalYear: text("fiscal_year").notNull(),
+  filingDate: text("filing_date").notNull(),
+  result: jsonb("result").notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+export const aiTemporalAnalysis = pgTable("ai_temporal_analysis", {
+  cacheKey: text("cache_key").primaryKey(),
+
+  companyName: text("company_name").notNull(),
+  ticker: text("ticker").notNull(),
+  cik: text("cik"),
+  timeHorizon: text("time_horizon").notNull(),
+
+  yearsAnalyzed: jsonb("years_analyzed").$type<string[]>(),
+
+  result: jsonb("result").notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+
+export const aiFootnotesAnalysis = pgTable("ai_footnotes_analysis", {
+  cacheKey: text("cache_key").primaryKey(),
+  companyName: text("company_name").notNull(),
+  ticker: text("ticker").notNull(),
+  cik: text("cik"),
+  fiscalYear: text("fiscal_year").notNull(),
+  filingDate: text("filing_date").notNull(),
+  result: jsonb("result").notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+
 // Complete company summary schema
 export const companySummarySchema = z.object({
   companyName: z.string(),
@@ -584,6 +622,7 @@ export type TimingDebug = z.infer<typeof timingDebugSchema>;
 //
 
 /* ============================
+<<<<<<< Updated upstream
    SEC CACHING TABLES
    ============================ */
 
@@ -631,3 +670,7 @@ export const leadSchema = z.object({
 });
 
 export type Lead = z.infer<typeof leadSchema>;
+=======
+   SEC CACHING TABLES */
+
+>>>>>>> Stashed changes

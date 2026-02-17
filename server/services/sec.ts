@@ -325,7 +325,9 @@ export class SECService {
 
     const company = this.tickerCache.get(upperTicker);
     if (!company) {
-      throw new Error(`Ticker ${ticker} not found`);
+      throw new Error(`Ticker ${ticker} not found in SEC database. Try using a US-listed ticker or CIK.`
+      );
+
     }
 
     const cik = String(company.cik_str).padStart(10, '0');
@@ -350,16 +352,20 @@ export class SECService {
     }
 
     const { filings } = data;
-//     const response = await retryWithBackoff(async () => {
-//       return await axios.get<SECSubmission>(url, { headers: SEC_HEADERS });
-//     });
-//
-//     const { filings } = response.data;
+    //     const response = await retryWithBackoff(async () => {
+    //       return await axios.get<SECSubmission>(url, { headers: SEC_HEADERS });
+    //     });
+    //
+    //     const { filings } = response.data;
 
-    const index = filings.recent.form.findIndex(form => form === "10-K");
+    const annualForms = ["10-K", "20-F", "40-F"];
+
+    const index = filings.recent.form.findIndex((form) =>
+      annualForms.includes(form)
+    );
 
     if (index === -1) {
-      throw new Error("No 10-K filing found for this company");
+      throw new Error("No annual filing found (10-K / 20-F / 40-F)");
     }
 
     const accessionNumber = filings.recent.accessionNumber[index];
@@ -389,8 +395,8 @@ export class SECService {
 
     const { filings } = data;
 
-//     const response = await axios.get<SECSubmission>(url, { headers: SEC_HEADERS });
-//     const { filings } = response.data;                                       
+    //     const response = await axios.get<SECSubmission>(url, { headers: SEC_HEADERS });
+    //     const { filings } = response.data;                                       
 
     const tenKFilings: Array<{
       accessionNumber: string;
@@ -452,11 +458,11 @@ export class SECService {
       text = response.data;
       this.filingTextCache.set(cacheKey, text);
     }
-//         const response = await retryWithBackoff(async () => {
-//           return await axios.get(url, { headers: SEC_HEADERS });
-//         });
+    //         const response = await retryWithBackoff(async () => {
+    //           return await axios.get(url, { headers: SEC_HEADERS });
+    //         });
 
-//     const text = response.data;
+    //     const text = response.data;
 
     // Try multiple regex patterns to handle different 10-K formatting
     const patterns = [
@@ -468,17 +474,24 @@ export class SECService {
       'ITEM\\s+1[\\.\\:\\-]?\\s*(?:Business)?[\\r\\n]*(.*?)(?:ITEM\\s+(?:1A|1B|2))',
     ];
 
-    let businessMatch = null;
+    if (!text) {
+      console.error(`SEC filing text is null for CIK ${cik}, accession ${accessionNumber}`);
+      throw new Error("SEC filing text is missing or empty");
+    }
+
+    let businessMatch: RegExpMatchArray | null = null;
+
     for (const pattern of patterns) {
-      const regex = new RegExp(pattern, 'is');
+      const regex = new RegExp(pattern, "is");
       businessMatch = text.match(regex);
       if (businessMatch) break;
     }
 
-    if (!businessMatch || !businessMatch[1]) {
+    if (!businessMatch?.[1]) {
       console.error(`Failed to extract business section for CIK ${cik}, accession ${accessionNumber}`);
       throw new Error("Unable to find the business description in this 10-K filing");
     }
+
 
     let businessSection = businessMatch[1];
 
@@ -508,31 +521,43 @@ export class SECService {
       text = response.data;
       this.filingTextCache.set(cacheKey, text);
     }
-//     const response = await axios.get(url, { headers: SEC_HEADERS });
-//     const text = response.data;
+    //     const response = await axios.get(url, { headers: SEC_HEADERS });
+    //     const text = response.data;
 
     // Try multiple regex patterns to extract notes/footnotes
     // Footnotes typically appear in Item 8 after the financial statements
     const patterns = [
-      // Pattern: "Notes to" (Consolidated) Financial Statements
-      'Notes\\s+to\\s+(?:Consolidated\\s+)?Financial\\s+Statements(.*?)(?:ITEM\\s+9|ITEM\\s+15)',
-      // Pattern: Look for explicit "Note 1" or "NOTE 1" section
-      '(?:Note|NOTE)\\s+1[\\s\\-\\.\\:](.*?)(?:ITEM\\s+9|ITEM\\s+15)',
-      // Alternative: Item 8 content (contains financial statements and notes)
-      'ITEM\\s+8[\\.\\:\\-]?\\s*Financial\\s+Statements(.*?)ITEM\\s+9',
+      // Most common heading
+      '(NOTES\\s+TO\\s+(?:THE\\s+)?(?:CONSOLIDATED\\s+)?FINANCIAL\\s+STATEMENTS[\\s\\S]*?)(?:ITEM\\s+9A?|ITEM\\s+10|PART\\s+III|SIGNATURES)',
+
+      // Mixed-case version
+      '(Notes\\s+to\\s+(?:the\\s+)?(?:Consolidated\\s+)?Financial\\s+Statements[\\s\\S]*?)(?:ITEM\\s+9A?|ITEM\\s+10|PART\\s+III|SIGNATURES)',
+
+      // Note 1 start
+      '((?:NOTE|Note)\\s+1\\s*[-–—\\.:\\)]?[\\s\\S]*?)(?:ITEM\\s+9A?|ITEM\\s+10|PART\\s+III|SIGNATURES)',
+
+      // Item 8 fallback
+      '(ITEM\\s+8[\\s\\S]*?)(?:ITEM\\s+9A?|ITEM\\s+10|PART\\s+III|SIGNATURES)',
     ];
 
-    let footnotesMatch = null;
+    if (!text) {
+      console.error(`SEC filing text is null for CIK ${cik}, accession ${accessionNumber}`);
+      throw new Error("SEC filing text is missing or empty");
+    }
+
+    let footnotesMatch: RegExpMatchArray | null = null;
+
     for (const pattern of patterns) {
-      const regex = new RegExp(pattern, 'is');
+      const regex = new RegExp(pattern, "is");
       footnotesMatch = text.match(regex);
       if (footnotesMatch) break;
     }
 
-    if (!footnotesMatch || !footnotesMatch[1]) {
+    if (!footnotesMatch?.[1]) {
       console.error(`Failed to extract footnotes section for CIK ${cik}, accession ${accessionNumber}`);
       throw new Error("Could not extract footnotes section from 10-K");
     }
+
 
     let footnotesSection = footnotesMatch[1];
 
@@ -563,7 +588,7 @@ export class SECService {
       }
     });
   }
-  
+
   private normalizeForSearch(text: string): string {
     return text
       .toLowerCase()
