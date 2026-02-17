@@ -18,6 +18,9 @@ The site has a full marketing presence with shared SiteHeader (nav + mobile menu
 - `/privacy` - Privacy Policy
 - `/app` - Main analysis tool (unchanged)
 
+### Authentication (February 2026)
+Google sign-in via Replit Auth (OpenID Connect). Backend: `server/replitAuth.ts` handles login/logout/callback with passport + express-session backed by PostgreSQL (`sessions` table). `server/index.ts` calls `setupAuth(app)` before route registration and exposes `/api/auth/user`. Client: `client/src/hooks/use-auth.ts` provides `useAuth()` hook returning `{ user, isLoading, isAuthenticated }`. `SiteHeader.tsx` shows "Sign in" button (logged out) or avatar dropdown with sign-out (logged in) on both desktop and mobile. Auth routes: `/api/login`, `/api/logout`, `/api/callback`, `/api/auth/user`.
+
 ## User Preferences
 
 Preferred communication style: Simple, everyday language.

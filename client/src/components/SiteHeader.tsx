@@ -3,7 +3,17 @@ import { Link, useLocation } from "wouter";
 import { ThemeToggle } from "./ThemeToggle";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
-import { Menu, Search, X } from "lucide-react";
+import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { Menu, Search, X, LogIn, LogOut, User } from "lucide-react";
+import { useAuth } from "@/hooks/use-auth";
 import ChatGPT_Image_Jan_22__2026__01_43_07_PM_cropped from "@assets/ChatGPT Image Jan 22, 2026, 01_43_07 PM_cropped.png";
 
 const navLinks = [
@@ -15,9 +25,68 @@ const navLinks = [
   { label: "About", href: "/about" },
 ];
 
+function UserMenu() {
+  const { user, isLoading, isAuthenticated } = useAuth();
+
+  if (isLoading) {
+    return <div className="h-9 w-9 rounded-full bg-muted animate-pulse" />;
+  }
+
+  if (!isAuthenticated || !user) {
+    return (
+      <a href="/api/login" data-testid="button-sign-in">
+        <Button variant="outline" size="sm" className="gap-2">
+          <LogIn className="h-4 w-4" />
+          <span className="hidden sm:inline">Sign in</span>
+        </Button>
+      </a>
+    );
+  }
+
+  const initials = [user.first_name, user.last_name]
+    .filter(Boolean)
+    .map((n) => n!.charAt(0).toUpperCase())
+    .join("") || user.email?.charAt(0).toUpperCase() || "?";
+
+  const displayName = [user.first_name, user.last_name].filter(Boolean).join(" ") || user.email || "User";
+
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <Button variant="ghost" size="icon" className="rounded-full" data-testid="button-user-menu">
+          <Avatar className="h-8 w-8">
+            {user.profile_image_url && (
+              <AvatarImage src={user.profile_image_url} alt={displayName} />
+            )}
+            <AvatarFallback className="text-xs">{initials}</AvatarFallback>
+          </Avatar>
+        </Button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end" className="w-56">
+        <DropdownMenuLabel className="font-normal">
+          <div className="flex flex-col gap-1">
+            <p className="text-sm font-medium leading-none" data-testid="text-user-name">{displayName}</p>
+            {user.email && (
+              <p className="text-xs leading-none text-muted-foreground" data-testid="text-user-email">{user.email}</p>
+            )}
+          </div>
+        </DropdownMenuLabel>
+        <DropdownMenuSeparator />
+        <DropdownMenuItem asChild>
+          <a href="/api/logout" className="cursor-pointer" data-testid="button-sign-out">
+            <LogOut className="mr-2 h-4 w-4" />
+            Sign out
+          </a>
+        </DropdownMenuItem>
+      </DropdownMenuContent>
+    </DropdownMenu>
+  );
+}
+
 export function SiteHeader() {
   const [location] = useLocation();
   const [mobileOpen, setMobileOpen] = useState(false);
+  const { user, isAuthenticated } = useAuth();
 
   return (
     <header
@@ -59,6 +128,7 @@ export function SiteHeader() {
             </Button>
           </Link>
           <ThemeToggle />
+          <UserMenu />
 
           <Sheet open={mobileOpen} onOpenChange={setMobileOpen}>
             <SheetTrigger asChild>
@@ -112,7 +182,55 @@ export function SiteHeader() {
                     </Button>
                   </Link>
                 </nav>
-                <div className="mt-auto p-4 border-t border-border">
+                <div className="mt-auto p-4 border-t border-border space-y-2">
+                  {isAuthenticated && user ? (
+                    <div className="flex items-center gap-3 px-2 py-2">
+                      <Avatar className="h-8 w-8">
+                        {user.profile_image_url && (
+                          <AvatarImage src={user.profile_image_url} alt="Profile" />
+                        )}
+                        <AvatarFallback className="text-xs">
+                          {[user.first_name, user.last_name]
+                            .filter(Boolean)
+                            .map((n) => n!.charAt(0).toUpperCase())
+                            .join("") || "?"}
+                        </AvatarFallback>
+                      </Avatar>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-medium truncate" data-testid="text-mobile-user-name">
+                          {[user.first_name, user.last_name].filter(Boolean).join(" ") || "User"}
+                        </p>
+                        {user.email && (
+                          <p className="text-xs text-muted-foreground truncate">{user.email}</p>
+                        )}
+                      </div>
+                    </div>
+                  ) : null}
+                  {isAuthenticated ? (
+                    <a href="/api/logout">
+                      <Button
+                        variant="outline"
+                        className="w-full gap-2"
+                        onClick={() => setMobileOpen(false)}
+                        data-testid="button-mobile-sign-out"
+                      >
+                        <LogOut className="h-4 w-4" />
+                        Sign out
+                      </Button>
+                    </a>
+                  ) : (
+                    <a href="/api/login">
+                      <Button
+                        variant="outline"
+                        className="w-full gap-2"
+                        onClick={() => setMobileOpen(false)}
+                        data-testid="button-mobile-sign-in"
+                      >
+                        <LogIn className="h-4 w-4" />
+                        Sign in
+                      </Button>
+                    </a>
+                  )}
                   <Link href="/app">
                     <Button
                       className="w-full rounded-full gap-2"

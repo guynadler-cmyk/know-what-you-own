@@ -2,6 +2,7 @@ import express, { type Request, Response, NextFunction } from "express";
 import "dotenv/config";
 import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
+import { setupAuth } from "./replitAuth";
 
 const app = express();
 app.use(express.json());
@@ -74,6 +75,16 @@ app.use((req, res, next) => {
 
 (async () => {
   try {
+    await setupAuth(app);
+
+    app.get("/api/auth/user", (req, res) => {
+      if (req.isAuthenticated() && req.user) {
+        const user = req.user as any;
+        return res.json(user.claims);
+      }
+      return res.status(401).json({ message: "Not authenticated" });
+    });
+
     const server = await registerRoutes(app);
 
     app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
