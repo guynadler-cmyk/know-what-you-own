@@ -287,6 +287,8 @@ export const incomeMetricsSchema = z.object({
   currentEarnings: z.string(),
   previousEarnings: z.string(),
   earningsChangePercent: z.number(),
+  profitMarginPercent: z.number().optional(),
+  operatingMarginPercent: z.number().optional(),
   fiscalYear: z.string(),
   previousFiscalYear: z.string(),
 });

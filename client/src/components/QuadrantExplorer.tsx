@@ -8,8 +8,8 @@ import type { FinancialMetrics, BalanceSheetMetrics } from "@shared/schema";
 const TERM_DEFINITIONS: Record<string, string> = {
   "Revenue": "The total money a company earns from selling its products or services — before any expenses.",
   "Earnings": "What's left after all costs are paid. Also called 'net income' or 'profit.'",
-  "Cash": "Money the company has on hand. A safety cushion for tough times.",
-  "Coverage": "How well the company's cash and liquid assets cover its near-term bills and obligations.",
+  "Margins": "How much profit the company keeps from each dollar of sales. Higher is usually better.",
+  "FCF": "Free cash flow — the real cash left after the business pays its bills and reinvests. Money it can actually keep or use.",
   "Debt": "What the company owes. Some is fine, too much is risky.",
   "CapEx": "Spending to grow or maintain the business — like new equipment or upgrades.",
   "ROIC": "Return on invested capital — how well the company turns invested money into profits.",
@@ -60,20 +60,20 @@ export const QUADRANT_DATA: QuadrantData[] = [
   },
   {
     id: "profit-cash",
-    title: "Financial Cushion",
-    verdict: "Well Cushioned",
-    signals: ["Cash", "Coverage"],
+    title: "Profit Quality",
+    verdict: "Cash-Backed Profits",
+    signals: ["Margins", "FCF"],
     signalDirections: [true, true],
-    xLabel: "Short-Term Obligations",
-    yLabel: "Cash on Hand",
+    xLabel: "Profit Margins",
+    yLabel: "Free Cash Flow",
     zones: {
-      topRight: { label: "Well Cushioned", color: "green" },
-      topLeft: { label: "Cash Rich, Busy", color: "yellow" },
-      bottomRight: { label: "Stretched Thin", color: "blue" },
-      bottomLeft: { label: "Under Pressure", color: "red" },
+      topRight: { label: "Cash Machine", color: "green" },
+      topLeft: { label: "Cash-Rich, Low Margin", color: "yellow" },
+      bottomRight: { label: "Paper Profits", color: "blue" },
+      bottomLeft: { label: "Cash Burn", color: "red" },
     },
     position: { x: 68, y: 30 },
-    insight: "Plenty of cash relative to near-term bills. The company has room to handle surprises and act on opportunities.",
+    insight: "Profits are real and cash-backed. The business earns healthy margins and turns them into free cash flow — giving it flexibility to reinvest, build a buffer, or return capital.",
     strength: "strong",
   },
   {
@@ -167,17 +167,44 @@ export function generateQuadrantData(
     growthInsight = "Earnings are up despite flat or declining revenue. This could mean efficiency gains, but watch for sustainability if revenue doesn't recover.";
   }
 
-  // 2. Financial Cushion - based on balance sheet liquidity
-  const liquidityStatus = balanceSheetMetrics?.checks?.liquidity?.status ?? "strong";
-  
-  let liquidityStrength = statusToStrength(liquidityStatus);
-  let liquidityVerdict = liquidityStatus === "strong" ? "Well Cushioned" : 
-                         liquidityStatus === "caution" ? "Adequate Cushion" : "Thin Cushion";
-  let liquidityInsight = liquidityStatus === "strong" 
-    ? "Plenty of cash relative to near-term bills. The company has room to handle surprises and act on opportunities."
-    : liquidityStatus === "caution"
-    ? "The company can cover its near-term bills, but there isn't much extra cushion. Worth keeping an eye on."
-    : "Cash is tight relative to what's owed soon. If business slows down, this could become a real problem.";
+  // 2. Profit Quality - based on profit margin and operating margin (FCF proxy)
+  const profitMargin = financialMetrics?.profitMarginPercent ?? 0;
+  const operatingMargin = financialMetrics?.operatingMarginPercent ?? 0;
+
+  const MARGIN_THRESHOLD = 10;
+  const FCF_THRESHOLD = 10;
+
+  const highMargin = profitMargin >= MARGIN_THRESHOLD;
+  const highFcf = operatingMargin >= FCF_THRESHOLD;
+
+  let profitQualityStrength: SignalStrength;
+  let profitQualityVerdict: string;
+  let profitQualityInsight: string;
+
+  if (highMargin && highFcf) {
+    profitQualityStrength = "strong";
+    profitQualityVerdict = "Cash-Backed Profits";
+    profitQualityInsight = "Profits are real and cash-backed. The business earns healthy margins and turns them into free cash flow \u2014 giving it flexibility to reinvest, build a buffer, or return capital.";
+  } else if (!highMargin && highFcf) {
+    profitQualityStrength = "mixed";
+    profitQualityVerdict = "Cash Strong, Margins Thin";
+    profitQualityInsight = "Cash generation is solid, but profitability is thin. Watch whether margins improve as the business scales.";
+  } else if (highMargin && !highFcf) {
+    profitQualityStrength = "mixed";
+    profitQualityVerdict = "Profit Without Cash";
+    profitQualityInsight = "Profits aren't showing up as cash yet. This can reflect heavy reinvestment, working-capital drag, or earnings that don't convert cleanly.";
+  } else {
+    profitQualityStrength = "weak";
+    profitQualityVerdict = "Weak Profit Quality";
+    profitQualityInsight = "Neither profits nor cash flow look healthy. The business may rely on outside funding until performance improves.";
+  }
+
+  const getProfitQualityPosition = () => {
+    const clamp = (val: number) => Math.max(10, Math.min(90, val));
+    const x = clamp(50 + (profitMargin / 2));
+    const y = clamp(50 - (operatingMargin / 2));
+    return { x, y };
+  };
 
   // 3. Debt Burden - based on balance sheet
   const debtStatus = balanceSheetMetrics?.checks?.debtBurden?.status ?? "strong";
@@ -227,11 +254,11 @@ export function generateQuadrantData(
     },
     {
       ...QUADRANT_DATA[1],
-      verdict: liquidityVerdict,
-      position: statusToPosition(liquidityStatus),
-      insight: liquidityInsight,
-      signalDirections: [statusToSignal(liquidityStatus), statusToSignal(liquidityStatus)] as [boolean, boolean],
-      strength: liquidityStrength,
+      verdict: profitQualityVerdict,
+      position: getProfitQualityPosition(),
+      insight: profitQualityInsight,
+      signalDirections: [highMargin, highFcf] as [boolean, boolean],
+      strength: profitQualityStrength,
     },
     {
       ...QUADRANT_DATA[2],

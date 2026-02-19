@@ -238,6 +238,14 @@ export class AlphaVantageService {
         }
       };
 
+      const profitMarginPercent = currentRevenue !== 0
+        ? parseFloat(((currentEarnings / currentRevenue) * 100).toFixed(2))
+        : 0;
+      const currentOperatingIncome = safeParseFloat(currentReport.operatingIncome);
+      const operatingMarginPercent = currentRevenue !== 0
+        ? parseFloat(((currentOperatingIncome / currentRevenue) * 100).toFixed(2))
+        : 0;
+
       const metrics: FinancialMetrics = {
         ticker: upperTicker,
         revenueGrowth: revenueGrowth as 'growing' | 'declining',
@@ -248,6 +256,8 @@ export class AlphaVantageService {
         currentEarnings: formatCurrency(currentEarnings),
         previousEarnings: formatCurrency(previousEarnings),
         earningsChangePercent: parseFloat(earningsChangePercent.toFixed(2)),
+        profitMarginPercent,
+        operatingMarginPercent,
         fiscalYear: currentReport.fiscalDateEnding.substring(0, 4),
         previousFiscalYear: previousReport ? previousReport.fiscalDateEnding.substring(0, 4) : currentReport.fiscalDateEnding.substring(0, 4),
       };
