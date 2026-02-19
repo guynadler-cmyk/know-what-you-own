@@ -12,7 +12,7 @@ const TERM_DEFINITIONS: Record<string, string> = {
   "FCF": "Free cash flow — the real cash left after the business pays its bills and reinvests. Money it can actually keep or use.",
   "Debt": "What the company owes. Some is fine, too much is risky.",
   "Coverage": "How easily the company's earnings cover its interest payments. Higher means more breathing room.",
-  "CapEx": "Spending to grow or maintain the business — like new equipment or upgrades.",
+  "Reinvestment Rate": "How much of its earnings the company plows back into the business — like new equipment, expansion, or upgrades.",
   "ROIC": "Return on invested capital — how well the company turns invested money into profits.",
 };
 
@@ -99,20 +99,19 @@ export const QUADRANT_DATA: QuadrantData[] = [
   {
     id: "reinvestment",
     title: "Reinvestment Return",
-    verdict: "Smart Allocation",
-    signals: ["CapEx", "ROIC"],
+    verdict: "Productive Reinvestment",
+    signals: ["Reinvestment Rate", "ROIC"],
     signalDirections: [true, true],
-    invertedSignals: [true, false], // CapEx is inverted: up spending = caution context
-    xLabel: "Capital Expenditure",
-    yLabel: "Return on Capital",
+    xLabel: "Reinvestment Rate",
+    yLabel: "ROIC",
     zones: {
       topRight: { label: "Value Creator", color: "green" },
       topLeft: { label: "Efficient", color: "yellow" },
-      bottomRight: { label: "Investing", color: "blue" },
-      bottomLeft: { label: "Destroying Value", color: "red" },
+      bottomRight: { label: "Chasing Growth", color: "blue" },
+      bottomLeft: { label: "Stagnating", color: "red" },
     },
     position: { x: 65, y: 28 },
-    insight: "High capital investment paired with strong returns. The company is reinvesting wisely and generating value from every dollar invested back into the business.",
+    insight: "The company reinvests heavily and earns strong returns on that capital. This is the clearest compounding setup.",
     strength: "strong",
   },
 ];
@@ -126,13 +125,6 @@ export function generateQuadrantData(
   if (!financialMetrics && !balanceSheetMetrics) {
     return QUADRANT_DATA;
   }
-
-  // Helper to map status to strength
-  const statusToStrength = (status: "strong" | "caution" | "weak"): SignalStrength => {
-    if (status === "strong") return "strong";
-    if (status === "caution") return "mixed";
-    return "weak";
-  };
 
   // Helper to get position based on metrics (0-100 scale)
   const getGrowthPosition = (revenueGrowth: boolean, earningsGrowth: boolean, revPct: number, earnPct: number) => {
@@ -248,30 +240,49 @@ export function generateQuadrantData(
     return { x, y };
   };
 
-  // 4. Equity Growth - based on balance sheet
-  const equityStatus = balanceSheetMetrics?.checks?.equityGrowth?.status ?? "strong";
-  
-  let equityStrength = statusToStrength(equityStatus);
-  let equityVerdict = equityStatus === "strong" ? "Growing Book Value" :
-                      equityStatus === "caution" ? "Stable Equity" : "Shrinking Equity";
-  let equityInsight = equityStatus === "strong"
-    ? "Shareholder equity is growing — the company is building long-term value and reinvesting profits effectively."
-    : equityStatus === "caution"
-    ? "Equity is relatively stable. The company is maintaining its book value but not dramatically increasing it."
-    : "Shareholder equity is declining. This could indicate losses, excessive dividends, or share buybacks at poor prices.";
+  // 4. Reinvestment Return - based on ROIC and Reinvestment Rate
+  const roic = financialMetrics?.roicPercent ?? 0;
+  const reinvestmentRate = financialMetrics?.reinvestmentRatePercent ?? 0;
+
+  const ROIC_THRESHOLD = 15;
+  const REINVESTMENT_THRESHOLD = 30;
+
+  const highRoic = roic >= ROIC_THRESHOLD;
+  const highReinvestment = reinvestmentRate >= REINVESTMENT_THRESHOLD;
+
+  let reinvestStrength: SignalStrength;
+  let reinvestVerdict: string;
+  let reinvestInsight: string;
+
+  if (highRoic && highReinvestment) {
+    reinvestStrength = "strong";
+    reinvestVerdict = "Productive Reinvestment";
+    reinvestInsight = "The company reinvests heavily and earns strong returns on that capital. This is the clearest compounding setup.";
+  } else if (highRoic && !highReinvestment) {
+    reinvestStrength = "mixed";
+    reinvestVerdict = "High Returns, Low Reinvestment";
+    reinvestInsight = "Returns are strong, but the company isn't reinvesting much. Often a cash-generator\u2014future growth depends on new opportunities.";
+  } else if (!highRoic && highReinvestment) {
+    reinvestStrength = "mixed";
+    reinvestVerdict = "Reinvesting Without Returns";
+    reinvestInsight = "A lot is being reinvested, but returns are weak so far. Watch for ROIC to improve\u2014or risk value dilution.";
+  } else {
+    reinvestStrength = "weak";
+    reinvestVerdict = "Low Return, Low Reinvestment";
+    reinvestInsight = "Weak returns and limited reinvestment suggest the business isn't compounding. Improvement usually requires a strategy shift.";
+  }
+
+  const getReinvestmentPosition = () => {
+    const clamp = (val: number) => Math.max(10, Math.min(90, val));
+    const cappedRoic = Math.min(roic, 50);
+    const cappedReinvest = Math.min(reinvestmentRate, 100);
+    const x = clamp((cappedReinvest / 100) * 100);
+    const y = clamp(100 - (cappedRoic / 50) * 100);
+    return { x, y };
+  };
 
   // Calculate positions based on real data
   const growthPos = getGrowthPosition(revenueUp, earningsUp, revPct, earnPct);
-  
-  // Position mapping for balance sheet metrics (status -> position)
-  const statusToPosition = (status: "strong" | "caution" | "weak", inverted: boolean = false) => {
-    if (status === "strong") return inverted ? { x: 75, y: 70 } : { x: 72, y: 25 };
-    if (status === "caution") return inverted ? { x: 50, y: 50 } : { x: 50, y: 50 };
-    return inverted ? { x: 25, y: 30 } : { x: 28, y: 75 };
-  };
-
-  // Helper to convert status to signal direction (true = positive, false = negative)
-  const statusToSignal = (status: "strong" | "caution" | "weak"): boolean => status === "strong";
 
   return [
     {
@@ -300,11 +311,11 @@ export function generateQuadrantData(
     },
     {
       ...QUADRANT_DATA[3],
-      verdict: equityVerdict,
-      position: statusToPosition(equityStatus),
-      insight: equityInsight,
-      signalDirections: [statusToSignal(equityStatus), statusToSignal(equityStatus)] as [boolean, boolean],
-      strength: equityStrength,
+      verdict: reinvestVerdict,
+      position: getReinvestmentPosition(),
+      insight: reinvestInsight,
+      signalDirections: [highReinvestment, highRoic] as [boolean, boolean],
+      strength: reinvestStrength,
     },
   ];
 }

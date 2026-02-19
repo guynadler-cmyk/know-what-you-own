@@ -290,6 +290,8 @@ export const incomeMetricsSchema = z.object({
   profitMarginPercent: z.number().optional(),
   operatingMarginPercent: z.number().optional(),
   interestCoverageRatio: z.number().optional(),
+  roicPercent: z.number().optional(),
+  reinvestmentRatePercent: z.number().optional(),
   fiscalYear: z.string(),
   previousFiscalYear: z.string(),
 });

@@ -251,6 +251,38 @@ export class AlphaVantageService {
         ? parseFloat((currentOperatingIncome / interestExpense).toFixed(2))
         : 99;
 
+      let roicPercent: number | undefined;
+      let reinvestmentRatePercent: number | undefined;
+
+      try {
+        const bsResponse = await axios.get<AlphaVantageBalanceSheetResponse>(BASE_URL, {
+          params: { function: 'BALANCE_SHEET', symbol: upperTicker, apikey: ALPHA_VANTAGE_API_KEY },
+          timeout: 10000,
+        });
+        const bsReports = bsResponse.data?.annualReports || [];
+        if (bsReports.length >= 1) {
+          const curBS = bsReports[0];
+          const prevBS = bsReports.length > 1 ? bsReports[1] : null;
+          const totalCurrentAssets = safeParseFloat(curBS.totalCurrentAssets);
+          const totalCurrentLiabilities = safeParseFloat(curBS.totalCurrentLiabilities);
+          const ppe = safeParseFloat(curBS.propertyPlantEquipment);
+          const prevPPE = prevBS ? safeParseFloat(prevBS.propertyPlantEquipment) : 0;
+
+          const netWorkingCapital = totalCurrentAssets - totalCurrentLiabilities;
+          const investedCapital = Math.abs(netWorkingCapital) + ppe;
+          if (investedCapital > 0) {
+            roicPercent = parseFloat(((currentOperatingIncome / investedCapital) * 100).toFixed(2));
+          }
+
+          const approxCapex = prevBS ? Math.max(0, ppe - prevPPE) : 0;
+          if (currentOperatingIncome > 0 && prevBS) {
+            reinvestmentRatePercent = parseFloat(((approxCapex / currentOperatingIncome) * 100).toFixed(2));
+          }
+        }
+      } catch (bsErr) {
+        console.log(`[Financial] ${upperTicker}: Could not fetch balance sheet for ROIC/reinvestment: ${(bsErr as Error).message}`);
+      }
+
       const metrics: FinancialMetrics = {
         ticker: upperTicker,
         revenueGrowth: revenueGrowth as 'growing' | 'declining',
@@ -264,6 +296,8 @@ export class AlphaVantageService {
         profitMarginPercent,
         operatingMarginPercent,
         interestCoverageRatio,
+        roicPercent,
+        reinvestmentRatePercent,
         fiscalYear: currentReport.fiscalDateEnding.substring(0, 4),
         previousFiscalYear: previousReport ? previousReport.fiscalDateEnding.substring(0, 4) : currentReport.fiscalDateEnding.substring(0, 4),
       };
