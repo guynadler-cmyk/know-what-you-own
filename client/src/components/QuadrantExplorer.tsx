@@ -98,7 +98,7 @@ export const QUADRANT_DATA: QuadrantData[] = [
   },
   {
     id: "reinvestment",
-    title: "Owner Value Creation",
+    title: "Owner Value Quality",
     verdict: "Compounding Equity",
     signals: ["Book Value Growth", "ROIC"],
     signalDirections: [true, true],
@@ -240,7 +240,7 @@ export function generateQuadrantData(
     return { x, y };
   };
 
-  // 4. Owner Value Creation - based on ROIC and Book Value Growth
+  // 4. Owner Value Quality - based on ROIC and Book Value Growth
   const roic = financialMetrics?.roicPercent ?? 0;
   const bvGrowth = financialMetrics?.bookValueGrowthPercent;
 
