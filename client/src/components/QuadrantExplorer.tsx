@@ -8,10 +8,9 @@ import type { FinancialMetrics, BalanceSheetMetrics } from "@shared/schema";
 const TERM_DEFINITIONS: Record<string, string> = {
   "Revenue": "The total money a company earns from selling its products or services — before any expenses.",
   "Earnings": "What's left after all costs are paid. Also called 'net income' or 'profit.'",
-  "Margins": "How much profit the company keeps from each dollar of sales. Higher is usually better.",
-  "FCF": "The money left after the business pays its bills and reinvests. Real money it can keep or use.",
-  "Debt": "What the company owes. Some is fine, too much is risky.",
   "Cash": "Money the company has on hand. A safety cushion for tough times.",
+  "Coverage": "How well the company's cash and liquid assets cover its near-term bills and obligations.",
+  "Debt": "What the company owes. Some is fine, too much is risky.",
   "CapEx": "Spending to grow or maintain the business — like new equipment or upgrades.",
   "ROIC": "Return on invested capital — how well the company turns invested money into profits.",
 };
@@ -61,20 +60,20 @@ export const QUADRANT_DATA: QuadrantData[] = [
   },
   {
     id: "profit-cash",
-    title: "Profit vs Cash",
-    verdict: "Profitable + Liquid",
-    signals: ["Margins", "FCF"],
+    title: "Financial Cushion",
+    verdict: "Well Cushioned",
+    signals: ["Cash", "Coverage"],
     signalDirections: [true, true],
-    xLabel: "Profit Margins",
-    yLabel: "Free Cash Flow",
+    xLabel: "Short-Term Obligations",
+    yLabel: "Cash on Hand",
     zones: {
-      topRight: { label: "Cash Machine", color: "green" },
-      topLeft: { label: "Paper Profits", color: "yellow" },
-      bottomRight: { label: "Reinvesting", color: "blue" },
-      bottomLeft: { label: "Cash Burn", color: "red" },
+      topRight: { label: "Well Cushioned", color: "green" },
+      topLeft: { label: "Cash Rich, Busy", color: "yellow" },
+      bottomRight: { label: "Stretched Thin", color: "blue" },
+      bottomLeft: { label: "Under Pressure", color: "red" },
     },
     position: { x: 68, y: 30 },
-    insight: "Strong profit margins paired with growing free cash flow. The business generates real cash, not just accounting profits. This is the sign of a healthy, sustainable operation.",
+    insight: "Plenty of cash relative to near-term bills. The company has room to handle surprises and act on opportunities.",
     strength: "strong",
   },
   {
@@ -168,18 +167,17 @@ export function generateQuadrantData(
     growthInsight = "Earnings are up despite flat or declining revenue. This could mean efficiency gains, but watch for sustainability if revenue doesn't recover.";
   }
 
-  // 2. Liquidity - based on balance sheet
+  // 2. Financial Cushion - based on balance sheet liquidity
   const liquidityStatus = balanceSheetMetrics?.checks?.liquidity?.status ?? "strong";
-  const liquiditySummary = balanceSheetMetrics?.checks?.liquidity?.summary ?? "";
   
   let liquidityStrength = statusToStrength(liquidityStatus);
-  let liquidityVerdict = liquidityStatus === "strong" ? "Financially Resilient" : 
-                         liquidityStatus === "caution" ? "Moderate Liquidity" : "Liquidity Concerns";
+  let liquidityVerdict = liquidityStatus === "strong" ? "Well Cushioned" : 
+                         liquidityStatus === "caution" ? "Adequate Cushion" : "Thin Cushion";
   let liquidityInsight = liquidityStatus === "strong" 
-    ? "Strong cash position relative to short-term obligations. The company can weather economic downturns and seize opportunities."
+    ? "Plenty of cash relative to near-term bills. The company has room to handle surprises and act on opportunities."
     : liquidityStatus === "caution"
-    ? "Liquidity is adequate but not exceptional. The company should manage its short-term obligations carefully."
-    : "The company may struggle to meet short-term obligations. This is a significant risk factor to monitor closely.";
+    ? "The company can cover its near-term bills, but there isn't much extra cushion. Worth keeping an eye on."
+    : "Cash is tight relative to what's owed soon. If business slows down, this could become a real problem.";
 
   // 3. Debt Burden - based on balance sheet
   const debtStatus = balanceSheetMetrics?.checks?.debtBurden?.status ?? "strong";
