@@ -12,7 +12,7 @@ const TERM_DEFINITIONS: Record<string, string> = {
   "FCF": "Free cash flow — the real cash left after the business pays its bills and reinvests. Money it can actually keep or use.",
   "Debt": "What the company owes. Some is fine, too much is risky.",
   "Coverage": "How easily the company's earnings cover its interest payments. Higher means more breathing room.",
-  "Reinvestment Rate": "How much of its earnings the company plows back into the business — like new equipment, expansion, or upgrades.",
+  "Book Value Growth": "How fast the company's net worth (assets minus debts) is growing over time — a sign of building real value for owners.",
   "ROIC": "Return on invested capital — how well the company turns invested money into profits.",
 };
 
@@ -98,20 +98,20 @@ export const QUADRANT_DATA: QuadrantData[] = [
   },
   {
     id: "reinvestment",
-    title: "Reinvestment Return",
-    verdict: "Productive Reinvestment",
-    signals: ["Reinvestment Rate", "ROIC"],
+    title: "Owner Value Creation",
+    verdict: "Compounding Equity",
+    signals: ["Book Value Growth", "ROIC"],
     signalDirections: [true, true],
-    xLabel: "Reinvestment Rate",
+    xLabel: "Book Value Growth",
     yLabel: "ROIC",
     zones: {
-      topRight: { label: "Value Creator", color: "green" },
-      topLeft: { label: "Efficient", color: "yellow" },
-      bottomRight: { label: "Chasing Growth", color: "blue" },
-      bottomLeft: { label: "Stagnating", color: "red" },
+      topRight: { label: "Compounding Equity", color: "green" },
+      topLeft: { label: "High Returns, Low Equity Growth", color: "yellow" },
+      bottomRight: { label: "Growing Without Returns", color: "blue" },
+      bottomLeft: { label: "Eroding Value", color: "red" },
     },
     position: { x: 65, y: 28 },
-    insight: "The company reinvests heavily and earns strong returns on that capital. This is the clearest compounding setup.",
+    insight: "Owner equity is growing and returns are strong. The company appears to be reinvesting in ways that build long-term value.",
     strength: "strong",
   },
 ];
@@ -240,44 +240,51 @@ export function generateQuadrantData(
     return { x, y };
   };
 
-  // 4. Reinvestment Return - based on ROIC and Reinvestment Rate
+  // 4. Owner Value Creation - based on ROIC and Book Value Growth
   const roic = financialMetrics?.roicPercent ?? 0;
-  const reinvestmentRate = financialMetrics?.reinvestmentRatePercent ?? 0;
+  const bvGrowth = financialMetrics?.bookValueGrowthPercent;
 
   const ROIC_THRESHOLD = 15;
-  const REINVESTMENT_THRESHOLD = 30;
+  const BV_GROWTH_THRESHOLD = 8;
 
   const highRoic = roic >= ROIC_THRESHOLD;
-  const highReinvestment = reinvestmentRate >= REINVESTMENT_THRESHOLD;
+  const bvGrowthKnown = bvGrowth !== undefined && bvGrowth !== null;
+  const highBvGrowth = bvGrowthKnown ? bvGrowth >= BV_GROWTH_THRESHOLD : false;
 
   let reinvestStrength: SignalStrength;
   let reinvestVerdict: string;
   let reinvestInsight: string;
 
-  if (highRoic && highReinvestment) {
+  if (!bvGrowthKnown) {
+    reinvestStrength = highRoic ? "mixed" : "weak";
+    reinvestVerdict = highRoic ? "Strong Returns, Book Value Unknown" : "Low Returns, Book Value Unknown";
+    reinvestInsight = highRoic
+      ? "Returns look solid, but we couldn't reliably measure book value growth. The picture is incomplete."
+      : "Returns are below average and book value data isn't available. Hard to assess owner value creation.";
+  } else if (highRoic && highBvGrowth) {
     reinvestStrength = "strong";
-    reinvestVerdict = "Productive Reinvestment";
-    reinvestInsight = "The company reinvests heavily and earns strong returns on that capital. This is the clearest compounding setup.";
-  } else if (highRoic && !highReinvestment) {
+    reinvestVerdict = "Compounding Equity";
+    reinvestInsight = "Owner equity is growing and returns are strong. The company appears to be reinvesting in ways that build long-term value.";
+  } else if (highRoic && !highBvGrowth) {
     reinvestStrength = "mixed";
-    reinvestVerdict = "High Returns, Low Reinvestment";
-    reinvestInsight = "Returns are strong, but the company isn't reinvesting much. Often a cash-generator\u2014future growth depends on new opportunities.";
-  } else if (!highRoic && highReinvestment) {
+    reinvestVerdict = "High Returns, Limited Reinvestment";
+    reinvestInsight = "Returns are strong, but book value isn't rising much. This can signal a cash-generative business returning capital or a maturing runway.";
+  } else if (!highRoic && highBvGrowth) {
     reinvestStrength = "mixed";
-    reinvestVerdict = "Reinvesting Without Returns";
-    reinvestInsight = "A lot is being reinvested, but returns are weak so far. Watch for ROIC to improve\u2014or risk value dilution.";
+    reinvestVerdict = "Growth With Low Returns";
+    reinvestInsight = "Book value is growing, but returns are weak. More capital is going in than value coming out — worth monitoring for improvement.";
   } else {
     reinvestStrength = "weak";
-    reinvestVerdict = "Low Return, Low Reinvestment";
-    reinvestInsight = "Weak returns and limited reinvestment suggest the business isn't compounding. Improvement usually requires a strategy shift.";
+    reinvestVerdict = "Value Pressure";
+    reinvestInsight = "Returns are weak and book value isn't growing. The business may be struggling to create owner value over time.";
   }
 
-  const getReinvestmentPosition = () => {
+  const getOwnerValuePosition = () => {
     const clamp = (val: number) => Math.max(10, Math.min(90, val));
-    const cappedRoic = Math.min(roic, 50);
-    const cappedReinvest = Math.min(reinvestmentRate, 100);
-    const x = clamp((cappedReinvest / 100) * 100);
-    const y = clamp(100 - (cappedRoic / 50) * 100);
+    const cappedRoic = Math.min(Math.max(roic, -10), 50);
+    const cappedBv = bvGrowthKnown ? Math.min(Math.max(bvGrowth, -20), 40) : 0;
+    const x = clamp(((cappedBv + 20) / 60) * 100);
+    const y = clamp(100 - ((cappedRoic + 10) / 60) * 100);
     return { x, y };
   };
 
@@ -312,9 +319,9 @@ export function generateQuadrantData(
     {
       ...QUADRANT_DATA[3],
       verdict: reinvestVerdict,
-      position: getReinvestmentPosition(),
+      position: getOwnerValuePosition(),
       insight: reinvestInsight,
-      signalDirections: [highReinvestment, highRoic] as [boolean, boolean],
+      signalDirections: [highBvGrowth, highRoic] as [boolean, boolean],
       strength: reinvestStrength,
     },
   ];

@@ -1,0 +1,103 @@
+You are working on the “Understand Performance” stage. There are 4 cards shown left-to-right:
+1) Growth Quality
+2) Profit Quality
+3) Debt Safety
+4) Reinvestment Return  ✅ THIS is the one to rebuild now
+
+TASK
+Rebuild ONLY the FOURTH card (currently titled “Reinvestment Return”) to use:
+- ROIC (higher is better)
+- Book Value Growth (higher is better)
+
+This replaces the current “Reinvestment Rate” approach. We want a simpler, 80/20 reinvestment lens that is intuitive and stable.
+
+HOW TO IDENTIFY THE CARD TO REBUILD
+It is the 4th Performance card that currently shows metric chips like:
+- “Reinvestment Rate” and “ROIC”
+and a quadrant chart with labels like “Efficient / Value Creator / Chasing Growth / Stagnating”.
+
+DO NOT CHANGE ANY OTHER PERFORMANCE CARDS
+Leave Growth Quality, Profit Quality, and Debt Safety as-is unless required for shared components.
+
+NEW CARD DEFINITION
+A) Card title:
+- Keep “Reinvestment Return” OR rename to “Owner Value Creation”.
+Choose one and apply consistently across the tab label, card header, and summary tile below.
+(Preferred: “Owner Value Creation”)
+
+B) Metric chips MUST be:
+- “Book Value Growth”
+- “ROIC”
+
+C) Axes:
+- X-axis: “Book Value Growth” (Low → High)
+- Y-axis: “ROIC” (Low → High)
+
+D) Quadrant zone labels (fixed, shown on chart):
+- Top-right (High ROIC, High BV Growth): “Compounding Equity”
+- Top-left (High ROIC, Low BV Growth): “High Returns, Low Equity Growth”
+- Bottom-right (Low ROIC, High BV Growth): “Growing Without Returns”
+- Bottom-left (Low ROIC, Low BV Growth): “Eroding Value”
+
+METRIC COMPUTATION REQUIREMENTS
+1) ROIC:
+Use the existing ROIC value already used in the app.
+
+2) Book Value Growth:
+Compute as a multi-year rate (to reduce noise). Use the best available option:
+- Preferred: 3-year CAGR of Shareholder Equity (Book Value)
+  CAGR = (Equity_end / Equity_start)^(1/3) - 1
+- If 3 years not available, use 5-year CAGR.
+- If CAGR not possible, fallback to 3-year % change.
+- As a last resort, use YoY % change.
+
+Important handling:
+- If equity_start <= 0 or equity_end <= 0, do not compute CAGR. Use a safe fallback:
+  - If equity_end is increasing from negative toward positive, treat as “Improving but noisy” and classify BV Growth as “High” only if the trend is clearly upward across periods.
+  - If equity values are unreliable, set BV Growth to “Unknown” and place the dot using ROIC only but still show a neutral verdict (avoid false precision).
+Only ask ONE question if you truly cannot compute BV Growth from available fields.
+
+QUADRANT LOGIC REQUIREMENTS (true 4-state)
+- Compute two independent high/low signals using the same threshold/percentile logic used in other cards:
+  - roicHigh: ROIC >= threshold
+  - bvGrowthHigh: BV_Growth >= threshold
+- Determine quadrant from (roicHigh, bvGrowthHigh).
+- Dot position must be based on the two numeric values (ROIC, BV Growth), not a single status field.
+
+VERDICT + INSIGHT COPY (must change by quadrant; 4 states, 1–2 short sentences each; plain English; calm/owner-minded)
+Implement this exact mapping:
+
+1) Top-right: Compounding Equity
+   Verdict label: “Compounding Equity”
+   Insight: “Owner equity is growing and returns are strong. The company appears to be reinvesting in ways that build long-term value.”
+
+2) Top-left: High Returns, Low Equity Growth
+   Verdict label: “High Returns, Limited Reinvestment”
+   Insight: “Returns are strong, but book value isn’t rising much. This can signal a cash-generative business returning capital or a maturing runway.”
+
+3) Bottom-right: Growing Without Returns
+   Verdict label: “Growth With Low Returns”
+   Insight: “Book value is growing, but returns are weak. More capital is going in than value coming out—worth monitoring for improvement.”
+
+4) Bottom-left: Eroding Value
+   Verdict label: “Value Pressure”
+   Insight: “Returns are weak and book value isn’t growing. The business may be struggling to create owner value over time.”
+
+SUMMARY TILE + HEALTH SCORE CONSISTENCY
+- Ensure the verdict label for this card (the 4th tile in the “Financial Health Score” summary) matches the quadrant verdict.
+- Ensure the overall “X out of 4 signals strong” logic is consistent:
+  - Only count this card as “strong” when it’s in the top-right quadrant (“Compounding Equity”).
+  - Treat top-left and bottom-right as “mixed/caution”.
+  - Treat bottom-left as “weak”.
+
+UI / STYLING
+- Keep existing styling, spacing, and component patterns consistent with other cards.
+- Update the metric chip coloring/arrows so both ROIC and Book Value Growth follow the standard “higher is better” interpretation.
+
+OUTPUT
+1) Provide PR-ready code changes (React/TypeScript or current stack):
+   - Updated 4th card component
+   - Updated constants/mapping for quadrant labels + verdict + insight
+   - New BV Growth computation function (with fallbacks)
+   - Updated summary tile/verdict wiring for this card
+2) Briefly explain what changed and why (we are simplifying reinvestment evaluation to an 80/20 lens).

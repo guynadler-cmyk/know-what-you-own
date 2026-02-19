@@ -252,7 +252,7 @@ export class AlphaVantageService {
         : 99;
 
       let roicPercent: number | undefined;
-      let reinvestmentRatePercent: number | undefined;
+      let bookValueGrowthPercent: number | undefined;
 
       try {
         const bsResponse = await axios.get<AlphaVantageBalanceSheetResponse>(BASE_URL, {
@@ -262,11 +262,9 @@ export class AlphaVantageService {
         const bsReports = bsResponse.data?.annualReports || [];
         if (bsReports.length >= 1) {
           const curBS = bsReports[0];
-          const prevBS = bsReports.length > 1 ? bsReports[1] : null;
           const totalCurrentAssets = safeParseFloat(curBS.totalCurrentAssets);
           const totalCurrentLiabilities = safeParseFloat(curBS.totalCurrentLiabilities);
           const ppe = safeParseFloat(curBS.propertyPlantEquipment);
-          const prevPPE = prevBS ? safeParseFloat(prevBS.propertyPlantEquipment) : 0;
 
           const netWorkingCapital = totalCurrentAssets - totalCurrentLiabilities;
           const investedCapital = Math.abs(netWorkingCapital) + ppe;
@@ -274,13 +272,34 @@ export class AlphaVantageService {
             roicPercent = parseFloat(((currentOperatingIncome / investedCapital) * 100).toFixed(2));
           }
 
-          const approxCapex = prevBS ? Math.max(0, ppe - prevPPE) : 0;
-          if (currentOperatingIncome > 0 && prevBS) {
-            reinvestmentRatePercent = parseFloat(((approxCapex / currentOperatingIncome) * 100).toFixed(2));
+          const equityEnd = safeParseFloat(curBS.totalShareholderEquity);
+          if (bsReports.length >= 4 && equityEnd > 0) {
+            const equityStart3 = safeParseFloat(bsReports[3].totalShareholderEquity);
+            if (equityStart3 > 0) {
+              bookValueGrowthPercent = parseFloat(((Math.pow(equityEnd / equityStart3, 1 / 3) - 1) * 100).toFixed(2));
+            }
+          }
+          if (bookValueGrowthPercent === undefined && bsReports.length >= 6 && equityEnd > 0) {
+            const equityStart5 = safeParseFloat(bsReports[5].totalShareholderEquity);
+            if (equityStart5 > 0) {
+              bookValueGrowthPercent = parseFloat(((Math.pow(equityEnd / equityStart5, 1 / 5) - 1) * 100).toFixed(2));
+            }
+          }
+          if (bookValueGrowthPercent === undefined && bsReports.length >= 4) {
+            const equityStart3 = safeParseFloat(bsReports[3].totalShareholderEquity);
+            if (equityStart3 !== 0) {
+              bookValueGrowthPercent = parseFloat((((equityEnd - equityStart3) / Math.abs(equityStart3)) * 100).toFixed(2));
+            }
+          }
+          if (bookValueGrowthPercent === undefined && bsReports.length >= 2) {
+            const equityPrev = safeParseFloat(bsReports[1].totalShareholderEquity);
+            if (equityPrev !== 0) {
+              bookValueGrowthPercent = parseFloat((((equityEnd - equityPrev) / Math.abs(equityPrev)) * 100).toFixed(2));
+            }
           }
         }
       } catch (bsErr) {
-        console.log(`[Financial] ${upperTicker}: Could not fetch balance sheet for ROIC/reinvestment: ${(bsErr as Error).message}`);
+        console.log(`[Financial] ${upperTicker}: Could not fetch balance sheet for ROIC/book value: ${(bsErr as Error).message}`);
       }
 
       const metrics: FinancialMetrics = {
@@ -297,7 +316,7 @@ export class AlphaVantageService {
         operatingMarginPercent,
         interestCoverageRatio,
         roicPercent,
-        reinvestmentRatePercent,
+        bookValueGrowthPercent,
         fiscalYear: currentReport.fiscalDateEnding.substring(0, 4),
         previousFiscalYear: previousReport ? previousReport.fiscalDateEnding.substring(0, 4) : currentReport.fiscalDateEnding.substring(0, 4),
       };
