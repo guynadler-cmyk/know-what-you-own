@@ -289,6 +289,7 @@ export const incomeMetricsSchema = z.object({
   earningsChangePercent: z.number(),
   profitMarginPercent: z.number().optional(),
   operatingMarginPercent: z.number().optional(),
+  interestCoverageRatio: z.number().optional(),
   fiscalYear: z.string(),
   previousFiscalYear: z.string(),
 });
@@ -310,6 +311,7 @@ export const balanceSheetMetricsSchema = z.object({
   ticker: z.string(),
   fiscalYear: z.string(),
   previousFiscalYear: z.string(),
+  debtToEquityRatio: z.number().optional(),
   checks: z.object({
     liquidity: balanceSheetCheckSchema,
     debtBurden: balanceSheetCheckSchema,

@@ -11,6 +11,7 @@ const TERM_DEFINITIONS: Record<string, string> = {
   "Margins": "How much profit the company keeps from each dollar of sales. Higher is usually better.",
   "FCF": "Free cash flow — the real cash left after the business pays its bills and reinvests. Money it can actually keep or use.",
   "Debt": "What the company owes. Some is fine, too much is risky.",
+  "Coverage": "How easily the company's earnings cover its interest payments. Higher means more breathing room.",
   "CapEx": "Spending to grow or maintain the business — like new equipment or upgrades.",
   "ROIC": "Return on invested capital — how well the company turns invested money into profits.",
 };
@@ -79,11 +80,11 @@ export const QUADRANT_DATA: QuadrantData[] = [
   {
     id: "debt-safety",
     title: "Debt Safety",
-    verdict: "Low Debt Burden",
-    signals: ["Debt", "Earnings"],
-    signalDirections: [true, true], // Default: debt is low (good), earnings up
-    invertedSignals: [true, false], // Debt is inverted: down arrow = good (low debt)
-    xLabel: "Return / Earnings Strength",
+    verdict: "Comfortable Coverage",
+    signals: ["Debt", "Coverage"],
+    signalDirections: [true, true],
+    invertedSignals: [true, false],
+    xLabel: "Coverage",
     yLabel: "Debt Levels",
     zones: {
       topRight: { label: "Aggressive Borrower", color: "orange" },
@@ -92,7 +93,7 @@ export const QUADRANT_DATA: QuadrantData[] = [
       bottomLeft: { label: "Underleveraged", color: "yellow" },
     },
     position: { x: 75, y: 70 },
-    insight: "Low debt and strong earnings create financial resilience. The company can weather economic downturns and seize opportunities when competitors struggle.",
+    insight: "Debt looks manageable and interest payments are well covered. This gives the business flexibility through a downturn.",
     strength: "strong",
   },
   {
@@ -206,17 +207,46 @@ export function generateQuadrantData(
     return { x, y };
   };
 
-  // 3. Debt Burden - based on balance sheet
-  const debtStatus = balanceSheetMetrics?.checks?.debtBurden?.status ?? "strong";
-  
-  let debtStrength = statusToStrength(debtStatus);
-  let debtVerdict = debtStatus === "strong" ? "Low Debt Burden" :
-                    debtStatus === "caution" ? "Moderate Debt" : "High Debt Load";
-  let debtInsight = debtStatus === "strong"
-    ? "Low debt levels provide financial flexibility and safety margin. The company isn't overleveraged."
-    : debtStatus === "caution"
-    ? "Debt levels are manageable but worth monitoring. The company has some leverage that could amplify both gains and losses."
-    : "High debt creates financial risk. Interest payments could strain cash flow, especially if earnings decline.";
+  // 3. Debt Safety - based on debt-to-equity and interest coverage
+  const debtToEquity = balanceSheetMetrics?.debtToEquityRatio ?? 0;
+  const interestCoverage = financialMetrics?.interestCoverageRatio ?? 99;
+
+  const DEBT_THRESHOLD = 1.0;
+  const COVERAGE_THRESHOLD = 3.0;
+
+  const highDebt = debtToEquity >= DEBT_THRESHOLD;
+  const highCoverage = interestCoverage >= COVERAGE_THRESHOLD;
+
+  let debtStrength: SignalStrength;
+  let debtVerdict: string;
+  let debtInsight: string;
+
+  if (!highDebt && highCoverage) {
+    debtStrength = "strong";
+    debtVerdict = "Comfortable Coverage";
+    debtInsight = "Debt looks manageable and interest payments are well covered. This gives the business flexibility through a downturn.";
+  } else if (!highDebt && !highCoverage) {
+    debtStrength = "mixed";
+    debtVerdict = "Conservative Balance Sheet";
+    debtInsight = "Debt is low, but coverage is also modest. The company isn't relying on leverage, though earnings power may be uneven.";
+  } else if (highDebt && highCoverage) {
+    debtStrength = "mixed";
+    debtVerdict = "Leverage With Support";
+    debtInsight = "Debt is elevated, but current earnings cover interest comfortably. Worth watching if coverage weakens or conditions tighten.";
+  } else {
+    debtStrength = "weak";
+    debtVerdict = "Debt Risk";
+    debtInsight = "High debt with weak coverage can strain cash flow. Refinancing or an earnings dip could create real pressure.";
+  }
+
+  const getDebtSafetyPosition = () => {
+    const clamp = (val: number) => Math.max(10, Math.min(90, val));
+    const cappedDE = Math.min(debtToEquity, 5);
+    const cappedCov = Math.min(interestCoverage, 20);
+    const x = clamp((cappedCov / 20) * 100);
+    const y = clamp(100 - (cappedDE / 5) * 100);
+    return { x, y };
+  };
 
   // 4. Equity Growth - based on balance sheet
   const equityStatus = balanceSheetMetrics?.checks?.equityGrowth?.status ?? "strong";
@@ -263,9 +293,9 @@ export function generateQuadrantData(
     {
       ...QUADRANT_DATA[2],
       verdict: debtVerdict,
-      position: statusToPosition(debtStatus, true),
+      position: getDebtSafetyPosition(),
       insight: debtInsight,
-      signalDirections: [statusToSignal(debtStatus), earningsUp] as [boolean, boolean],
+      signalDirections: [!highDebt, highCoverage] as [boolean, boolean],
       strength: debtStrength,
     },
     {

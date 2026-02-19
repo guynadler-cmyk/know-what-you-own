@@ -9,6 +9,7 @@ interface AlphaVantageIncomeStatement {
   totalRevenue: string;
   netIncome: string;
   operatingIncome: string;
+  interestExpense: string;
 }
 
 interface AlphaVantageCompanyOverview {
@@ -245,6 +246,10 @@ export class AlphaVantageService {
       const operatingMarginPercent = currentRevenue !== 0
         ? parseFloat(((currentOperatingIncome / currentRevenue) * 100).toFixed(2))
         : 0;
+      const interestExpense = Math.abs(safeParseFloat(currentReport.interestExpense));
+      const interestCoverageRatio = interestExpense > 0
+        ? parseFloat((currentOperatingIncome / interestExpense).toFixed(2))
+        : 99;
 
       const metrics: FinancialMetrics = {
         ticker: upperTicker,
@@ -258,6 +263,7 @@ export class AlphaVantageService {
         earningsChangePercent: parseFloat(earningsChangePercent.toFixed(2)),
         profitMarginPercent,
         operatingMarginPercent,
+        interestCoverageRatio,
         fiscalYear: currentReport.fiscalDateEnding.substring(0, 4),
         previousFiscalYear: previousReport ? previousReport.fiscalDateEnding.substring(0, 4) : currentReport.fiscalDateEnding.substring(0, 4),
       };
@@ -417,10 +423,15 @@ export class AlphaVantageService {
         equityDetails = `Shareholder equity declined from <strong>${formatCurrency(previousEquity)}</strong> to <strong>${formatCurrency(currentEquity)}</strong> (down ${equityDecline}%).<br>This decline warrants further investigation into the underlying causes.`;
       }
 
+      const debtToEquityRatio = currentEquity > 0
+        ? parseFloat((totalDebt / currentEquity).toFixed(2))
+        : totalDebt > 0 ? 99 : 0;
+
       const metrics: BalanceSheetMetrics = {
         ticker: upperTicker,
         fiscalYear: currentReport.fiscalDateEnding.substring(0, 4),
         previousFiscalYear: previousReport ? previousReport.fiscalDateEnding.substring(0, 4) : currentReport.fiscalDateEnding.substring(0, 4),
+        debtToEquityRatio,
         checks: {
           liquidity: {
             status: liquidityStatus,
