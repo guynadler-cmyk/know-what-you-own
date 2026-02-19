@@ -1,0 +1,84 @@
+You are working on the “Understand Performance” stage. There are 4 cards:
+1) Growth Quality
+2) Profit Quality
+3) Debt Safety
+4) Reinvestment Return  ✅ THIS is the one to rebuild now
+
+TASK
+Rebuild ONLY the FOURTH card (“Reinvestment Return”) to use a true 2-metric, 4-quadrant approach based on:
+- Y-axis: ROIC (higher is better)
+- X-axis: Reinvestment Rate (higher means the company is reinvesting a larger share of what it generates)
+
+IMPORTANT CHANGE
+Replace the current “CapEx” metric on this card with “Reinvestment Rate”.
+Do NOT treat “CapEx up/down” as inherently good or bad.
+
+HOW TO IDENTIFY THE CARD TO REBUILD
+It is currently titled “Reinvestment Return” and shows metric chips like:
+- “CapEx”
+- “ROIC”
+and has a quadrant chart with labels like “Efficient”, “Value Creator”, “Investing”, “Destroying Value”.
+
+NEW METRIC DEFINITIONS
+Compute Reinvestment Rate using the best available data in this order (pick the first feasible without asking unless absolutely required):
+
+Preferred:
+1) Reinvestment Rate = (CapEx + R&D) / NOPAT
+
+If NOPAT not available:
+2) Reinvestment Rate = (CapEx + R&D) / Operating Cash Flow
+
+If R&D not available:
+3) Reinvestment Rate = CapEx / Operating Cash Flow
+
+If Operating Cash Flow not available:
+4) Reinvestment Rate = CapEx / Operating Income (or EBIT)
+
+ENGINEERING REQUIREMENTS
+- Dot position must be based on two independent numeric values: ROIC and Reinvestment Rate.
+- Determine high/low splits for each axis using the same threshold/percentile approach used in the other quadrant cards.
+- Quadrant selection must be deterministic from (ROIC high/low, ReinvestmentRate high/low).
+- Verdict label + insight text MUST map 1:1 to the quadrant (4 states). No 3-state mapping.
+
+UI REQUIREMENTS
+- Card title stays: “Reinvestment Return” (or “Reinvestment Quality” if you prefer—choose one and apply consistently).
+- Metric chips MUST be: “Reinvestment Rate” and “ROIC”
+- Axis labels:
+  - X-axis: “Reinvestment Rate” (Low → High)
+  - Y-axis: “ROIC” (Low → High)
+
+QUADRANT ZONE LABELS (fixed on the chart)
+- Top-right (High ROIC, High Reinvestment Rate): “Value Creator”
+- Top-left (High ROIC, Low Reinvestment Rate): “Efficient”
+- Bottom-right (Low ROIC, High Reinvestment Rate): “Chasing Growth”
+- Bottom-left (Low ROIC, Low Reinvestment Rate): “Stagnating”
+
+VERDICT + INSIGHT COPY (1–2 short sentences, plain English, calm/owner-minded)
+Implement these for each quadrant:
+
+1) Value Creator (top-right)
+   Verdict: “Productive Reinvestment”
+   Insight: “The company reinvests heavily and earns strong returns on that capital. This is the clearest compounding setup.”
+
+2) Efficient (top-left)
+   Verdict: “High Returns, Low Reinvestment”
+   Insight: “Returns are strong, but the company isn’t reinvesting much. Often a cash-generator—future growth depends on new opportunities.”
+
+3) Chasing Growth (bottom-right)
+   Verdict: “Reinvesting Without Returns”
+   Insight: “A lot is being reinvested, but returns are weak so far. Watch for ROIC to improve—or risk value dilution.”
+
+4) Stagnating (bottom-left)
+   Verdict: “Low Return, Low Reinvestment”
+   Insight: “Weak returns and limited reinvestment suggest the business isn’t compounding. Improvement usually requires a strategy shift.”
+
+OUTPUT
+- Provide PR-ready code changes (React/TypeScript or current stack):
+  - Update metric chips and axis labels
+  - Add/replace the computation for Reinvestment Rate
+  - Update quadrant mapping constants (zone labels + verdict + insights)
+  - Remove any logic that treats CapEx direction as green/red on this card
+- Briefly explain what changed and why.
+
+FALLBACK
+Only ask ONE question if you truly cannot compute Reinvestment Rate from available fields. Otherwise choose the best available formula above and proceed.
