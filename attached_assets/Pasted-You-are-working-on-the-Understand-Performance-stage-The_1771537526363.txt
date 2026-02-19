@@ -1,0 +1,67 @@
+You are working on the “Understand Performance” stage. There are 4 cards: Growth Quality, Profit Quality, Debt Safety, Reinvestment Return.
+
+TASK
+Rebuild ONLY the THIRD card: “Debt Safety”.
+
+CURRENT PROBLEM (must fix)
+The Debt Safety card shows a 4-quadrant chart with 4 zone labels, but the logic only produces 3 dynamic states (strong/caution/weak) based on a single debtBurden.status field. The dot position and copy are not truly based on both axes.
+
+GOAL
+Make Debt Safety a true 2-metric, 4-quadrant card (like we did for Profit Quality).
+
+NEW METRICS (Option A)
+- X-axis metric: Interest Coverage (Coverage) — higher is better
+  Example: EBIT / Interest Expense (preferred) or EBITDA / Interest
+- Y-axis metric: Debt Levels — lower is better
+  Example: Debt-to-Equity, Debt/Assets, or Net Debt/EBITDA (choose what exists in the dataset)
+
+UI REQUIREMENTS
+1) Card title stays: “Debt Safety”
+2) Metric chips MUST be: “Debt” and “Coverage” (do not show “Earnings” on this card)
+3) Axis labels:
+   - X-axis: “Coverage” (Low → High)
+   - Y-axis: “Debt Levels” (Low → High)
+4) Quadrant zone labels (fixed, shown on chart):
+   - Top-right (High Debt, High Coverage): “Aggressive Borrower”
+   - Top-left (High Debt, Low Coverage): “Financially Fragile”
+   - Bottom-right (Low Debt, High Coverage): “Healthy Leverage”
+   - Bottom-left (Low Debt, Low Coverage): “Underleveraged”
+
+IMPORTANT: Because Y is “Debt Levels”, HIGHER = more debt burden (worse). Because X is “Coverage”, HIGHER = better.
+
+LOGIC REQUIREMENTS
+- Compute two independent signals:
+  A) debtLevel = high/low based on your existing thresholds/percentiles (or define them consistently with other cards)
+  B) coverageStrength = high/low based on thresholds (higher is better)
+- Determine the quadrant from (debtLevel, coverageStrength).
+- Dot position must be determined by the two underlying numeric values (not by a single status field).
+- Verdict label and insight text MUST map 1:1 to the quadrant (4 states).
+
+VERDICT + INSIGHT COPY (1–2 sentences each, plain English, calm, owner-minded)
+Implement these for each quadrant:
+
+1) Healthy Leverage (bottom-right: Low Debt, High Coverage)
+   Verdict: “Comfortable Coverage”
+   Insight: “Debt looks manageable and interest payments are well covered. This gives the business flexibility through a downturn.”
+
+2) Underleveraged (bottom-left: Low Debt, Low Coverage)
+   Verdict: “Conservative Balance Sheet”
+   Insight: “Debt is low, but coverage is also modest. The company isn’t relying on leverage, though earnings power may be uneven.”
+
+3) Aggressive Borrower (top-right: High Debt, High Coverage)
+   Verdict: “Leverage With Support”
+   Insight: “Debt is elevated, but current earnings cover interest comfortably. Worth watching if coverage weakens or conditions tighten.”
+
+4) Financially Fragile (top-left: High Debt, Low Coverage)
+   Verdict: “Debt Risk”
+   Insight: “High debt with weak coverage can strain cash flow. Refinancing or an earnings dip could create real pressure.”
+
+ENGINEERING OUTPUT
+- Provide PR-ready code changes (React/TypeScript or current stack):
+  - Update the metric chips and axis labels
+  - Update the quadrant mapping constants (zone labels + verdict + insights)
+  - Replace the old 3-state debtBurden.status mapping with true 2D quadrant logic
+  - Ensure styling and layout match the other Performance cards
+
+FALLBACK
+If the dataset does not have interest expense, use the closest available “coverage” proxy already present (e.g., interest coverage ratio, EBIT/interest, EBITDA/interest). Only ask ONE question if absolutely required; otherwise choose the best available and proceed.
