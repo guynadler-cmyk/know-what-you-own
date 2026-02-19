@@ -1,0 +1,56 @@
+We have a “Profit vs Cash” card that currently shows a 2x2 quadrant chart with labels:
+- Top-right: Cash Machine
+- Top-left: Paper Profits
+- Bottom-right: Reinvesting
+- Bottom-left: Cash Burn
+
+However, the card’s dot position, verdict label, and insight text are NOT driven by margins + free cash flow.
+They are driven by a BALANCE SHEET liquidity check (ability to meet short-term obligations).
+This causes a mismatch: the chart labels imply “profit converts to cash,” but the copy/verdict is about liquidity.
+
+CURRENT STATES (3)
+Strong:
+Verdict label: “Financially Resilient”
+Insight: “Strong cash position relative to short-term obligations. The company can weather economic downturns and seize opportunities.”
+
+Caution:
+Verdict label: “Moderate Liquidity”
+Insight: “Liquidity is adequate but not exceptional. The company should manage its short-term obligations carefully.”
+
+Weak:
+Verdict label: “Liquidity Concerns”
+Insight: “The company may struggle to meet short-term obligations. This is a significant risk factor to monitor closely.”
+
+TASK
+Propose and implement improvements so the UI is conceptually consistent and user-friendly.
+
+REQUIREMENTS
+1) Decide on one of two approaches and implement it:
+   A) Keep liquidity as the underlying metric:
+      - Rename the card title and any related labels so they reflect LIQUIDITY (not Profit vs Cash).
+      - Update quadrant labels to match liquidity OR remove/replace the quadrant chart with an appropriate liquidity visualization.
+      - Keep the 3 states (Strong/Caution/Weak) but rewrite insight text to be clear, plain-English, and owner-minded.
+
+   B) Keep “Profit vs Cash” framing:
+      - Change the underlying logic so dot position + verdict + insight are based on Profit Margin + Free Cash Flow.
+      - Keep or refine the existing quadrant labels (Cash Machine / Paper Profits / Reinvesting / Cash Burn).
+      - Rewrite the 3-state copy + verdict labels to reflect profit-to-cash conversion and highlight common “tension” reasons (working capital, capex, non-cash expenses) briefly.
+
+2) Output the final code changes (React/TypeScript or whatever the project uses), including:
+   - Updated title/verdict strings
+   - Updated insight copy strings for all 3 states
+   - Any changes to chart labels/axes text
+   - If you change the chart type, implement it with minimal UI disruption
+
+3) Copy guidelines:
+   - Avoid jargon (“current ratio,” “quick ratio”) unless shown in a tooltip.
+   - Keep each insight to 1–2 short sentences.
+   - Focus on durability and clarity (restnvest tone): calm, practical, no hype.
+
+4) Provide a short explanation of what you changed and why, focusing on conceptual consistency.
+
+IMPORTANT
+Ask me (the user) ONE question only if you absolutely need a missing detail (e.g., which liquidity metric is used). Otherwise, make the best assumption and proceed.
+
+DELIVERABLE
+A PR-ready implementation + revised copy for all states.
