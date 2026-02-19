@@ -1,0 +1,72 @@
+You are working on the “Performance” stage of a stock research app. The Performance stage has FOUR cards shown left-to-right.
+
+GOAL
+Rebuild ONLY the SECOND Performance card.
+
+HOW TO IDENTIFY THE CARD TO REBUILD
+It is currently the card that:
+- Has a title like “Profit vs Cash” OR “Financial Cushion” (liquidity-focused)
+- Uses BALANCE SHEET liquidity / short-term obligations to place the dot and determine its verdict/copy
+- Shows one of these liquidity insights:
+  Strong: “Strong cash position relative to short-term obligations…”
+  Caution: “Liquidity is adequate but not exceptional…”
+  Weak: “The company may struggle to meet short-term obligations…”
+- Verdict labels include: “Financially Resilient”, “Moderate Liquidity”, “Liquidity Concerns”
+
+DO NOT CHANGE ANY OTHER PERFORMANCE CARDS
+Leave the 1st card (Quality of Growth), 3rd card (Quality of Debt), and 4th card (Quality of Reinvestment) exactly as-is unless needed for shared components.
+
+WHAT TO BUILD IN PLACE OF THAT CARD
+Replace the liquidity-driven 2nd card with a true “Profit Quality” card powered by:
+- X-axis: Profit Margins (Low → High)
+- Y-axis: Free Cash Flow (Low → High)
+
+This Profit Quality card MUST be a 2x2 quadrant chart with FIXED quadrant labels:
+- Top-right (High margins, High FCF): “Cash Machine”
+- Top-left (Low margins, High FCF): “Cash-Rich, Low Margin”
+- Bottom-right (High margins, Low FCF): “Paper Profits”
+- Bottom-left (Low margins, Low FCF): “Cash Burn”
+
+The dot position MUST be based on the company’s margin metric and FCF metric (NOT liquidity, NOT balance sheet short-term obligations).
+
+VERDICT + INSIGHT COPY (changes by quadrant; 4 states, not 3)
+Implement this mapping:
+
+1) Cash Machine (top-right)
+   Verdict: “Cash-Backed Profits”
+   Insight: “Profits are real and cash-backed. The business earns healthy margins and turns them into free cash flow — giving it flexibility to reinvest, build a buffer, or return capital.”
+
+2) Cash-Rich, Low Margin (top-left)
+   Verdict: “Cash Strong, Margins Thin”
+   Insight: “Cash generation is solid, but profitability is thin. Watch whether margins improve as the business scales.”
+
+3) Paper Profits (bottom-right)
+   Verdict: “Profit Without Cash”
+   Insight: “Profits aren’t showing up as cash yet. This can reflect heavy reinvestment, working-capital drag, or earnings that don’t convert cleanly.”
+
+4) Cash Burn (bottom-left)
+   Verdict: “Weak Profit Quality”
+   Insight: “Neither profits nor cash flow look healthy. The business may rely on outside funding until performance improves.”
+
+UI REQUIREMENTS
+- Card title: “Profit Quality”
+- Metric chips: “Margins” and “FCF”
+- Axis labels:
+  X-axis “Profit Margins”
+  Y-axis “Free Cash Flow”
+- Keep existing styling/layout consistent with other Performance cards.
+
+ENGINEERING REQUIREMENTS
+- Use the existing high/low split logic used by other quadrant cards (thresholds/percentiles) to determine quadrant.
+- Ensure verdict + insight always match the dot’s quadrant.
+- Remove the old liquidity computations/copy from THIS SECOND CARD ONLY (liquidity can remain elsewhere).
+
+OUTPUT
+- Provide PR-ready code changes (React/TypeScript or current stack):
+  - Updated card component
+  - Updated mapping object/constants for quadrant verdict + insight
+  - Any metric selection logic (margins + FCF)
+- Briefly explain what was changed and why.
+
+IMPORTANT
+If you cannot find the 2nd card by position, search the codebase for the exact liquidity sentences above and refactor the component that renders them. That is the card to replace.
