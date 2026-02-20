@@ -16,7 +16,8 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Menu, Search, X, LogIn, LogOut, User, Bookmark } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
-import { getQueryFn } from "@/lib/queryClient";
+import { signInWithGoogle, firebaseSignOut } from "@/lib/firebase";
+import { queryClient, getQueryFn } from "@/lib/queryClient";
 import ChatGPT_Image_Jan_22__2026__01_43_07_PM_cropped from "@assets/ChatGPT Image Jan 22, 2026, 01_43_07 PM_cropped.png";
 
 const navLinks = [
@@ -45,12 +46,16 @@ function UserMenu() {
 
   if (!isAuthenticated || !user) {
     return (
-      <a href="/api/login" data-testid="button-sign-in">
-        <Button variant="outline" size="sm" className="gap-2">
-          <LogIn className="h-4 w-4" />
-          <span className="hidden sm:inline">Sign in</span>
-        </Button>
-      </a>
+      <Button
+        variant="outline"
+        size="sm"
+        className="gap-2"
+        data-testid="button-sign-in"
+        onClick={() => signInWithGoogle().catch(console.error)}
+      >
+        <LogIn className="h-4 w-4" />
+        <span className="hidden sm:inline">Sign in with Google</span>
+      </Button>
     );
   }
 
@@ -92,11 +97,17 @@ function UserMenu() {
             )}
           </Link>
         </DropdownMenuItem>
-        <DropdownMenuItem asChild>
-          <a href="/api/logout" className="cursor-pointer" data-testid="button-sign-out">
-            <LogOut className="mr-2 h-4 w-4" />
-            Sign out
-          </a>
+        <DropdownMenuItem
+          className="cursor-pointer"
+          data-testid="button-sign-out"
+          onClick={() => {
+            firebaseSignOut().then(() => {
+              queryClient.clear();
+            }).catch(console.error);
+          }}
+        >
+          <LogOut className="mr-2 h-4 w-4" />
+          Sign out
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
@@ -250,30 +261,33 @@ export function SiteHeader() {
                           )}
                         </Button>
                       </Link>
-                      <a href="/api/logout">
-                        <Button
-                          variant="outline"
-                          className="w-full gap-2"
-                          onClick={() => setMobileOpen(false)}
-                          data-testid="button-mobile-sign-out"
-                        >
-                          <LogOut className="h-4 w-4" />
-                          Sign out
-                        </Button>
-                      </a>
-                    </>
-                  ) : (
-                    <a href="/api/login">
                       <Button
                         variant="outline"
                         className="w-full gap-2"
-                        onClick={() => setMobileOpen(false)}
-                        data-testid="button-mobile-sign-in"
+                        data-testid="button-mobile-sign-out"
+                        onClick={() => {
+                          firebaseSignOut().then(() => {
+                            queryClient.clear();
+                            setMobileOpen(false);
+                          }).catch(console.error);
+                        }}
                       >
-                        <LogIn className="h-4 w-4" />
-                        Sign in
+                        <LogOut className="h-4 w-4" />
+                        Sign out
                       </Button>
-                    </a>
+                    </>
+                  ) : (
+                    <Button
+                      variant="outline"
+                      className="w-full gap-2"
+                      data-testid="button-mobile-sign-in"
+                      onClick={() => {
+                        signInWithGoogle().then(() => setMobileOpen(false)).catch(console.error);
+                      }}
+                    >
+                      <LogIn className="h-4 w-4" />
+                      Sign in with Google
+                    </Button>
                   )}
                   <Link href="/app">
                     <Button

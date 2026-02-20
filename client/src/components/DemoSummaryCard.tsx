@@ -132,10 +132,10 @@ export function DemoSummaryCard({
           <Button 
             size="lg"
             className="rounded-full px-10 py-6 text-lg font-semibold"
-            onClick={() => {
-              // Save ticker to sessionStorage so we can auto-analyze after login
+            onClick={async () => {
               sessionStorage.setItem('pendingTicker', ticker);
-              window.location.href = '/api/login';
+              const { signInWithGoogle } = await import("@/lib/firebase");
+              signInWithGoogle().catch(console.error);
             }}
             data-testid="button-see-full-analysis"
           >

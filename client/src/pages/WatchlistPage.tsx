@@ -10,6 +10,7 @@ import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Bookmark, Search, Trash2, Pencil, Check, X, ExternalLink, LogIn, TrendingUp, TrendingDown, Minus } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
+import { signInWithGoogle } from "@/lib/firebase";
 import { apiRequest, queryClient, getQueryFn } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import type { WatchlistItem } from "@shared/schema";
@@ -279,12 +280,10 @@ export default function WatchlistPage() {
                   Save stocks during analysis so you can come back to them with your notes and snapshot data.
                 </p>
               </div>
-              <a href="/api/login">
-                <Button className="gap-2" data-testid="button-watchlist-signin">
-                  <LogIn className="h-4 w-4" />
-                  Sign in
-                </Button>
-              </a>
+              <Button className="gap-2" data-testid="button-watchlist-signin" onClick={() => signInWithGoogle().catch(console.error)}>
+                <LogIn className="h-4 w-4" />
+                Sign in with Google
+              </Button>
             </CardContent>
           </Card>
         ) : items && items.length > 0 ? (

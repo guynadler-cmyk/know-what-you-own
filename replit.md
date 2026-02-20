@@ -51,7 +51,7 @@ A three-state paywall (`locked` | `skipped` | `unlocked`) gates analysis stages 
 
 ### Authentication
 
-Google sign-in is implemented via Replit Auth (OpenID Connect). The backend handles login/logout/callback with `passport` and `express-session` backed by PostgreSQL. The client uses a `useAuth()` hook to provide user authentication status.
+Google Sign-In is implemented via Firebase Authentication (Google provider with popup flow). The frontend uses `firebase/auth` for sign-in/sign-out and passes Firebase ID tokens via `Authorization: Bearer <token>` headers. The backend uses `firebase-admin` to verify tokens and upsert users. The client uses a `useAuth()` hook (based on `onAuthStateChanged`) to provide user authentication status. Auth module: `server/firebaseAuth.ts`, client config: `client/src/lib/firebase.ts`.
 
 ## External Dependencies
 

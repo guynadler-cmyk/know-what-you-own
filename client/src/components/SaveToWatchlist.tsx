@@ -5,6 +5,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Bookmark, BookmarkCheck, Loader2, LogIn } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
+import { signInWithGoogle } from "@/lib/firebase";
 import { apiRequest, queryClient, getQueryFn } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import type { WatchlistSnapshot } from "@shared/schema";
@@ -63,12 +64,16 @@ export function SaveToWatchlist({ ticker, companyName, getSnapshot }: SaveToWatc
 
   if (!isAuthenticated) {
     return (
-      <a href="/api/login">
-        <Button variant="outline" size="sm" className="rounded-full gap-2" data-testid="button-save-watchlist-login">
-          <LogIn className="h-4 w-4" />
-          Sign in to save
-        </Button>
-      </a>
+      <Button
+        variant="outline"
+        size="sm"
+        className="rounded-full gap-2"
+        data-testid="button-save-watchlist-login"
+        onClick={() => signInWithGoogle().catch(console.error)}
+      >
+        <LogIn className="h-4 w-4" />
+        Sign in to save
+      </Button>
     );
   }
 

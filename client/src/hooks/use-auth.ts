@@ -1,5 +1,5 @@
-import { useQuery } from "@tanstack/react-query";
-import { getQueryFn } from "@/lib/queryClient";
+import { useState, useEffect, useCallback } from "react";
+import { auth, onAuthStateChanged, type User } from "@/lib/firebase";
 
 interface AuthUser {
   sub: string;
@@ -9,18 +9,54 @@ interface AuthUser {
   profile_image_url: string | null;
 }
 
+function firebaseUserToAuthUser(user: User): AuthUser {
+  const displayName = user.displayName || "";
+  const parts = displayName.split(" ");
+  return {
+    sub: user.uid,
+    email: user.email,
+    first_name: parts[0] || null,
+    last_name: parts.slice(1).join(" ") || null,
+    profile_image_url: user.photoURL,
+  };
+}
+
 export function useAuth() {
-  const { data: user, isLoading, error } = useQuery<AuthUser | null>({
-    queryKey: ["/api/auth/user"],
-    queryFn: getQueryFn({ on401: "returnNull" }),
-    staleTime: 5 * 60 * 1000,
-    retry: false,
-  });
+  const [user, setUser] = useState<AuthUser | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+
+  const syncUserToBackend = useCallback(async (firebaseUser: User) => {
+    try {
+      const token = await firebaseUser.getIdToken();
+      await fetch("/api/auth/sync", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${token}`,
+        },
+      });
+    } catch (e) {
+      console.warn("Failed to sync user to backend:", e);
+    }
+  }, []);
+
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
+      if (firebaseUser) {
+        setUser(firebaseUserToAuthUser(firebaseUser));
+        await syncUserToBackend(firebaseUser);
+      } else {
+        setUser(null);
+      }
+      setIsLoading(false);
+    });
+    return unsubscribe;
+  }, [syncUserToBackend]);
 
   return {
     user: user ?? null,
     isLoading,
     isAuthenticated: !!user,
-    error,
+    error: null,
   };
 }

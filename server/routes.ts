@@ -984,7 +984,7 @@ import {
 
 import { alphaVantageService } from "./services/alphavantage";
 import { storage } from "./storage";
-import { isAuthenticated } from "./replitAuth";
+import { isAuthenticated } from "./firebaseAuth";
 import { z } from "zod";
 import {
   getBusinessByCacheKey,
