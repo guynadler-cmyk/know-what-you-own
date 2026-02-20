@@ -3,7 +3,7 @@ import { useMutation, useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
-import { Bookmark, BookmarkCheck, Loader2, LogIn } from "lucide-react";
+import { Bookmark, BookmarkCheck, RefreshCw, Loader2, LogIn } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
 import { signInWithGoogle } from "@/lib/firebase";
 import { apiRequest, queryClient, getQueryFn } from "@/lib/queryClient";
@@ -22,8 +22,8 @@ export function SaveToWatchlist({ ticker, companyName, getSnapshot }: SaveToWatc
   const [dialogOpen, setDialogOpen] = useState(false);
   const [notes, setNotes] = useState("");
 
-  const { data: checkData, isLoading: checkLoading } = useQuery<{ saved: boolean }>({
-    queryKey: [`/api/watchlist/check/${ticker}`],
+  const { data: checkData, isLoading: checkLoading } = useQuery<{ saved: boolean; item?: { id: string; snapshotHistory?: any[] } | null }>({
+    queryKey: ["/api/watchlist/check", ticker],
     queryFn: getQueryFn({ on401: "returnNull" }),
     enabled: isAuthenticated && !!ticker,
     staleTime: 30 * 1000,
@@ -40,7 +40,7 @@ export function SaveToWatchlist({ ticker, companyName, getSnapshot }: SaveToWatc
       });
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: [`/api/watchlist/check/${ticker}`] });
+      queryClient.invalidateQueries({ queryKey: ["/api/watchlist/check", ticker] });
       queryClient.invalidateQueries({ queryKey: ["/api/watchlist"] });
       setDialogOpen(false);
       setNotes("");
@@ -56,7 +56,25 @@ export function SaveToWatchlist({ ticker, companyName, getSnapshot }: SaveToWatc
     },
   });
 
+  const updateSnapshotMutation = useMutation({
+    mutationFn: async () => {
+      const snapshot = getSnapshot();
+      const itemId = checkData?.item?.id;
+      if (!itemId) throw new Error("No watchlist item found");
+      await apiRequest("PATCH", `/api/watchlist/${itemId}/snapshot`, { snapshot });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/watchlist/check", ticker] });
+      queryClient.invalidateQueries({ queryKey: ["/api/watchlist"] });
+      toast({ title: "Snapshot updated", description: `${companyName}'s analysis snapshot has been refreshed. Previous snapshot saved to history.` });
+    },
+    onError: () => {
+      toast({ title: "Error", description: "Failed to update snapshot. Please try again.", variant: "destructive" });
+    },
+  });
+
   const isSaved = checkData?.saved;
+  const historyCount = (checkData?.item?.snapshotHistory as any[])?.length || 0;
 
   if (authLoading) {
     return <div className="h-9 w-24 rounded-full bg-muted animate-pulse" />;
@@ -79,10 +97,33 @@ export function SaveToWatchlist({ ticker, companyName, getSnapshot }: SaveToWatc
 
   if (isSaved) {
     return (
-      <Button variant="outline" size="sm" className="rounded-full gap-2 text-primary" disabled data-testid="button-watchlist-saved">
-        <BookmarkCheck className="h-4 w-4" />
-        Saved
-      </Button>
+      <div className="flex items-center gap-2">
+        <Button
+          variant="outline"
+          size="sm"
+          className="rounded-full gap-2 text-primary"
+          disabled
+          data-testid="button-watchlist-saved"
+        >
+          <BookmarkCheck className="h-4 w-4" />
+          Saved{historyCount > 0 ? ` (${historyCount + 1})` : ""}
+        </Button>
+        <Button
+          variant="outline"
+          size="sm"
+          className="rounded-full gap-2"
+          onClick={() => updateSnapshotMutation.mutate()}
+          disabled={updateSnapshotMutation.isPending}
+          data-testid="button-update-snapshot"
+        >
+          {updateSnapshotMutation.isPending ? (
+            <Loader2 className="h-4 w-4 animate-spin" />
+          ) : (
+            <RefreshCw className="h-4 w-4" />
+          )}
+          Update Snapshot
+        </Button>
+      </div>
     );
   }
 

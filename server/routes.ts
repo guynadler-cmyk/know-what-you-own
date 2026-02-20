@@ -2363,6 +2363,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.patch("/api/watchlist/:id/snapshot", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user?.claims?.sub;
+      if (!userId) return res.status(401).json({ message: "Unauthorized" });
+      const { snapshot } = req.body;
+      if (!snapshot) return res.status(400).json({ error: "Snapshot is required" });
+      const item = await storage.updateWatchlistSnapshot(req.params.id, userId, snapshot);
+      if (!item) return res.status(404).json({ error: "Not found" });
+      res.json(item);
+    } catch (error: any) {
+      console.error("[watchlist] Error updating snapshot:", error);
+      res.status(500).json({ error: "Failed to update snapshot" });
+    }
+  });
+
   app.delete("/api/watchlist/:id", isAuthenticated, async (req: any, res) => {
     try {
       const userId = req.user?.claims?.sub;

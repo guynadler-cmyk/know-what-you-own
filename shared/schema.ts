@@ -636,6 +636,7 @@ export const watchlistItems = pgTable("watchlist_items", {
   companyName: varchar("company_name", { length: 255 }).notNull(),
   notes: text("notes"),
   snapshot: jsonb("snapshot").notNull().$type<WatchlistSnapshot>(),
+  snapshotHistory: jsonb("snapshot_history").$type<HistoricalSnapshot[]>().default([]),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
@@ -672,6 +673,11 @@ export interface WatchlistSnapshot {
     selectedCheckins?: string[];
     reminderDates?: { type: string; date: string }[];
   };
+}
+
+export interface HistoricalSnapshot {
+  snapshot: WatchlistSnapshot;
+  savedAt: string;
 }
 
 export const insertWatchlistItemSchema = z.object({

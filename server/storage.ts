@@ -13,6 +13,7 @@ import {
   type Lead,
   type WatchlistItem,
   type WatchlistSnapshot,
+  type HistoricalSnapshot,
 } from "@shared/schema";
 import { db } from "./db";
 import { internalDb } from "./internalDb";
@@ -45,6 +46,7 @@ export interface IStorage {
   getWatchlistItems(userId: string): Promise<WatchlistItem[]>;
   addWatchlistItem(userId: string, data: { ticker: string; companyName: string; notes?: string | null; snapshot: WatchlistSnapshot }): Promise<WatchlistItem>;
   updateWatchlistNotes(id: string, userId: string, notes: string | null): Promise<WatchlistItem | undefined>;
+  updateWatchlistSnapshot(id: string, userId: string, newSnapshot: WatchlistSnapshot): Promise<WatchlistItem | undefined>;
   removeWatchlistItem(id: string, userId: string): Promise<boolean>;
   getWatchlistItem(userId: string, ticker: string): Promise<WatchlistItem | undefined>;
   
@@ -174,6 +176,33 @@ export class DatabaseStorage implements IStorage {
     const [item] = await internalDb
       .update(watchlistItems)
       .set({ notes, updatedAt: new Date() })
+      .where(and(eq(watchlistItems.id, id), eq(watchlistItems.userId, userId)))
+      .returning();
+    return item;
+  }
+
+  async updateWatchlistSnapshot(id: string, userId: string, newSnapshot: WatchlistSnapshot): Promise<WatchlistItem | undefined> {
+    const existing = await internalDb
+      .select()
+      .from(watchlistItems)
+      .where(and(eq(watchlistItems.id, id), eq(watchlistItems.userId, userId)))
+      .limit(1);
+    if (!existing.length) return undefined;
+
+    const currentItem = existing[0];
+    const history: HistoricalSnapshot[] = (currentItem.snapshotHistory as HistoricalSnapshot[] || []);
+    history.push({
+      snapshot: currentItem.snapshot,
+      savedAt: (currentItem.updatedAt || new Date()).toISOString(),
+    });
+
+    const [item] = await internalDb
+      .update(watchlistItems)
+      .set({
+        snapshot: newSnapshot,
+        snapshotHistory: history,
+        updatedAt: new Date(),
+      })
       .where(and(eq(watchlistItems.id, id), eq(watchlistItems.userId, userId)))
       .returning();
     return item;
