@@ -1329,7 +1329,7 @@ export class AlphaVantageService {
     })();
 
     const capitalDisciplinePos = (() => {
-      const shareX = normalize(-shareChange, -10, 10);
+      const shareX = normalize(-shareChange + 2, -10, 10);
       const roicY = normalize(returnOnCapital, 0, 30);
       return { x: clamp(shareX, 5, 95), y: clamp(roicY, 5, 95) };
     })();

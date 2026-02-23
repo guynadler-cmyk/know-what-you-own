@@ -363,7 +363,7 @@ function ValuationQuadrantChart({ quadrant }: { quadrant: ValuationQuadrantData 
       <div className="absolute inset-0 pointer-events-none" style={{ padding: '14%' }}>
         <div className="relative w-full h-full">
           {/* Top Left zone label */}
-          <div className="absolute pointer-events-auto" style={{ left: '4%', top: '4%' }}>
+          <div className="absolute pointer-events-auto" style={{ left: '4%', top: '4%', maxWidth: '46%' }}>
             {quadrant.zones.topLeft.tooltip ? (
               <Tooltip>
                 <TooltipTrigger asChild>
@@ -384,7 +384,7 @@ function ValuationQuadrantChart({ quadrant }: { quadrant: ValuationQuadrantData 
           </div>
           
           {/* Top Right zone label */}
-          <div className="absolute pointer-events-auto" style={{ right: '4%', top: '4%', textAlign: 'right' }}>
+          <div className="absolute pointer-events-auto" style={{ right: '4%', top: '4%', textAlign: 'right', maxWidth: '46%' }}>
             {quadrant.zones.topRight.tooltip ? (
               <Tooltip>
                 <TooltipTrigger asChild>
@@ -405,7 +405,7 @@ function ValuationQuadrantChart({ quadrant }: { quadrant: ValuationQuadrantData 
           </div>
           
           {/* Bottom Left zone label */}
-          <div className="absolute pointer-events-auto" style={{ left: '4%', bottom: '4%' }}>
+          <div className="absolute pointer-events-auto" style={{ left: '4%', bottom: '4%', maxWidth: '46%' }}>
             {quadrant.zones.bottomLeft.tooltip ? (
               <Tooltip>
                 <TooltipTrigger asChild>
@@ -426,7 +426,7 @@ function ValuationQuadrantChart({ quadrant }: { quadrant: ValuationQuadrantData 
           </div>
           
           {/* Bottom Right zone label */}
-          <div className="absolute pointer-events-auto" style={{ right: '4%', bottom: '4%', textAlign: 'right' }}>
+          <div className="absolute pointer-events-auto" style={{ right: '4%', bottom: '4%', textAlign: 'right', maxWidth: '46%' }}>
             {quadrant.zones.bottomRight.tooltip ? (
               <Tooltip>
                 <TooltipTrigger asChild>
