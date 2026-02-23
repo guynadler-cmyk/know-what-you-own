@@ -4,7 +4,7 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { Skeleton } from "@/components/ui/skeleton";
-import { TrendingUp, TrendingDown, HelpCircle, CheckCircle, AlertTriangle, XCircle, Minus, AlertOctagon, RefreshCw } from "lucide-react";
+import { TrendingUp, TrendingDown, HelpCircle, CheckCircle, AlertTriangle, XCircle, Minus, AlertOctagon, RefreshCw, ChevronDown, ChevronUp } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { ValuationMetrics, ValuationQuadrant as APIValuationQuadrant } from "@shared/schema";
 import { PriceDisciplineTag } from "./PriceDisciplineTag";
@@ -687,6 +687,32 @@ function convertAPIQuadrantToLocal(apiQuadrant: APIValuationQuadrant): Valuation
   };
 }
 
+function QuadrantTierExplanation({ tier1, tier2, quadrantId }: { tier1: string; tier2?: string; quadrantId: string }) {
+  const [isExpanded, setIsExpanded] = useState(false);
+  return (
+    <div className="bg-muted/50 rounded-lg p-4 border border-border/60" data-testid={`quadrant-tier-explanation-${quadrantId}`}>
+      <p className="text-sm text-muted-foreground leading-snug">{tier1}</p>
+      {tier2 && tier2 !== tier1 && (
+        <>
+          <button
+            onClick={() => setIsExpanded(!isExpanded)}
+            className="flex items-center gap-1 text-xs text-primary mt-2 hover-elevate rounded px-1 py-0.5"
+            data-testid={`quadrant-tier-toggle-${quadrantId}`}
+          >
+            {isExpanded ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
+            <span>{isExpanded ? "Less detail" : "Why this matters"}</span>
+          </button>
+          {isExpanded && (
+            <p className="text-sm text-muted-foreground leading-relaxed mt-2" data-testid={`quadrant-tier2-${quadrantId}`}>
+              {tier2}
+            </p>
+          )}
+        </>
+      )}
+    </div>
+  );
+}
+
 interface ValuationExplorerProps {
   ticker?: string;
   onQuadrantDataChange?: (data: ValuationQuadrantData[]) => void;
@@ -809,23 +835,32 @@ export function ValuationExplorer({ ticker, onQuadrantDataChange }: ValuationExp
             {selectedQuadrant.id === "price-discipline" && priceDisciplineQuadrant ? (
               <PriceDisciplineTag quadrant={priceDisciplineQuadrant} />
             ) : (
-              <div 
-                className="bg-primary/5 rounded-lg p-4 border border-primary/10"
-                data-testid="valuation-quadrant-insight"
-              >
-                <p className="text-foreground leading-relaxed text-base">
-                  {selectedQuadrant.insightHighlight && selectedQuadrant.insight.includes(selectedQuadrant.insightHighlight) ? (
-                    <>
-                      {selectedQuadrant.insight.split(selectedQuadrant.insightHighlight)[0]}
-                      <span className="font-semibold text-primary">
-                        {selectedQuadrant.insightHighlight}
-                      </span>
-                      {selectedQuadrant.insight.split(selectedQuadrant.insightHighlight)[1] || ''}
-                    </>
-                  ) : (
-                    selectedQuadrant.insight
-                  )}
-                </p>
+              <div className="space-y-3">
+                <div 
+                  className="bg-primary/5 rounded-lg p-4 border border-primary/10"
+                  data-testid="valuation-quadrant-insight"
+                >
+                  <p className="text-foreground leading-relaxed text-base">
+                    {selectedQuadrant.insightHighlight && selectedQuadrant.insight.includes(selectedQuadrant.insightHighlight) ? (
+                      <>
+                        {selectedQuadrant.insight.split(selectedQuadrant.insightHighlight)[0]}
+                        <span className="font-semibold text-primary">
+                          {selectedQuadrant.insightHighlight}
+                        </span>
+                        {selectedQuadrant.insight.split(selectedQuadrant.insightHighlight)[1] || ''}
+                      </>
+                    ) : (
+                      selectedQuadrant.insight
+                    )}
+                  </p>
+                </div>
+                {selectedQuadrant.tier1Summary && (
+                  <QuadrantTierExplanation
+                    tier1={selectedQuadrant.tier1Summary}
+                    tier2={selectedQuadrant.tier2Explanation}
+                    quadrantId={selectedQuadrant.id}
+                  />
+                )}
               </div>
             )}
           </div>

@@ -1096,6 +1096,9 @@ export class AlphaVantageService {
       console.log(`[Valuation] ${upperTicker}: 52wk high $${weekHigh52.toFixed(2)}, current $${currentPrice.toFixed(2)}, distance ${distanceFromHigh.toFixed(1)}%`);
 
       // Generate quadrant data based on calculations
+      const netIncomeCurrent = safeParseFloat(incomeReports[0].netIncome);
+      const netIncomePrevious = incomeReports.length > 1 ? safeParseFloat(incomeReports[1].netIncome) : NaN;
+
       const quadrants: ValuationQuadrant[] = this.generateValuationQuadrants({
         earningsYield,
         returnOnCapital,
@@ -1113,6 +1116,9 @@ export class AlphaVantageService {
         earningsGrowthRate: earningsGrowthComputable ? earningsGrowthRate : NaN,
         earningsGrowthYears: earningsGrowthComputable ? earningsGrowthYears : 0,
         earningsGrowthComputable,
+        netIncomeCurrent,
+        netIncomePrevious,
+        sharesOutstanding,
       });
 
       // Determine overall strength
@@ -1185,13 +1191,25 @@ export class AlphaVantageService {
     earningsGrowthRate: number;
     earningsGrowthYears: number;
     earningsGrowthComputable: boolean;
+    netIncomeCurrent: number;
+    netIncomePrevious: number;
+    sharesOutstanding: number;
   }): ValuationQuadrant[] {
-    const { earningsYield, returnOnCapital, peRatio, marketCap, shareChange, distanceFromHigh, stockCAGR, cagrYears, sma200, priceVsSma, trajectory, currentPrice, earningsGrowthRate, earningsGrowthYears, earningsGrowthComputable } = data;
+    const { earningsYield, returnOnCapital, peRatio, marketCap, shareChange, distanceFromHigh, stockCAGR, cagrYears, sma200, priceVsSma, trajectory, currentPrice, earningsGrowthRate, earningsGrowthYears, earningsGrowthComputable, netIncomeCurrent, netIncomePrevious, sharesOutstanding } = data;
 
     // Determine signal colors based on thresholds
     const eyColor: 'green' | 'red' | 'yellow' = earningsYield > 8 ? 'green' : earningsYield > 5 ? 'yellow' : 'red';
     const rocColor: 'green' | 'red' | 'yellow' = returnOnCapital > 15 ? 'green' : returnOnCapital > 8 ? 'yellow' : 'red';
-    const peColor: 'green' | 'red' | 'yellow' = peRatio > 0 && peRatio < 15 ? 'green' : peRatio > 25 ? 'red' : 'yellow';
+    const pegRatio = (peRatio > 0 && earningsGrowthComputable) ? peRatio / Math.max(earningsGrowthRate, 5) : NaN;
+    const peColor: 'green' | 'red' | 'yellow' = (() => {
+      if (peRatio <= 0) return 'yellow';
+      if (!earningsGrowthComputable) return peRatio <= 15 ? 'green' : peRatio > 25 ? 'red' : 'yellow';
+      if (earningsGrowthRate <= 0) return peRatio <= 15 ? 'yellow' : 'red';
+      if (peRatio >= 80 && earningsGrowthRate < 20) return 'red';
+      if (pegRatio <= 1.6) return 'green';
+      if (pegRatio <= 2.0) return 'yellow';
+      return pegRatio <= 3.0 ? 'yellow' : 'red';
+    })();
     const shareColor: 'green' | 'red' | 'neutral' = shareChange < 0 ? 'green' : shareChange > 0 ? 'red' : 'neutral';
 
     // Distance from high color logic (user requested):
@@ -1376,31 +1394,46 @@ export class AlphaVantageService {
         tier2Explanation: priceDisciplineTier2,
         position: priceDisciplinePos,
       },
-      {
-        id: 'price-tag',
-        title: 'Price Tag',
-        verdict: this.getPriceTagVerdict(peRatio, earningsGrowthRate, earningsGrowthComputable),
-        signals: [
-          { 
-            label: 'P/E Ratio', 
-            value: peRatio > 0 ? `${peRatio.toFixed(1)}x` : 'N/A', 
-            color: peColor, 
-            tooltip: 'Tells you how many years of earnings it would take to "pay back" the stock price. The higher it is, the more expensive the stock may look.' 
-          },
-          { 
-            label: 'Earnings Growth', 
-            value: earningsGrowthComputable ? `${earningsGrowthRate > 0 ? '+' : ''}${earningsGrowthRate.toFixed(1)}%` : 'N/A', 
-            color: earningsGrowthComputable ? (earningsGrowthRate > 15 ? 'green' : earningsGrowthRate > 5 ? 'yellow' : 'red') : 'neutral', 
-            tooltip: earningsGrowthComputable 
-              ? `Shows how fast the company's earnings are growing (${earningsGrowthYears}-year${earningsGrowthYears === 1 ? '' : 's'} trend). Fast growth can justify a high price.`
-              : 'Not enough earnings history to calculate growth rate.' 
-          },
-        ],
-        insight: this.getPriceTagInsight(peRatio, earningsGrowthRate, earningsGrowthComputable),
-        insightHighlight: this.getPriceTagHighlight(peRatio, earningsGrowthRate, earningsGrowthComputable),
-        strength: this.getPriceTagStrength(peRatio, earningsGrowthRate, earningsGrowthComputable),
-        position: priceTagPos,
-      },
+      (() => {
+        const pt = this.evaluatePriceTag(peRatio, earningsGrowthRate, earningsGrowthComputable, pegRatio, netIncomeCurrent, netIncomePrevious, sharesOutstanding, currentPrice);
+
+        let priceTagStrength = pt.strength;
+        if (priceTagPos.x >= 50 && priceTagPos.y <= 50) {
+          priceTagStrength = 'sensible';
+        } else if (priceTagPos.x < 50 && priceTagPos.y > 50) {
+          priceTagStrength = 'risky';
+        } else {
+          priceTagStrength = 'caution';
+        }
+
+        return {
+          id: 'price-tag' as const,
+          title: 'Price Tag',
+          verdict: pt.verdict,
+          signals: [
+            { 
+              label: 'P/E Ratio', 
+              value: peRatio > 0 ? `${peRatio.toFixed(1)}x` : 'N/A', 
+              color: peColor, 
+              tooltip: 'Tells you how many years of earnings it would take to "pay back" the stock price. The higher it is, the more expensive the stock may look.' 
+            },
+            { 
+              label: 'Earnings Growth', 
+              value: earningsGrowthComputable ? `${earningsGrowthRate > 0 ? '+' : ''}${earningsGrowthRate.toFixed(1)}%` : 'N/A', 
+              color: earningsGrowthComputable ? (earningsGrowthRate > 15 ? 'green' : earningsGrowthRate > 5 ? 'yellow' : 'red') : 'neutral', 
+              tooltip: earningsGrowthComputable 
+                ? `Shows how fast the company's earnings are growing (${earningsGrowthYears}-year${earningsGrowthYears === 1 ? '' : 's'} trend). Fast growth can justify a high price.`
+                : 'Not enough earnings history to calculate growth rate.' 
+            },
+          ],
+          insight: pt.insight,
+          insightHighlight: pt.highlight,
+          strength: priceTagStrength,
+          tier1Summary: pt.tier1,
+          tier2Explanation: pt.tier2,
+          position: priceTagPos,
+        };
+      })(),
       {
         id: 'capital-discipline',
         title: 'Capital Discipline',
@@ -1446,126 +1479,176 @@ export class AlphaVantageService {
     ];
   }
 
-  private getPriceTagVerdict(peRatio: number, earningsGrowthRate: number, earningsGrowthComputable: boolean): string {
-    // Handle missing/invalid P/E (negative earnings companies)
-    if (peRatio <= 0) {
-      return 'Hard to Value';
-    }
-    
-    // Handle missing growth data - can only evaluate based on P/E
-    if (!earningsGrowthComputable) {
-      return peRatio <= 15 ? 'Looks Cheap' : peRatio > 25 ? 'Looks Expensive' : 'Fairly Priced';
-    }
-    
-    const isHighPE = peRatio > 25;
-    const isLowPE = peRatio <= 15;
-    const isHighGrowth = earningsGrowthRate > 15;
-    const isLowGrowth = earningsGrowthRate <= 5;
+  private evaluatePriceTag(
+    peRatio: number,
+    earningsGrowthRate: number,
+    earningsGrowthComputable: boolean,
+    pegRatio: number,
+    netIncomeCurrent: number,
+    netIncomePrevious: number,
+    sharesOutstanding: number,
+    currentPrice: number,
+  ): { verdict: string; insight: string; highlight: string; strength: 'sensible' | 'caution' | 'risky'; tier1: string; tier2: string } {
+    type Bucket = 'Cheap' | 'Fair' | 'Premium' | 'PricedForPerfection' | 'InsufficientData';
 
-    if (isLowPE && isHighGrowth) return 'Hidden Gem';
-    if (isLowPE && isLowGrowth) return 'Value Trap Risk';
-    if (isHighPE && isHighGrowth) return 'Growth Premium';
-    if (isHighPE && isLowGrowth) return 'Overpriced';
-    return 'Fairly Priced';
-  }
-
-  private getPriceTagInsight(peRatio: number, earningsGrowthRate: number, earningsGrowthComputable: boolean): string {
-    // Handle missing/invalid P/E (negative earnings companies)
-    if (peRatio <= 0) {
-      return 'The company doesn\'t have positive earnings right now, so traditional price measures don\'t apply. Focus on the business story and future potential instead.';
-    }
-    
-    // Handle missing growth data
-    if (!earningsGrowthComputable) {
-      if (peRatio <= 15) {
-        return 'The stock looks cheap based on P/E, but we don\'t have enough data to measure earnings growth. Dig into the story to understand why.';
+    const getBucket = (): Bucket => {
+      if (peRatio <= 0) return 'InsufficientData';
+      if (!earningsGrowthComputable || earningsGrowthRate <= 0) {
+        return peRatio <= 15 ? 'Fair' : 'Premium';
       }
-      if (peRatio > 25) {
-        return 'The stock looks expensive based on P/E, and we don\'t have clear earnings growth data. Proceed carefully.';
+      if (peRatio >= 80 && earningsGrowthRate < 20) return 'PricedForPerfection';
+      if (pegRatio <= 1.2) return 'Cheap';
+      if (pegRatio <= 2.0) return pegRatio <= 1.6 ? 'Cheap' : 'Fair';
+      if (pegRatio <= 3.0) return 'Premium';
+      return 'PricedForPerfection';
+    };
+
+    const bucket = getBucket();
+
+    const distortionNote = peRatio > 300 ? ' Note: P/E is extremely high and may be distorted by unusually low earnings.' : '';
+
+    const verdictMap: Record<Bucket, string> = {
+      Cheap: 'Undervalued Opportunity',
+      Fair: 'Reasonable for Growth',
+      Premium: 'Growth Premium',
+      PricedForPerfection: 'Priced for Perfection',
+      InsufficientData: 'Hard to Value',
+    };
+
+    const strengthMap: Record<Bucket, 'sensible' | 'caution' | 'risky'> = {
+      Cheap: 'sensible',
+      Fair: earningsGrowthRate <= 0 ? 'caution' : (pegRatio <= 1.6 ? 'sensible' : 'caution'),
+      Premium: 'caution',
+      PricedForPerfection: 'risky',
+      InsufficientData: 'caution',
+    };
+
+    const getInsightAndHighlight = (): { insight: string; highlight: string } => {
+      switch (bucket) {
+        case 'Cheap':
+          return {
+            insight: `The stock looks reasonably priced relative to its earnings growth. With a P/E of ${peRatio.toFixed(0)}x and earnings growing at ${earningsGrowthRate.toFixed(0)}%, you're getting good value for the growth on offer.${distortionNote}`,
+            highlight: 'good value',
+          };
+        case 'Fair':
+          if (!earningsGrowthComputable || earningsGrowthRate <= 0) {
+            return {
+              insight: peRatio <= 15
+                ? 'The stock looks cheap based on P/E, but earnings aren\'t growing. Sometimes low prices reflect real problems — make sure you understand the story.'
+                : 'The price is elevated and earnings aren\'t growing. Be careful — you may be paying more than the business currently earns.',
+              highlight: peRatio <= 15 ? 'understand the story' : 'be careful',
+            };
+          }
+          return {
+            insight: `The price seems reasonable relative to earnings growth. At a P/E of ${peRatio.toFixed(0)}x with ${earningsGrowthRate.toFixed(0)}% growth, you're not overpaying — but it's not a bargain either.${distortionNote}`,
+            highlight: 'reasonable',
+          };
+        case 'Premium':
+          return {
+            insight: `You're paying a premium for this stock. The P/E of ${peRatio.toFixed(0)}x is high relative to ${earningsGrowthComputable ? earningsGrowthRate.toFixed(0) + '% earnings growth' : 'current earnings'}. The market expects big things — the question is whether the company can deliver.${distortionNote}`,
+            highlight: 'paying a premium',
+          };
+        case 'PricedForPerfection':
+          return {
+            insight: `The stock is priced for perfection. At a P/E of ${peRatio.toFixed(0)}x${earningsGrowthComputable ? ' with ' + earningsGrowthRate.toFixed(0) + '% growth' : ''}, there's very little room for error. Even small disappointments could lead to a sharp pullback.${distortionNote}`,
+            highlight: 'little room for error',
+          };
+        case 'InsufficientData':
+        default:
+          return {
+            insight: 'The company doesn\'t have positive earnings right now, so traditional price measures don\'t apply. Focus on the business story and future potential instead.',
+            highlight: 'business story',
+          };
       }
-      return 'The P/E looks reasonable, but we don\'t have enough data to assess earnings growth trends.';
-    }
-    
-    const isHighPE = peRatio > 25;
-    const isLowPE = peRatio <= 15;
-    const isHighGrowth = earningsGrowthRate > 15;
-    const isLowGrowth = earningsGrowthRate <= 5;
+    };
 
-    if (isLowPE && isHighGrowth) {
-      return 'The stock looks reasonably priced and the business is growing fast. This combination is rare — dig deeper to confirm it\'s real.';
-    }
-    if (isLowPE && isLowGrowth) {
-      return 'The stock looks cheap, but earnings aren\'t growing much. Sometimes low prices reflect real problems — make sure you understand why.';
-    }
-    if (isHighPE && isHighGrowth) {
-      return 'You\'re paying a premium, but earnings growth is strong. The market expects big things — the question is whether the company can deliver.';
-    }
-    if (isHighPE && isLowGrowth) {
-      return 'The stock looks expensive and earnings growth is slow. Be careful — you may be paying more than the business is worth.';
-    }
-    return 'The price seems reasonable relative to earnings growth. Not a screaming deal, but not overpriced either.';
-  }
+    const { insight, highlight } = getInsightAndHighlight();
 
-  private getPriceTagHighlight(peRatio: number, earningsGrowthRate: number, earningsGrowthComputable: boolean): string {
-    if (peRatio <= 0) return 'business story';
-    if (!earningsGrowthComputable) return 'dig into the story';
-    
-    const isHighPE = peRatio > 25;
-    const isLowPE = peRatio <= 15;
-    const isHighGrowth = earningsGrowthRate > 15;
-    const isLowGrowth = earningsGrowthRate <= 5;
+    const getPeChangeContext = (): { tier1: string; tier2: string } => {
+      if (sharesOutstanding <= 0 || isNaN(netIncomeCurrent) || isNaN(netIncomePrevious)) {
+        return { tier1: '', tier2: '' };
+      }
 
-    if (isLowPE && isHighGrowth) return 'rare';
-    if (isLowPE && isLowGrowth) return 'understand why';
-    if (isHighPE && isHighGrowth) return 'paying a premium';
-    if (isHighPE && isLowGrowth) return 'expensive';
-    return 'reasonable';
-  }
+      const epsCurrent = netIncomeCurrent / sharesOutstanding;
+      const epsPrevious = netIncomePrevious / sharesOutstanding;
 
-  private getPriceTagStrength(peRatio: number, earningsGrowthRate: number, earningsGrowthComputable: boolean): 'sensible' | 'caution' | 'risky' {
-    // Handle missing/invalid P/E (negative earnings companies) - neutral caution
-    if (peRatio <= 0) return 'caution';
-    
-    // Handle missing growth data - be conservative, evaluate based on P/E only
-    if (!earningsGrowthComputable) {
-      // Without growth data, very high P/E is risky, low P/E is caution, otherwise caution
-      return peRatio > 25 ? 'risky' : 'caution';
-    }
-    
-    // Define thresholds
-    const isVeryHighPE = peRatio > 30;
-    const isHighPE = peRatio > 20;
-    const isModeratePE = peRatio > 15 && peRatio <= 20;
-    const isLowPE = peRatio <= 15;
-    const isHighGrowth = earningsGrowthRate > 15;
-    const isModerateGrowth = earningsGrowthRate > 8 && earningsGrowthRate <= 15;
-    const isLowGrowth = earningsGrowthRate <= 5;
+      if ((epsPrevious < 0 && epsCurrent > 0) || (epsPrevious > 0 && epsCurrent < 0)) {
+        return {
+          tier1: 'Earnings crossed from positive to negative (or vice versa) — P/E comparisons may be distorted.',
+          tier2: 'When a company swings between profit and loss, traditional valuation metrics like P/E can be misleading. Focus on the business trajectory and whether the company is moving toward sustained profitability.',
+        };
+      }
 
-    // Best case: Low P/E with high growth = sensible (undervalued opportunity)
-    if (isLowPE && isHighGrowth) return 'sensible';
-    
-    // Low P/E with moderate growth = sensible
-    if (isLowPE && isModerateGrowth) return 'sensible';
-    
-    // Low P/E but low/no growth = caution (cheap for a reason)
-    if (isLowPE && isLowGrowth) return 'caution';
-    
-    // Very high P/E is risky unless growth is exceptional
-    if (isVeryHighPE && isHighGrowth) return 'caution'; // Growth premium
-    if (isVeryHighPE) return 'risky'; // Too expensive
-    
-    // High P/E (20-30) needs strong growth to justify
-    if (isHighPE && isHighGrowth) return 'caution'; // Growth premium - justified
-    if (isHighPE && isModerateGrowth) return 'caution'; // Expensive but some growth justifies caution not risky
-    if (isHighPE) return 'risky'; // Expensive with low/no growth
-    
-    // Moderate P/E (15-20) with high growth = sensible
-    if (isModeratePE && isHighGrowth) return 'sensible';
-    
-    // Moderate P/E with moderate or low growth = caution
-    if (isModeratePE) return 'caution';
-    
-    return 'caution';
+      if (Math.abs(epsPrevious) < 0.01) {
+        return { tier1: '', tier2: '' };
+      }
+
+      const epsChangePct = ((epsCurrent - epsPrevious) / Math.abs(epsPrevious)) * 100;
+      const DEADBAND = 3;
+      const epsDirection: 'up' | 'down' | 'flat' = epsChangePct > DEADBAND ? 'up' : epsChangePct < -DEADBAND ? 'down' : 'flat';
+
+      if (peRatio > 0 && epsCurrent > 0) {
+        const impliedPreviousPrice = (peRatio * epsCurrent) / (epsCurrent / epsPrevious);
+        const priceChangePct = ((currentPrice - impliedPreviousPrice) / Math.abs(impliedPreviousPrice)) * 100;
+        const priceDirection: 'up' | 'down' | 'flat' = priceChangePct > DEADBAND ? 'up' : priceChangePct < -DEADBAND ? 'down' : 'flat';
+
+        if (priceDirection === 'down' && epsDirection === 'up') {
+          return {
+            tier1: 'Price is down while earnings are up — the stock is getting cheaper for the right reasons.',
+            tier2: `The stock price has pulled back while the company's earnings have grown${epsChangePct > 10 ? ' significantly' : ''}. This means the P/E is shrinking because earnings are growing faster than the price — a healthy sign for value-oriented investors.`,
+          };
+        }
+        if (priceDirection === 'down' && epsDirection === 'down') {
+          const severity = epsChangePct < -15 ? 'red' : 'amber';
+          return {
+            tier1: severity === 'red'
+              ? 'Both price and earnings are falling sharply — proceed with caution.'
+              : 'Both price and earnings are declining — watch for signs of stabilization.',
+            tier2: severity === 'red'
+              ? `Both the stock price and earnings have dropped meaningfully (earnings down ${Math.abs(epsChangePct).toFixed(0)}%). A falling price paired with shrinking profits can signal deeper problems. Make sure you understand why before buying.`
+              : `The stock price and earnings have both declined modestly. This isn't necessarily alarming, but watch for whether earnings stabilize in coming quarters.`,
+          };
+        }
+        if (priceDirection === 'up' && epsDirection === 'up') {
+          return {
+            tier1: 'Both price and earnings are rising — the market is rewarding growth.',
+            tier2: `The stock price has risen alongside earnings growth (earnings up ${epsChangePct.toFixed(0)}%). This is a healthy dynamic — the price increase is backed by improving fundamentals rather than just hype.`,
+          };
+        }
+        if (priceDirection === 'up' && epsDirection === 'down') {
+          return {
+            tier1: 'Price is rising but earnings are falling — the stock may be getting more expensive.',
+            tier2: `The stock price has gone up while earnings have declined (down ${Math.abs(epsChangePct).toFixed(0)}%). This means the P/E is expanding — you're paying more for each dollar of earnings. Be cautious unless you believe a strong earnings recovery is coming.`,
+          };
+        }
+      }
+
+      if (epsDirection === 'up') {
+        return {
+          tier1: `Earnings are growing (up ${epsChangePct.toFixed(0)}% year-over-year).`,
+          tier2: 'Growing earnings are a positive sign. If the price hasn\'t moved much, the stock may be getting cheaper relative to its earning power.',
+        };
+      }
+      if (epsDirection === 'down') {
+        return {
+          tier1: `Earnings are declining (down ${Math.abs(epsChangePct).toFixed(0)}% year-over-year).`,
+          tier2: 'Falling earnings deserve attention. Check whether this is a temporary dip or a sign of longer-term challenges.',
+        };
+      }
+
+      return { tier1: '', tier2: '' };
+    };
+
+    const { tier1, tier2 } = getPeChangeContext();
+
+    return {
+      verdict: verdictMap[bucket],
+      insight,
+      highlight,
+      strength: strengthMap[bucket],
+      tier1,
+      tier2,
+    };
   }
 
   async getTimingAnalysis(ticker: string, timeframe: TimingTimeframe = 'weekly'): Promise<TimingAnalysis> {
