@@ -589,8 +589,8 @@ function convertAPIQuadrantToLocal(apiQuadrant: APIValuationQuadrant): Valuation
       },
       'price-tag': {
         topLeft: { label: "Priced for Perfection", color: "red", tooltip: "Expensive stock with slow earnings growth — expectations may not be met." },
-        topRight: { label: "Growth Premium", color: "yellow", tooltip: "High price, but fast-growing earnings — the growth may justify the cost." },
-        bottomLeft: { label: "Cheap for a Reason", color: "orange", tooltip: "Low price, but earnings aren't growing — there may be a reason it's cheap." },
+        topRight: { label: "Cheap for a Reason", color: "orange", tooltip: "Low price, but earnings aren't growing — there may be a reason it's cheap." },
+        bottomLeft: { label: "Growth Premium", color: "yellow", tooltip: "High price, but fast-growing earnings — the growth may justify the cost." },
         bottomRight: { label: "Undervalued Opportunity", color: "green", tooltip: "Low price with strong earnings growth — could be a hidden gem worth exploring." },
       },
       'capital-discipline': {

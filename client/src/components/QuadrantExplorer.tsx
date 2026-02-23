@@ -283,8 +283,8 @@ export function generateQuadrantData(
     const clamp = (val: number) => Math.max(10, Math.min(90, val));
     const cappedRoic = Math.min(Math.max(roic, -10), 50);
     const cappedBv = bvGrowthKnown ? Math.min(Math.max(bvGrowth, -20), 40) : 0;
-    const x = clamp(((cappedBv + 20) / 60) * 100);
-    const y = clamp(100 - ((cappedRoic + 10) / 60) * 100);
+    const x = clamp(((cappedBv + 22) / 60) * 100);
+    const y = clamp(100 - ((cappedRoic + 15) / 60) * 100);
     return { x, y };
   };
 
