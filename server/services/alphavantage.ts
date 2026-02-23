@@ -1318,7 +1318,7 @@ export class AlphaVantageService {
       else if (priceVsSma === 'above' && trajectory === 'drifting') y = 65;
       else if (priceVsSma === 'below' && trajectory === 'drifting') y = 85;
       else y = 50;
-      if (distanceFromHigh < 10) { y = clamp(y + 15, 5, 95); }
+      if (distanceFromHigh < 10) { y = Math.max(y + 15, 75); }
       return { x: clamp(x, 5, 95), y: clamp(y, 5, 95) };
     })();
 
