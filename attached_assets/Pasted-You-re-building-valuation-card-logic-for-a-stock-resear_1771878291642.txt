@@ -1,0 +1,105 @@
+You’re building valuation-card logic for a stock research app. Implement robust, testable rules for P/E ratio “coloring” and messaging.
+
+Goal:
+- DO NOT color purely on “P/E went down/up”.
+- Color should reflect (1) valuation LEVEL vs growth (entry lens), and (2) P/E CHANGE DRIVER (context lens).
+- Output must be deterministic with unit tests.
+
+Tech assumptions:
+- TypeScript codebase (Node + React). If unknown, write in TS anyway.
+- Create a pure function + tests; UI will consume returned “chips/badges”.
+
+Data inputs (per ticker, per period):
+- pe_ttm_current: number | null
+- pe_ttm_prev: number | null
+- price_current: number | null
+- price_prev: number | null
+- eps_ttm_current: number | null
+- eps_ttm_prev: number | null
+- earnings_growth_forward_pct: number | null   // e.g. 25 means +25%
+- sector: string | null
+- market_cap: number | null
+
+Outputs:
+Return an object:
+{
+  priceTag: {
+    bucket: "Cheap" | "Fair" | "Premium" | "PricedForPerfection" | "InsufficientData",
+    color: "green" | "amber" | "red" | "gray",
+    primaryLabel: string,            // e.g. "Growth Premium"
+    supportingText: string,          // 1-2 sentences in plain English
+    metrics: Array<{ label: string, value: string, color?: string }>
+  },
+  peChangeContext: {
+    driverCase: "PriceDown_EpsUp" | "PriceDown_EpsDown" | "PriceUp_EpsUp" | "PriceUp_EpsDown" | "InsufficientData",
+    color: "green" | "amber" | "red" | "gray",
+    badges: Array<{ label: string, value: string, direction?: "up"|"down"|"flat", color?: string }>,
+    explanation: string
+  }
+}
+
+Rules:
+
+A) PriceTag bucket (ENTRY lens) – based on P/E LEVEL vs growth
+- Compute growth = earnings_growth_forward_pct. If null, fall back to EPS change pct: (eps_ttm_current - eps_ttm_prev)/abs(eps_ttm_prev) * 100 if eps_ttm_prev exists.
+- Convert growth to decimal g = growth/100.
+- Use a PEG-like heuristic: peg = (pe_ttm_current) / max(growth, 5) where growth is in % points (so 25 => 25). Clamp growth floor at 5 to avoid division issues.
+- Also enforce absolute P/E bounds for sanity.
+
+Suggested thresholds (implement as constants, easy to tune):
+- If pe null -> InsufficientData (gray)
+- If growth <= 0:
+    - If pe <= 15 => Fair (amber/green? choose amber)
+    - If pe > 15 => Premium (red)
+- Else (growth > 0):
+    - If pe >= 80 AND growth < 20 => PricedForPerfection (red)
+    - Else if peg <= 1.2 => Cheap (green)
+    - Else if peg <= 2.0 => Fair (green/amber; choose green for <=1.6 else amber)
+    - Else if peg <= 3.0 => Premium (amber)
+    - Else => PricedForPerfection (red)
+
+Primary labels:
+- Cheap => "Undervalued Opportunity"
+- Fair => "Reasonable for Growth"
+- Premium => "Growth Premium"
+- PricedForPerfection => "Priced for Perfection"
+
+SupportingText guidelines:
+- Mention “paying a premium” only when bucket is Premium or PricedForPerfection.
+- Mention “room for error” when PricedForPerfection.
+- Keep it plain English; no jargon beyond P/E and earnings growth.
+
+B) P/E change context (ENTRY + OWNER lens) – based on PRICE vs EPS drivers
+- Need price_current, price_prev, eps_ttm_current, eps_ttm_prev. If missing -> InsufficientData (gray).
+- Compute price_change_pct and eps_change_pct.
+- Determine directions with deadband:
+    - up if > +3%
+    - down if < -3%
+    - flat otherwise
+- Map to 4 driver cases:
+    1) PriceDown + EpsUp => Green (cheaper while earnings improving)
+    2) PriceDown + EpsDown => Amber by default; Red if eps_change_pct < -15%
+    3) PriceUp + EpsUp => Amber by default; Green if peg <= 1.6 and price_change_pct < +15%
+    4) PriceUp + EpsDown => Red
+- Build badges:
+    - “Price” badge with +/- pct
+    - “Earnings” badge with +/- pct
+    - Optional “P/E” badge with +/- pct if pe_prev exists
+
+Edge cases:
+- EPS can be negative; handle percent changes carefully:
+    - If eps_prev is 0 or near 0, treat eps_change_pct as null and mark InsufficientData for driver logic.
+    - If eps_prev < 0 and eps_current > 0 (or vice versa), treat as “inflection” and set driverCase = InsufficientData with explanation “earnings crossed zero; P/E comparisons may be distorted”.
+- If pe_ttm_current is extreme (>300) flag in supportingText: “P/E may be distorted (very high).”
+
+Deliverables:
+1) Create /src/valuation/peLogic.ts with exported function evaluatePeValuation(inputs): outputs
+2) Create unit tests in /src/valuation/peLogic.test.ts covering:
+   - PLTR-like: very high P/E, strong growth; P/E down due to price down or EPS up -> should NOT be red just because P/E down
+   - PriceDown_EpsUp => green context
+   - PriceDown_EpsDown with EPS -20% => red context
+   - Growth <=0 with P/E high => red bucket
+   - EPS crossing zero => InsufficientData driver
+3) Include a small README snippet in comments showing how UI should render: primary chip uses priceTag.color; driver badges use peChangeContext.color.
+
+Implement clean TypeScript with good naming, no external libs besides Jest/Vitest as available.
