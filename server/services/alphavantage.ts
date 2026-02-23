@@ -1318,9 +1318,19 @@ export class AlphaVantageService {
       else if (priceVsSma === 'above' && trajectory === 'drifting') y = 65;
       else if (priceVsSma === 'below' && trajectory === 'drifting') y = 85;
       else y = 50;
-      if (distanceFromHigh < 10) { y = Math.max(y + 15, 75); }
+      if (distanceFromHigh < 10) { y = clamp(y + 15, 5, 95); }
       return { x: clamp(x, 5, 95), y: clamp(y, 5, 95) };
     })();
+
+    // Derive strength from the zone the dot actually lands in, so card color always matches quadrant
+    // price-discipline zones: topLeft=red, topRight=yellow, bottomLeft=orange, bottomRight=green
+    if (priceDisciplinePos.x >= 50 && priceDisciplinePos.y <= 50) {
+      priceDisciplineStrength = 'sensible';  // bottomRight = green (Sunny Discount)
+    } else if (priceDisciplinePos.x < 50 && priceDisciplinePos.y > 50) {
+      priceDisciplineStrength = 'risky';     // topLeft = red (Stormy Peak)
+    } else {
+      priceDisciplineStrength = 'caution';   // topRight = yellow (Bargain in Rain) or bottomLeft = orange (Clear but Pricey)
+    }
 
     const priceTagPos = (() => {
       const peX = peRatio <= 0 ? 50 : normalize(50 - peRatio, 0, 50);
