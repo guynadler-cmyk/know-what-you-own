@@ -19,7 +19,7 @@ import {
 import {
   Bookmark, Search, Trash2, Pencil, Check, X, ExternalLink,
   LogIn, TrendingUp, TrendingDown, Minus, ChevronDown, ChevronUp,
-  Clock, History,
+  Clock, History, Construction,
 } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
 import { signInWithGoogle } from "@/lib/firebase";
@@ -411,6 +411,13 @@ export default function WatchlistPage() {
         <div className="mb-8">
           <h1 className="text-3xl font-bold tracking-tight" data-testid="text-watchlist-title">My Watchlist</h1>
           <p className="text-muted-foreground mt-1">Stocks you're tracking, with your analysis snapshots and notes.</p>
+        </div>
+
+        <div className="flex items-start gap-3 rounded-md border border-border/60 bg-muted/40 px-4 py-3 mb-8" data-testid="banner-watchlist-wip">
+          <Construction className="h-4 w-4 mt-0.5 text-muted-foreground shrink-0" />
+          <p className="text-sm text-muted-foreground">
+            This feature is a work in progress. More improvements are on the way — including alerts, comparison tools, and richer snapshot insights.
+          </p>
         </div>
 
         {authLoading || isLoading ? (
