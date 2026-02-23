@@ -275,13 +275,6 @@ function ValuationQuadrantChart({ quadrant }: { quadrant: ValuationQuadrantData 
             <stop offset="0%" stopColor={bottomLeftColors.gradient} stopOpacity="0.08" />
             <stop offset="100%" stopColor={bottomLeftColors.gradient} stopOpacity="0.12" />
           </linearGradient>
-          <filter id={`vGlow-${quadrant.id}`}>
-            <feGaussianBlur stdDeviation="4" result="coloredBlur"/>
-            <feMerge>
-              <feMergeNode in="coloredBlur"/>
-              <feMergeNode in="SourceGraphic"/>
-            </feMerge>
-          </filter>
         </defs>
 
         {/* Top Left Quadrant */}
@@ -364,21 +357,6 @@ function ValuationQuadrantChart({ quadrant }: { quadrant: ValuationQuadrantData 
           {quadrant.yLabel}
         </text>
 
-        {/* Position dot with glow */}
-        <g filter={`url(#vGlow-${quadrant.id})`}>
-          <circle 
-            cx={dotX} 
-            cy={dotY} 
-            r="12" 
-            className="fill-primary"
-          />
-          <circle 
-            cx={dotX} 
-            cy={dotY} 
-            r="6" 
-            className="fill-white"
-          />
-        </g>
       </svg>
       
       {/* Zone labels with tooltips - positioned as HTML overlays */}
@@ -467,6 +445,22 @@ function ValuationQuadrantChart({ quadrant }: { quadrant: ValuationQuadrantData 
               </span>
             )}
           </div>
+        </div>
+      </div>
+
+      {/* Dot overlay - rendered after labels so it's always on top */}
+      <div 
+        className="absolute pointer-events-none"
+        style={{
+          left: `${(dotX / chartSize) * 100}%`,
+          top: `${(dotY / chartSize) * 100}%`,
+          transform: 'translate(-50%, -50%)',
+        }}
+      >
+        <div className="relative">
+          <div className="absolute inset-0 rounded-full bg-primary blur-[4px] opacity-60" style={{ width: 24, height: 24, left: -12, top: -12 }} />
+          <div className="absolute rounded-full bg-primary" style={{ width: 24, height: 24, left: -12, top: -12 }} />
+          <div className="absolute rounded-full bg-white" style={{ width: 12, height: 12, left: -6, top: -6 }} />
         </div>
       </div>
     </div>
