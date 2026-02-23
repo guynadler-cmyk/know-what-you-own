@@ -684,7 +684,7 @@ function convertAPIQuadrantToLocal(apiQuadrant: APIValuationQuadrant): Valuation
     xLabel: axisLabels.xLabel,
     yLabel: axisLabels.yLabel,
     zones: getDefaultZones(apiQuadrant.id),
-    position: getPosition(apiQuadrant.id, apiQuadrant.strength),
+    position: apiQuadrant.position || getPosition(apiQuadrant.id, apiQuadrant.strength),
     insight: apiQuadrant.insight,
     insightHighlight: apiQuadrant.insightHighlight,
     strength: apiQuadrant.strength,

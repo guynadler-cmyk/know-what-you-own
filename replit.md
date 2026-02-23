@@ -37,6 +37,14 @@ Shared Zod schemas, located in `/shared/schema.ts`, ensure type safety and data 
 
 The application features a clear, minimalist design with a monochrome palette and a teal accent. It includes a hero section, a structured results page with visual clustering, strong heading hierarchies, and accessible elements like mobile-friendly tag explanations using Radix UI Popovers. Investment analysis is multi-dimensional, categorizing drivers into Strategic Themes, Competitive Moats, Market Opportunity, and Value Creation, each with visual icons and color-coded emphasis scoring. A prominent AI-powered investment thesis section summarizes how companies plan to create shareholder value. The landing page provides marketing and onboarding, while an "App page" focuses on analysis, with intuitive navigation between them. The application supports easy link sharing and PWA installation.
 
+### Valuation Quadrant Positioning (Stage 3)
+
+Valuation sub-quadrants use continuous x/y positioning based on actual metric values (not discrete 3-position snapping). The backend computes `position: { x, y }` (0-100 scale, clamped 5-95) for each quadrant and sends it in the API response. The frontend falls back to the old 3-position system for cached data without position fields. Position mappings per quadrant:
+- **Price Discipline**: x = distance from 52-week high (more = right), y = entry risk from SMA/trajectory (recovering = low/bottom, drifting = high/top). Green = Bottom Right.
+- **Price Tag**: x = inverted P/E (low P/E = right), y = inverted earnings growth (high growth = low/bottom). Green = Bottom Right.
+- **Capital Discipline**: x = share buyback tendency (buybacks = right), y = ROIC (high = top). Green = Top Right.
+- **Doubling Potential**: x = inverted CAGR (high CAGR = left), y = inverted ROIC (high ROIC = bottom). Green = Bottom Left.
+
 ### Timing Stage (Technical Analysis)
 
 The Timing stage employs a consistent pattern matching Valuation/Performance stages, featuring horizontal navigation for Trend/Momentum/Stretch selection, a two-panel layout with a quadrant visual and explanation, and a timeframe toggle (Weekly/Daily). The Stretch Module uses investor-native language for RSI interpretation, while the Momentum Module employs deterministic case mapping for consistent summaries.

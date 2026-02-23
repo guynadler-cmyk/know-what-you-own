@@ -407,6 +407,10 @@ export const valuationQuadrantSchema = z.object({
   strength: z.enum(["sensible", "caution", "risky"]),
   tier1Summary: z.string().optional(),
   tier2Explanation: z.string().optional(),
+  position: z.object({
+    x: z.number().min(0).max(100),
+    y: z.number().min(0).max(100),
+  }).optional(),
 });
 
 export const valuationMetricsSchema = z.object({

@@ -1306,6 +1306,40 @@ export class AlphaVantageService {
       priceDisciplineStrength = 'caution';
     }
 
+    const clamp = (val: number, min: number, max: number) => Math.max(min, Math.min(max, val));
+    const normalize = (val: number, minIn: number, maxIn: number) => clamp((val - minIn) / (maxIn - minIn) * 100, 5, 95);
+
+    const priceDisciplinePos = (() => {
+      const x = normalize(distanceFromHigh, 0, 50);
+      let y: number;
+      if (priceVsSma === 'below' && trajectory === 'recovering') y = 15;
+      else if (priceVsSma === 'above' && trajectory === 'recovering') y = 30;
+      else if (priceVsSma === 'below' && trajectory === 'basing') y = 55;
+      else if (priceVsSma === 'above' && trajectory === 'drifting') y = 65;
+      else if (priceVsSma === 'below' && trajectory === 'drifting') y = 85;
+      else y = 50;
+      if (distanceFromHigh < 10) { y = clamp(y + 15, 5, 95); }
+      return { x: clamp(x, 5, 95), y: clamp(y, 5, 95) };
+    })();
+
+    const priceTagPos = (() => {
+      const peX = peRatio <= 0 ? 50 : normalize(50 - peRatio, 0, 50);
+      const growthY = !earningsGrowthComputable ? 50 : 100 - normalize(earningsGrowthRate, -10, 35);
+      return { x: clamp(peX, 5, 95), y: clamp(growthY, 5, 95) };
+    })();
+
+    const capitalDisciplinePos = (() => {
+      const shareX = normalize(-shareChange, -10, 10);
+      const roicY = normalize(returnOnCapital, 0, 30);
+      return { x: clamp(shareX, 5, 95), y: clamp(roicY, 5, 95) };
+    })();
+
+    const doublingPotentialPos = (() => {
+      const cagrX = 100 - normalize(stockCAGR, 0, 25);
+      const qualityY = 100 - normalize(returnOnCapital, 0, 30);
+      return { x: clamp(cagrX, 5, 95), y: clamp(qualityY, 5, 95) };
+    })();
+
     return [
       {
         id: 'price-discipline',
@@ -1330,6 +1364,7 @@ export class AlphaVantageService {
         strength: priceDisciplineStrength,
         tier1Summary: priceDisciplineTier1,
         tier2Explanation: priceDisciplineTier2,
+        position: priceDisciplinePos,
       },
       {
         id: 'price-tag',
@@ -1354,6 +1389,7 @@ export class AlphaVantageService {
         insight: this.getPriceTagInsight(peRatio, earningsGrowthRate, earningsGrowthComputable),
         insightHighlight: this.getPriceTagHighlight(peRatio, earningsGrowthRate, earningsGrowthComputable),
         strength: this.getPriceTagStrength(peRatio, earningsGrowthRate, earningsGrowthComputable),
+        position: priceTagPos,
       },
       {
         id: 'capital-discipline',
@@ -1368,6 +1404,7 @@ export class AlphaVantageService {
           : 'Capital returns are modest. The business may struggle to compound wealth efficiently over time.',
         insightHighlight: returnOnCapital > 15 ? 'strong returns' : 'modest',
         strength: rocColor === 'green' ? 'sensible' : rocColor === 'yellow' ? 'caution' : 'risky',
+        position: capitalDisciplinePos,
       },
       {
         id: 'doubling-potential',
@@ -1394,6 +1431,7 @@ export class AlphaVantageService {
           : 'Not enough historical data to estimate doubling time. Proceed with caution.',
         insightHighlight: stockCAGR > 15 ? 'strong momentum' : 'betting on future improvements',
         strength: stockCAGR > 15 ? 'sensible' : stockCAGR > 7 ? 'caution' : 'risky',
+        position: doublingPotentialPos,
       },
     ];
   }
