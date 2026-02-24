@@ -52,6 +52,9 @@ export async function setupAuth(app: Express) {
       return res.status(401).json({ message: "Invalid token" });
     }
     try {
+      const existingUser = await storage.getUser(decoded.uid);
+      const isNewUser = !existingUser;
+
       await storage.upsertUser({
         id: decoded.uid,
         email: decoded.email || null,
@@ -59,8 +62,16 @@ export async function setupAuth(app: Express) {
         lastName: decoded.name?.split(" ").slice(1).join(" ") || null,
         profileImageUrl: decoded.picture || null,
       });
-      console.log(`[auth/sync] User synced: ${decoded.uid} (${decoded.email || "no email"})`);
-      return res.json({ ok: true });
+
+      let isNewLead = false;
+      if (isNewUser && decoded.email) {
+        isNewLead = await storage.isEmailNew(decoded.email);
+        console.log(`[auth/sync] New user created: ${decoded.uid} (${decoded.email}) isNewLead: ${isNewLead}`);
+      } else {
+        console.log(`[auth/sync] User synced: ${decoded.uid} (${decoded.email || "no email"})`);
+      }
+
+      return res.json({ ok: true, isNewUser, isNewLead });
     } catch (dbErr) {
       console.error("[auth/sync] Database upsert failed for user", decoded.uid, ":", dbErr);
       return res.status(500).json({ message: "Failed to save user" });

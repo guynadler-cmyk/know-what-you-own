@@ -28,13 +28,25 @@ export function useAuth() {
   const syncUserToBackend = useCallback(async (firebaseUser: User) => {
     try {
       const token = await firebaseUser.getIdToken();
-      await fetch("/api/auth/sync", {
+      const response = await fetch("/api/auth/sync", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
           "Authorization": `Bearer ${token}`,
         },
       });
+      if (!response.ok) return;
+      const result = await response.json();
+
+      if (result.isNewLead) {
+        const { analytics } = await import("@/lib/analytics");
+        analytics.trackNewLead({
+          lead_source: 'google_signin',
+          ticker: undefined,
+          stage: 0,
+          company_name: undefined,
+        });
+      }
     } catch (e) {
       console.warn("Failed to sync user to backend:", e);
     }
