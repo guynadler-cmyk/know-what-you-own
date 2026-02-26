@@ -223,6 +223,8 @@ export const companySummarySchema = z.object({
   metadata: metadataSchema,
   cik: z.string().optional(),
   temporalAnalysis: temporalAnalysisSchema.optional(),
+  businessAnalysisUnavailable: z.boolean().optional(),
+  businessAnalysisError: z.string().optional(),
 });
 
 export type Product = z.infer<typeof productSchema>;

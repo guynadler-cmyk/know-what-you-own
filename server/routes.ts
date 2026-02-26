@@ -1039,7 +1039,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       const { cik, name } = await secService.getCompanyInfo(upperTicker);
 
-      const { accessionNumber, filingDate, fiscalYear } =
+      const { accessionNumber, filingDate, fiscalYear, primaryDocument } =
         await secService.getLatest10K(cik);
 
       const routeCacheKey = `route:${upperTicker}:${fiscalYear}`;
@@ -1058,76 +1058,111 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       const start = performance.now();
 
-      const businessSection = await secService.get10KBusinessSection(
-        cik,
-        accessionNumber,
-      );
+      let summary: any;
+      let businessAnalysisUnavailable = false;
+      let businessAnalysisError: string | undefined;
 
-      const summary = await openaiService.analyzeBusiness(
-        name,
-        upperTicker,
-        businessSection,
-        filingDate,
-        fiscalYear,
-        cik,
-      );
+      try {
+        const businessSection = await secService.get10KBusinessSection(
+          cik,
+          accessionNumber,
+          primaryDocument,
+        );
 
-      const end = performance.now();
-      console.log(`Live analysis took ${(end - start).toFixed(2)} ms`);
+        summary = await openaiService.analyzeBusiness(
+          name,
+          upperTicker,
+          businessSection,
+          filingDate,
+          fiscalYear,
+          cik,
+        );
+
+        const end = performance.now();
+        console.log(`Live analysis took ${(end - start).toFixed(2)} ms`);
+      } catch (businessErr: any) {
+        console.warn(`[BUSINESS ANALYSIS] Failed for ${upperTicker}, continuing with other stages:`, businessErr.message);
+        businessAnalysisUnavailable = true;
+        businessAnalysisError = "We had trouble reading this company's 10-K filing. Other analysis stages are still available.";
+        summary = {
+          companyName: name,
+          ticker: upperTicker,
+          filingDate,
+          fiscalYear,
+          tagline: "",
+          investmentThesis: "",
+          investmentThemes: [],
+          moats: [],
+          marketOpportunity: [],
+          valueCreation: [],
+          products: [],
+          operations: { regions: [], channels: [], scale: "" },
+          competitors: [],
+          leaders: [],
+          metrics: [],
+          metadata: { homepage: "", news: [], videos: [] },
+          cik,
+        };
+      }
 
       let temporalAnalysis;
-      try {
-        const yearlyData = await secService.get5YearsBusinessSections(cik);
+      if (!businessAnalysisUnavailable) {
+        try {
+          const yearlyData = await secService.get5YearsBusinessSections(cik);
 
-        if (yearlyData.length >= 2) {
-          console.log(
-            `Starting temporal analysis for ${upperTicker} with ${yearlyData.length} years of data`,
+          if (yearlyData.length >= 2) {
+            console.log(
+              `Starting temporal analysis for ${upperTicker} with ${yearlyData.length} years of data`,
+            );
+
+            const timeoutPromise = new Promise((_, reject) =>
+              setTimeout(
+                () => reject(new Error("Temporal analysis timeout")),
+                30000,
+              ),
+            );
+
+            const analysisPromise = openaiService.analyzeTemporalChanges(
+              name,
+              upperTicker,
+              yearlyData,
+            );
+
+            temporalAnalysis = (await Promise.race([
+              analysisPromise,
+              timeoutPromise,
+            ])) as any;
+            console.log(`Temporal analysis completed for ${upperTicker}`);
+          }
+        } catch (temporalError) {
+          console.warn(
+            "Temporal analysis failed, continuing without it:",
+            temporalError,
           );
-
-          const timeoutPromise = new Promise((_, reject) =>
-            setTimeout(
-              () => reject(new Error("Temporal analysis timeout")),
-              30000,
-            ),
-          );
-
-          const analysisPromise = openaiService.analyzeTemporalChanges(
-            name,
-            upperTicker,
-            yearlyData,
-          );
-
-          temporalAnalysis = (await Promise.race([
-            analysisPromise,
-            timeoutPromise,
-          ])) as any;
-          console.log(`Temporal analysis completed for ${upperTicker}`);
         }
-      } catch (temporalError) {
-        console.warn(
-          "Temporal analysis failed, continuing without it:",
-          temporalError,
-        );
       }
 
       const validated = companySummarySchema.parse({
         ...summary,
         ...(temporalAnalysis ? { temporalAnalysis } : {}),
+        ...(businessAnalysisUnavailable ? { businessAnalysisUnavailable, businessAnalysisError } : {}),
       });
 
-      try {
-        await insertBusinessAnalysis({
-          cacheKey: routeCacheKey,
-          companyName: name,
-          ticker: upperTicker,
-          cik,
-          fiscalYear,
-          filingDate,
-          result: validated,
-        });
-        console.log(`[ROUTE CACHE WRITE] Saved full result for ${upperTicker} (FY${fiscalYear})`);
-      } catch (dbErr) {
-        console.warn("Route cache write failed (non-fatal):", dbErr);
+      if (!businessAnalysisUnavailable) {
+        try {
+          await insertBusinessAnalysis({
+            cacheKey: routeCacheKey,
+            companyName: name,
+            ticker: upperTicker,
+            cik,
+            fiscalYear,
+            filingDate,
+            result: validated,
+          });
+          console.log(`[ROUTE CACHE WRITE] Saved full result for ${upperTicker} (FY${fiscalYear})`);
+        } catch (dbErr) {
+          console.warn("Route cache write failed (non-fatal):", dbErr);
+        }
       }
 
       res.json(validated);
@@ -1145,16 +1180,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({
           error: "No 10-K Available",
           message: `${req.params.ticker.toUpperCase()} doesn't have a 10-K filing available yet.`,
-        });
-      }
-
-      if (
-        error.message?.includes("business section") ||
-        error.message?.includes("business description")
-      ) {
-        return res.status(500).json({
-          error: "Filing Format Error",
-          message: "We had trouble reading this company's 10-K filing.",
         });
       }
 
@@ -1217,7 +1242,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       const { cik, name } = await secService.getCompanyInfo(upperTicker);
-      const { accessionNumber, filingDate, fiscalYear } =
+      const { accessionNumber, filingDate, fiscalYear, primaryDocument } =
         await secService.getLatest10K(cik);
 
       const routeFootnotesCacheKey = `route:footnotes:${upperTicker}:${fiscalYear}`;
@@ -1237,6 +1262,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const footnotesSection = await secService.get10KFootnotesSection(
         cik,
         accessionNumber,
+        primaryDocument,
       );
 
       const finePrintAnalysis = await openaiService.analyzeFootnotes(

@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
-import { Calendar, Building2, MapPin, Users, TrendingUp, Briefcase, Award, DollarSign, ExternalLink, Globe, ChevronDown, Shield, Target, Coins } from "lucide-react";
+import { Calendar, Building2, MapPin, Users, TrendingUp, Briefcase, Award, DollarSign, ExternalLink, Globe, ChevronDown, Shield, Target, Coins, AlertTriangle } from "lucide-react";
 import { LucideIcon } from "lucide-react";
 
 import { useQuery } from "@tanstack/react-query";
@@ -69,6 +69,8 @@ interface SummaryCardProps {
   
   cik?: string;
   temporalAnalysis?: TemporalAnalysisType;
+  businessAnalysisUnavailable?: boolean;
+  businessAnalysisError?: string;
 }
 
 function CompetitorQuickSummary({ ticker }: { ticker: string }) {
@@ -161,7 +163,9 @@ export function SummaryCard({
   metrics,
   metadata,
   cik,
-  temporalAnalysis
+  temporalAnalysis,
+  businessAnalysisUnavailable,
+  businessAnalysisError,
 }: SummaryCardProps) {
   const [expandedCompetitor, setExpandedCompetitor] = useState<string | null>(null);
 
@@ -203,6 +207,20 @@ export function SummaryCard({
   return (
     <TooltipProvider>
     <div className="w-full max-w-6xl mx-auto space-y-16 pb-16 animate-fade-in">
+
+      {/* Business analysis unavailable notice */}
+      {businessAnalysisUnavailable && (
+        <div className="flex items-start gap-3 rounded-md border border-amber-200 bg-amber-50 dark:border-amber-800 dark:bg-amber-950/30 px-5 py-4">
+          <AlertTriangle className="mt-0.5 h-5 w-5 shrink-0 text-amber-600 dark:text-amber-400" />
+          <div>
+            <p className="font-medium text-amber-800 dark:text-amber-300">Business summary unavailable</p>
+            <p className="mt-0.5 text-sm text-amber-700 dark:text-amber-400">
+              {businessAnalysisError || "We had trouble reading this company's 10-K filing."} Performance, Valuation, Timing and other stages below are still fully available.
+            </p>
+          </div>
+        </div>
+      )}
+
       {/* Hero Header */}
       <div className="text-center space-y-6 py-8 border-b-2 border-border pb-12">
         {/* Company Logo */}
