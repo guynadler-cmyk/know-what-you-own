@@ -1061,13 +1061,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
       let summary: any;
       let businessAnalysisUnavailable = false;
       let businessAnalysisError: string | undefined;
+      let analysisDepth: 'full' | 'limited' | 'unavailable' = 'full';
 
       try {
-        const businessSection = await secService.get10KBusinessSection(
+        const { text: businessSection, depth: sectionDepth } = await secService.get10KBusinessSection(
           cik,
           accessionNumber,
           primaryDocument,
         );
+
+        analysisDepth = sectionDepth === 'full' ? 'full' : 'limited';
 
         summary = await openaiService.analyzeBusiness(
           name,
@@ -1076,6 +1079,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           filingDate,
           fiscalYear,
           cik,
+          sectionDepth,
         );
 
         const end = performance.now();
@@ -1083,6 +1087,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       } catch (businessErr: any) {
         console.warn(`[BUSINESS ANALYSIS] Failed for ${upperTicker}, continuing with other stages:`, businessErr.message);
         businessAnalysisUnavailable = true;
+        analysisDepth = 'unavailable';
         businessAnalysisError = "We had trouble reading this company's 10-K filing. Other analysis stages are still available.";
         summary = {
           companyName: name,
@@ -1146,6 +1151,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         ...summary,
         ...(temporalAnalysis ? { temporalAnalysis } : {}),
         ...(businessAnalysisUnavailable ? { businessAnalysisUnavailable, businessAnalysisError } : {}),
+        analysisDepth,
       });
 
       if (!businessAnalysisUnavailable) {

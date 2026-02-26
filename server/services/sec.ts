@@ -421,11 +421,11 @@ export class SECService {
 
     for (const filing of filings) {
       try {
-        const businessSection = await this.get10KBusinessSection(cik, filing.accessionNumber, filing.primaryDocument);
+        const result = await this.get10KBusinessSection(cik, filing.accessionNumber, filing.primaryDocument);
         sections.push({
           fiscalYear: filing.fiscalYear,
           filingDate: filing.filingDate,
-          businessSection,
+          businessSection: result.text,
         });
       } catch (error) {
         console.warn(`Failed to fetch business section for ${filing.fiscalYear}:`, error);
@@ -435,7 +435,7 @@ export class SECService {
     return sections;
   }
 
-  async get10KBusinessSection(cik: string, accessionNumber: string, primaryDocument?: string): Promise<string> {
+  async get10KBusinessSection(cik: string, accessionNumber: string, primaryDocument?: string): Promise<{ text: string; depth: 'full' | 'limited' | 'full_doc' }> {
     const accessionPath = accessionNumber.replace(/-/g, '');
     const docFile = primaryDocument || `${accessionNumber}.txt`;
     const url = `https://www.sec.gov/Archives/edgar/data/${parseInt(cik)}/${accessionPath}/${docFile}`;
@@ -449,47 +449,64 @@ export class SECService {
       text = response.data;
       this.filingTextCache.set(cacheKey, text);
     }
-//         const response = await retryWithBackoff(async () => {
-//           return await axios.get(url, { headers: SEC_HEADERS });
-//         });
 
-//     const text = response.data;
+    const cleanHtml = (raw: string) =>
+      raw
+        .replace(/<[^>]*>/g, ' ')
+        .replace(/&nbsp;/g, ' ')
+        .replace(/&[a-z]+;/g, ' ')
+        .replace(/&#\d+;/g, ' ')
+        .replace(/\s+/g, ' ')
+        .trim();
 
-    // Try multiple regex patterns to handle different 10-K formatting
-    const patterns = [
-      // Standard format: ITEM 1. Business ... ITEM 1A
+    // Tier 1: Standard ITEM 1 / ITEM 1A patterns
+    const tier1Patterns = [
       'ITEM\\s+1[\\.\\:\\-]?\\s*Business(.*?)ITEM\\s+1A',
-      // Alternative: ITEM 1 ... ITEM 1A (Business might be on new line)
       'ITEM\\s+1[\\.\\:\\-]?\\s*[\\r\\n]*(.*?)ITEM\\s+1A',
-      // Looser pattern: Look for ITEM 1 followed by content until next ITEM
       'ITEM\\s+1[\\.\\:\\-]?\\s*(?:Business)?[\\r\\n]*(.*?)(?:ITEM\\s+(?:1A|1B|2))',
     ];
 
-    let businessMatch = null;
-    for (const pattern of patterns) {
-      const regex = new RegExp(pattern, 'is');
-      businessMatch = text.match(regex);
-      if (businessMatch) break;
+    for (const pattern of tier1Patterns) {
+      const match = text.match(new RegExp(pattern, 'is'));
+      if (match?.[1]) {
+        return { text: cleanHtml(match[1]).slice(0, 15000), depth: 'full' };
+      }
     }
 
-    if (!businessMatch || !businessMatch[1]) {
-      console.error(`Failed to extract business section for CIK ${cik}, accession ${accessionNumber}`);
-      throw new Error("Unable to find the business description in this 10-K filing");
+    // Tier 2: Financial note fallbacks for SPACs / early-stage / non-standard filers
+    console.warn(`[SEC] Standard ITEM 1 extraction failed for CIK ${cik}, trying financial note fallbacks`);
+    const tier2Patterns = [
+      'Note\\s*1\\s+Organization and Description of Business(.*?)(?:Note\\s*2|Going Concern|Basis of Presentation|Significant Accounting)',
+      'Organization and Description of Business(.*?)(?:Note\\s*\\d|Going Concern|Basis of Presentation|Significant Accounting)',
+      'PART\\s+I[\\s\\.:]+(?:ITEM\\s+1[\\s\\.:]*)?(.*?)PART\\s+II',
+    ];
+
+    for (const pattern of tier2Patterns) {
+      const match = text.match(new RegExp(pattern, 'is'));
+      if (match?.[1]) {
+        const cleaned = cleanHtml(match[1]).slice(0, 15000);
+        if (cleaned.length > 200) {
+          console.warn(`[SEC] Extracted limited content from financial notes for CIK ${cik} (${cleaned.length} chars)`);
+          return { text: cleaned, depth: 'limited' };
+        }
+      }
     }
 
-    let businessSection = businessMatch[1];
+    // Tier 3: Full-document fallback for small filings (≤40KB stripped)
+    const strippedFull = cleanHtml(text);
+    if (strippedFull.length <= 40000) {
+      // Skip leading XBRL metadata — find first human-readable sentence (capital letter after whitespace)
+      const humanStart = strippedFull.search(/[A-Z][a-z]{3,}/);
+      const usable = humanStart > 0 ? strippedFull.slice(humanStart) : strippedFull;
+      const excerpt = usable.slice(0, 15000);
+      if (excerpt.length > 200) {
+        console.warn(`[SEC] Using full-document fallback for CIK ${cik} (stripped text: ${strippedFull.length} chars)`);
+        return { text: excerpt, depth: 'full_doc' };
+      }
+    }
 
-    // Clean up HTML tags and entities
-    businessSection = businessSection
-      .replace(/<[^>]*>/g, ' ')
-      .replace(/&nbsp;/g, ' ')
-      .replace(/&[a-z]+;/g, ' ')
-      .replace(/&#\d+;/g, ' ')
-      .replace(/\s+/g, ' ')
-      .trim();
-
-    // Return first 15000 characters for the business section
-    return businessSection.slice(0, 15000);
+    console.error(`Failed to extract business section for CIK ${cik}, accession ${accessionNumber}`);
+    throw new Error("Unable to find the business description in this 10-K filing");
   }
 
   async get10KFootnotesSection(cik: string, accessionNumber: string, primaryDocument?: string): Promise<string> {

@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
-import { Calendar, Building2, MapPin, Users, TrendingUp, Briefcase, Award, DollarSign, ExternalLink, Globe, ChevronDown, Shield, Target, Coins, AlertTriangle } from "lucide-react";
+import { Calendar, Building2, MapPin, Users, TrendingUp, Briefcase, Award, DollarSign, ExternalLink, Globe, ChevronDown, Shield, Target, Coins, AlertTriangle, Info } from "lucide-react";
 import { LucideIcon } from "lucide-react";
 
 import { useQuery } from "@tanstack/react-query";
@@ -71,6 +71,7 @@ interface SummaryCardProps {
   temporalAnalysis?: TemporalAnalysisType;
   businessAnalysisUnavailable?: boolean;
   businessAnalysisError?: string;
+  analysisDepth?: 'full' | 'limited' | 'unavailable';
 }
 
 function CompetitorQuickSummary({ ticker }: { ticker: string }) {
@@ -166,6 +167,7 @@ export function SummaryCard({
   temporalAnalysis,
   businessAnalysisUnavailable,
   businessAnalysisError,
+  analysisDepth,
 }: SummaryCardProps) {
   const [expandedCompetitor, setExpandedCompetitor] = useState<string | null>(null);
 
@@ -207,6 +209,19 @@ export function SummaryCard({
   return (
     <TooltipProvider>
     <div className="w-full max-w-6xl mx-auto space-y-16 pb-16 animate-fade-in">
+
+      {/* Business analysis limited — soft info banner for SPACs / non-standard filers */}
+      {analysisDepth === 'limited' && !businessAnalysisUnavailable && (
+        <div className="flex items-start gap-3 rounded-md border border-blue-200 bg-blue-50 dark:border-blue-800 dark:bg-blue-950/30 px-5 py-4" data-testid="banner-limited-depth">
+          <Info className="mt-0.5 h-5 w-5 shrink-0 text-blue-600 dark:text-blue-400" />
+          <div>
+            <p className="font-medium text-blue-800 dark:text-blue-300">Limited filing</p>
+            <p className="mt-0.5 text-sm text-blue-700 dark:text-blue-400">
+              This company's 10-K has minimal business information — it may be a SPAC, blank check company, or early-stage filer. The summary below is based on available disclosures.
+            </p>
+          </div>
+        </div>
+      )}
 
       {/* Business analysis unavailable notice */}
       {businessAnalysisUnavailable && (

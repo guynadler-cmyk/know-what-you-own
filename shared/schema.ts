@@ -225,6 +225,7 @@ export const companySummarySchema = z.object({
   temporalAnalysis: temporalAnalysisSchema.optional(),
   businessAnalysisUnavailable: z.boolean().optional(),
   businessAnalysisError: z.string().optional(),
+  analysisDepth: z.enum(['full', 'limited', 'unavailable']).optional(),
 });
 
 export type Product = z.infer<typeof productSchema>;

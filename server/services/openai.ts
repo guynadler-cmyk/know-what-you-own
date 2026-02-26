@@ -174,7 +174,8 @@ export class OpenAIService {
     businessSection: string,
     filingDate: string,
     fiscalYear: string,
-    cik: string
+    cik: string,
+    sectionDepth?: 'full' | 'limited' | 'full_doc'
   ): Promise<CompanySummary> {
       const cacheKey = this.makeBusinessCacheKey(
                           companyName,
@@ -267,7 +268,13 @@ Requirements:
 - Generate 3 plausible news items with Google News search URLs: https://news.google.com/search?q=${ticker}+recent+news
 - Generate 3 video resources with YouTube search URLs: https://www.youtube.com/results?search_query=${ticker}+stock+analysis
 - Keep all text concise and scannable (except investmentThesis which should be comprehensive)
-- Use actual data from the filing when available`;
+- Use actual data from the filing when available${sectionDepth && sectionDepth !== 'full' ? `
+
+IMPORTANT — LIMITED FILING NOTICE: This text was extracted from financial notes or the full document because the filing does not use standard ITEM 1 section headers. This may be a blank check company, SPAC, shell company, or early-stage company with minimal operations.
+- For a SPAC or blank check company: describe the intended acquisition target's business if mentioned; note the merger plan prominently in the tagline and thesis
+- Honestly flag going concern, pre-revenue, or shell company status in the tagline (e.g., "SPAC formed to acquire ClassOver, an edtech company (merger closed April 2025)")
+- The investmentThesis should honestly reflect the company's actual stage and plan — do not fabricate a mature business narrative
+- Use empty arrays only when information is truly absent from the text; extract whatever signals do exist` : ''}`;
 
     const completion = await retryWithBackoff(async () => {
       return await openai.chat.completions.create({
