@@ -9,7 +9,8 @@ import { FinancialScorecard } from "@/components/FinancialScorecard";
 import { ValuationExplorer, VALUATION_QUADRANT_DATA, type ValuationQuadrantData } from "@/components/ValuationExplorer";
 import { ValuationScorecard } from "@/components/ValuationScorecard";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Smartphone, Laptop, Tablet, Watch, Car, Zap, Battery, Server, Cloud, Gamepad2, Package, Code, Globe, Music, Video, Tv, Search, Cpu, Info } from "lucide-react";
+import { AlertDialog, AlertDialogAction, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
+import { Smartphone, Laptop, Tablet, Watch, Car, Zap, Battery, Server, Cloud, Gamepad2, Package, Code, Globe, Music, Video, Tv, Search, Cpu, Info, FileX2 } from "lucide-react";
 import { CompanySummary, FinancialMetrics, BalanceSheetMetrics } from "@shared/schema";
 import { CompanyLogo } from "@/components/CompanyLogo";
 
@@ -122,6 +123,29 @@ export function StageContent({ stage, summaryData, financialMetrics, balanceShee
   }
 
   if (stage === 1 && summaryData) {
+    if (summaryData.no10KAvailable) {
+      return (
+        <AlertDialog open={true}>
+          <AlertDialogContent className="max-w-md text-center">
+            <AlertDialogHeader>
+              <div className="flex justify-center mb-2">
+                <FileX2 className="h-10 w-10 text-muted-foreground" />
+              </div>
+              <AlertDialogTitle className="text-center">No 10-K Analysis Available</AlertDialogTitle>
+              <AlertDialogDescription className="text-center">
+                {summaryData.companyName} doesn't file a 10-K with the SEC — it may be a foreign company (which files a 20-F instead) or a fund. Business analysis isn't available, but Performance, Valuation, Timing, Strategy and Protection are all fully accessible using market data.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter className="justify-center sm:justify-center">
+              <AlertDialogAction onClick={() => onStageChange?.(2)} data-testid="button-continue-performance">
+                Continue to Performance Analysis
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+      );
+    }
+
     const preparedSummary = {
       ...summaryData,
       products: summaryData.products.map(p => ({

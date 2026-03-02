@@ -212,21 +212,8 @@ export function SummaryCard({
     <TooltipProvider>
     <div className="w-full max-w-6xl mx-auto space-y-16 pb-16 animate-fade-in">
 
-      {/* No 10-K on record — foreign filers (20-F), funds, newly listed companies */}
-      {no10KAvailable && (
-        <div className="flex items-start gap-3 rounded-md border border-blue-200 bg-blue-50 dark:border-blue-800 dark:bg-blue-950/30 px-5 py-4" data-testid="banner-no-10k">
-          <Info className="mt-0.5 h-5 w-5 shrink-0 text-blue-600 dark:text-blue-400" />
-          <div>
-            <p className="font-medium text-blue-800 dark:text-blue-300">No 10-K on record</p>
-            <p className="mt-0.5 text-sm text-blue-700 dark:text-blue-400">
-              This company doesn't file a 10-K with the SEC — it may be a foreign company (which files a 20-F instead) or a fund. Business summary is unavailable, but Performance, Valuation, Timing and other stages below are fully available.
-            </p>
-          </div>
-        </div>
-      )}
-
       {/* Business analysis limited — soft info banner for SPACs / non-standard filers */}
-      {analysisDepth === 'limited' && !businessAnalysisUnavailable && !no10KAvailable && (
+      {analysisDepth === 'limited' && !businessAnalysisUnavailable && (
         <div className="flex items-start gap-3 rounded-md border border-blue-200 bg-blue-50 dark:border-blue-800 dark:bg-blue-950/30 px-5 py-4" data-testid="banner-limited-depth">
           <Info className="mt-0.5 h-5 w-5 shrink-0 text-blue-600 dark:text-blue-400" />
           <div>
