@@ -1039,8 +1039,42 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       const { cik, name } = await secService.getCompanyInfo(upperTicker);
 
-      const { accessionNumber, filingDate, fiscalYear, primaryDocument } =
-        await secService.getLatest10K(cik);
+      let accessionNumber: string;
+      let filingDate: string;
+      let fiscalYear: string;
+      let primaryDocument: string;
+
+      try {
+        ({ accessionNumber, filingDate, fiscalYear, primaryDocument } =
+          await secService.getLatest10K(cik));
+      } catch (no10KErr: any) {
+        if (no10KErr.message?.includes("No 10-K")) {
+          console.log(`[NO 10-K] ${upperTicker} has no 10-K filing — returning stub for market-data stages`);
+          const stub = companySummarySchema.parse({
+            companyName: name,
+            ticker: upperTicker,
+            filingDate: "",
+            fiscalYear: "",
+            tagline: "",
+            investmentThesis: "",
+            investmentThemes: [],
+            moats: [],
+            marketOpportunity: [],
+            valueCreation: [],
+            products: [],
+            operations: { regions: [], channels: [], scale: "" },
+            competitors: [],
+            leaders: [],
+            metrics: [],
+            metadata: { homepage: "", news: [], videos: [] },
+            cik,
+            no10KAvailable: true,
+            analysisDepth: "unavailable" as const,
+          });
+          return res.json(stub);
+        }
+        throw no10KErr;
+      }
 
       const routeCacheKey = `route:${upperTicker}:${fiscalYear}`;
 
