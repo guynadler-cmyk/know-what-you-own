@@ -1016,6 +1016,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const ticker = (req.params.ticker ?? "").toUpperCase();
       if (!ticker || !/^[A-Z]{1,10}$/.test(ticker)) return next();
 
+      // In development, let Vite handle the HTML serving (it needs to inject HMR scripts).
+      // Meta tag injection only matters in production where crawlers actually hit these URLs.
+      const isProd = app.get("env") === "production";
+      if (!isProd) return next();
+
       const fsModule = await import("fs");
       const pathModule = await import("path");
 
@@ -1033,10 +1038,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         : `${ticker} | restnvest`;
       const canonicalUrl = `https://restnvest.com/stocks/${ticker}`;
 
-      const isProd = app.get("env") === "production";
-      const htmlPath = isProd
-        ? pathModule.resolve(import.meta.dirname, "public", "index.html")
-        : pathModule.resolve(import.meta.dirname, "..", "client", "index.html");
+      const htmlPath = pathModule.resolve(import.meta.dirname, "public", "index.html");
       let html = await fsModule.promises.readFile(htmlPath, "utf-8");
 
       html = html.replace(/<title>[^<]*<\/title>/, `<title>${title}</title>`);

@@ -1,26 +1,481 @@
-import { useParams } from "wouter";
+import { useState, useEffect } from "react";
+import { useParams, useLocation } from "wouter";
 import { Helmet } from "react-helmet-async";
+import { queryClient } from "@/lib/queryClient";
+import { Header } from "@/components/Header";
+import { Footer } from "@/components/Footer";
+import { LoadingState } from "@/components/LoadingState";
+import { ErrorState } from "@/components/ErrorState";
+import { JourneyNarrative } from "@/components/JourneyNarrative";
+import { StageNavigation } from "@/components/StageNavigation";
+import { StageContent } from "@/components/StageContent";
+import { EmailPaywall } from "@/components/EmailPaywall";
+import { InlineEmailCapture } from "@/components/InlineEmailCapture";
+import { TickerFollowPrompt } from "@/components/TickerFollowPrompt";
+import { SaveToWatchlist } from "@/components/SaveToWatchlist";
+import { Button } from "@/components/ui/button";
+import { ArrowLeft } from "lucide-react";
+import { CompanySummary, FinancialMetrics, BalanceSheetMetrics, WatchlistSnapshot } from "@shared/schema";
+import { analytics } from "@/lib/analytics";
+import {
+  type PaywallState,
+  getPaywallState,
+  getStoredEmail,
+  unlockPaywall,
+  skipPaywall,
+  getSkippedStage,
+  shouldShowPaywall,
+} from "@/lib/abTest";
+
+type ViewState = "loading" | "success" | "error";
 
 export default function StockPage() {
   const params = useParams<{ ticker: string }>();
   const ticker = (params.ticker ?? "").toUpperCase();
+  const [, navigate] = useLocation();
+
+  const [viewState, setViewState] = useState<ViewState>("loading");
+  const [currentStage, setCurrentStage] = useState(1);
+  const [summaryData, setSummaryData] = useState<CompanySummary | null>(null);
+  const [errorInfo, setErrorInfo] = useState({ title: "", message: "" });
+  const [financialMetrics, setFinancialMetrics] = useState<FinancialMetrics | null>(null);
+  const [balanceSheetMetrics, setBalanceSheetMetrics] = useState<BalanceSheetMetrics | null>(null);
+
+  const [paywallState, setPaywallState] = useState<PaywallState>("locked");
+  const [showFloatingModal, setShowFloatingModal] = useState(false);
+  const [lastSkippedStage, setLastSkippedStage] = useState<number | null>(null);
+  const [tickerFollowed, setTickerFollowed] = useState(true);
+
+  useEffect(() => {
+    if (!ticker) return;
+    const tickerAtStart = ticker;
+    setTickerFollowed(true);
+    const localState = getPaywallState(ticker);
+    if (localState === "unlocked") {
+      setPaywallState("unlocked");
+      const storedEmail = getStoredEmail();
+      if (storedEmail) {
+        fetch(`/api/waitlist/check-ticker?email=${encodeURIComponent(storedEmail)}&ticker=${encodeURIComponent(ticker)}`)
+          .then(r => r.json())
+          .then(data => {
+            if (tickerAtStart !== ticker) return;
+            setTickerFollowed(!!data.followed);
+          })
+          .catch(() => {});
+      }
+      return;
+    }
+    if (localState === "skipped") {
+      const persisted = getSkippedStage(ticker);
+      if (persisted !== null) setLastSkippedStage(persisted);
+    }
+    const storedEmail = getStoredEmail();
+    if (storedEmail) {
+      fetch(`/api/waitlist/check?email=${encodeURIComponent(storedEmail)}`)
+        .then(r => r.json())
+        .then(data => {
+          if (tickerAtStart !== ticker) return;
+          if (data.exists) {
+            unlockPaywall(tickerAtStart);
+            setPaywallState("unlocked");
+            fetch(`/api/waitlist/check-ticker?email=${encodeURIComponent(storedEmail!)}&ticker=${encodeURIComponent(tickerAtStart)}`)
+              .then(r => r.json())
+              .then(d => {
+                if (tickerAtStart !== ticker) return;
+                setTickerFollowed(!!d.followed);
+              })
+              .catch(() => {});
+          } else {
+            setPaywallState(localState);
+          }
+        })
+        .catch(() => {
+          if (tickerAtStart !== ticker) return;
+          setPaywallState(localState);
+        });
+    } else {
+      setPaywallState(localState);
+    }
+  }, [ticker]);
+
+  useEffect(() => {
+    if (!shouldShowPaywall(currentStage)) { setShowFloatingModal(false); return; }
+    if (paywallState === "unlocked") { setShowFloatingModal(false); return; }
+    if (paywallState === "locked") { setShowFloatingModal(true); return; }
+    if (paywallState === "skipped") {
+      if (lastSkippedStage !== null && currentStage <= lastSkippedStage) {
+        setShowFloatingModal(false);
+      } else {
+        setShowFloatingModal(true);
+      }
+    }
+  }, [currentStage, paywallState, lastSkippedStage]);
+
+  const handlePaywallUnlocked = () => {
+    setPaywallState("unlocked");
+    setShowFloatingModal(false);
+  };
+
+  const handlePaywallSkipped = () => {
+    if (!ticker) return;
+    skipPaywall(ticker, currentStage);
+    setPaywallState("skipped");
+    setLastSkippedStage(currentStage);
+    setShowFloatingModal(false);
+  };
+
+  const fetchFinancialMetrics = async (t: string) => {
+    const requestedTicker = t.toUpperCase();
+    setFinancialMetrics(null);
+    setBalanceSheetMetrics(null);
+
+    try {
+      const response = await fetch(`/api/financials/${requestedTicker}`);
+      const data = await response.json();
+
+      if (!response.ok) {
+        console.warn(`Financial metrics not available for ${requestedTicker}:`, data.message);
+        return;
+      }
+
+      const { balanceSheet, ...incomeMetrics } = data;
+      setFinancialMetrics(incomeMetrics);
+      if (balanceSheet) {
+        setBalanceSheetMetrics(balanceSheet);
+      }
+    } catch (error) {
+      console.warn(`Failed to fetch financial metrics for ${requestedTicker}:`, error);
+    }
+  };
+
+  const handleTickerSubmit = async (t: string) => {
+    analytics.trackTickerSearch(t);
+    analytics.trackAnalysisStarted(t);
+
+    try {
+      const response = await fetch(`/api/analyze/${t}`);
+      const data = await response.json();
+
+      if (!response.ok) {
+        const errorData = {
+          error: data.error || "Analysis Failed",
+          message: data.message || "Something went wrong. Please try again."
+        };
+        throw { errorData };
+      }
+
+      setSummaryData(data);
+      setViewState("success");
+
+      analytics.trackAnalysisCompleted(t);
+
+      if (data.competitors && Array.isArray(data.competitors)) {
+        data.competitors.forEach((competitor: any) => {
+          if (competitor.ticker) {
+            queryClient.prefetchQuery({
+              queryKey: ['/api/analyze', competitor.ticker],
+              queryFn: async () => {
+                const res = await fetch(`/api/analyze/${competitor.ticker}`);
+                if (!res.ok) throw new Error('Failed to fetch competitor data');
+                return res.json();
+              },
+              staleTime: 1000 * 60 * 60,
+            });
+          }
+        });
+      }
+
+      fetchFinancialMetrics(t);
+    } catch (error: any) {
+      const errorTitle = error.errorData?.error || "Analysis Failed";
+      const errorMessage = error.errorData?.message ||
+        `We couldn't analyze "${t}". Please try again.`;
+
+      setErrorInfo({
+        title: errorTitle,
+        message: errorMessage
+      });
+      setViewState("error");
+
+      analytics.trackAnalysisError(t, errorMessage);
+    }
+  };
+
+  useEffect(() => {
+    if (!ticker) return;
+    handleTickerSubmit(ticker);
+  }, [ticker]);
+
+  const STAGE_NAMES = ['Business', 'Performance', 'Valuation', 'Strategy', 'Timing', 'Protection'];
+
+  const handleStageChange = (stage: number) => {
+    setCurrentStage(stage);
+    window.scrollTo(0, 0);
+    analytics.trackStageViewed(stage, STAGE_NAMES[stage - 1] || 'Unknown', ticker);
+
+    if (stage === 2 && ticker && !financialMetrics) {
+      fetchFinancialMetrics(ticker);
+    }
+
+    if (stage === 2 && ticker) {
+      queryClient.prefetchQuery({
+        queryKey: [`/api/valuation/${ticker}`],
+      });
+      const tf = (typeof window !== 'undefined' && localStorage.getItem('timing-timeframe') === 'daily') ? 'daily' : 'weekly';
+      queryClient.prefetchQuery({
+        queryKey: ['/api/timing', ticker, tf],
+        queryFn: async () => {
+          const res = await fetch(`/api/timing/${ticker}?timeframe=${tf}`);
+          if (!res.ok) throw new Error('Prefetch failed');
+          return res.json();
+        },
+      });
+    }
+  };
+
+  const handleNextStage = () => {
+    if (currentStage < 6) handleStageChange(currentStage + 1);
+  };
+
+  const handlePreviousStage = () => {
+    if (currentStage > 1) handleStageChange(currentStage - 1);
+  };
+
+  const handleRetry = () => {
+    setViewState("loading");
+    handleTickerSubmit(ticker);
+  };
+
+  const handleBack = () => {
+    navigate("/");
+  };
+
+  const getStageButtonText = () => {
+    if (currentStage === 1) {
+      return {
+        next: "I like this business - let's check performance →",
+        previous: null
+      };
+    }
+    return {
+      next: currentStage < 6 ? "Continue to Next Stage →" : null,
+      previous: "← Previous Stage"
+    };
+  };
+
+  const buttonText = getStageButtonText();
+
+  const getWatchlistSnapshot = (): WatchlistSnapshot => {
+    const snapshot: WatchlistSnapshot = {};
+
+    if (financialMetrics) {
+      snapshot.performance = {
+        fundamentalsScore: undefined,
+        revenueGrowth: financialMetrics.revenueGrowth,
+        earningsGrowth: financialMetrics.earningsGrowth,
+        revenueChangePercent: financialMetrics.revenueChangePercent,
+        earningsChangePercent: financialMetrics.earningsChangePercent,
+      };
+    }
+
+    const valuationData = queryClient.getQueryData([`/api/valuation/${ticker}`]) as any;
+    if (valuationData) {
+      const sensibleCount = valuationData.quadrants?.filter((q: any) => q.strength === "sensible").length ?? 0;
+      const totalQuadrants = valuationData.quadrants?.length ?? 0;
+      snapshot.valuation = {
+        sensibleCount,
+        totalQuadrants,
+        earningsYieldFormatted: valuationData.earningsYieldFormatted,
+        returnOnCapitalFormatted: valuationData.returnOnCapitalFormatted,
+        verdict: valuationData.verdict,
+      };
+    }
+
+    const tf = (typeof window !== 'undefined' && localStorage.getItem('timing-timeframe') === 'daily') ? 'daily' : 'weekly';
+    const timingData = queryClient.getQueryData(['/api/timing', ticker, tf]) as any;
+    if (timingData) {
+      const modules = timingData.modules || {};
+      let supportive = 0;
+      let total = 0;
+      Object.values(modules).forEach((m: any) => {
+        if (m?.quadrant) {
+          total++;
+          if (["bullish", "improving", "bounce_setup", "momentum_aligning"].includes(m.quadrant)) supportive++;
+        }
+      });
+      snapshot.timing = {
+        supportiveCount: supportive,
+        totalSignals: total,
+        trendLabel: modules.trend?.label,
+        momentumLabel: modules.momentum?.label,
+      };
+    }
+
+    const strategyKey = `strategyPlan:${ticker}`;
+    if (typeof window !== 'undefined') {
+      try {
+        const saved = localStorage.getItem(strategyKey);
+        if (saved) {
+          const plan = JSON.parse(saved);
+          snapshot.strategy = {
+            convictionValue: plan.convictionValue,
+            convictionLabel: plan.convictionLabel,
+            totalAmount: plan.totalAmount,
+            tranches: plan.tranches,
+            imWrongIf: plan.imWrongIf,
+          };
+        }
+      } catch {}
+    }
+
+    return snapshot;
+  };
 
   return (
-    <>
+    <div className="flex min-h-screen flex-col">
       <Helmet>
-        <title>{ticker} — Know What You Own</title>
+        <title>{ticker} — Investment Thesis & Analysis | restnvest</title>
       </Helmet>
-      <div className="flex min-h-screen flex-col items-center justify-center gap-4">
-        <h1 className="text-4xl font-bold tracking-tight" data-testid="text-stock-ticker">
-          {ticker}
-        </h1>
-        <div className="flex items-center gap-3">
-          <div className="h-5 w-5 animate-spin rounded-full border-4 border-primary border-t-transparent" />
-          <p className="text-muted-foreground" data-testid="text-loading-message">
-            Loading analysis...
-          </p>
-        </div>
-      </div>
-    </>
+      <Header />
+
+      <main className="flex-1">
+        {viewState === "loading" && (
+          <div className="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8" data-testid="analysis-loading">
+            <LoadingState message={`Analyzing ${ticker}'s 10-K filing...`} />
+          </div>
+        )}
+
+        {viewState === "success" && summaryData && (
+          <div className="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8" data-active-ticker={ticker}>
+            <div className="mb-12 flex items-center justify-center gap-3 flex-wrap">
+              <Button
+                variant="outline"
+                onClick={handleBack}
+                className="h-12 px-8 rounded-full"
+                data-testid="button-back-to-search"
+              >
+                <ArrowLeft className="mr-2 h-4 w-4" />
+                New Search
+              </Button>
+              <SaveToWatchlist
+                ticker={ticker}
+                companyName={summaryData.companyName}
+                getSnapshot={getWatchlistSnapshot}
+              />
+            </div>
+
+            <JourneyNarrative />
+            <StageNavigation
+              currentStage={currentStage}
+              onStageChange={handleStageChange}
+            />
+
+            {(() => {
+              const isGated = shouldShowPaywall(currentStage);
+              const isUnlocked = paywallState === "unlocked";
+
+              const stageContentProps = {
+                stage: currentStage,
+                summaryData: summaryData,
+                financialMetrics: financialMetrics ?? undefined,
+                balanceSheetMetrics: balanceSheetMetrics ?? undefined,
+                ticker: ticker,
+                onStageChange: handleStageChange,
+              };
+
+              if (!isGated || isUnlocked) {
+                const showFollowPrompt = isGated && isUnlocked && !tickerFollowed;
+                return (
+                  <>
+                    {showFollowPrompt && (
+                      <TickerFollowPrompt
+                        ticker={ticker}
+                        onFollowed={() => setTickerFollowed(true)}
+                      />
+                    )}
+                    <StageContent {...stageContentProps} />
+                  </>
+                );
+              }
+
+              if (paywallState === "skipped" && !showFloatingModal) {
+                return (
+                  <>
+                    <InlineEmailCapture
+                      ticker={ticker}
+                      onUnlocked={handlePaywallUnlocked}
+                    />
+                    <StageContent {...stageContentProps} />
+                  </>
+                );
+              }
+
+              return (
+                <div className="relative" style={{ display: "grid" }}>
+                  <div
+                    className="select-none"
+                    style={{ gridArea: "1 / 1", filter: "blur(5px)", pointerEvents: "none" }}
+                    aria-hidden="true"
+                  >
+                    <StageContent {...stageContentProps} />
+                  </div>
+                  <div
+                    className="pointer-events-none"
+                    style={{ gridArea: "1 / 1", position: "sticky", top: "25vh", zIndex: 40, height: 0 }}
+                  >
+                    <div className="pointer-events-auto mx-auto max-w-lg">
+                      <EmailPaywall
+                        ticker={ticker}
+                        onUnlocked={handlePaywallUnlocked}
+                        onSkipped={currentStage < 5 ? handlePaywallSkipped : undefined}
+                        mode={currentStage < 5 ? "friday_report" : "action_gate"}
+                      />
+                    </div>
+                  </div>
+                </div>
+              );
+            })()}
+
+            {(!shouldShowPaywall(currentStage) || paywallState === "unlocked") && (
+              <div className="mt-8 flex items-center justify-between gap-4">
+                {buttonText.previous && (
+                  <Button
+                    variant="outline"
+                    onClick={handlePreviousStage}
+                    className="h-12 px-8"
+                    data-testid="button-previous-stage"
+                  >
+                    {buttonText.previous}
+                  </Button>
+                )}
+                <div className="flex-1" />
+                {buttonText.next && (
+                  <Button
+                    onClick={handleNextStage}
+                    className="h-12 px-8"
+                    data-testid="button-next-stage"
+                  >
+                    {buttonText.next}
+                  </Button>
+                )}
+              </div>
+            )}
+          </div>
+        )}
+
+        {viewState === "error" && (
+          <div className="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8">
+            <ErrorState
+              title={errorInfo.title}
+              message={errorInfo.message}
+              onBack={handleBack}
+              onRetry={handleRetry}
+            />
+          </div>
+        )}
+      </main>
+
+      <Footer />
+    </div>
   );
 }
