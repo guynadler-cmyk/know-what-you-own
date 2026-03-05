@@ -999,11 +999,10 @@ import {
 export async function registerRoutes(app: Express): Promise<Server> {
   // --------------------------------------------------------------------------
   // /stocks/:ticker — SSR meta tag injection for social/SEO (production only)
-  // In development, calls next() so Vite's catch-all serves the SPA normally.
+  // Injects ticker-specific meta tags into index.html for SEO and social previews.
+  // Works in both development (reads client/index.html) and production (reads public/index.html).
   // --------------------------------------------------------------------------
   app.get("/stocks/:ticker", async (req, res, next) => {
-    if (app.get("env") !== "production") return next();
-
     try {
       const ticker = (req.params.ticker ?? "").toUpperCase();
       if (!ticker || !/^[A-Z]{1,10}$/.test(ticker)) return next();
@@ -1025,7 +1024,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
         : `${ticker} | restnvest`;
       const canonicalUrl = `https://restnvest.com/stocks/${ticker}`;
 
-      const htmlPath = pathModule.resolve(import.meta.dirname, "public", "index.html");
+      const isProd = app.get("env") === "production";
+      const htmlPath = isProd
+        ? pathModule.resolve(import.meta.dirname, "public", "index.html")
+        : pathModule.resolve(import.meta.dirname, "..", "client", "index.html");
       let html = await fsModule.promises.readFile(htmlPath, "utf-8");
 
       html = html.replace(/<title>[^<]*<\/title>/, `<title>${title}</title>`);
