@@ -20,6 +20,7 @@ const InstitutionsPage = lazy(() => import("@/pages/InstitutionsPage"));
 const TermsPage = lazy(() => import("@/pages/TermsPage"));
 const PrivacyPage = lazy(() => import("@/pages/PrivacyPage"));
 const WatchlistPage = lazy(() => import("@/pages/WatchlistPage"));
+const StockPage = lazy(() => import("@/pages/StockPage"));
 const NotFound = lazy(() => import("@/pages/not-found"));
 
 function LoadingFallback() {
@@ -48,6 +49,7 @@ function Router() {
         <Route path="/terms" component={TermsPage} />
         <Route path="/privacy" component={PrivacyPage} />
         <Route path="/watchlist" component={WatchlistPage} />
+        <Route path="/stocks/:ticker" component={StockPage} />
         <Route component={NotFound} />
       </Switch>
     </Suspense>
