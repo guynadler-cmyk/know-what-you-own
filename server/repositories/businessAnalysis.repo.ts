@@ -1,6 +1,6 @@
 import { db } from "../db";
 import { aiBusinessAnalysis } from "@shared/schema";
-import { eq } from "drizzle-orm";
+import { eq, desc } from "drizzle-orm";
 import type { CompanySummary } from "@shared/schema";
 
 export async function getBusinessByCacheKey(
@@ -13,6 +13,18 @@ export async function getBusinessByCacheKey(
     .limit(1);
 
   return rows.length ? (rows[0].result as CompanySummary) : null;
+}
+
+export async function getLatestCompanyInfoByTicker(
+  ticker: string
+): Promise<{ companyName: string } | null> {
+  const rows = await db
+    .select({ companyName: aiBusinessAnalysis.companyName })
+    .from(aiBusinessAnalysis)
+    .where(eq(aiBusinessAnalysis.ticker, ticker.toUpperCase()))
+    .orderBy(desc(aiBusinessAnalysis.filingDate))
+    .limit(1);
+  return rows.length ? { companyName: rows[0].companyName } : null;
 }
 
 export async function insertBusinessAnalysis(params: {

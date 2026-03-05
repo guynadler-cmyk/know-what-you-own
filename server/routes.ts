@@ -989,6 +989,7 @@ import { z } from "zod";
 import {
   getBusinessByCacheKey,
   insertBusinessAnalysis,
+  getLatestCompanyInfoByTicker,
 } from "./repositories/businessAnalysis.repo";
 import {
   getFootnotesByCacheKey,
@@ -996,6 +997,55 @@ import {
 } from "./repositories/footnotesAnalysis.repo";
 
 export async function registerRoutes(app: Express): Promise<Server> {
+  // --------------------------------------------------------------------------
+  // /stocks/:ticker — SSR meta tag injection for social/SEO (production only)
+  // In development, calls next() so Vite's catch-all serves the SPA normally.
+  // --------------------------------------------------------------------------
+  app.get("/stocks/:ticker", async (req, res, next) => {
+    if (app.get("env") !== "production") return next();
+
+    try {
+      const ticker = (req.params.ticker ?? "").toUpperCase();
+      if (!ticker || !/^[A-Z]{1,10}$/.test(ticker)) return next();
+
+      const fsModule = await import("fs");
+      const pathModule = await import("path");
+
+      const info = await getLatestCompanyInfoByTicker(ticker);
+      const companyName = info?.companyName ?? null;
+
+      const title = companyName
+        ? `${companyName} (${ticker}) — Investment Thesis & Analysis | restnvest`
+        : `${ticker} Analysis | restnvest`;
+      const description = companyName
+        ? `${companyName} investment thesis, financial health, competitive moats and signals — in plain English.`
+        : `${ticker} investment thesis, financial health, competitive moats and signals — in plain English.`;
+      const ogTitle = companyName
+        ? `${companyName} (${ticker}) | restnvest`
+        : `${ticker} | restnvest`;
+      const canonicalUrl = `https://restnvest.com/stocks/${ticker}`;
+
+      const htmlPath = pathModule.resolve(import.meta.dirname, "public", "index.html");
+      let html = await fsModule.promises.readFile(htmlPath, "utf-8");
+
+      html = html.replace(/<title>[^<]*<\/title>/, `<title>${title}</title>`);
+      html = html.replace(
+        /<meta name="description"[^>]*>/,
+        `<meta name="description" content="${description}">`
+      );
+      html = html.replace(
+        "</head>",
+        `  <meta property="og:title" content="${ogTitle}">\n  <meta property="og:description" content="${description}">\n  <meta property="og:type" content="website">\n  <meta property="og:url" content="${canonicalUrl}">\n  <link rel="canonical" href="${canonicalUrl}">\n</head>`
+      );
+
+      console.log(`[stocks:meta] Served ${ticker} — companyName: ${companyName ?? "fallback"}`);
+      res.status(200).type("text/html").send(html);
+    } catch (err) {
+      console.error("[stocks:meta] Error, falling through to static:", err);
+      next();
+    }
+  });
+
   // --------------------------------------------------------------------------
   // COMPANY SEARCH
   // --------------------------------------------------------------------------
