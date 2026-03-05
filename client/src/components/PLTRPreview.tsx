@@ -46,7 +46,7 @@ export function PLTRPreview() {
   const [, setLocation] = useLocation();
 
   const handleViewFullAnalysis = () => {
-    setLocation('/app?ticker=PLTR');
+    setLocation('/stocks/PLTR');
   };
 
   const getThemeBadgeClasses = (emphasis: "high" | "medium" | "low") => {

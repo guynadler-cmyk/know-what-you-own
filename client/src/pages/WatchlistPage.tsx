@@ -200,7 +200,7 @@ function WatchlistCard({ item, onRemove, onNotesUpdated }: {
             <Button
               size="icon"
               variant="ghost"
-              onClick={() => navigate(`/app?ticker=${item.ticker}`)}
+              onClick={() => navigate(`/stocks/${item.ticker}`)}
               title="Re-analyze"
               data-testid={`button-reanalyze-${item.ticker}`}
             >

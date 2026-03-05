@@ -400,12 +400,12 @@ export default function AppPage() {
         <meta property="og:title" content={pageTitle} />
         <meta property="og:description" content={pageDescription} />
         <meta property="og:type" content="website" />
-        <meta property="og:url" content={`https://restnvest.com/app${currentTicker ? `?ticker=${currentTicker}` : ''}`} />
+        <meta property="og:url" content={`${currentTicker ? `https://restnvest.com/stocks/${currentTicker}` : 'https://restnvest.com/app'}`} />
         <meta property="og:image" content="https://restnvest.com/icons/icon-512x512.png" />
         <meta name="twitter:card" content="summary" />
         <meta name="twitter:title" content={pageTitle} />
         <meta name="twitter:description" content={pageDescription} />
-        <link rel="canonical" href={`https://restnvest.com/app${currentTicker ? `?ticker=${currentTicker}` : ''}`} />
+        <link rel="canonical" href={`${currentTicker ? `https://restnvest.com/stocks/${currentTicker}` : 'https://restnvest.com/app'}`} />
       </Helmet>
       <Header />
       

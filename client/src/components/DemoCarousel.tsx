@@ -288,7 +288,7 @@ export function DemoCarousel() {
                                 </div>
                                 <Button
                                   size="sm"
-                                  onClick={() => setLocation(`/app?ticker=${company.ticker}`)}
+                                  onClick={() => setLocation(`/stocks/${company.ticker}`)}
                                   className="w-full gap-2 text-xs mt-4"
                                   data-testid={`button-view-${company.ticker.toLowerCase()}`}
                                 >
@@ -362,7 +362,7 @@ export function DemoCarousel() {
 
                               <Button
                                 size="sm"
-                                onClick={() => setLocation(`/app?ticker=${company.ticker}`)}
+                                onClick={() => setLocation(`/stocks/${company.ticker}`)}
                                 className="w-full gap-2 text-xs mt-4"
                                 data-testid={`button-view-${company.ticker.toLowerCase()}`}
                               >
@@ -468,7 +468,7 @@ export function DemoCarousel() {
 
                             <Button
                               size="sm"
-                              onClick={() => setLocation(`/app?ticker=${company.ticker}`)}
+                              onClick={() => setLocation(`/stocks/${company.ticker}`)}
                               className="w-full gap-2 text-xs mt-3"
                               data-testid={`button-view-${company.ticker.toLowerCase()}`}
                             >
