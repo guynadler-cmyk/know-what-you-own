@@ -1017,8 +1017,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         ? `${companyName} (${ticker}) — Investment Thesis & Analysis | restnvest`
         : `${ticker} Analysis | restnvest`;
       const description = companyName
-        ? `${companyName} investment thesis, financial health, competitive moats and signals — in plain English.`
-        : `${ticker} investment thesis, financial health, competitive moats and signals — in plain English.`;
+        ? `Skip the noise. See the metrics that actually matter for ${companyName} — and walk through the decision of whether ${ticker} belongs in your portfolio.`
+        : `Skip the noise. See the metrics that actually matter for ${ticker} — and walk through the decision of whether ${ticker} belongs in your portfolio.`;
       const ogTitle = companyName
         ? `${companyName} (${ticker}) | restnvest`
         : `${ticker} | restnvest`;
