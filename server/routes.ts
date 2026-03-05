@@ -996,9 +996,18 @@ import {
   saveFootnotesAnalysis,
 } from "./repositories/footnotesAnalysis.repo";
 
+function stripLegalSuffix(name: string): string {
+  return name
+    .replace(
+      /,?\s+(Incorporated|Corporation|Limited|Inc\.?|Corp\.?|Ltd\.?|Co\.?|LLC|L\.L\.C\.?|N\.V\.?|S\.A\.S\.?|S\.A\.?|PLC|P\.L\.C\.?|AG|SE|GmbH|B\.V\.?|Pty\.?\s+Ltd\.?)\.?$/i,
+      ""
+    )
+    .trim();
+}
+
 export async function registerRoutes(app: Express): Promise<Server> {
   // --------------------------------------------------------------------------
-  // /stocks/:ticker — SSR meta tag injection for social/SEO (production only)
+  // /stocks/:ticker — SSR meta tag injection for social/SEO
   // Injects ticker-specific meta tags into index.html for SEO and social previews.
   // Works in both development (reads client/index.html) and production (reads public/index.html).
   // --------------------------------------------------------------------------
@@ -1011,7 +1020,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const pathModule = await import("path");
 
       const info = await getLatestCompanyInfoByTicker(ticker);
-      const companyName = info?.companyName ?? null;
+      const companyName = info?.companyName ? stripLegalSuffix(info.companyName) : null;
 
       const title = companyName
         ? `${companyName} (${ticker}) — Investment Thesis & Analysis | restnvest`
