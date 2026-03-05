@@ -1007,6 +1007,21 @@ function stripLegalSuffix(name: string): string {
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // --------------------------------------------------------------------------
+  // /app?ticker=X redirect → /stocks/X  (301 permanent)
+  // Keeps existing bookmarks, shared links, and hardcoded /app?ticker= references working.
+  // Only redirects when a valid ticker param is present; /app alone falls through normally.
+  // --------------------------------------------------------------------------
+  app.get("/app", (req, res, next) => {
+    const ticker = (req.query.ticker as string | undefined)?.toUpperCase().trim();
+    if (ticker && /^[A-Z]{1,10}$/.test(ticker)) {
+      const stage = req.query.stage as string | undefined;
+      const dest = stage ? `/stocks/${ticker}?stage=${stage}` : `/stocks/${ticker}`;
+      return res.redirect(301, dest);
+    }
+    return next();
+  });
+
+  // --------------------------------------------------------------------------
   // /stocks/:ticker — SSR meta tag injection for social/SEO
   // Injects ticker-specific meta tags into index.html for SEO and social previews.
   // Works in both development (reads client/index.html) and production (reads public/index.html).
