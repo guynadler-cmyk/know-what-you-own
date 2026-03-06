@@ -36,6 +36,7 @@ export async function insertBusinessAnalysis(params: {
   filingDate: string;
   result: CompanySummary;
 }) {
+  if (!params.cacheKey) throw new Error("cacheKey is required for insertBusinessAnalysis");
   await db
     .insert(aiBusinessAnalysis)
     .values({

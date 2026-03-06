@@ -1155,10 +1155,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
         throw no10KErr;
       }
 
-      const routeCacheKey = businessCacheKey(upperTicker, fiscalYear);
+      const businessKey = businessCacheKey(upperTicker, fiscalYear);
 
       try {
-        const cached = await getBusinessByCacheKey(routeCacheKey);
+        const cached = await getBusinessByCacheKey(businessKey);
         if (cached) {
           console.log(`[ROUTE CACHE HIT] ${upperTicker} FY${fiscalYear} — returning instantly`);
           return res.json(cached);
@@ -1270,7 +1270,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (!businessAnalysisUnavailable) {
         try {
           await insertBusinessAnalysis({
-            cacheKey: routeCacheKey,
+            cacheKey: businessKey,
             companyName: name,
             ticker: upperTicker,
             cik,
@@ -1364,10 +1364,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const { accessionNumber, filingDate, fiscalYear, primaryDocument } =
         await secService.getLatest10K(cik);
 
-      const routeFootnotesCacheKey = footnotesCacheKey(upperTicker, fiscalYear);
+      const footnotesKey = footnotesCacheKey(upperTicker, fiscalYear);
 
       try {
-        const cached = await getFootnotesByCacheKey(routeFootnotesCacheKey);
+        const cached = await getFootnotesByCacheKey(footnotesKey);
         if (cached) {
           console.log(`[ROUTE CACHE HIT] Footnotes for ${upperTicker} FY${fiscalYear} — returning instantly`);
           return res.json(cached);
@@ -1396,7 +1396,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       try {
         await saveFootnotesAnalysis({
-          cacheKey: routeFootnotesCacheKey,
+          cacheKey: footnotesKey,
           companyName: name,
           ticker: upperTicker,
           fiscalYear,

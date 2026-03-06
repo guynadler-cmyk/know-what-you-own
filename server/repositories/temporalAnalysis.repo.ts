@@ -22,6 +22,7 @@ export async function saveTemporalAnalysis(params: {
   yearsAnalyzed: string[];
   result: TemporalAnalysis;
 }) {
+  if (!params.cacheKey) throw new Error("cacheKey is required for saveTemporalAnalysis");
   await db
     .insert(aiTemporalAnalysis)
     .values({

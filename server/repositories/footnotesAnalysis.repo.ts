@@ -23,6 +23,7 @@ export async function saveFootnotesAnalysis(params: {
   filingDate: string;
   result: FinePrintAnalysis;
 }) {
+  if (!params.cacheKey) throw new Error("cacheKey is required for saveFootnotesAnalysis");
   await db
     .insert(aiFootnotesAnalysis)
     .values({
