@@ -1,0 +1,77 @@
+We are seeing cache_key values in the database that look like this:
+
+e2fd8213a0f9aea19993ad66894bc78d8b4f1b809df7330a2b3889b6945e1750
+
+This is a 64-character SHA-256 hash. However, our system was recently standardized to use canonical cache keys in the following formats:
+
+Business analysis:
+TICKER:FISCAL_YEAR
+Example: PLTR:2025
+
+Footnotes analysis:
+footnotes:TICKER:FISCAL_YEAR
+Example: footnotes:PLTR:2025
+
+Temporal analysis:
+temporal:TICKER:FISCAL_YEAR
+Example: temporal:PLTR:2025
+
+The SHA-256 format indicates that some code path is still generating hashed keys (likely from older logic in openai.ts or a cache utility).
+
+Tasks:
+
+1. Search the entire codebase for any SHA-256 hash generation such as:
+   - crypto.createHash("sha256")
+   - createHash
+   - sha256(
+   - hash(
+   - digest("hex")
+
+2. Identify which file or service is generating these hashed cache keys.
+
+3. Trace the code path where the hash is produced and determine:
+   - what input data is being hashed
+   - which service calls this function
+   - where the resulting value is used as cacheKey
+
+4. Check the following likely files:
+   - server/services/openai.ts
+   - server/utils/cacheKey.ts
+   - server/routes.ts
+   - repository insert functions
+
+5. Confirm whether the hashed key is still being passed into:
+   - insertBusinessAnalysis()
+   - saveFootnotesAnalysis()
+   - saveTemporalAnalysis()
+
+6. If a SHA-256 key is still being generated, update the code so that ALL cache keys use the canonical format instead of hashes.
+
+Canonical functions should look like this:
+
+export function makeCanonicalCacheKey(ticker: string, fiscalYear: string | number) {
+  return `${ticker.toUpperCase()}:${fiscalYear}`;
+}
+
+export function makeFootnotesKey(ticker: string, fiscalYear: string | number) {
+  return `footnotes:${ticker.toUpperCase()}:${fiscalYear}`;
+}
+
+export function makeTemporalKey(ticker: string, fiscalYear: string | number) {
+  return `temporal:${ticker.toUpperCase()}:${fiscalYear}`;
+}
+
+7. Ensure all routes and services use these canonical key generators before inserting into the database.
+
+8. Confirm that no code path still produces 64-character SHA-256 keys.
+
+Expected Result:
+After the fix, the database should only contain cache_key values like:
+
+PLTR:2025
+footnotes:PLTR:2025
+temporal:PLTR:2025
+
+There should be zero keys that:
+- start with "route:"
+- are 64-character hexadecimal hashes
