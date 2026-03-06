@@ -2,7 +2,7 @@
 import OpenAI from "openai";
 import { CompanySummary, TemporalAnalysis, FinePrintAnalysis } from "@shared/schema";
 import { MemoryCache } from "./caching";
-import { businessCacheKey, temporalCacheKey, footnotesCacheKey } from "../utils/cacheKey";
+import { makeCacheKey } from "../utils/cacheKey";
 
 import {
   getBusinessByCacheKey,
@@ -121,7 +121,7 @@ export class OpenAIService {
     cik: string,
     sectionDepth?: 'full' | 'limited' | 'full_doc'
   ): Promise<CompanySummary> {
-      const cacheKey = businessCacheKey(ticker, fiscalYear);
+      const cacheKey = makeCacheKey("business", ticker, fiscalYear);
 
   const cached = await getBusinessByCacheKey(cacheKey);
     if (cached) {
@@ -309,7 +309,7 @@ IMPORTANT — LIMITED FILING NOTICE: This text was extracted from financial note
     }>
   ): Promise<TemporalAnalysis> {
     const yearsAnalyzed = yearlyData.map(d => d.fiscalYear).sort();
-    const cacheKey = temporalCacheKey(ticker, yearsAnalyzed[yearsAnalyzed.length - 1]);
+    const cacheKey = makeCacheKey("temporal", ticker, yearsAnalyzed[yearsAnalyzed.length - 1]);
 
     const cached = await getTemporalByCacheKey(cacheKey);
     if (cached) {
@@ -616,7 +616,7 @@ Additional Guidelines:
     filingDate: string
   ): Promise<FinePrintAnalysis> {
 
-      const cacheKey = footnotesCacheKey(ticker, fiscalYear);
+      const cacheKey = makeCacheKey("footnotes", ticker, fiscalYear);
     const cached = await getFootnotesByCacheKey(cacheKey);
     if (cached) {
       console.log("[DB CACHE] FOOTNOTES HIT:", ticker, fiscalYear);

@@ -1,11 +1,12 @@
-export function businessCacheKey(ticker: string, fiscalYear: string): string {
-  return `${ticker.toUpperCase()}:${fiscalYear}`;
-}
+import crypto from "node:crypto";
 
-export function footnotesCacheKey(ticker: string, fiscalYear: string): string {
-  return `footnotes:${ticker.toUpperCase()}:${fiscalYear}`;
-}
+export type CacheKeyType = "business" | "footnotes" | "temporal";
 
-export function temporalCacheKey(ticker: string, fiscalYear: string): string {
-  return `temporal:${ticker.toUpperCase()}:${fiscalYear}`;
+export function makeCacheKey(
+  type: CacheKeyType,
+  ticker: string,
+  fiscalYear: string | number
+): string {
+  const payload = `${type}:${ticker.toUpperCase().trim()}:${fiscalYear}`;
+  return crypto.createHash("sha256").update(payload).digest("hex");
 }
