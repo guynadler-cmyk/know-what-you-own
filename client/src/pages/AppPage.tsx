@@ -32,7 +32,7 @@ import {
 type ViewState = "input" | "loading" | "success" | "error";
 
 export default function AppPage() {
-  const [location] = useLocation();
+  const [location, setLocation] = useLocation();
   const [viewState, setViewState] = useState<ViewState>("input");
   const [currentTicker, setCurrentTicker] = useState("");
   const [currentStage, setCurrentStage] = useState(1);
@@ -169,70 +169,10 @@ export default function AppPage() {
     }
   }, []);
 
-  const handleTickerSubmit = async (ticker: string, targetStage?: number) => {
-    setCurrentTicker(ticker);
-    setViewState("loading");
-    
-    // Update URL immediately so GA4 captures the ticker in page path
-    const stageToUse = targetStage !== undefined ? targetStage : currentStage;
-    const params = new URLSearchParams();
-    params.set('ticker', ticker);
-    params.set('stage', stageToUse.toString());
-    window.history.pushState({}, '', `?${params.toString()}`);
-    
+  const handleTickerSubmit = (ticker: string, targetStage?: number) => {
     analytics.trackTickerSearch(ticker);
-    analytics.trackAnalysisStarted(ticker);
-
-    try {
-      const response = await fetch(`/api/analyze/${ticker}`);
-      const data = await response.json();
-
-      if (!response.ok) {
-        // Store the error data for better error messaging
-        const errorData = {
-          error: data.error || "Analysis Failed",
-          message: data.message || "Something went wrong. Please try again."
-        };
-        throw { errorData };
-      }
-
-      setSummaryData(data);
-      setViewState("success");
-      
-      analytics.trackAnalysisCompleted(ticker);
-
-      if (data.competitors && Array.isArray(data.competitors)) {
-        data.competitors.forEach((competitor: any) => {
-          if (competitor.ticker) {
-            queryClient.prefetchQuery({
-              queryKey: ['/api/analyze', competitor.ticker],
-              queryFn: async () => {
-                const res = await fetch(`/api/analyze/${competitor.ticker}`);
-                if (!res.ok) throw new Error('Failed to fetch competitor data');
-                return res.json();
-              },
-              staleTime: 1000 * 60 * 60,
-            });
-          }
-        });
-      }
-      
-      // Preload Stage 2 financial metrics in the background
-      fetchFinancialMetrics(ticker);
-    } catch (error: any) {
-      // Extract error information from thrown error or fallback to generic message
-      const errorTitle = error.errorData?.error || "Analysis Failed";
-      const errorMessage = error.errorData?.message || 
-        `We couldn't analyze "${ticker}". Please try again.`;
-      
-      setErrorInfo({
-        title: errorTitle,
-        message: errorMessage
-      });
-      setViewState("error");
-      
-      analytics.trackAnalysisError(ticker, errorMessage);
-    }
+    const stage = targetStage && targetStage > 1 ? targetStage : null;
+    setLocation(stage ? `/stocks/${ticker}?stage=${stage}` : `/stocks/${ticker}`);
   };
 
   const handleBack = () => {
