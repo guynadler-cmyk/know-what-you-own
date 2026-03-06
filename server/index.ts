@@ -34,12 +34,57 @@ app.get("/robots.txt", (req, res) => {
   }
 });
 
-app.get("/sitemap.xml", (req, res) => {
-  const filePath = path.resolve(import.meta.dirname, "..", "client", "public", "sitemap.xml");
-  if (fs.existsSync(filePath)) {
-    res.type("application/xml").sendFile(filePath);
-  } else {
-    res.status(404).send("Not found");
+app.get("/sitemap.xml", async (req, res) => {
+  try {
+    const { db } = await import("./db");
+    const { aiBusinessAnalysis } = await import("../shared/schema");
+    const { max } = await import("drizzle-orm");
+
+    const rows = await db
+      .select({
+        ticker: aiBusinessAnalysis.ticker,
+        lastMod: max(aiBusinessAnalysis.createdAt),
+      })
+      .from(aiBusinessAnalysis)
+      .groupBy(aiBusinessAnalysis.ticker)
+      .orderBy(aiBusinessAnalysis.ticker);
+
+    const staticUrls = [
+      { loc: "https://restnvest.com/", changefreq: "weekly", priority: "1.0" },
+      { loc: "https://restnvest.com/app", changefreq: "weekly", priority: "0.9" },
+    ];
+
+    const tickerUrls = rows.map((r) => {
+      const lastmod = r.lastMod
+        ? new Date(r.lastMod).toISOString().split("T")[0]
+        : new Date().toISOString().split("T")[0];
+      return `  <url>\n    <loc>https://restnvest.com/stocks/${r.ticker.toUpperCase()}</loc>\n    <lastmod>${lastmod}</lastmod>\n    <changefreq>weekly</changefreq>\n    <priority>0.8</priority>\n  </url>`;
+    });
+
+    const staticXml = staticUrls
+      .map(
+        (u) =>
+          `  <url>\n    <loc>${u.loc}</loc>\n    <changefreq>${u.changefreq}</changefreq>\n    <priority>${u.priority}</priority>\n  </url>`
+      )
+      .join("\n");
+
+    const xml = [
+      '<?xml version="1.0" encoding="UTF-8"?>',
+      '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">',
+      staticXml,
+      ...tickerUrls,
+      "</urlset>",
+    ].join("\n");
+
+    res.type("application/xml").send(xml);
+  } catch (err) {
+    console.error("[sitemap] DB error, falling back to static file:", err);
+    const filePath = path.resolve(import.meta.dirname, "..", "client", "public", "sitemap.xml");
+    if (fs.existsSync(filePath)) {
+      res.type("application/xml").sendFile(filePath);
+    } else {
+      res.status(500).send("Sitemap unavailable");
+    }
   }
 });
 
