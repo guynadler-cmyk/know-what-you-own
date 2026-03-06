@@ -1,0 +1,96 @@
+restnvest is a stock research tool for individual investors. The brand is calm, clear, and minimal. No hype, no financial jargon. Color palette: deep teal (#1B6B6B or similar), off-white backgrounds, soft gray text, clean sans-serif typography (Inter or similar). Think: Bloomberg meets Notion, but approachable.
+
+WHAT TO BUILD
+A single flow: /founding → signup form → authenticated → redirect to https://restnvest.com/app
+
+PAGE 1: /founding — Invite Landing Page
+Full-screen, centered layout. Minimal. No navbar.
+Top: small restnvest wordmark or logo (top left or centered)
+Hero section:
+
+Small label above headline: FOUNDING MEMBER ACCESS in teal, small caps, letter-spaced
+Headline: Free access. Locked in for life.
+Subheadline: restnvest is free right now — but that won't last forever. Founding members lock in free access for life, no matter what we charge down the road.
+Single CTA button: Create Your Account → in teal, full-width on mobile
+
+Below CTA, 3 short value lines (icon + text):
+
+Research stocks like an owner, not a gambler
+Understand the business before you buy
+No noise. No predictions. Just clarity.
+
+Footer: restnvest · Built for long-term investors
+
+TOKEN-GATE LOGIC
+Before rendering the page, read the ?token= URL parameter and check it against a Firestore collection called inviteTokens. Each document in that collection has a field active: true/false and uses the token string as the document ID.
+
+If no token is present → redirect to https://restnvest.com/app
+If token exists but active: false → redirect to https://restnvest.com/app
+If token is valid and active: true → render the founding page normally
+
+The working invite URL will be: restnvest.com/founding?token=founding2026
+
+PAGE 2: Signup Form
+Triggered by clicking the CTA. Can be a modal overlay or a separate step — whichever feels cleaner.
+Offer two signup options, visually stacked:
+Option A — Google sign-in:
+
+A single button: Continue with Google with the Google logo
+Uses Firebase signInWithPopup with GoogleAuthProvider
+
+Option B — Email/Password:
+
+Divider line with or between the two options
+Fields: Full name, Email, Password, Confirm password
+Button: Create Account →
+
+On successful account creation via either method:
+
+Write to Firebase Firestore: create a user document under users/{userId} with:
+
+foundingMember: true
+accessToken: [the token they used]
+createdAt: timestamp
+displayName: [from Google or from name field]
+email: [user's email]
+
+
+Redirect to https://restnvest.com/app
+
+If user already has an account and signs in via Google, still write foundingMember: true to their existing document — don't overwrite other fields, just merge.
+On error: show inline error messages (e.g. "Email already in use", "Passwords don't match")
+
+TECHNICAL REQUIREMENTS
+
+Firebase Authentication: both Email/Password and Google sign-in
+Firebase Firestore for inviteTokens collection and user profile storage
+Use Firebase SDK v9+ (modular)
+Protect the /founding route — invalid or missing token redirects to https://restnvest.com/app
+If user is already authenticated and hits /founding, redirect straight to https://restnvest.com/app
+Store Firebase config in environment variables (.env): VITE_FIREBASE_API_KEY, VITE_FIREBASE_AUTH_DOMAIN, VITE_FIREBASE_PROJECT_ID, VITE_FIREBASE_APP_ID
+Use React + Vite or plain HTML/JS — whichever is already in the project
+Mobile responsive
+
+
+STYLE RULES
+
+No gradients, no heavy shadows
+Generous whitespace
+Teal (#1B6B6B) for all primary actions and accents
+Off-white or very light gray page background
+Body text: dark gray (not pure black)
+No stock market imagery, no charts on the landing page
+Feels like a product people trust with their money
+Google button should follow standard Google branding guidelines (white button, Google logo, dark text)
+
+
+DELIVERABLES
+
+/founding landing page with token-gate
+Signup form with both Google and Email/Password options
+Firestore write on signup (foundingMember: true)
+Post-signup redirect to https://restnvest.com/app
+.env.example file with required Firebase variable names
+
+
+Firebase is already configured with both Google and Email/Password providers enabled. The inviteTokens collection exists in Firestore with document founding2026 set to active: true.
