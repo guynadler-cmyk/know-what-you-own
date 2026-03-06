@@ -1,0 +1,83 @@
+We are seeing duplicate and inconsistent cache_key values in our database.
+
+Examples:
+
+route:PLTR:2025
+route:CRM:2025
+PLTR:2025
+MSFT:2025
+
+Problem:
+Multiple code paths are generating cache keys without using a shared canonical utility. Because of this, different formats are being inserted into the database.
+
+There is also missing validation logic like:
+
+if (!params.cacheKey) {
+  throw new Error("cacheKey is required");
+}
+
+This allows inserts to occur even when the canonical key generation is skipped.
+
+Tasks:
+
+1. Search the entire codebase for:
+   - cache_key
+   - cacheKey
+   - "route:"
+   - makeCanonicalCacheKey
+   - generateFootnotesKey
+   - generateBusinessKey
+   - insertBusinessAnalysis
+   - saveFootnotesAnalysis
+
+2. Identify all places where cache keys are generated.
+
+3. Determine which files/functions are generating:
+   - route:TICKER:YEAR format
+   - TICKER:YEAR format
+
+4. Trace the code path from:
+   - API routes
+   - service layer
+   - database insert functions
+
+5. Confirm where the canonical key should be generated. Ideally it should come from a shared utility such as:
+
+utils/cacheKey.ts
+
+Example canonical function:
+
+export function makeCanonicalCacheKey(
+  ticker: string,
+  fiscalYear: string | number
+) {
+  return `${ticker.toUpperCase()}:${fiscalYear}`;
+}
+
+6. Ensure every service uses this canonical function before inserting into the database.
+
+7. Add validation to database insert functions:
+
+if (!params.cacheKey) {
+  throw new Error("cacheKey is required");
+}
+
+8. Update all services so they pass the canonical cacheKey when calling:
+
+insertBusinessAnalysis()
+saveFootnotesAnalysis()
+
+9. Propose code changes to remove any "route:" prefixes and ensure all keys follow this format:
+
+<TICKER>:<FISCAL_YEAR>
+
+Examples:
+
+PLTR:2025
+MSFT:2025
+UBER:2026
+
+10. Suggest safeguards to prevent this issue in the future:
+- Centralized key generator
+- Validation before database insert
+- Optional database unique constraint on cache_key
