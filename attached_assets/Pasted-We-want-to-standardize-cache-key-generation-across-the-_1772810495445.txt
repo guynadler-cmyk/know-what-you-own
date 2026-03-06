@@ -1,0 +1,79 @@
+We want to standardize cache_key generation across the entire codebase.
+
+The ONLY allowed cache key format going forward should be a SHA-256 hash like:
+
+e2fd8213a0f9aea19993ad66894bc78d8b4f1b809df7330a2b3889b6945e1750
+
+We DO NOT want cache keys like:
+
+route:PLTR:2025
+PLTR:2025
+footnotes:PLTR:2025
+temporal:PLTR:2025
+
+Tasks:
+
+1. Search the entire project for any logic that generates cache keys, including:
+   - makeCanonicalCacheKey
+   - generateFootnotesKey
+   - generateBusinessKey
+   - generateTemporalKey
+   - "route:"
+   - cache_key
+   - cacheKey
+
+2. Replace all cache key generation with a single shared utility function located in:
+
+server/utils/cacheKey.ts
+
+3. The canonical key generator must produce a SHA-256 hash using ticker + fiscalYear + analysis type.
+
+Example implementation:
+
+import crypto from "crypto";
+
+function sha256(input: string) {
+  return crypto.createHash("sha256").update(input).digest("hex");
+}
+
+export function makeCacheKey(
+  type: "business" | "footnotes" | "temporal",
+  ticker: string,
+  fiscalYear: string | number
+) {
+  const normalizedTicker = ticker.toUpperCase().trim();
+  const payload = `${type}:${normalizedTicker}:${fiscalYear}`;
+  return sha256(payload);
+}
+
+4. Update all services and routes to use this function before inserting into the database.
+
+Example:
+
+const cacheKey = makeCacheKey("business", ticker, fiscalYear);
+
+5. Ensure the repository insert functions enforce validation:
+
+if (!params.cacheKey) {
+  throw new Error("cacheKey is required");
+}
+
+6. Remove any logic that adds the prefix "route:" or returns plain keys like TICKER:YEAR.
+
+7. Clean the database by deleting old cache keys that do not match the SHA-256 format:
+
+DELETE FROM ai_business_analysis WHERE cache_key NOT ~ '^[0-9a-f]{64}$';
+DELETE FROM ai_footnotes_analysis WHERE cache_key NOT ~ '^[0-9a-f]{64}$';
+DELETE FROM ai_temporal_analysis WHERE cache_key NOT ~ '^[0-9a-f]{64}$';
+
+8. Verify the workflow:
+   - First request generates the SHA-256 key and inserts the record.
+   - Second request should return a cache hit using the same SHA-256 key.
+
+Acceptance Criteria:
+
+- All cache_key values in the database are exactly 64-character SHA-256 hashes.
+- No cache keys contain "route:".
+- No cache keys contain "TICKER:YEAR".
+- All services use the same shared cache key generator.
+- Cache hits work correctly on repeated requests.
