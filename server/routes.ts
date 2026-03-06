@@ -985,6 +985,7 @@ import {
 import { alphaVantageService } from "./services/alphavantage";
 import { storage } from "./storage";
 import { isAuthenticated } from "./firebaseAuth";
+import { businessCacheKey, footnotesCacheKey } from "./utils/cacheKey";
 import { z } from "zod";
 import {
   getBusinessByCacheKey,
@@ -1154,7 +1155,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         throw no10KErr;
       }
 
-      const routeCacheKey = `route:${upperTicker}:${fiscalYear}`;
+      const routeCacheKey = businessCacheKey(upperTicker, fiscalYear);
 
       try {
         const cached = await getBusinessByCacheKey(routeCacheKey);
@@ -1363,7 +1364,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const { accessionNumber, filingDate, fiscalYear, primaryDocument } =
         await secService.getLatest10K(cik);
 
-      const routeFootnotesCacheKey = `route:footnotes:${upperTicker}:${fiscalYear}`;
+      const routeFootnotesCacheKey = footnotesCacheKey(upperTicker, fiscalYear);
 
       try {
         const cached = await getFootnotesByCacheKey(routeFootnotesCacheKey);

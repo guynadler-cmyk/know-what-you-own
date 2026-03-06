@@ -2,7 +2,7 @@
 import OpenAI from "openai";
 import { CompanySummary, TemporalAnalysis, FinePrintAnalysis } from "@shared/schema";
 import { MemoryCache } from "./caching";
-import crypto from "node:crypto";
+import { businessCacheKey, temporalCacheKey, footnotesCacheKey } from "../utils/cacheKey";
 
 import {
   getBusinessByCacheKey,
@@ -110,62 +110,6 @@ export class OpenAIService {
     private temporalCache = new MemoryCache(24 * 60 * 60 * 1000);
     private footnotesCache = new MemoryCache(24 * 60 * 60 * 1000);
 
-    private makeBusinessCacheKey(
-          companyName: string,
-          ticker: string,
-          fiscalYear: string,
-          filingDate: string,
-          businessSection: string
-        ): string {
-          return crypto
-            .createHash("sha256")
-            .update([
-              "BUSINESS",
-              companyName,
-              ticker,
-              fiscalYear,
-              filingDate,
-              businessSection.slice(0, 5000)
-            ].join("|"))
-            .digest("hex");
-        }
-    private makeTemporalCacheKey(
-              companyName: string,
-              ticker: string,
-              yearlyData: Array<{
-                fiscalYear: string;
-                filingDate: string;
-                businessSection: string;
-              }>
-            ): string {
-              const normalized = yearlyData
-                .map(y => `${y.fiscalYear}:${y.filingDate}:${y.businessSection.slice(0, 3000)}`)
-                .join("||");
-
-              return crypto
-                .createHash("sha256")
-                .update(["TEMPORAL", companyName, ticker, normalized].join("|"))
-                .digest("hex");
-            }
-    private makeFootnotesCacheKey(
-                  companyName: string,
-                  ticker: string,
-                  fiscalYear: string,
-                  filingDate: string,
-                  footnotesSection: string
-                ): string {
-                  return crypto
-                    .createHash("sha256")
-                    .update([
-                      "FOOTNOTES",
-                      companyName,
-                      ticker,
-                      fiscalYear,
-                      filingDate,
-                      footnotesSection.slice(0, 5000)
-                    ].join("|"))
-                    .digest("hex");
-                }
 
 
   async analyzeBusiness(
@@ -177,13 +121,7 @@ export class OpenAIService {
     cik: string,
     sectionDepth?: 'full' | 'limited' | 'full_doc'
   ): Promise<CompanySummary> {
-      const cacheKey = this.makeBusinessCacheKey(
-                          companyName,
-                          ticker,
-                          fiscalYear,
-                          filingDate,
-                          businessSection
-                          );
+      const cacheKey = businessCacheKey(ticker, fiscalYear);
 
   const cached = await getBusinessByCacheKey(cacheKey);
     if (cached) {
@@ -371,7 +309,7 @@ IMPORTANT — LIMITED FILING NOTICE: This text was extracted from financial note
     }>
   ): Promise<TemporalAnalysis> {
     const yearsAnalyzed = yearlyData.map(d => d.fiscalYear).sort();
-    const cacheKey = this.makeTemporalCacheKey(companyName, ticker, yearlyData);
+    const cacheKey = temporalCacheKey(ticker, yearsAnalyzed[yearsAnalyzed.length - 1]);
 
     const cached = await getTemporalByCacheKey(cacheKey);
     if (cached) {
@@ -678,13 +616,7 @@ Additional Guidelines:
     filingDate: string
   ): Promise<FinePrintAnalysis> {
 
-      const cacheKey = this.makeFootnotesCacheKey(
-          companyName,
-          ticker,
-          fiscalYear,
-          filingDate,
-          footnotesSection
-        );
+      const cacheKey = footnotesCacheKey(ticker, fiscalYear);
     const cached = await getFootnotesByCacheKey(cacheKey);
     if (cached) {
       console.log("[DB CACHE] FOOTNOTES HIT:", ticker, fiscalYear);
