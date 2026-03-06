@@ -12,7 +12,7 @@ import {
   createUserWithEmailAndPassword,
   updateProfile,
 } from "firebase/auth";
-import { Shield, BarChart2, CheckCircle, X, Loader2 } from "lucide-react";
+import { TrendingUp, BookOpen, SlidersHorizontal, X, Loader2 } from "lucide-react";
 
 type PageState = "checking" | "valid" | "signup";
 
@@ -227,14 +227,14 @@ export default function FoundingPage() {
 
           <div className="mt-12 flex flex-col gap-5 text-left max-w-xs mx-auto">
             {[
-              { icon: Shield, text: "Research stocks like an owner, not a gambler" },
-              { icon: BarChart2, text: "Understand the business before you buy" },
-              { icon: CheckCircle, text: "No noise. No predictions. Just clarity." },
+              { icon: TrendingUp, text: "Research stocks like an owner, not a gambler" },
+              { icon: BookOpen, text: "Understand the business before you buy" },
+              { icon: SlidersHorizontal, text: "No noise. No predictions. Just clarity." },
             ].map(({ icon: Icon, text }) => (
               <div key={text} className="flex items-start gap-3">
                 <Icon
                   className="mt-0.5 shrink-0"
-                  size={17}
+                  size={18}
                   style={{ color: "#1B6B6B" }}
                 />
                 <span className="text-sm leading-snug" style={{ color: "#374151" }}>
