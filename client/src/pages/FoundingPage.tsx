@@ -102,6 +102,21 @@ export default function FoundingPage() {
     );
   }
 
+  async function syncToInternalDB(firebaseUser: import("firebase/auth").User) {
+    try {
+      const idToken = await firebaseUser.getIdToken();
+      await fetch("/api/auth/sync", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${idToken}`,
+        },
+      });
+    } catch {
+      // Non-fatal — user is created in Firebase/Firestore regardless
+    }
+  }
+
   async function handleGoogleSignIn() {
     setFormError(null);
     setIsSubmitting(true);
@@ -112,6 +127,7 @@ export default function FoundingPage() {
         user.displayName || "",
         user.email || ""
       );
+      await syncToInternalDB(user);
       window.location.href = REDIRECT_URL;
     } catch (err: unknown) {
       const code = (err as { code?: string }).code;
@@ -142,6 +158,7 @@ export default function FoundingPage() {
       const result = await createUserWithEmailAndPassword(auth, email, password);
       await updateProfile(result.user, { displayName: name.trim() });
       await writeFoundingMember(result.user.uid, name.trim(), email);
+      await syncToInternalDB(result.user);
       window.location.href = REDIRECT_URL;
     } catch (err: unknown) {
       const code = (err as { code?: string }).code;
