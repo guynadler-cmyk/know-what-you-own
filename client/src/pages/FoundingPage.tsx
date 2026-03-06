@@ -12,7 +12,7 @@ import {
   createUserWithEmailAndPassword,
   updateProfile,
 } from "firebase/auth";
-import { BookOpen, TrendingUp, EyeOff, X, Loader2 } from "lucide-react";
+import { Shield, BarChart2, CheckCircle, X, Loader2 } from "lucide-react";
 
 type PageState = "checking" | "valid" | "signup";
 
@@ -188,15 +188,6 @@ export default function FoundingPage() {
       className="min-h-screen flex flex-col"
       style={{ background: "#F8F8F6", color: "#1a1a1a" }}
     >
-      <div className="flex justify-center pt-8 pb-0 px-6">
-        <span
-          className="text-sm font-semibold tracking-widest"
-          style={{ color: "#374151", letterSpacing: "0.12em" }}
-        >
-          restnvest
-        </span>
-      </div>
-
       <main className="flex-1 flex flex-col items-center justify-center px-6 py-16">
         <div className="w-full max-w-md text-center">
           <p
@@ -236,9 +227,9 @@ export default function FoundingPage() {
 
           <div className="mt-12 flex flex-col gap-5 text-left max-w-xs mx-auto">
             {[
-              { icon: BookOpen, text: "Research stocks like an owner, not a gambler" },
-              { icon: TrendingUp, text: "Understand the business before you buy" },
-              { icon: EyeOff, text: "No noise. No predictions. Just clarity." },
+              { icon: Shield, text: "Research stocks like an owner, not a gambler" },
+              { icon: BarChart2, text: "Understand the business before you buy" },
+              { icon: CheckCircle, text: "No noise. No predictions. Just clarity." },
             ].map(({ icon: Icon, text }) => (
               <div key={text} className="flex items-start gap-3">
                 <Icon
