@@ -274,7 +274,9 @@ IMPORTANT — LIMITED FILING NOTICE: This text was extracted from financial note
         channels: [],
         scale: "Information not available",
       },
-      competitors: result.competitors || [],
+      competitors: (result.competitors || []).filter(
+        (c: any) => !c.ticker || c.ticker.toUpperCase() !== ticker.toUpperCase()
+      ),
       leaders: result.leaders || [],
       metrics: result.metrics || [],
       metadata: {

@@ -172,6 +172,9 @@ export function SummaryCard({
   no10KAvailable,
 }: SummaryCardProps) {
   const [expandedCompetitor, setExpandedCompetitor] = useState<string | null>(null);
+  const filteredCompetitors = competitors.filter(
+    (c) => !c.ticker || c.ticker.toUpperCase() !== ticker.toUpperCase()
+  );
 
   // Fetch fine print analysis - custom queryFn to handle 404s gracefully
   const { data: finePrintAnalysis } = useQuery<FinePrintAnalysisType | null>({
@@ -548,7 +551,7 @@ export function SummaryCard({
             <section className="space-y-6">
               <h3 className="text-2xl font-bold pb-3 border-b border-border">Competition</h3>
               <div className="grid gap-4 md:grid-cols-2">
-                {competitors.map((competitor, index) => (
+                {filteredCompetitors.map((competitor, index) => (
                   competitor.ticker ? (
                     <Collapsible
                       key={index}
