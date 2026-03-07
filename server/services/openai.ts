@@ -198,7 +198,7 @@ Requirements:
   * Provide a concise 1-sentence plain-English explanation that non-financial people can understand
   * Explanations should clarify what the term means and why it matters to investors
 - Extract 3-6 products maximum
-- Include 3-4 competitors with their stock ticker symbols if they are publicly traded companies
+- Include 3-4 competitors with their stock ticker symbols if they are publicly traded companies. CRITICAL: Do NOT include ${ticker} (${companyName}) itself in the competitors list — never list the company being analyzed as its own competitor
 - For each sales channel, provide a simple explanation that non-financial people can understand
 - Include 3-5 key leaders if mentioned (use initials from first/last name)
 - Include 3-4 key metrics (revenue, employees, etc) if mentioned

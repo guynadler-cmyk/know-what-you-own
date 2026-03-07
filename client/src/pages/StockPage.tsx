@@ -45,10 +45,21 @@ export default function StockPage() {
   const [showFloatingModal, setShowFloatingModal] = useState(false);
   const [lastSkippedStage, setLastSkippedStage] = useState<number | null>(null);
   const [tickerFollowed, setTickerFollowed] = useState(true);
+  const [isFirstAnalysis, setIsFirstAnalysis] = useState(false);
+
+  useEffect(() => {
+    if (viewState !== "loading") {
+      setIsFirstAnalysis(false);
+      return;
+    }
+    const timer = setTimeout(() => setIsFirstAnalysis(true), 5000);
+    return () => clearTimeout(timer);
+  }, [viewState]);
 
   useEffect(() => {
     if (!ticker) return;
     const tickerAtStart = ticker;
+    setIsFirstAnalysis(false);
     setTickerFollowed(true);
     const localState = getPaywallState(ticker);
     if (localState === "unlocked") {
@@ -247,7 +258,7 @@ export default function StockPage() {
   };
 
   const handleBack = () => {
-    navigate("/");
+    navigate("/app");
   };
 
   const getStageButtonText = () => {
@@ -341,7 +352,7 @@ export default function StockPage() {
       <main className="flex-1">
         {viewState === "loading" && (
           <div className="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8" data-testid="analysis-loading">
-            <LoadingState message={`Analyzing ${ticker}'s 10-K filing...`} />
+            <LoadingState message={`Analyzing ${ticker}'s 10-K filing...`} ticker={ticker} isFirstAnalysis={isFirstAnalysis} />
           </div>
         )}
 
