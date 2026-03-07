@@ -6,7 +6,6 @@ import { makeCacheKey } from "../utils/cacheKey";
 
 import {
   getBusinessByCacheKey,
-  insertBusinessAnalysis,
 } from "../repositories/businessAnalysis.repo";
 
 import {
@@ -286,16 +285,6 @@ IMPORTANT — LIMITED FILING NOTICE: This text was extracted from financial note
       },
       cik,
     };
-    await insertBusinessAnalysis({
-      cacheKey,
-      companyName,
-      ticker,
-      cik,
-      fiscalYear,
-      filingDate,
-      result: summary,
-    });
-
     return summary;
   }
 
