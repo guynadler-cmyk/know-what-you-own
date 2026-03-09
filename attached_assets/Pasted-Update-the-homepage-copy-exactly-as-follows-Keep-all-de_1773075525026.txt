@@ -1,0 +1,49 @@
+Update the homepage copy exactly as follows. 
+Keep all design, layout, colors, and styling identical. 
+Change text only.
+
+HERO SECTION:
+Headline: "You look at your portfolio and think: what was I thinking?"
+Subtext: "Finding a good company is the easy part. Knowing what 
+to do about it is where you get stuck. Restnvest gives you the process."
+CTA button: "Research a stock →"
+Below CTA: "No signup required · Takes seconds"
+
+SECTION 1 (currently "Know what you're actually investing in"):
+Headline: "Know the business, not just the ticker"
+Subtext: "Before you buy anything, understand what the company 
+actually does, how it makes money, and whether the business model holds up."
+
+SECTION 2 (currently "See how the story changes over time"):
+Headline: keep exactly as is
+Subtext: "Most investors miss how much a company changes year to 
+year. Restnvest tracks what's new, what's been quietly dropped, and 
+what's actually sticking — without you reading a single filing."
+
+SECTION 3 (currently "Understand the competitive landscape"):
+Headline: "Who else is in the room?"
+Subtext: "Every business has competition. Restnvest shows you who 
+they're up against and how they're positioned — so you're not surprised later."
+
+SECTION 4 (currently "Is this business financially strong?"):
+Headline: keep exactly as is
+Subtext: "Revenue growth means nothing if the cash isn't real. 
+Restnvest checks the numbers that actually matter — margins, debt, 
+cash flow, reinvestment — and gives you a straight answer."
+
+SECTION 5 (currently "Turn understanding into confident action"):
+Headline: "You've done the homework. Now what?"
+Subtext: "Restnvest pairs everything you've learned about the 
+business with market signals — so you can think clearly about 
+timing, sizing, and when to act."
+
+FINAL CTA BLOCK:
+Headline: "Your next investment should have a reason behind it."
+Subtext: "Research any public company in seconds — business, 
+finances, competition, and signals, all in one place."
+CTA button: "Research a stock →"
+Below CTA: "Built for investors who think before they buy."
+
+NAV BAR:
+Change "For Institutions" to "For Credit Unions & Advisors"
+Keep all other nav items exactly as they are.
