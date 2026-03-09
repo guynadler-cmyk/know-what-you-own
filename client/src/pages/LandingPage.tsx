@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Search } from "lucide-react";
 import { Link } from "wouter";
 import { Helmet } from "react-helmet-async";
+import { HeroThesisDemo } from "@/components/HeroThesisDemo";
 
 import businessOverviewImg from "@assets/Business_Overview_1766161245319.png";
 import changesImg from "@assets/Changes_Over_Time_1766161245320.png";
@@ -81,6 +82,7 @@ export default function LandingPage() {
           className={`${SECTION_PADDING} px-4 sm:px-6 lg:px-8`}
           data-testid="section-hero"
         >
+          {/* Headline + CTA — constrained to readable width */}
           <div className="mx-auto max-w-3xl text-center">
             <div className="space-y-4">
               <h1 
@@ -114,6 +116,11 @@ export default function LandingPage() {
                 No signup required · Takes seconds
               </p>
             </div>
+          </div>
+
+          {/* Live Investment Thesis Demo — full page width up to max-w-6xl */}
+          <div className="mt-14 mx-auto max-w-6xl w-full px-0">
+            <HeroThesisDemo />
           </div>
         </section>
 

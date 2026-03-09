@@ -61,6 +61,10 @@ A three-state paywall (`locked` | `skipped` | `unlocked`) gates analysis stages 
 
 Google Sign-In is implemented via Firebase Authentication (Google provider with popup flow). The frontend uses `firebase/auth` for sign-in/sign-out and passes Firebase ID tokens via `Authorization: Bearer <token>` headers. The backend uses `firebase-admin` to verify tokens and upsert users. The client uses a `useAuth()` hook (based on `onAuthStateChanged`) to provide user authentication status. Auth module: `server/firebaseAuth.ts`, client config: `client/src/lib/firebase.ts`.
 
+### Homepage Investment Thesis Demo
+
+The landing page hero section includes a live `HeroThesisDemo` component (`client/src/components/HeroThesisDemo.tsx`) embedded directly below the hero CTA buttons. It pre-fetches the Investment Thesis data for three hardcoded tickers (AAPL, NVDA, MSFT) from `/api/analyze/:ticker` on page load (all guaranteed cache hits, <200ms). A three-button toggle switches between companies instantly without re-fetching. The `InvestmentThesisCard` component (`client/src/components/InvestmentThesisCard.tsx`) is a standalone extraction of the Investment Thesis block from `SummaryCard.tsx`, rendering the same tags, legend, and collapsible thesis. A "See [TICKER]'s full analysis →" link below the card deep-links to the stock page.
+
 ### Discover Page
 
 The Discover page (`/discover`) displays a filterable grid of all cached stock analyses. The `GET /api/discover` endpoint queries the external DB's `ai_business_analysis` table, deduplicates by ticker (latest entry), and derives a letter grade (A–F) from high-emphasis moat/theme/value/opportunity counts. The frontend (`client/src/pages/DiscoverPage.tsx`) renders a responsive tile grid with client-side search, grade filtering, and sorting. Each tile links to `/stocks/:ticker`. A "Discover" nav link is in the site header.
