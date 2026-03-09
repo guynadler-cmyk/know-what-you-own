@@ -1,0 +1,517 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>restnvest — Nav States</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400&family=DM+Sans:wght@300;400;500&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --teal-deep: #0d4a47;
+    --teal-mid: #1a6b66;
+    --teal-brand: #2a8c85;
+    --teal-light: #4db8b0;
+    --teal-pale: #e8f5f4;
+    --teal-ghost: #f2faf9;
+    --warm-white: #fffef9;
+    --cream: #faf8f4;
+    --ink: #1a1a18;
+    --ink-mid: #3d3d38;
+    --ink-light: #6b6b64;
+    --ink-ghost: #9b9b92;
+    --border: rgba(42,140,133,0.12);
+    --shadow-card: 0 2px 20px rgba(13,74,71,0.07);
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: var(--cream);
+    color: var(--ink);
+  }
+
+  /* =====================
+     SHARED NAV BASE
+  ===================== */
+  .nav {
+    height: 52px;
+    display: flex;
+    align-items: center;
+    background: var(--warm-white);
+    border-bottom: 1px solid var(--border);
+    padding: 0 24px;
+    gap: 0;
+    position: relative;
+  }
+
+  /* LOGO */
+  .nav-logo {
+    font-family: 'DM Sans', sans-serif;
+    font-size: 15px;
+    font-weight: 500;
+    color: var(--ink);
+    letter-spacing: -0.02em;
+    text-decoration: none;
+    flex-shrink: 0;
+    margin-right: 28px;
+  }
+  .nav-logo span { color: var(--teal-brand); }
+
+  /* NAV LINKS */
+  .nav-links {
+    display: flex;
+    align-items: center;
+    gap: 2px;
+    flex-shrink: 0;
+  }
+
+  .nav-link {
+    font-size: 12px;
+    color: var(--ink-light);
+    text-decoration: none;
+    padding: 5px 10px;
+    border-radius: 5px;
+    transition: color 0.15s;
+    white-space: nowrap;
+  }
+  .nav-link:hover { color: var(--teal-brand); }
+
+  /* NAV SPACER */
+  .nav-spacer { flex: 1; }
+
+  /* COMPACT NAV SEARCH */
+  .nav-search {
+    display: flex;
+    align-items: center;
+    background: white;
+    border: 1.5px solid var(--border);
+    border-radius: 7px;
+    padding: 0 4px 0 10px;
+    gap: 8px;
+    height: 34px;
+    transition: border-color 0.2s, box-shadow 0.2s;
+    flex: 1;
+    max-width: 360px;
+    margin: 0 20px;
+  }
+
+  .nav-search:focus-within {
+    border-color: var(--teal-brand);
+    box-shadow: 0 2px 12px rgba(42,140,133,0.12);
+  }
+
+  .nav-search-icon {
+    color: var(--ink-ghost);
+    font-size: 12px;
+    flex-shrink: 0;
+  }
+
+  .nav-search-input {
+    flex: 1;
+    border: none;
+    outline: none;
+    font-size: 12px;
+    font-family: 'DM Sans', sans-serif;
+    color: var(--ink);
+    background: transparent;
+    min-width: 0;
+  }
+  .nav-search-input::placeholder { color: var(--ink-ghost); font-weight: 300; }
+
+  .nav-search-btn {
+    background: var(--teal-deep);
+    color: white;
+    border: none;
+    border-radius: 5px;
+    padding: 5px 12px;
+    font-size: 11px;
+    font-weight: 500;
+    font-family: 'DM Sans', sans-serif;
+    cursor: pointer;
+    white-space: nowrap;
+    height: 26px;
+    display: flex;
+    align-items: center;
+    transition: background 0.15s;
+  }
+  .nav-search-btn:hover { background: var(--teal-mid); }
+
+  /* NAV RIGHT ACTIONS */
+  .nav-actions {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex-shrink: 0;
+  }
+
+  .nav-icon-btn {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 11px;
+    color: var(--ink-light);
+    background: none;
+    border: 1px solid var(--border);
+    border-radius: 5px;
+    padding: 5px 10px;
+    cursor: pointer;
+    font-family: 'DM Sans', sans-serif;
+    transition: all 0.15s;
+    white-space: nowrap;
+    text-decoration: none;
+  }
+  .nav-icon-btn:hover { border-color: var(--teal-brand); color: var(--teal-brand); }
+
+  .nav-icon-btn.active {
+    background: var(--teal-ghost);
+    border-color: var(--teal-brand);
+    color: var(--teal-brand);
+  }
+
+  .nav-divider {
+    width: 1px;
+    height: 18px;
+    background: var(--border);
+    margin: 0 4px;
+  }
+
+  /* COMPANY PILL (analysis nav) */
+  .company-pill {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: white;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 5px 10px;
+    flex-shrink: 0;
+    margin-right: 12px;
+  }
+
+  .company-logo-box {
+    width: 20px;
+    height: 20px;
+    background: var(--teal-deep);
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 9px;
+    color: white;
+    font-weight: 700;
+    font-family: 'DM Mono', monospace;
+    flex-shrink: 0;
+  }
+
+  .company-pill-name {
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--ink);
+    white-space: nowrap;
+  }
+
+  .company-pill-ticker {
+    font-size: 10px;
+    font-family: 'DM Mono', monospace;
+    color: var(--ink-ghost);
+  }
+
+  /* =====================
+     DEMO PAGE WRAPPERS
+  ===================== */
+  .demo-section {
+    margin-bottom: 40px;
+  }
+
+  .demo-label {
+    font-size: 10px;
+    font-weight: 500;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--ink-ghost);
+    padding: 20px 24px 10px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .demo-label::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: var(--border);
+  }
+
+  /* PAGE BODY PREVIEWS */
+  .page-preview {
+    background: var(--warm-white);
+    border: 1px solid var(--border);
+    border-radius: 0;
+    min-height: 200px;
+    padding: 40px 24px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 16px;
+  }
+
+  .preview-hero-headline {
+    font-family: 'Playfair Display', serif;
+    font-size: 42px;
+    font-weight: 700;
+    color: var(--ink);
+    letter-spacing: -0.02em;
+    text-align: center;
+  }
+  .preview-hero-headline em { font-style: italic; color: var(--teal-brand); }
+
+  .preview-search-hero {
+    display: flex;
+    align-items: center;
+    background: white;
+    border: 1.5px solid var(--border);
+    border-radius: 10px;
+    padding: 4px 4px 4px 16px;
+    gap: 10px;
+    width: 100%;
+    max-width: 460px;
+    box-shadow: 0 4px 24px rgba(13,74,71,0.07);
+  }
+
+  .preview-search-input {
+    flex: 1;
+    border: none;
+    outline: none;
+    font-size: 13px;
+    font-family: 'DM Sans', sans-serif;
+    color: var(--ink-ghost);
+    background: transparent;
+    padding: 10px 0;
+    font-weight: 300;
+  }
+
+  .preview-search-btn-hero {
+    background: var(--teal-deep);
+    color: white;
+    border: none;
+    border-radius: 7px;
+    padding: 10px 20px;
+    font-size: 12px;
+    font-weight: 500;
+    font-family: 'DM Sans', sans-serif;
+    cursor: pointer;
+  }
+
+  .preview-trust {
+    font-size: 11px;
+    font-weight: 300;
+    color: var(--ink-ghost);
+  }
+
+  .preview-stage-content {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .preview-stage-label {
+    font-size: 10px;
+    font-weight: 500;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--teal-brand);
+  }
+
+  .preview-stage-headline {
+    font-family: 'Playfair Display', serif;
+    font-size: 22px;
+    font-weight: 700;
+    color: var(--ink);
+  }
+  .preview-stage-headline em { font-style: italic; color: var(--teal-brand); }
+
+  .preview-stage-sub {
+    font-size: 12px;
+    font-weight: 300;
+    color: var(--ink-light);
+    text-align: center;
+  }
+
+  /* ANNOTATION CALLOUTS */
+  .annotations {
+    padding: 16px 24px;
+    background: var(--cream);
+    border-top: 1px solid var(--border);
+    display: flex;
+    gap: 24px;
+    flex-wrap: wrap;
+  }
+
+  .annotation {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    max-width: 220px;
+  }
+
+  .annotation-num {
+    width: 18px;
+    height: 18px;
+    background: var(--teal-deep);
+    color: white;
+    border-radius: 50%;
+    font-size: 9px;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    margin-top: 1px;
+  }
+
+  .annotation-text {
+    font-size: 11px;
+    font-weight: 300;
+    color: var(--ink-light);
+    line-height: 1.5;
+  }
+
+  .annotation-text strong {
+    font-weight: 500;
+    color: var(--ink);
+    display: block;
+    margin-bottom: 1px;
+  }
+</style>
+</head>
+<body>
+
+<!-- =====================
+     STATE 1: SEARCH PAGE NAV
+===================== -->
+<div class="demo-label">Nav State 1 — Search / Home Page</div>
+
+<nav class="nav">
+  <!-- Logo -->
+  <a href="#" class="nav-logo">rest<span>n</span>vest</a>
+
+  <!-- Links -->
+  <div class="nav-links">
+    <a href="#" class="nav-link">Product</a>
+    <a href="#" class="nav-link">How It Works</a>
+    <a href="#" class="nav-link">Pricing</a>
+    <a href="#" class="nav-link">For Advisors</a>
+  </div>
+
+  <div class="nav-spacer"></div>
+
+  <!-- Right actions -->
+  <div class="nav-actions">
+    <a href="#" class="nav-icon-btn">Share</a>
+    <a href="#" class="nav-icon-btn">Install</a>
+  </div>
+</nav>
+
+<!-- Search page body preview -->
+<div class="page-preview">
+  <div class="preview-hero-headline">Know what you <em>own.</em></div>
+  <div class="preview-search-hero">
+    <span style="color:var(--ink-ghost);font-size:13px">🔍</span>
+    <input class="preview-search-input" placeholder="Company name or ticker..." readonly>
+    <button class="preview-search-btn-hero">Analyze →</button>
+  </div>
+  <div class="preview-trust">No signup required · Takes seconds · Real company data · 88+ companies pre-analyzed</div>
+</div>
+
+<div class="annotations">
+  <div class="annotation">
+    <div class="annotation-num">1</div>
+    <div class="annotation-text"><strong>Logo left</strong> "restnvest" with teal 'n' — replaces "Know What You Own"</div>
+  </div>
+  <div class="annotation">
+    <div class="annotation-num">2</div>
+    <div class="annotation-text"><strong>Nav links</strong> Product · How It Works · Pricing · For Advisors</div>
+  </div>
+  <div class="annotation">
+    <div class="annotation-num">3</div>
+    <div class="annotation-text"><strong>No search in nav</strong> — hero search IS the search. Nav stays clean.</div>
+  </div>
+  <div class="annotation">
+    <div class="annotation-num">4</div>
+    <div class="annotation-text"><strong>Share + Install</strong> moved to right, styled as compact outline buttons</div>
+  </div>
+</div>
+
+
+<!-- =====================
+     STATE 2: ANALYSIS PAGE NAV
+===================== -->
+<div class="demo-label" style="margin-top:32px">Nav State 2 — Analysis Page (any stage)</div>
+
+<nav class="nav">
+  <!-- Logo -->
+  <a href="#" class="nav-logo">rest<span>n</span>vest</a>
+
+  <!-- Company pill -->
+  <div class="company-pill">
+    <div class="company-logo-box">P</div>
+    <span class="company-pill-name">Palantir Technologies</span>
+    <span class="company-pill-ticker">PLTR</span>
+  </div>
+
+  <!-- Persistent search -->
+  <div class="nav-search">
+    <span class="nav-search-icon">🔍</span>
+    <input class="nav-search-input" type="text" placeholder="Search another company...">
+    <button class="nav-search-btn">Analyze →</button>
+  </div>
+
+  <div class="nav-spacer"></div>
+
+  <!-- Right actions -->
+  <div class="nav-actions">
+    <a href="#" class="nav-icon-btn active">🔖 Saved (2)</a>
+    <a href="#" class="nav-icon-btn">↻ Update</a>
+    <div class="nav-divider"></div>
+    <a href="#" class="nav-icon-btn">Share</a>
+    <a href="#" class="nav-icon-btn">Install</a>
+  </div>
+</nav>
+
+<!-- Analysis page body preview -->
+<div class="page-preview">
+  <div class="preview-stage-content">
+    <div class="preview-stage-label">Stage 1 of 6 · Business Overview</div>
+    <div class="preview-stage-headline">Know what you <em>own.</em></div>
+    <div class="preview-stage-sub">Business fundamentals, financial health, and timing signals — all in plain English.</div>
+  </div>
+</div>
+
+<div class="annotations">
+  <div class="annotation">
+    <div class="annotation-num">1</div>
+    <div class="annotation-text"><strong>Logo stays</strong> — always links back to search home</div>
+  </div>
+  <div class="annotation">
+    <div class="annotation-num">2</div>
+    <div class="annotation-text"><strong>Company pill</strong> shows current company logo + name + ticker. Replaces "Know What You Own" title.</div>
+  </div>
+  <div class="annotation">
+    <div class="annotation-num">3</div>
+    <div class="annotation-text"><strong>Persistent search bar</strong> in center — lets user jump to any new stock mid-flow without navigating away</div>
+  </div>
+  <div class="annotation">
+    <div class="annotation-num">4</div>
+    <div class="annotation-text"><strong>Saved + Update</strong> absorbed into nav right — removes the floating pill buttons below the nav entirely</div>
+  </div>
+  <div class="annotation">
+    <div class="annotation-num">5</div>
+    <div class="annotation-text"><strong>Floating "New Search" button removed</strong> — the nav search replaces it. One less thing on the page.</div>
+  </div>
+</div>
+
+</body>
+</html>

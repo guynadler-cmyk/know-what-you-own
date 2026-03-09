@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useParams, useLocation } from "wouter";
 import { Helmet } from "react-helmet-async";
 import { queryClient } from "@/lib/queryClient";
@@ -12,10 +12,10 @@ import { StageContent } from "@/components/StageContent";
 import { EmailPaywall } from "@/components/EmailPaywall";
 import { InlineEmailCapture } from "@/components/InlineEmailCapture";
 import { TickerFollowPrompt } from "@/components/TickerFollowPrompt";
-import { SaveToWatchlist } from "@/components/SaveToWatchlist";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft } from "lucide-react";
 import { CompanySummary, FinancialMetrics, BalanceSheetMetrics, WatchlistSnapshot } from "@shared/schema";
+
+import { useNavContext } from "@/contexts/NavContext";
 import { analytics } from "@/lib/analytics";
 import {
   type PaywallState,
@@ -33,6 +33,7 @@ export default function StockPage() {
   const params = useParams<{ ticker: string }>();
   const ticker = (params.ticker ?? "").toUpperCase();
   const [, navigate] = useLocation();
+  const { setAnalysisState } = useNavContext();
 
   const [viewState, setViewState] = useState<ViewState>("loading");
   const [currentStage, setCurrentStage] = useState(1);
@@ -342,6 +343,22 @@ export default function StockPage() {
     return snapshot;
   };
 
+  const getWatchlistSnapshotRef = useRef(getWatchlistSnapshot);
+  getWatchlistSnapshotRef.current = getWatchlistSnapshot;
+
+  useEffect(() => {
+    if (viewState === "success" && summaryData) {
+      setAnalysisState({
+        ticker,
+        companyName: summaryData.companyName,
+        getSnapshot: () => getWatchlistSnapshotRef.current(),
+      });
+    } else {
+      setAnalysisState(null);
+    }
+    return () => setAnalysisState(null);
+  }, [viewState, ticker, summaryData?.companyName]);
+
   return (
     <div className="flex min-h-screen flex-col">
       <Helmet>
@@ -358,23 +375,6 @@ export default function StockPage() {
 
         {viewState === "success" && summaryData && (
           <div className="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8" data-active-ticker={ticker}>
-            <div className="mb-12 flex items-center justify-center gap-3 flex-wrap">
-              <Button
-                variant="outline"
-                onClick={handleBack}
-                className="h-12 px-8 rounded-full"
-                data-testid="button-back-to-search"
-              >
-                <ArrowLeft className="mr-2 h-4 w-4" />
-                New Search
-              </Button>
-              <SaveToWatchlist
-                ticker={ticker}
-                companyName={summaryData.companyName}
-                getSnapshot={getWatchlistSnapshot}
-              />
-            </div>
-
             <JourneyNarrative />
             <StageNavigation
               currentStage={currentStage}

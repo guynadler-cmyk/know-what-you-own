@@ -12,7 +12,16 @@ Preferred communication style: Simple, everyday language.
 
 ### Frontend Architecture
 
-The frontend is built with React and TypeScript, leveraging Vite for development, Wouter for routing, and TanStack Query for data management. UI components are sourced from Shadcn UI (built on Radix UI) and styled with Tailwind CSS, adhering to a minimalist design system featuring a monochrome palette, teal accent (`--lp-teal-deep: #0d4a47`), and DM Sans / Playfair Display / DM Mono typography. It supports theme toggling and employs a component-based architecture without a global state management library. Key UI patterns include a hero section, structured results with visual clustering, and strong heading hierarchies. The application also supports Progressive Web App (PWA) installation.
+The frontend is built with React and TypeScript, leveraging Vite for development, Wouter for routing, and TanStack Query for data management. UI components are sourced from Shadcn UI (built on Radix UI) and styled with Tailwind CSS, adhering to a minimalist design system featuring a monochrome palette, teal accent (`--lp-teal-deep: #0d4a47`), and DM Sans / Playfair Display / DM Mono typography. It supports theme toggling and employs a component-based architecture. Key UI patterns include a hero section, structured results with visual clustering, and strong heading hierarchies. The application also supports Progressive Web App (PWA) installation.
+
+### Navigation Design (Two-State Header)
+
+`Header.tsx` renders two distinct states based on a `NavContext` (`client/src/contexts/NavContext.tsx`):
+
+- **State 1 (Search/Home)** — shown on `/app` and all marketing pages: `restnvest` logo (DM Sans 500, teal 'n') + nav links (Product · How It Works · Pricing · For Advisors) + Share/Install on right. No search bar in nav.
+- **State 2 (Analysis)** — shown on `/stocks/:ticker` when analysis is loaded: logo + company pill (dark teal initial box + company name + ticker) + persistent search bar ("Search another company..." + "Analyze →") + watchlist actions (Save/Update for authenticated users) + Share/Install.
+
+`NavContext` is provided at the app root. `StockPage` calls `setAnalysisState()` when analysis loads (viewState = success) and clears it on unmount. A `useRef` pattern ensures `getSnapshot` always captures the latest state for watchlist saves. The old floating action row (← New Search + SaveToWatchlist) has been removed from `StockPage`; those actions now live in the nav. Nav height: 52px, background: `--lp-warm-white`, sticky top-0, z-index 100.
 
 ### Analysis Stage Design System (Stages 2–4)
 

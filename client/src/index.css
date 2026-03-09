@@ -370,3 +370,56 @@
     inset: -1px;
   }
 }
+
+/* Nav icon button — shared across both nav states */
+.nav-icon-btn {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 11px;
+  font-family: 'DM Sans', sans-serif;
+  font-weight: 400;
+  color: var(--lp-ink-light);
+  background: none;
+  border: 1px solid var(--lp-border);
+  border-radius: 5px;
+  padding: 5px 10px;
+  cursor: pointer;
+  transition: border-color 0.15s, color 0.15s;
+  white-space: nowrap;
+  text-decoration: none;
+  line-height: 1;
+}
+.nav-icon-btn:hover {
+  border-color: var(--lp-teal-brand);
+  color: var(--lp-teal-brand);
+}
+.nav-icon-btn.active {
+  background: var(--lp-teal-ghost);
+  border-color: var(--lp-teal-brand);
+  color: var(--lp-teal-brand);
+}
+.nav-icon-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Nav search bar — analysis page persistent search */
+.nav-search-bar {
+  display: flex;
+  align-items: center;
+  background: white;
+  border: 1.5px solid var(--lp-border);
+  border-radius: 7px;
+  padding: 0 4px 0 10px;
+  gap: 8px;
+  height: 34px;
+  flex: 1;
+  max-width: 360px;
+  margin: 0 20px;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+.nav-search-bar:focus-within {
+  border-color: var(--lp-teal-brand);
+  box-shadow: 0 2px 12px rgba(42,140,133,0.12);
+}

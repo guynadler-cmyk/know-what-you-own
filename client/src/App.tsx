@@ -7,6 +7,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { HelmetProvider } from "react-helmet-async";
 import { initGA } from "./lib/analytics";
 import { useAnalytics } from "./hooks/use-analytics";
+import { NavProvider } from "@/contexts/NavContext";
 
 const LandingPage = lazy(() => import("@/pages/LandingPage"));
 const AppPage = lazy(() => import("@/pages/AppPage"));
@@ -68,10 +69,12 @@ function App() {
   return (
     <HelmetProvider>
       <QueryClientProvider client={queryClient}>
-        <TooltipProvider>
-          <Toaster />
-          <Router />
-        </TooltipProvider>
+        <NavProvider>
+          <TooltipProvider>
+            <Toaster />
+            <Router />
+          </TooltipProvider>
+        </NavProvider>
       </QueryClientProvider>
     </HelmetProvider>
   );

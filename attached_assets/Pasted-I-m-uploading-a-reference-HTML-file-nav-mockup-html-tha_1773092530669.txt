@@ -1,0 +1,88 @@
+I'm uploading a reference HTML file (nav_mockup.html) that 
+shows two nav states for restnvest. Please update the 
+navigation to match both states exactly.
+
+RULES:
+- Do NOT change any page content, data, routing, or existing 
+  functionality
+- The nav must be a single shared component that renders 
+  differently based on context
+- Use existing fonts: Playfair Display, DM Sans, DM Mono
+- Use existing CSS variables already in globals.css
+- Match the reference visually as closely as possible
+
+─────────────────────────────────────
+STATE 1: SEARCH / HOME PAGE NAV
+Shown on: the home/search page only
+─────────────────────────────────────
+
+Layout (left → right):
+1. Logo: "restnvest" in DM Sans 500, with the 'n' in 
+   --teal-brand. Clicking navigates to home/search page.
+2. Nav links (immediately right of logo): 
+   Product · How It Works · Pricing · For Advisors
+   Font: DM Sans 12px, color: --ink-light
+   Active/hover: --teal-brand
+3. Spacer (flex: 1)
+4. Right actions: Share · Install
+   Styled as compact outline buttons (border: 1px solid 
+   --border, border-radius: 5px, font-size: 11px)
+
+No search bar in the nav on this page. The hero search 
+handles it.
+
+Remove: the current "Know What You Own" page title from 
+the nav. Replace with the "restnvest" logo described above.
+
+─────────────────────────────────────
+STATE 2: ANALYSIS PAGE NAV
+Shown on: all analysis pages (any stage, any ticker)
+─────────────────────────────────────
+
+Layout (left → right):
+1. Logo: same "restnvest" as State 1. Always links to home.
+2. Company pill (immediately right of logo):
+   - Small logo box (20x20px, --teal-deep background, white 
+     letter, DM Mono, border-radius: 4px)
+   - Company name: DM Sans 12px 500, --ink
+   - Ticker: DM Mono 10px, --ink-ghost
+   - White background, 1px --border, border-radius: 6px
+   - Populated dynamically from the current analysis ticker
+3. Persistent search bar (flex: 1, max-width: 360px, 
+   margin: 0 20px):
+   - White background, 1.5px --border, border-radius: 7px, 
+     height: 34px
+   - Left: small search icon in --ink-ghost
+   - Input: DM Sans 12px, placeholder "Search another 
+     company..."
+   - Right: "Analyze →" button, --teal-deep background, 
+     white text, border-radius: 5px, height: 26px
+   - On submit: runs the same search/analyze action as the 
+     home page search bar
+   - Focus state: border-color --teal-brand, soft teal 
+     box-shadow
+4. Spacer (flex: 1)
+5. Right actions:
+   - "🔖 Saved (X)" — shows current saved count, styled 
+     as active state (--teal-ghost background, 
+     --teal-brand border + text) when saves > 0
+   - "↻ Update" — triggers existing Update Snapshot action
+   - Divider (1px vertical line, --border)
+   - Share · Install — same outline button style as State 1
+
+Remove: the floating row of pill buttons below the nav 
+("← New Search", "Saved (X)", "↻ Update Snapshot"). 
+These are fully replaced by the nav actions above.
+
+─────────────────────────────────────
+NAV HEIGHT + SHARED STYLES
+─────────────────────────────────────
+- Height: 52px for both states
+- Background: --warm-white
+- Bottom border: 1px solid --border
+- Position: sticky, top: 0, z-index: 100
+- The nav component should detect which page it is on 
+  and render State 1 or State 2 accordingly
+
+Screenshot both the home page and an analysis page 
+(PLTR) when complete.
