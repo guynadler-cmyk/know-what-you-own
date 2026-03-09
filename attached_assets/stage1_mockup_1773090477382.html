@@ -1,0 +1,1097 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>restnvest — Business Overview</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400&family=DM+Sans:wght@300;400;500&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --teal-deep: #0d4a47;
+    --teal-mid: #1a6b66;
+    --teal-brand: #2a8c85;
+    --teal-light: #4db8b0;
+    --teal-pale: #e8f5f4;
+    --teal-ghost: #f2faf9;
+    --warm-white: #fffef9;
+    --cream: #faf8f4;
+    --ink: #1a1a18;
+    --ink-mid: #3d3d38;
+    --ink-light: #6b6b64;
+    --ink-ghost: #9b9b92;
+    --gold: #c9a84c;
+    --border: rgba(42,140,133,0.12);
+    --shadow-card: 0 2px 20px rgba(13,74,71,0.07);
+    --shadow-soft: 0 4px 32px rgba(13,74,71,0.06);
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: var(--warm-white);
+    color: var(--ink);
+    min-height: 100vh;
+  }
+
+  /* TOP NAV */
+  .top-nav {
+    height: 48px;
+    background: var(--warm-white);
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 28px;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    backdrop-filter: blur(12px);
+  }
+
+  .back-btn {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 12px;
+    color: var(--ink-light);
+    text-decoration: none;
+    transition: color 0.2s;
+  }
+  .back-btn:hover { color: var(--teal-brand); }
+
+  .company-pill {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: white;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 5px 12px;
+  }
+
+  .company-logo-box {
+    width: 20px;
+    height: 20px;
+    background: var(--teal-deep);
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 9px;
+    color: white;
+    font-weight: 700;
+    font-family: 'DM Mono', monospace;
+  }
+
+  .company-name { font-size: 12px; font-weight: 500; color: var(--ink); }
+  .company-ticker { font-size: 10px; font-family: 'DM Mono', monospace; color: var(--ink-ghost); }
+
+  .nav-actions { display: flex; gap: 8px; }
+  .nav-btn {
+    font-size: 11px;
+    color: var(--ink-light);
+    background: none;
+    border: 1px solid var(--border);
+    border-radius: 5px;
+    padding: 4px 10px;
+    cursor: pointer;
+    font-family: 'DM Sans', sans-serif;
+    transition: all 0.15s;
+  }
+  .nav-btn:hover { border-color: var(--teal-brand); color: var(--teal-brand); }
+
+  /* STAGE BAR */
+  .stage-bar {
+    background: white;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    justify-content: center;
+  }
+
+  .stage-bar-inner {
+    display: flex;
+    align-items: center;
+    height: 44px;
+  }
+
+  .stage-step {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    padding: 0 14px;
+    height: 100%;
+    font-size: 11px;
+    color: var(--ink-ghost);
+    font-weight: 400;
+    border-bottom: 2px solid transparent;
+    cursor: pointer;
+    transition: all 0.2s;
+    white-space: nowrap;
+  }
+
+  .stage-step.active {
+    color: var(--teal-deep);
+    font-weight: 500;
+    border-bottom-color: var(--teal-brand);
+  }
+
+  .stage-step.completed { color: var(--teal-brand); }
+
+  .stage-num {
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 8px;
+    font-weight: 600;
+    flex-shrink: 0;
+  }
+
+  .stage-step.active .stage-num { background: var(--teal-brand); color: white; }
+  .stage-step.completed .stage-num { background: var(--teal-pale); color: var(--teal-brand); }
+  .stage-step:not(.active):not(.completed) .stage-num {
+    background: var(--cream);
+    color: var(--ink-ghost);
+    border: 1px solid var(--border);
+  }
+
+  .stage-sep { width: 20px; height: 1px; background: var(--border); }
+
+  /* PHILOSOPHY */
+  .philosophy {
+    background: white;
+    border-bottom: 1px solid var(--border);
+    padding: 10px 28px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .philosophy-title { font-size: 11px; font-weight: 500; color: var(--ink); }
+  .philosophy-sub { font-size: 10px; font-weight: 300; color: var(--ink-ghost); margin-top: 1px; }
+  .philosophy-hide {
+    font-size: 10px;
+    color: var(--teal-brand);
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-family: 'DM Sans', sans-serif;
+  }
+
+  /* MAIN */
+  .main {
+    max-width: 960px;
+    margin: 0 auto;
+    padding: 28px 24px 80px;
+  }
+
+  /* COMPANY HEADER CARD */
+  .company-header-card {
+    background: var(--teal-deep);
+    border-radius: 12px;
+    padding: 24px 28px;
+    margin-bottom: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .company-header-card::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(ellipse 60% 80% at 80% 50%, rgba(77,184,176,0.12) 0%, transparent 60%);
+    pointer-events: none;
+  }
+
+  .company-header-left {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    position: relative;
+    z-index: 1;
+  }
+
+  .company-logo-large {
+    width: 44px;
+    height: 44px;
+    background: rgba(255,255,255,0.12);
+    border: 1px solid rgba(255,255,255,0.2);
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 16px;
+    color: white;
+    font-weight: 700;
+    font-family: 'DM Mono', monospace;
+  }
+
+  .company-header-info {}
+  .company-header-name {
+    font-family: 'Playfair Display', serif;
+    font-size: 20px;
+    font-weight: 700;
+    color: white;
+    letter-spacing: -0.01em;
+  }
+
+  .company-header-meta {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-top: 4px;
+  }
+
+  .meta-item {
+    font-size: 11px;
+    font-family: 'DM Mono', monospace;
+    color: rgba(255,255,255,0.55);
+  }
+
+  .meta-dot { color: rgba(255,255,255,0.25); }
+
+  .company-header-right {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 8px;
+    position: relative;
+    z-index: 1;
+  }
+
+  .company-tagline {
+    font-size: 12px;
+    font-weight: 300;
+    color: rgba(255,255,255,0.65);
+    max-width: 280px;
+    text-align: right;
+    line-height: 1.5;
+    font-style: italic;
+  }
+
+  .website-link {
+    font-size: 11px;
+    color: var(--teal-light);
+    text-decoration: none;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    transition: opacity 0.2s;
+  }
+  .website-link:hover { opacity: 0.8; }
+
+  /* TWO COLUMN LAYOUT */
+  .two-col {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+    margin-bottom: 16px;
+  }
+
+  /* CARDS */
+  .card {
+    background: white;
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: var(--shadow-card);
+  }
+
+  .card-header {
+    background: var(--teal-deep);
+    padding: 10px 16px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .card-header-title {
+    font-size: 11px;
+    font-family: 'DM Mono', monospace;
+    color: rgba(255,255,255,0.7);
+    letter-spacing: 0.04em;
+  }
+
+  .card-header-badge {
+    font-size: 10px;
+    font-weight: 500;
+    padding: 2px 8px;
+    border-radius: 100px;
+    background: rgba(255,255,255,0.1);
+    color: rgba(255,255,255,0.8);
+    border: 1px solid rgba(255,255,255,0.15);
+  }
+
+  .card-body { padding: 18px; }
+
+  /* INVESTMENT THESIS */
+  .thesis-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 14px;
+  }
+
+  .thesis-section-label {
+    font-size: 9px;
+    font-weight: 500;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--ink-ghost);
+    margin-bottom: 8px;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+  }
+
+  .thesis-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 5px;
+  }
+
+  .thesis-tag {
+    font-size: 10px;
+    padding: 3px 8px;
+    border-radius: 4px;
+    font-weight: 400;
+    border: 1px solid transparent;
+  }
+
+  .tag-strong {
+    background: var(--teal-deep);
+    color: white;
+  }
+
+  .tag-mid {
+    background: var(--teal-pale);
+    color: var(--teal-mid);
+    border-color: var(--border);
+  }
+
+  .tag-light {
+    background: var(--cream);
+    color: var(--ink-light);
+    border-color: var(--border);
+  }
+
+  .thesis-legend {
+    display: flex;
+    gap: 12px;
+    margin-bottom: 14px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .legend-item {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 9px;
+    color: var(--ink-ghost);
+    font-weight: 300;
+  }
+
+  .legend-dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 2px;
+  }
+
+  .legend-dot.strong { background: var(--teal-deep); }
+  .legend-dot.mid { background: var(--teal-pale); border: 1px solid var(--border); }
+  .legend-dot.light { background: var(--cream); border: 1px solid var(--border); }
+
+  .read-more {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 5px;
+    margin-top: 14px;
+    padding-top: 12px;
+    border-top: 1px solid var(--border);
+    font-size: 11px;
+    color: var(--teal-brand);
+    cursor: pointer;
+    font-weight: 400;
+  }
+
+  /* BUSINESS OVERVIEW */
+  .products-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    margin-bottom: 14px;
+  }
+
+  .product-tile {
+    background: var(--cream);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 12px;
+  }
+
+  .product-icon {
+    width: 24px;
+    height: 24px;
+    background: var(--teal-ghost);
+    border-radius: 5px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--teal-brand);
+    font-size: 11px;
+    margin-bottom: 7px;
+  }
+
+  .product-name { font-size: 11px; font-weight: 500; color: var(--ink); margin-bottom: 3px; }
+  .product-desc { font-size: 10px; font-weight: 300; color: var(--ink-light); line-height: 1.4; }
+
+  .where-how {
+    padding-top: 12px;
+    border-top: 1px solid var(--border);
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 10px;
+  }
+
+  .wh-section {}
+  .wh-label {
+    font-size: 9px;
+    font-weight: 500;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--ink-ghost);
+    margin-bottom: 6px;
+  }
+
+  .wh-tags { display: flex; flex-wrap: wrap; gap: 4px; }
+  .wh-tag {
+    font-size: 9px;
+    padding: 2px 7px;
+    background: var(--teal-ghost);
+    color: var(--teal-mid);
+    border-radius: 3px;
+    border: 1px solid var(--border);
+  }
+
+  .wh-text { font-size: 10px; font-weight: 300; color: var(--ink-light); line-height: 1.4; }
+
+  /* THREE COLUMN BOTTOM ROW */
+  .three-col {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 16px;
+    margin-bottom: 24px;
+  }
+
+  /* CHANGES OVER TIME */
+  .changes-counters {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+  }
+
+  .counter-tile {
+    padding: 10px;
+    border-radius: 7px;
+    border: 1px solid var(--border);
+    text-align: center;
+  }
+
+  .counter-tile.discontinued { background: rgba(239,68,68,0.04); border-color: rgba(239,68,68,0.12); }
+  .counter-tile.sustained { background: rgba(34,197,94,0.04); border-color: rgba(34,197,94,0.12); }
+  .counter-tile.evolved { background: rgba(59,130,246,0.04); border-color: rgba(59,130,246,0.12); }
+  .counter-tile.new-products { background: rgba(139,92,246,0.04); border-color: rgba(139,92,246,0.12); }
+
+  .counter-num {
+    font-family: 'Playfair Display', serif;
+    font-size: 22px;
+    font-weight: 700;
+    line-height: 1;
+    margin-bottom: 3px;
+  }
+  .counter-tile.discontinued .counter-num { color: #dc2626; }
+  .counter-tile.sustained .counter-num { color: #16a34a; }
+  .counter-tile.evolved .counter-num { color: #2563eb; }
+  .counter-tile.new-products .counter-num { color: #7c3aed; }
+
+  .counter-label { font-size: 9px; font-weight: 400; color: var(--ink-ghost); }
+
+  .changes-preview {
+    margin-top: 12px;
+    padding-top: 12px;
+    border-top: 1px solid var(--border);
+  }
+
+  .preview-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 7px;
+    padding: 7px 0;
+    border-bottom: 1px solid var(--border);
+  }
+  .preview-item:last-child { border-bottom: none; }
+
+  .preview-badge {
+    font-size: 8px;
+    padding: 2px 5px;
+    border-radius: 3px;
+    font-weight: 500;
+    white-space: nowrap;
+    margin-top: 1px;
+    flex-shrink: 0;
+  }
+  .badge-product { background: var(--teal-pale); color: var(--teal-mid); }
+  .badge-market { background: rgba(201,168,76,0.1); color: var(--gold); }
+
+  .preview-text { font-size: 10px; color: var(--ink-light); line-height: 1.4; font-weight: 300; }
+  .preview-year { font-size: 9px; font-family: 'DM Mono', monospace; color: var(--ink-ghost); margin-left: auto; flex-shrink: 0; }
+
+  /* PERFORMANCE NUMBERS */
+  .perf-numbers {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .perf-stat {
+    padding: 12px 14px;
+    background: var(--cream);
+    border-radius: 7px;
+    border: 1px solid var(--border);
+  }
+
+  .perf-stat-label {
+    font-size: 9px;
+    font-weight: 500;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--ink-ghost);
+    margin-bottom: 4px;
+  }
+
+  .perf-stat-value {
+    font-family: 'Playfair Display', serif;
+    font-size: 20px;
+    font-weight: 700;
+    color: var(--ink);
+    letter-spacing: -0.01em;
+  }
+
+  .perf-stat-sub {
+    font-size: 10px;
+    font-weight: 300;
+    color: var(--ink-ghost);
+    margin-top: 2px;
+  }
+
+  /* COMPETITION */
+  .comp-list {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  .comp-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 12px;
+    background: var(--cream);
+    border-radius: 7px;
+    border: 1px solid var(--border);
+    cursor: pointer;
+    transition: all 0.15s;
+    text-decoration: none;
+  }
+  .comp-item:hover { border-color: var(--teal-light); background: var(--teal-ghost); }
+
+  .comp-item-left { display: flex; align-items: center; gap: 8px; }
+
+  .comp-ticker-badge {
+    font-size: 9px;
+    font-family: 'DM Mono', monospace;
+    font-weight: 500;
+    padding: 2px 6px;
+    background: var(--teal-deep);
+    color: white;
+    border-radius: 3px;
+  }
+
+  .comp-name { font-size: 11px; font-weight: 400; color: var(--ink); }
+  .comp-desc { font-size: 10px; font-weight: 300; color: var(--ink-ghost); margin-top: 1px; }
+  .comp-arrow { font-size: 10px; color: var(--ink-ghost); }
+
+  /* FINE PRINT */
+  .fine-print-summary {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 8px;
+  }
+
+  .fp-tile {
+    padding: 10px 12px;
+    border-radius: 7px;
+    border: 1px solid var(--border);
+    text-align: center;
+    background: var(--cream);
+  }
+
+  .fp-tile.risk { background: rgba(239,68,68,0.04); border-color: rgba(239,68,68,0.12); }
+
+  .fp-num {
+    font-family: 'Playfair Display', serif;
+    font-size: 20px;
+    font-weight: 700;
+    color: var(--ink);
+    line-height: 1;
+    margin-bottom: 3px;
+  }
+  .fp-tile.risk .fp-num { color: #dc2626; }
+  .fp-label { font-size: 9px; color: var(--ink-ghost); font-weight: 300; }
+
+  .fp-preview {
+    margin-top: 12px;
+    padding: 10px 12px;
+    background: rgba(239,68,68,0.03);
+    border: 1px solid rgba(239,68,68,0.1);
+    border-radius: 7px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .fp-preview-text { font-size: 11px; color: var(--ink-mid); font-weight: 400; }
+  .fp-risk-badge {
+    font-size: 9px;
+    padding: 2px 7px;
+    background: rgba(239,68,68,0.08);
+    color: #dc2626;
+    border-radius: 3px;
+    font-weight: 500;
+    border: 1px solid rgba(239,68,68,0.15);
+  }
+
+  /* CTA */
+  .stage-cta {
+    background: var(--teal-deep);
+    border-radius: 12px;
+    padding: 20px 24px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .stage-cta::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(ellipse 50% 80% at 100% 50%, rgba(77,184,176,0.15) 0%, transparent 60%);
+    pointer-events: none;
+  }
+
+  .cta-left { position: relative; z-index: 1; }
+  .cta-eyebrow {
+    font-size: 9px;
+    font-weight: 500;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: rgba(255,255,255,0.45);
+    margin-bottom: 5px;
+  }
+  .cta-headline {
+    font-family: 'Playfair Display', serif;
+    font-size: 17px;
+    font-weight: 700;
+    color: white;
+  }
+  .cta-headline em { font-style: italic; color: var(--teal-light); }
+  .cta-sub {
+    font-size: 11px;
+    font-weight: 300;
+    color: rgba(255,255,255,0.5);
+    margin-top: 4px;
+  }
+
+  .cta-btn {
+    position: relative;
+    z-index: 1;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: white;
+    color: var(--teal-deep);
+    font-size: 12px;
+    font-weight: 500;
+    padding: 10px 20px;
+    border-radius: 7px;
+    text-decoration: none;
+    transition: all 0.15s;
+    white-space: nowrap;
+    font-family: 'DM Sans', sans-serif;
+  }
+  .cta-btn:hover { background: var(--teal-ghost); }
+</style>
+</head>
+<body>
+
+<!-- TOP NAV -->
+<div class="top-nav">
+  <div style="display:flex;align-items:center;gap:20px">
+    <a href="#" class="back-btn">← New Search</a>
+    <div class="company-pill">
+      <div class="company-logo-box">P</div>
+      <span class="company-name">Palantir Technologies</span>
+      <span class="company-ticker">PLTR</span>
+    </div>
+  </div>
+  <div class="nav-actions">
+    <button class="nav-btn">Share</button>
+    <button class="nav-btn">Install</button>
+  </div>
+</div>
+
+<!-- STAGE BAR -->
+<div class="stage-bar">
+  <div class="stage-bar-inner">
+    <div class="stage-step active">
+      <div class="stage-num">1</div> Business
+    </div>
+    <div class="stage-sep"></div>
+    <div class="stage-step">
+      <div class="stage-num">2</div> Performance
+    </div>
+    <div class="stage-sep"></div>
+    <div class="stage-step">
+      <div class="stage-num">3</div> Valuation
+    </div>
+    <div class="stage-sep"></div>
+    <div class="stage-step">
+      <div class="stage-num">4</div> Timing
+    </div>
+    <div class="stage-sep"></div>
+    <div class="stage-step">
+      <div class="stage-num">5</div> Strategy
+    </div>
+    <div class="stage-sep"></div>
+    <div class="stage-step">
+      <div class="stage-num">6</div> Protection
+    </div>
+  </div>
+</div>
+
+<!-- PHILOSOPHY -->
+<div class="philosophy">
+  <div>
+    <div class="philosophy-title">Our Investment Philosophy</div>
+    <div class="philosophy-sub">We only buy great businesses at great prices, entered wisely, protected carefully.</div>
+  </div>
+  <button class="philosophy-hide">Hide ↑</button>
+</div>
+
+<!-- MAIN -->
+<div class="main">
+
+  <!-- COMPANY HEADER -->
+  <div class="company-header-card">
+    <div class="company-header-left">
+      <div class="company-logo-large">P</div>
+      <div class="company-header-info">
+        <div class="company-header-name">Palantir Technologies Inc.</div>
+        <div class="company-header-meta">
+          <span class="meta-item">PLTR</span>
+          <span class="meta-dot">·</span>
+          <span class="meta-item">February 17, 2026</span>
+          <span class="meta-dot">·</span>
+          <span class="meta-item">NYSE</span>
+        </div>
+      </div>
+    </div>
+    <div class="company-header-right">
+      <div class="company-tagline">Empowering organizations to integrate data and operations at scale.</div>
+      <a href="#" class="website-link">🌐 palantir.com →</a>
+    </div>
+  </div>
+
+  <!-- TWO COLUMN: THESIS + BUSINESS OVERVIEW -->
+  <div class="two-col">
+
+    <!-- INVESTMENT THESIS -->
+    <div class="card">
+      <div class="card-header">
+        <span class="card-header-title">Investment Thesis — PLTR</span>
+        <span class="card-header-badge">4 themes</span>
+      </div>
+      <div class="card-body">
+        <div class="thesis-legend">
+          <div class="legend-item"><div class="legend-dot strong"></div> Strong</div>
+          <div class="legend-item"><div class="legend-dot mid"></div> Moderate</div>
+          <div class="legend-item"><div class="legend-dot light"></div> Mentioned</div>
+        </div>
+        <div class="thesis-grid">
+          <div>
+            <div class="thesis-section-label">↗ Strategic Themes</div>
+            <div class="thesis-tags">
+              <span class="thesis-tag tag-strong">AI/ML</span>
+              <span class="thesis-tag tag-strong">Data Integration</span>
+              <span class="thesis-tag tag-mid">Cloud Infrastructure</span>
+              <span class="thesis-tag tag-light">Gov Contracts</span>
+            </div>
+          </div>
+          <div>
+            <div class="thesis-section-label">◎ Competitive Moats</div>
+            <div class="thesis-tags">
+              <span class="thesis-tag tag-strong">Proprietary Tech</span>
+              <span class="thesis-tag tag-strong">Switching Costs</span>
+              <span class="thesis-tag tag-mid">Brand Power</span>
+            </div>
+          </div>
+          <div>
+            <div class="thesis-section-label">◎ Market Opportunity</div>
+            <div class="thesis-tags">
+              <span class="thesis-tag tag-strong">TAM: $500B</span>
+              <span class="thesis-tag tag-mid">Growing 20% YoY</span>
+              <span class="thesis-tag tag-light">Intl Expansion</span>
+            </div>
+          </div>
+          <div>
+            <div class="thesis-section-label">◈ Value Creation</div>
+            <div class="thesis-tags">
+              <span class="thesis-tag tag-strong">Recurring Revenue</span>
+              <span class="thesis-tag tag-strong">High Margins 70%+</span>
+              <span class="thesis-tag tag-mid">Platform Economics</span>
+            </div>
+          </div>
+        </div>
+        <div class="read-more">Read Full Thesis ↓</div>
+      </div>
+    </div>
+
+    <!-- BUSINESS OVERVIEW -->
+    <div class="card">
+      <div class="card-header">
+        <span class="card-header-title">Business Overview — PLTR</span>
+        <span class="card-header-badge">4 products</span>
+      </div>
+      <div class="card-body">
+        <div class="products-grid">
+          <div class="product-tile">
+            <div class="product-icon">◈</div>
+            <div class="product-name">Palantir Gotham</div>
+            <div class="product-desc">Data integration for government operations.</div>
+          </div>
+          <div class="product-tile">
+            <div class="product-icon">◈</div>
+            <div class="product-name">Palantir Foundry</div>
+            <div class="product-desc">Central OS for commercial data management.</div>
+          </div>
+          <div class="product-tile">
+            <div class="product-icon">◈</div>
+            <div class="product-name">Palantir Apollo</div>
+            <div class="product-desc">Cloud-agnostic software delivery.</div>
+          </div>
+          <div class="product-tile">
+            <div class="product-icon">◈</div>
+            <div class="product-name">Palantir AIP</div>
+            <div class="product-desc">AI platform for ML operationalization.</div>
+          </div>
+        </div>
+        <div class="where-how">
+          <div class="wh-section">
+            <div class="wh-label">Reach</div>
+            <div class="wh-tags">
+              <span class="wh-tag">US</span>
+              <span class="wh-tag">International</span>
+            </div>
+          </div>
+          <div class="wh-section">
+            <div class="wh-label">Sales</div>
+            <div class="wh-tags">
+              <span class="wh-tag">Direct Sales</span>
+              <span class="wh-tag">Partnerships</span>
+            </div>
+          </div>
+          <div class="wh-section">
+            <div class="wh-label">Scale</div>
+            <div class="wh-text">954 customers across 90+ industries globally.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- THREE COLUMN: CHANGES + PERFORMANCE + COMPETITION -->
+  <div class="three-col">
+
+    <!-- CHANGES OVER TIME -->
+    <div class="card">
+      <div class="card-header">
+        <span class="card-header-title">Changes Over Time</span>
+        <span class="card-header-badge">5 yrs</span>
+      </div>
+      <div class="card-body">
+        <div class="changes-counters">
+          <div class="counter-tile discontinued">
+            <div class="counter-num">1</div>
+            <div class="counter-label">Discontinued</div>
+          </div>
+          <div class="counter-tile sustained">
+            <div class="counter-num">2</div>
+            <div class="counter-label">New & Sustained</div>
+          </div>
+          <div class="counter-tile evolved">
+            <div class="counter-num">3</div>
+            <div class="counter-label">Evolved</div>
+          </div>
+          <div class="counter-tile new-products">
+            <div class="counter-num">2</div>
+            <div class="counter-label">New Products</div>
+          </div>
+        </div>
+        <div class="changes-preview">
+          <div class="preview-item">
+            <span class="preview-badge badge-product">product</span>
+            <span class="preview-text">Skywise partnership dropped</span>
+            <span class="preview-year">2023</span>
+          </div>
+          <div class="preview-item">
+            <span class="preview-badge badge-market">market</span>
+            <span class="preview-text">Expanded to 90+ industries</span>
+            <span class="preview-year">2024</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- PERFORMANCE -->
+    <div class="card">
+      <div class="card-header">
+        <span class="card-header-title">Performance Snapshot</span>
+        <span class="card-header-badge">FY 2026</span>
+      </div>
+      <div class="card-body">
+        <div class="perf-numbers">
+          <div class="perf-stat">
+            <div class="perf-stat-label">Revenue</div>
+            <div class="perf-stat-value">$4.5B</div>
+            <div class="perf-stat-sub">Annual · FY 2026</div>
+          </div>
+          <div class="perf-stat">
+            <div class="perf-stat-label">Customers</div>
+            <div class="perf-stat-value">954</div>
+            <div class="perf-stat-sub">Across ~90 industries</div>
+          </div>
+          <div class="perf-stat">
+            <div class="perf-stat-label">Avg Revenue · Top 20</div>
+            <div class="perf-stat-value">$93.9M</div>
+            <div class="perf-stat-sub">Per customer annually</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- COMPETITION -->
+    <div class="card">
+      <div class="card-header">
+        <span class="card-header-title">Competition — PLTR</span>
+        <span class="card-header-badge">4 peers</span>
+      </div>
+      <div class="card-body">
+        <div class="comp-list">
+          <a href="#" class="comp-item">
+            <div class="comp-item-left">
+              <span class="comp-ticker-badge">SNOW</span>
+              <div>
+                <div class="comp-name">Snowflake Inc.</div>
+                <div class="comp-desc">Data warehousing & analytics</div>
+              </div>
+            </div>
+            <span class="comp-arrow">→</span>
+          </a>
+          <a href="#" class="comp-item">
+            <div class="comp-item-left">
+              <span class="comp-ticker-badge">IBM</span>
+              <div>
+                <div class="comp-name">IBM Corporation</div>
+                <div class="comp-desc">Enterprise software & cloud</div>
+              </div>
+            </div>
+            <span class="comp-arrow">→</span>
+          </a>
+          <a href="#" class="comp-item">
+            <div class="comp-item-left">
+              <span class="comp-ticker-badge">MSFT</span>
+              <div>
+                <div class="comp-name">Microsoft</div>
+                <div class="comp-desc">Cloud services & analytics</div>
+              </div>
+            </div>
+            <span class="comp-arrow">→</span>
+          </a>
+          <a href="#" class="comp-item">
+            <div class="comp-item-left">
+              <span class="comp-ticker-badge">CRM</span>
+              <div>
+                <div class="comp-name">Salesforce</div>
+                <div class="comp-desc">Enterprise CRM & AI platform</div>
+              </div>
+            </div>
+            <span class="comp-arrow">→</span>
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- FINE PRINT -->
+  <div class="card" style="margin-bottom:20px">
+    <div class="card-header">
+      <span class="card-header-title">Fine Print Analysis — PLTR</span>
+      <span class="card-header-badge">5 items</span>
+    </div>
+    <div class="card-body">
+      <div class="fine-print-summary">
+        <div class="fp-tile risk">
+          <div class="fp-num">1</div>
+          <div class="fp-label">Critical Risks</div>
+        </div>
+        <div class="fp-tile">
+          <div class="fp-num">1</div>
+          <div class="fp-label">Commitments</div>
+        </div>
+        <div class="fp-tile">
+          <div class="fp-num">1</div>
+          <div class="fp-label">Accounting</div>
+        </div>
+        <div class="fp-tile">
+          <div class="fp-num">2</div>
+          <div class="fp-label">Other</div>
+        </div>
+      </div>
+      <div class="fp-preview">
+        <span class="fp-preview-text">Revenue Recognition Complexity</span>
+        <span class="fp-risk-badge">High Risk</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- CTA -->
+  <div class="stage-cta">
+    <div class="cta-left">
+      <div class="cta-eyebrow">Stage 1 complete</div>
+      <div class="cta-headline">You know the business. <em>Is it financially strong?</em></div>
+      <div class="cta-sub">Next: revenue growth, profit quality, debt, and cash flow — all in plain English.</div>
+    </div>
+    <a href="#" class="cta-btn">Check Performance →</a>
+  </div>
+
+</div>
+</body>
+</html>

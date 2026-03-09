@@ -1,19 +1,16 @@
 import { useState } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
-import { Calendar, Building2, MapPin, Users, TrendingUp, Briefcase, Award, DollarSign, ExternalLink, Globe, ChevronDown, Shield, Target, Coins, AlertTriangle, Info } from "lucide-react";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { Globe, ChevronDown, AlertTriangle, Info, ArrowRight } from "lucide-react";
 import { LucideIcon } from "lucide-react";
+import { Link } from "wouter";
 
 import { useQuery } from "@tanstack/react-query";
 import { InvestmentTheme, Moat, MarketOpportunity, ValueCreation, TemporalAnalysis as TemporalAnalysisType, FinePrintAnalysis as FinePrintAnalysisType } from "@shared/schema";
 import { TagWithTooltip } from "@/components/TagWithTooltip";
 import { CompanyLogo } from "@/components/CompanyLogo";
-import { TemporalAnalysis } from "@/components/TemporalAnalysis";
-import { FinePrintAnalysis } from "@/components/FinePrintAnalysis";
 
 interface Product {
   name: string;
@@ -38,7 +35,6 @@ interface Metric {
   trend?: "up" | "down" | "stable";
 }
 
-
 interface SummaryCardProps {
   companyName: string;
   ticker: string;
@@ -50,108 +46,82 @@ interface SummaryCardProps {
   moats: Moat[];
   marketOpportunity: MarketOpportunity[];
   valueCreation: ValueCreation[];
-  
   products: Product[];
-  
   operations: {
     regions: string[];
     channels: SalesChannel[];
     scale: string;
   };
-  
   competitors: Competitor[];
   metrics: Metric[];
-  
   metadata: {
     homepage: string;
     investorRelations?: string;
   };
-  
   cik?: string;
   temporalAnalysis?: TemporalAnalysisType;
   businessAnalysisUnavailable?: boolean;
   businessAnalysisError?: string;
   analysisDepth?: 'full' | 'limited' | 'unavailable';
   no10KAvailable?: boolean;
+  onStageChange?: (stage: number) => void;
 }
 
-function CompetitorQuickSummary({ ticker }: { ticker: string }) {
-  const { data, isLoading, error } = useQuery<any>({
-    queryKey: ['/api/analyze', ticker],
-    enabled: !!ticker,
-    staleTime: 1000 * 60 * 60,
-  });
+/* ─── helpers ─────────────────────────────────────────────── */
 
-  if (isLoading) {
-    return (
-      <div className="mt-4 p-4 bg-background/50 rounded-lg border border-border animate-pulse">
-        <div className="h-4 bg-muted rounded w-3/4 mb-3"></div>
-        <div className="h-3 bg-muted rounded w-full mb-2"></div>
-        <div className="h-3 bg-muted rounded w-5/6"></div>
-      </div>
-    );
-  }
+const tealDeep = 'var(--lp-teal-deep)';
+const tealPale = 'var(--lp-teal-pale)';
+const cream = 'var(--lp-cream)';
+const border = 'rgba(42,140,133,0.12)';
 
-  if (error || !data) {
-    return (
-      <div className="mt-4 p-4 bg-background/50 rounded-lg border border-border text-muted-foreground">
-        <p>Unable to load competitor summary</p>
-      </div>
-    );
-  }
-
+function CardHeader({ label, badge }: { label: string; badge?: string }) {
   return (
-    <div className="mt-4 p-6 bg-background/50 rounded-lg border border-border space-y-4">
-      <div>
-        <p className="text-sm font-semibold text-muted-foreground uppercase tracking-wide mb-2">Quick Summary</p>
-        <p className="text-base leading-relaxed">{data.tagline}</p>
-      </div>
-
-      {data.products && data.products.length > 0 && (
-        <div>
-          <p className="text-sm font-semibold text-muted-foreground uppercase tracking-wide mb-2">Key Products</p>
-          <div className="flex flex-wrap gap-2">
-            {data.products.slice(0, 4).map((product: Product, i: number) => (
-              <Badge key={i} variant="secondary" className="text-xs">
-                {product.name}
-              </Badge>
-            ))}
-          </div>
-        </div>
+    <div
+      className="flex items-center justify-between px-4 py-2.5"
+      style={{ background: tealDeep }}
+    >
+      <span className="font-mono text-[11px] tracking-wider" style={{ color: 'rgba(255,255,255,0.7)' }}>
+        {label}
+      </span>
+      {badge && (
+        <span
+          className="text-[10px] px-2 py-0.5 rounded-full border"
+          style={{
+            background: 'rgba(255,255,255,0.1)',
+            borderColor: 'rgba(255,255,255,0.15)',
+            color: 'rgba(255,255,255,0.8)',
+          }}
+        >
+          {badge}
+        </span>
       )}
-
-      {data.metrics && data.metrics.length > 0 && (
-        <div>
-          <p className="text-sm font-semibold text-muted-foreground uppercase tracking-wide mb-2">Key Metrics</p>
-          <div className="grid grid-cols-2 gap-3">
-            {data.metrics.slice(0, 4).map((metric: Metric, i: number) => (
-              <div key={i} className="text-sm">
-                <span className="text-muted-foreground">{metric.label}:</span>{" "}
-                <span className="font-semibold">{metric.value}</span>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
-
-      <Button
-        variant="outline"
-        size="sm"
-        className="w-full mt-2"
-        onClick={() => window.open(`/?ticker=${ticker}`, '_blank')}
-        data-testid={`button-dive-deeper-${ticker}`}
-      >
-        Dive Deeper
-        <ExternalLink className="ml-2 h-4 w-4" />
-      </Button>
     </div>
   );
 }
 
-export function SummaryCard({ 
-  companyName, 
-  ticker, 
-  filingDate, 
+function SectionCard({ header, badge, children, className = '' }: {
+  header: string;
+  badge?: string;
+  children: React.ReactNode;
+  className?: string;
+}) {
+  return (
+    <div
+      className={`rounded-xl overflow-hidden border ${className}`}
+      style={{ borderColor: border, boxShadow: '0 2px 20px rgba(13,74,71,0.07)' }}
+    >
+      <CardHeader label={header} badge={badge} />
+      <div className="bg-white p-4">{children}</div>
+    </div>
+  );
+}
+
+/* ─── main component ──────────────────────────────────────── */
+
+export function SummaryCard({
+  companyName,
+  ticker,
+  filingDate,
   fiscalYear,
   tagline,
   investmentThesis,
@@ -170,27 +140,23 @@ export function SummaryCard({
   businessAnalysisError,
   analysisDepth,
   no10KAvailable,
+  onStageChange,
 }: SummaryCardProps) {
-  const [expandedCompetitor, setExpandedCompetitor] = useState<string | null>(null);
+  const [thesisOpen, setThesisOpen] = useState(false);
+
   const filteredCompetitors = competitors.filter(
     (c) => !c.ticker || c.ticker.toUpperCase() !== ticker.toUpperCase()
   );
 
-  // Fetch fine print analysis - custom queryFn to handle 404s gracefully
   const { data: finePrintAnalysis } = useQuery<FinePrintAnalysisType | null>({
     queryKey: ['/api/analyze', ticker, 'fine-print'],
     queryFn: async () => {
       try {
         const response = await fetch(`/api/analyze/${ticker}/fine-print`);
-        if (response.status === 404) {
-          return null;
-        }
-        if (!response.ok) {
-          return null;
-        }
+        if (response.status === 404) return null;
+        if (!response.ok) return null;
         return await response.json();
-      } catch (error) {
-        console.warn('Fine print analysis failed:', error);
+      } catch {
         return null;
       }
     },
@@ -199,420 +165,561 @@ export function SummaryCard({
     retry: false,
   });
 
-  // Get badge classes based on emphasis level
   const getThemeBadgeClasses = (emphasis: "high" | "medium" | "low") => {
     switch (emphasis) {
-      case "high":
-        return "bg-primary text-primary-foreground border-primary";
-      case "medium":
-        return "bg-primary/70 text-primary-foreground border-primary/70";
-      case "low":
-        return "bg-primary/40 text-primary-foreground border-primary/40";
+      case "high":   return "bg-[#0d4a47] text-white border-transparent";
+      case "medium": return "bg-[#e8f5f4] text-[#1a6b66] border-[rgba(42,140,133,0.12)]";
+      case "low":    return "bg-[#faf8f4] text-[#6b6b64] border-[rgba(42,140,133,0.12)]";
     }
   };
 
+  /* --- temporal counters --- */
+  const temporalCounters = temporalAnalysis ? [
+    { label: 'Discontinued', count: temporalAnalysis.discontinued.length, color: '#dc2626', bg: 'rgba(239,68,68,0.04)', borderColor: 'rgba(239,68,68,0.12)' },
+    { label: 'New & Sustained', count: temporalAnalysis.newAndSustained.length, color: '#16a34a', bg: 'rgba(34,197,94,0.04)', borderColor: 'rgba(34,197,94,0.12)' },
+    { label: 'Evolved', count: temporalAnalysis.evolved.length, color: '#2563eb', bg: 'rgba(59,130,246,0.04)', borderColor: 'rgba(59,130,246,0.12)' },
+    { label: 'New Products', count: temporalAnalysis.newProducts.length, color: '#7c3aed', bg: 'rgba(139,92,246,0.04)', borderColor: 'rgba(139,92,246,0.12)' },
+  ] : [];
+
+  /* --- temporal preview items --- */
+  type PreviewItem = { label: string; text: string; year: string; type: 'product' | 'market' };
+  const temporalPreviewItems: PreviewItem[] = [];
+  if (temporalAnalysis) {
+    if (temporalAnalysis.discontinued[0]) {
+      temporalPreviewItems.push({ label: 'product', text: temporalAnalysis.discontinued[0].item, year: temporalAnalysis.discontinued[0].lastMentionedYear, type: 'product' });
+    }
+    if (temporalAnalysis.evolved[0]) {
+      temporalPreviewItems.push({ label: 'evolved', text: temporalAnalysis.evolved[0].item, year: temporalAnalysis.evolved[0].yearRange?.split('–')[1] || '', type: 'market' });
+    } else if (temporalAnalysis.newProducts[0]) {
+      temporalPreviewItems.push({ label: 'product', text: temporalAnalysis.newProducts[0].name, year: temporalAnalysis.newProducts[0].introducedYear, type: 'product' });
+    }
+  }
+
+  /* --- fine print counters --- */
+  const fpOther = finePrintAnalysis
+    ? (finePrintAnalysis.relatedPartyTransactions?.length || 0) + (finePrintAnalysis.otherMaterialDisclosures?.length || 0)
+    : 0;
+  const fpCounters = finePrintAnalysis ? [
+    { label: 'Critical Risks', count: finePrintAnalysis.criticalRisks?.length || 0, isRisk: true },
+    { label: 'Commitments', count: finePrintAnalysis.financialCommitments?.length || 0, isRisk: false },
+    { label: 'Accounting', count: finePrintAnalysis.accountingChanges?.length || 0, isRisk: false },
+    { label: 'Other', count: fpOther, isRisk: false },
+  ] : [];
+  const topRisk = finePrintAnalysis?.criticalRisks?.[0] || finePrintAnalysis?.financialCommitments?.[0];
+
+  const yearsLabel = temporalAnalysis?.summary?.yearsAnalyzed?.length
+    ? `${temporalAnalysis.summary.yearsAnalyzed.length} yrs`
+    : undefined;
+
   return (
     <TooltipProvider>
-    <div className="w-full max-w-6xl mx-auto space-y-16 pb-16 animate-fade-in">
+    <div className="w-full max-w-5xl mx-auto space-y-5 pb-16 animate-fade-in" data-testid="stage-1-content">
 
-      {/* Business analysis limited — soft info banner for SPACs / non-standard filers */}
+      {/* ── analysis notices ── */}
       {analysisDepth === 'limited' && !businessAnalysisUnavailable && (
-        <div className="flex items-start gap-3 rounded-md border border-blue-200 bg-blue-50 dark:border-blue-800 dark:bg-blue-950/30 px-5 py-4" data-testid="banner-limited-depth">
-          <Info className="mt-0.5 h-5 w-5 shrink-0 text-blue-600 dark:text-blue-400" />
+        <div className="flex items-start gap-3 rounded-md border border-blue-200 bg-blue-50 dark:border-blue-800 dark:bg-blue-950/30 px-4 py-3" data-testid="banner-limited-depth">
+          <Info className="mt-0.5 h-4 w-4 shrink-0 text-blue-600 dark:text-blue-400" />
           <div>
-            <p className="font-medium text-blue-800 dark:text-blue-300">Limited filing</p>
-            <p className="mt-0.5 text-sm text-blue-700 dark:text-blue-400">
-              This company's 10-K has minimal business information — it may be a SPAC, blank check company, or early-stage filer. The summary below is based on available disclosures.
+            <p className="text-sm font-medium text-blue-800 dark:text-blue-300">Limited filing</p>
+            <p className="text-xs mt-0.5 text-blue-700 dark:text-blue-400">
+              This company's 10-K has minimal business information — it may be a SPAC, blank check company, or early-stage filer.
             </p>
           </div>
         </div>
       )}
-
-      {/* Business analysis unavailable notice */}
       {businessAnalysisUnavailable && (
-        <div className="flex items-start gap-3 rounded-md border border-amber-200 bg-amber-50 dark:border-amber-800 dark:bg-amber-950/30 px-5 py-4">
-          <AlertTriangle className="mt-0.5 h-5 w-5 shrink-0 text-amber-600 dark:text-amber-400" />
+        <div className="flex items-start gap-3 rounded-md border border-amber-200 bg-amber-50 dark:border-amber-800 dark:bg-amber-950/30 px-4 py-3">
+          <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-amber-600 dark:text-amber-400" />
           <div>
-            <p className="font-medium text-amber-800 dark:text-amber-300">Business summary unavailable</p>
-            <p className="mt-0.5 text-sm text-amber-700 dark:text-amber-400">
+            <p className="text-sm font-medium text-amber-800 dark:text-amber-300">Business summary unavailable</p>
+            <p className="text-xs mt-0.5 text-amber-700 dark:text-amber-400">
               {businessAnalysisError || "We had trouble reading this company's 10-K filing."} Performance, Valuation, Timing and other stages below are still fully available.
             </p>
           </div>
         </div>
       )}
 
-      {/* Hero Header */}
-      <div className="text-center space-y-6 py-8 border-b-2 border-border pb-12">
-        {/* Company Logo */}
-        <div className="flex justify-center mb-6">
-          <CompanyLogo
-            homepage={metadata.homepage}
-            companyName={companyName}
-            ticker={ticker}
-            size="lg"
-          />
-        </div>
-        
-        <h1 className="text-5xl sm:text-6xl md:text-7xl font-bold tracking-tight">{companyName}</h1>
-        <p className="text-2xl sm:text-3xl text-muted-foreground font-light max-w-4xl mx-auto leading-relaxed">
-          {tagline}
-        </p>
-        <div className="flex flex-wrap items-center justify-center gap-6 pt-4">
-          <Badge variant="outline" className="font-mono text-lg px-4 py-2" data-testid="text-ticker">
-            {ticker}
-          </Badge>
-          <span className="text-muted-foreground">•</span>
-          <p className="text-muted-foreground" data-testid="text-filing-date">
-            {filingDate}
-          </p>
-        </div>
-        <div className="flex flex-wrap items-center justify-center gap-6 pt-2">
-          <a 
-            href={metadata.homepage}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="inline-flex items-center gap-2 text-primary hover:underline text-base"
-            data-testid="link-homepage"
+      {/* ── company header card ── */}
+      <div
+        className="rounded-xl px-6 py-5 flex items-center justify-between relative overflow-hidden"
+        style={{ background: tealDeep }}
+        data-testid="company-header-card"
+      >
+        <div
+          className="absolute inset-0 pointer-events-none"
+          style={{ background: 'radial-gradient(ellipse 60% 80% at 80% 50%, rgba(77,184,176,0.12) 0%, transparent 60%)' }}
+        />
+        <div className="relative z-10 flex items-center gap-4">
+          <div
+            className="w-11 h-11 rounded-xl flex items-center justify-center flex-shrink-0 overflow-hidden"
+            style={{ background: 'rgba(255,255,255,0.12)', border: '1px solid rgba(255,255,255,0.2)' }}
           >
-            <Globe className="h-4 w-4" />
-            Website
-          </a>
-          {metadata.investorRelations && (
-            <>
-              <span className="text-muted-foreground">•</span>
-              <a 
-                href={metadata.investorRelations}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex items-center gap-2 text-primary hover:underline text-base"
-                data-testid="link-investor-relations"
-              >
-                <DollarSign className="h-4 w-4" />
-                Investors
-              </a>
-            </>
+            <CompanyLogo
+              homepage={metadata.homepage}
+              companyName={companyName}
+              ticker={ticker}
+              size="sm"
+            />
+          </div>
+          <div>
+            <h1
+              className="text-xl font-bold leading-tight text-white"
+              style={{ fontFamily: "'Playfair Display', serif" }}
+              data-testid="text-company-name"
+            >
+              {companyName}
+            </h1>
+            <div className="flex items-center gap-3 mt-1">
+              <span className="font-mono text-[11px]" style={{ color: 'rgba(255,255,255,0.55)' }} data-testid="text-ticker">
+                {ticker}
+              </span>
+              <span style={{ color: 'rgba(255,255,255,0.25)' }}>·</span>
+              <span className="font-mono text-[11px]" style={{ color: 'rgba(255,255,255,0.55)' }} data-testid="text-filing-date">
+                {filingDate}
+              </span>
+            </div>
+          </div>
+        </div>
+        <div className="relative z-10 flex flex-col items-end gap-2 max-w-xs">
+          <p
+            className="text-xs font-light italic text-right leading-relaxed"
+            style={{ color: 'rgba(255,255,255,0.65)' }}
+          >
+            {tagline}
+          </p>
+          {metadata.homepage && (
+            <a
+              href={metadata.homepage}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center gap-1.5 text-[11px] transition-opacity hover:opacity-80"
+              style={{ color: 'var(--lp-teal-light)' }}
+              data-testid="link-homepage"
+            >
+              <Globe className="h-3 w-3" />
+              {metadata.homepage.replace(/^https?:\/\/(www\.)?/, '').split('/')[0]}
+              <ArrowRight className="h-2.5 w-2.5" />
+            </a>
           )}
         </div>
       </div>
 
-      {/* INVESTMENT THESIS SECTION */}
-      <div className="border-2 border-primary/20 rounded-2xl bg-primary/5">
-        <div className="bg-primary px-8 py-4 border-b-2 border-primary">
-          <h2 className="text-2xl font-bold text-center uppercase tracking-wide text-primary-foreground">Investment Thesis</h2>
-        </div>
-        <div className="p-8 sm:p-12">
-          <div className="max-w-5xl mx-auto space-y-8">
-            {/* Legend */}
-            <div className="flex items-center justify-end gap-4 text-sm">
-              <div className="flex items-center gap-2">
-                <div className="h-3 w-3 rounded-sm bg-primary" />
-                <span className="text-muted-foreground">Strong emphasis</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <div className="h-3 w-3 rounded-sm bg-primary/70" />
-                <span className="text-muted-foreground">Moderate</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <div className="h-3 w-3 rounded-sm bg-primary/40" />
-                <span className="text-muted-foreground">Mentioned</span>
-              </div>
+      {/* ── two-col row: Investment Thesis + Business Overview ── */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+
+        {/* Investment Thesis */}
+        <SectionCard
+          header={`Investment Thesis — ${ticker}`}
+          badge={`${(investmentThemes?.length || 0) + (moats?.length || 0) > 0 ? Math.round(((investmentThemes?.length || 0) + (moats?.length || 0)) / 2) : 4} themes`}
+        >
+          {/* legend */}
+          <div className="flex items-center gap-4 pb-3 mb-3 border-b" style={{ borderColor: border }}>
+            <div className="flex items-center gap-1.5 text-[9px]" style={{ color: 'var(--lp-ink-ghost)' }}>
+              <div className="w-1.5 h-1.5 rounded-sm bg-[#0d4a47]" /> Strong
             </div>
-
-            {/* Tag Categories Grid */}
-            <div className="grid gap-6 sm:grid-cols-2">
-              {/* Strategic Themes */}
-              {investmentThemes && investmentThemes.length > 0 && (
-                <div className="space-y-3">
-                  <div className="flex items-center gap-2">
-                    <TrendingUp className="h-5 w-5 text-primary" />
-                    <h3 className="text-lg font-semibold">Strategic Themes</h3>
-                  </div>
-                  <div className="flex flex-wrap gap-2" data-testid="investment-themes">
-                    {investmentThemes.map((theme, index) => (
-                      <TagWithTooltip
-                        key={index}
-                        name={theme.name}
-                        emphasis={theme.emphasis}
-                        explanation={theme.explanation}
-                        testId={`theme-${theme.emphasis}-${index}`}
-                        getThemeBadgeClasses={getThemeBadgeClasses}
-                      />
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {/* Competitive Moats */}
-              {moats && moats.length > 0 && (
-                <div className="space-y-3">
-                  <div className="flex items-center gap-2">
-                    <Shield className="h-5 w-5 text-primary" />
-                    <h3 className="text-lg font-semibold">Competitive Moats</h3>
-                  </div>
-                  <div className="flex flex-wrap gap-2" data-testid="moats">
-                    {moats.map((moat, index) => (
-                      <TagWithTooltip
-                        key={index}
-                        name={moat.name}
-                        emphasis={moat.emphasis}
-                        explanation={moat.explanation}
-                        testId={`moat-${moat.emphasis}-${index}`}
-                        getThemeBadgeClasses={getThemeBadgeClasses}
-                      />
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {/* Market Opportunity */}
-              {marketOpportunity && marketOpportunity.length > 0 && (
-                <div className="space-y-3">
-                  <div className="flex items-center gap-2">
-                    <Target className="h-5 w-5 text-primary" />
-                    <h3 className="text-lg font-semibold">Market Opportunity</h3>
-                  </div>
-                  <div className="flex flex-wrap gap-2" data-testid="market-opportunity">
-                    {marketOpportunity.map((opportunity, index) => (
-                      <TagWithTooltip
-                        key={index}
-                        name={opportunity.name}
-                        emphasis={opportunity.emphasis}
-                        explanation={opportunity.explanation}
-                        testId={`opportunity-${opportunity.emphasis}-${index}`}
-                        getThemeBadgeClasses={getThemeBadgeClasses}
-                      />
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {/* Value Creation */}
-              {valueCreation && valueCreation.length > 0 && (
-                <div className="space-y-3">
-                  <div className="flex items-center gap-2">
-                    <Coins className="h-5 w-5 text-primary" />
-                    <h3 className="text-lg font-semibold">Value Creation</h3>
-                  </div>
-                  <div className="flex flex-wrap gap-2" data-testid="value-creation">
-                    {valueCreation.map((value, index) => (
-                      <TagWithTooltip
-                        key={index}
-                        name={value.name}
-                        emphasis={value.emphasis}
-                        explanation={value.explanation}
-                        testId={`value-${value.emphasis}-${index}`}
-                        getThemeBadgeClasses={getThemeBadgeClasses}
-                      />
-                    ))}
-                  </div>
-                </div>
-              )}
+            <div className="flex items-center gap-1.5 text-[9px]" style={{ color: 'var(--lp-ink-ghost)' }}>
+              <div className="w-1.5 h-1.5 rounded-sm bg-[#e8f5f4] border border-[rgba(42,140,133,0.12)]" /> Moderate
             </div>
-            
-            {/* Thesis Paragraphs - Collapsible */}
-            <Collapsible>
-              <div className="flex justify-center pt-4">
-                <CollapsibleTrigger asChild>
-                  <Button 
-                    variant="outline" 
-                    className="gap-2"
-                    data-testid="button-toggle-thesis"
-                  >
-                    <span>Read Full Thesis</span>
-                    <ChevronDown className="h-4 w-4" />
-                  </Button>
-                </CollapsibleTrigger>
-              </div>
-              
-              <CollapsibleContent>
-                <div className="space-y-6 pt-6">
-                  {investmentThesis.split('\n\n').map((paragraph, index) => (
-                    <p 
-                      key={index} 
-                      className="text-lg leading-relaxed" 
-                      data-testid={`text-investment-thesis-p${index + 1}`}
-                    >
-                      {paragraph}
-                    </p>
+            <div className="flex items-center gap-1.5 text-[9px]" style={{ color: 'var(--lp-ink-ghost)' }}>
+              <div className="w-1.5 h-1.5 rounded-sm bg-[#faf8f4] border border-[rgba(42,140,133,0.12)]" /> Mentioned
+            </div>
+          </div>
+
+          {/* 2x2 category grid */}
+          <div className="grid grid-cols-2 gap-4">
+            {investmentThemes && investmentThemes.length > 0 && (
+              <div>
+                <p className="text-[9px] font-medium uppercase tracking-widest mb-2 flex items-center gap-1" style={{ color: 'var(--lp-ink-ghost)' }}>
+                  ↗ Strategic Themes
+                </p>
+                <div className="flex flex-wrap gap-1" data-testid="investment-themes">
+                  {investmentThemes.map((theme, i) => (
+                    <TagWithTooltip
+                      key={i}
+                      name={theme.name}
+                      emphasis={theme.emphasis}
+                      explanation={theme.explanation}
+                      testId={`theme-${theme.emphasis}-${i}`}
+                      getThemeBadgeClasses={getThemeBadgeClasses}
+                    />
                   ))}
                 </div>
-              </CollapsibleContent>
-            </Collapsible>
+              </div>
+            )}
+            {moats && moats.length > 0 && (
+              <div>
+                <p className="text-[9px] font-medium uppercase tracking-widest mb-2" style={{ color: 'var(--lp-ink-ghost)' }}>
+                  ◎ Competitive Moats
+                </p>
+                <div className="flex flex-wrap gap-1" data-testid="moats">
+                  {moats.map((moat, i) => (
+                    <TagWithTooltip
+                      key={i}
+                      name={moat.name}
+                      emphasis={moat.emphasis}
+                      explanation={moat.explanation}
+                      testId={`moat-${moat.emphasis}-${i}`}
+                      getThemeBadgeClasses={getThemeBadgeClasses}
+                    />
+                  ))}
+                </div>
+              </div>
+            )}
+            {marketOpportunity && marketOpportunity.length > 0 && (
+              <div>
+                <p className="text-[9px] font-medium uppercase tracking-widest mb-2" style={{ color: 'var(--lp-ink-ghost)' }}>
+                  ◎ Market Opportunity
+                </p>
+                <div className="flex flex-wrap gap-1" data-testid="market-opportunity">
+                  {marketOpportunity.map((opp, i) => (
+                    <TagWithTooltip
+                      key={i}
+                      name={opp.name}
+                      emphasis={opp.emphasis}
+                      explanation={opp.explanation}
+                      testId={`opportunity-${opp.emphasis}-${i}`}
+                      getThemeBadgeClasses={getThemeBadgeClasses}
+                    />
+                  ))}
+                </div>
+              </div>
+            )}
+            {valueCreation && valueCreation.length > 0 && (
+              <div>
+                <p className="text-[9px] font-medium uppercase tracking-widest mb-2" style={{ color: 'var(--lp-ink-ghost)' }}>
+                  ◈ Value Creation
+                </p>
+                <div className="flex flex-wrap gap-1" data-testid="value-creation">
+                  {valueCreation.map((val, i) => (
+                    <TagWithTooltip
+                      key={i}
+                      name={val.name}
+                      emphasis={val.emphasis}
+                      explanation={val.explanation}
+                      testId={`value-${val.emphasis}-${i}`}
+                      getThemeBadgeClasses={getThemeBadgeClasses}
+                    />
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
-        </div>
+
+          {/* Read Full Thesis collapsible */}
+          <Collapsible open={thesisOpen} onOpenChange={setThesisOpen}>
+            <div className="flex items-center justify-center mt-3 pt-3 border-t" style={{ borderColor: border }}>
+              <CollapsibleTrigger asChild>
+                <button
+                  className="flex items-center gap-1.5 text-[11px] font-medium"
+                  style={{ color: 'var(--lp-teal-brand)' }}
+                  data-testid="button-toggle-thesis"
+                >
+                  Read Full Thesis
+                  <ChevronDown className={`h-3 w-3 transition-transform ${thesisOpen ? 'rotate-180' : ''}`} />
+                </button>
+              </CollapsibleTrigger>
+            </div>
+            <CollapsibleContent>
+              <div className="mt-3 space-y-3">
+                {investmentThesis.split('\n\n').map((para, i) => (
+                  <p key={i} className="text-sm leading-relaxed" style={{ color: 'var(--lp-ink-mid)' }} data-testid={`text-investment-thesis-p${i + 1}`}>
+                    {para}
+                  </p>
+                ))}
+              </div>
+            </CollapsibleContent>
+          </Collapsible>
+        </SectionCard>
+
+        {/* Business Overview */}
+        <SectionCard
+          header={`Business Overview — ${ticker}`}
+          badge={`${products?.length || 0} products`}
+        >
+          {/* 2x2 products grid */}
+          <div className="grid grid-cols-2 gap-2.5 mb-3">
+            {products.map((product, i) => {
+              const Icon = product.icon;
+              return (
+                <div
+                  key={i}
+                  className="rounded-lg p-3 border"
+                  style={{ background: cream, borderColor: border }}
+                >
+                  <div
+                    className="w-6 h-6 rounded-md flex items-center justify-center mb-2"
+                    style={{ background: 'var(--lp-teal-ghost)' }}
+                  >
+                    <Icon className="h-3.5 w-3.5" style={{ color: 'var(--lp-teal-brand)' }} />
+                  </div>
+                  <p className="text-[11px] font-medium mb-0.5" style={{ color: 'var(--lp-ink)' }}>{product.name}</p>
+                  <p className="text-[10px] leading-[1.4]" style={{ color: 'var(--lp-ink-light)' }}>{product.description}</p>
+                </div>
+              );
+            })}
+          </div>
+
+          {/* where & how 3-col strip */}
+          <div
+            className="pt-3 border-t grid grid-cols-3 gap-2.5"
+            style={{ borderColor: border }}
+          >
+            <div>
+              <p className="text-[9px] font-medium uppercase tracking-widest mb-1.5" style={{ color: 'var(--lp-ink-ghost)' }}>
+                Reach
+              </p>
+              <div className="flex flex-wrap gap-1">
+                {operations.regions.map((r, i) => (
+                  <span
+                    key={i}
+                    className="text-[9px] px-1.5 py-0.5 rounded-sm border"
+                    style={{ background: 'var(--lp-teal-ghost)', color: 'var(--lp-teal-mid)', borderColor: border }}
+                  >
+                    {r}
+                  </span>
+                ))}
+              </div>
+            </div>
+            <div>
+              <p className="text-[9px] font-medium uppercase tracking-widest mb-1.5" style={{ color: 'var(--lp-ink-ghost)' }}>
+                Sales
+              </p>
+              <div className="flex flex-wrap gap-1">
+                {operations.channels.map((ch, i) => (
+                  <Tooltip key={i}>
+                    <TooltipTrigger asChild>
+                      <span
+                        className="text-[9px] px-1.5 py-0.5 rounded-sm border cursor-help"
+                        style={{ background: 'var(--lp-teal-ghost)', color: 'var(--lp-teal-mid)', borderColor: border }}
+                        data-testid={`badge-channel-${i}`}
+                      >
+                        {ch.name}
+                      </span>
+                    </TooltipTrigger>
+                    <TooltipContent className="max-w-xs p-2 text-xs">
+                      <p>{ch.explanation}</p>
+                    </TooltipContent>
+                  </Tooltip>
+                ))}
+              </div>
+            </div>
+            <div>
+              <p className="text-[9px] font-medium uppercase tracking-widest mb-1.5" style={{ color: 'var(--lp-ink-ghost)' }}>
+                Scale
+              </p>
+              <p className="text-[10px] leading-[1.4]" style={{ color: 'var(--lp-ink-light)' }}>
+                {operations.scale}
+              </p>
+            </div>
+          </div>
+        </SectionCard>
       </div>
 
-      {/* BUSINESS OVERVIEW CLUSTER */}
-      <div className="border-2 border-border rounded-2xl">
-        <div className="bg-muted px-8 py-4 border-b-2 border-border">
-          <h2 className="text-2xl font-bold text-center uppercase tracking-wide">Business Overview</h2>
-        </div>
-        <div className="bg-muted/20 p-8 sm:p-12 space-y-12">
-          {/* What They Do */}
-          <section className="space-y-8">
-            <h3 className="text-3xl font-bold text-center">What they do</h3>
-            <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-4">
-              {products.map((product, index) => (
-                <div 
-                  key={index}
-                  className="flex flex-col items-center text-center space-y-4 p-6"
+      {/* ── three-col row: Changes · Performance · Competition ── */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+
+        {/* Changes Over Time */}
+        {temporalAnalysis ? (
+          <SectionCard header="Changes Over Time" badge={yearsLabel}>
+            <div className="grid grid-cols-2 gap-2 mb-3">
+              {temporalCounters.map((c) => (
+                <div
+                  key={c.label}
+                  className="rounded-lg p-2.5 text-center border"
+                  style={{ background: c.bg, borderColor: c.borderColor }}
                 >
-                  <product.icon className="h-12 w-12 text-foreground stroke-[1.5]" />
-                  <h4 className="text-xl font-semibold">{product.name}</h4>
-                  <p className="text-base text-muted-foreground leading-relaxed">{product.description}</p>
+                  <p className="font-serif text-[22px] font-bold leading-none mb-1" style={{ color: c.color }}>
+                    {c.count}
+                  </p>
+                  <p className="text-[9px]" style={{ color: 'var(--lp-ink-ghost)' }}>{c.label}</p>
                 </div>
               ))}
             </div>
-          </section>
-
-          <div className="w-full h-0.5 bg-border" />
-
-          {/* Where & How */}
-          <section className="space-y-8">
-            <h3 className="text-3xl font-bold text-center">Where & how</h3>
-            <div className="grid gap-12 md:grid-cols-3 max-w-5xl mx-auto">
-              <div className="space-y-4 text-center">
-                <h4 className="text-lg font-semibold">Global Reach</h4>
-                <div className="flex flex-wrap justify-center gap-3">
-                  {operations.regions.map((region, i) => (
-                    <Badge key={i} variant="secondary" className="text-sm px-4 py-1.5">
-                      {region}
-                    </Badge>
-                  ))}
-                </div>
+            {temporalPreviewItems.length > 0 && (
+              <div className="pt-3 border-t space-y-2" style={{ borderColor: border }}>
+                {temporalPreviewItems.map((item, i) => (
+                  <div key={i} className="flex items-start gap-2 py-1.5 border-b last:border-b-0" style={{ borderColor: border }}>
+                    <span
+                      className="text-[8px] px-1.5 py-0.5 rounded-sm font-medium flex-shrink-0 mt-0.5"
+                      style={
+                        item.type === 'product'
+                          ? { background: 'var(--lp-teal-pale)', color: 'var(--lp-teal-mid)' }
+                          : { background: 'rgba(201,168,76,0.1)', color: '#c9a84c' }
+                      }
+                    >
+                      {item.label}
+                    </span>
+                    <span className="text-[10px] leading-[1.4] flex-1" style={{ color: 'var(--lp-ink-light)' }}>
+                      {item.text}
+                    </span>
+                    {item.year && (
+                      <span className="font-mono text-[9px] flex-shrink-0" style={{ color: 'var(--lp-ink-ghost)' }}>
+                        {item.year}
+                      </span>
+                    )}
+                  </div>
+                ))}
               </div>
-              <div className="space-y-4 text-center">
-                <h4 className="text-lg font-semibold">Sales Channels</h4>
-                <div className="flex flex-wrap justify-center gap-3">
-                  {operations.channels.map((channel, i) => (
-                    <Tooltip key={i}>
-                      <TooltipTrigger asChild>
-                        <div>
-                          <Badge 
-                            variant="secondary" 
-                            className="text-sm px-4 py-1.5 cursor-help"
-                            data-testid={`badge-channel-${i}`}
-                          >
-                            {channel.name}
-                          </Badge>
-                        </div>
-                      </TooltipTrigger>
-                      <TooltipContent className="max-w-xs">
-                        <p>{channel.explanation}</p>
-                      </TooltipContent>
-                    </Tooltip>
-                  ))}
-                </div>
-              </div>
-              <div className="space-y-4 text-center">
-                <h4 className="text-lg font-semibold">Scale</h4>
-                <p className="text-base text-muted-foreground">{operations.scale}</p>
-              </div>
-            </div>
-          </section>
-        </div>
-      </div>
+            )}
+          </SectionCard>
+        ) : (
+          <SectionCard header="Changes Over Time" badge="—">
+            <p className="text-xs py-4 text-center" style={{ color: 'var(--lp-ink-ghost)' }}>
+              Temporal analysis not yet available.
+            </p>
+          </SectionCard>
+        )}
 
-      {/* TEMPORAL ANALYSIS SECTION */}
-      {temporalAnalysis && (
-        <TemporalAnalysis analysis={temporalAnalysis} companyName={companyName} />
-      )}
-
-      {/* FINE PRINT ANALYSIS SECTION */}
-      {finePrintAnalysis && (
-        <FinePrintAnalysis analysis={finePrintAnalysis} companyName={companyName} />
-      )}
-
-      {/* PERFORMANCE CLUSTER */}
-      <div className="border-2 border-border rounded-2xl">
-        <div className="bg-muted px-8 py-4 border-b-2 border-border">
-          <h2 className="text-2xl font-bold text-center uppercase tracking-wide">Performance</h2>
-        </div>
-        <div className="bg-muted/20 p-8 sm:p-12">
-          <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-4 max-w-5xl mx-auto">
-            {metrics.map((metric, index) => (
-              <div key={index} className="text-center space-y-2">
-                <p className="text-sm text-muted-foreground uppercase tracking-wide font-semibold">{metric.label}</p>
-                <p className="text-4xl font-bold">{metric.value}</p>
+        {/* Performance Snapshot */}
+        <SectionCard header="Performance Snapshot" badge={fiscalYear ? `FY ${fiscalYear}` : undefined}>
+          <div className="space-y-2.5">
+            {metrics.slice(0, 3).map((m, i) => (
+              <div
+                key={i}
+                className="rounded-lg p-3 border"
+                style={{ background: cream, borderColor: border }}
+              >
+                <p className="text-[9px] font-medium uppercase tracking-widest mb-1" style={{ color: 'var(--lp-ink-ghost)' }}>
+                  {m.label}
+                </p>
+                <p
+                  className="font-serif text-xl font-bold leading-none"
+                  style={{ color: 'var(--lp-ink)', fontFamily: "'Playfair Display', serif" }}
+                >
+                  {m.value}
+                </p>
               </div>
             ))}
           </div>
-        </div>
-      </div>
+        </SectionCard>
 
-      {/* MARKET CONTEXT CLUSTER */}
-      <div className="border-2 border-border rounded-2xl">
-        <div className="bg-muted px-8 py-4 border-b-2 border-border">
-          <h2 className="text-2xl font-bold text-center uppercase tracking-wide">Market Context</h2>
-        </div>
-        <div className="bg-muted/20 p-8 sm:p-12">
-          <div className="max-w-5xl mx-auto">
-            {/* Competition */}
-            <section className="space-y-6">
-              <h3 className="text-2xl font-bold pb-3 border-b border-border">Competition</h3>
-              <div className="grid gap-4 md:grid-cols-2">
-                {filteredCompetitors.map((competitor, index) => (
-                  competitor.ticker ? (
-                    <Collapsible
-                      key={index}
-                      open={expandedCompetitor === competitor.ticker}
-                      onOpenChange={(open) => setExpandedCompetitor(open ? competitor.ticker! : null)}
+        {/* Competition */}
+        <SectionCard
+          header={`Competition — ${ticker}`}
+          badge={`${filteredCompetitors.length} peers`}
+        >
+          <div className="space-y-1.5">
+            {filteredCompetitors.slice(0, 5).map((comp, i) => (
+              comp.ticker ? (
+                <Link
+                  key={i}
+                  href={`/stocks/${comp.ticker}`}
+                  className="flex items-center justify-between p-2.5 rounded-lg border transition-all"
+                  style={{ background: cream, borderColor: border }}
+                  data-testid={`competitor-${i}`}
+                >
+                  <div className="flex items-center gap-2 min-w-0">
+                    <span
+                      className="font-mono text-[9px] font-medium px-1.5 py-0.5 rounded-sm flex-shrink-0 text-white"
+                      style={{ background: tealDeep }}
                     >
-                      <div className="rounded-lg border border-border hover-elevate">
-                        <CollapsibleTrigger asChild>
-                          <div 
-                            className="w-full cursor-pointer p-4 space-y-1"
-                            data-testid={`competitor-${index}`}
-                          >
-                            <div className="flex items-center justify-between gap-2">
-                              <div className="flex items-center gap-2">
-                                <p className="font-semibold text-lg text-primary">
-                                  {competitor.name}
-                                </p>
-                                <Badge variant="outline" className="font-mono text-xs">
-                                  {competitor.ticker}
-                                </Badge>
-                              </div>
-                              <ChevronDown 
-                                className={`h-5 w-5 text-muted-foreground transition-transform ${
-                                  expandedCompetitor === competitor.ticker ? 'rotate-180' : ''
-                                }`}
-                              />
-                            </div>
-                            <p className="text-base text-muted-foreground text-left">{competitor.focus}</p>
-                          </div>
-                        </CollapsibleTrigger>
-                        <CollapsibleContent>
-                          <div className="px-4 pb-4">
-                            <CompetitorQuickSummary ticker={competitor.ticker} />
-                          </div>
-                        </CollapsibleContent>
-                      </div>
-                    </Collapsible>
-                  ) : (
-                    <div 
-                      key={index} 
-                      className="space-y-1 py-3"
-                      data-testid={`competitor-${index}`}
-                    >
-                      <p className="font-semibold text-lg">{competitor.name}</p>
-                      <p className="text-base text-muted-foreground">{competitor.focus}</p>
+                      {comp.ticker}
+                    </span>
+                    <div className="min-w-0">
+                      <p className="text-[11px] font-medium truncate" style={{ color: 'var(--lp-ink)' }}>{comp.name}</p>
+                      <p className="text-[10px] truncate" style={{ color: 'var(--lp-ink-ghost)' }}>{comp.focus}</p>
                     </div>
-                  )
-                ))}
-              </div>
-            </section>
+                  </div>
+                  <ArrowRight className="h-3 w-3 flex-shrink-0 ml-2" style={{ color: 'var(--lp-ink-ghost)' }} />
+                </Link>
+              ) : (
+                <div
+                  key={i}
+                  className="p-2.5 rounded-lg border"
+                  style={{ background: cream, borderColor: border }}
+                  data-testid={`competitor-${i}`}
+                >
+                  <p className="text-[11px] font-medium" style={{ color: 'var(--lp-ink)' }}>{comp.name}</p>
+                  <p className="text-[10px]" style={{ color: 'var(--lp-ink-ghost)' }}>{comp.focus}</p>
+                </div>
+              )
+            ))}
           </div>
+        </SectionCard>
+      </div>
+
+      {/* ── fine print ── */}
+      {finePrintAnalysis && (
+        <SectionCard
+          header={`Fine Print Analysis — ${ticker}`}
+          badge={`${(finePrintAnalysis.criticalRisks?.length || 0) + (finePrintAnalysis.financialCommitments?.length || 0) + (finePrintAnalysis.accountingChanges?.length || 0) + fpOther} items`}
+        >
+          <div className="grid grid-cols-4 gap-2 mb-3">
+            {fpCounters.map((fp) => (
+              <div
+                key={fp.label}
+                className="rounded-lg p-2.5 text-center border"
+                style={
+                  fp.isRisk
+                    ? { background: 'rgba(239,68,68,0.04)', borderColor: 'rgba(239,68,68,0.12)' }
+                    : { background: cream, borderColor: border }
+                }
+              >
+                <p
+                  className="font-serif text-xl font-bold leading-none mb-1"
+                  style={{ fontFamily: "'Playfair Display', serif", color: fp.isRisk ? '#dc2626' : 'var(--lp-ink)' }}
+                >
+                  {fp.count}
+                </p>
+                <p className="text-[9px]" style={{ color: 'var(--lp-ink-ghost)' }}>{fp.label}</p>
+              </div>
+            ))}
+          </div>
+          {topRisk && (
+            <div
+              className="flex items-center justify-between rounded-lg p-2.5 border"
+              style={{ background: 'rgba(239,68,68,0.03)', borderColor: 'rgba(239,68,68,0.1)' }}
+            >
+              <span className="text-[11px]" style={{ color: 'var(--lp-ink-mid)' }}>{topRisk.title}</span>
+              <span
+                className="text-[9px] px-2 py-0.5 rounded-sm font-medium border flex-shrink-0 ml-3"
+                style={{ background: 'rgba(239,68,68,0.08)', color: '#dc2626', borderColor: 'rgba(239,68,68,0.15)' }}
+              >
+                {topRisk.importance === 'high' ? 'High Risk' : topRisk.importance === 'medium' ? 'Medium Risk' : 'Low Risk'}
+              </span>
+            </div>
+          )}
+        </SectionCard>
+      )}
+
+      {/* ── bottom CTA: teaser for Stage 2 ── */}
+      <div
+        className="rounded-xl px-6 py-5 flex items-center justify-between relative overflow-hidden"
+        style={{ background: tealDeep }}
+        data-testid="stage-1-cta"
+      >
+        <div
+          className="absolute inset-0 pointer-events-none"
+          style={{ background: 'radial-gradient(ellipse 50% 80% at 100% 50%, rgba(77,184,176,0.15) 0%, transparent 60%)' }}
+        />
+        <div className="relative z-10">
+          <p
+            className="text-[9px] font-medium uppercase tracking-widest mb-1"
+            style={{ color: 'rgba(255,255,255,0.45)' }}
+          >
+            Stage 1 complete
+          </p>
+          <p
+            className="text-[17px] font-bold text-white"
+            style={{ fontFamily: "'Playfair Display', serif" }}
+          >
+            You know the business.{' '}
+            <em className="italic" style={{ color: 'var(--lp-teal-light)' }}>Is it financially strong?</em>
+          </p>
+          <p className="text-[11px] mt-1" style={{ color: 'rgba(255,255,255,0.5)' }}>
+            Next: revenue growth, profit quality, debt, and cash flow — all in plain English.
+          </p>
         </div>
+        <button
+          className="relative z-10 flex items-center gap-2 rounded-lg text-[12px] font-medium px-5 py-2.5 flex-shrink-0 ml-6 transition-opacity hover:opacity-90"
+          style={{ background: 'white', color: tealDeep, fontFamily: "'DM Sans', sans-serif" }}
+          data-testid="button-cta-performance"
+          onClick={() => onStageChange?.(2)}
+        >
+          Check Performance →
+        </button>
       </div>
 
-
-      {/* Footer */}
-      <div className="text-center pt-8 border-t border-border">
-        <p className="text-sm text-muted-foreground">
-          Source: Official company report
-        </p>
-      </div>
     </div>
     </TooltipProvider>
   );

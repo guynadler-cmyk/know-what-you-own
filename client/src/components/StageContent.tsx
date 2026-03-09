@@ -201,7 +201,7 @@ export function StageContent({ stage, summaryData, financialMetrics, balanceShee
         icon: iconMap[p.icon] || Package
       }))
     };
-    return <SummaryCard {...preparedSummary} />;
+    return <SummaryCard {...preparedSummary} onStageChange={onStageChange} />;
   }
 
   if (stage === 2) {
