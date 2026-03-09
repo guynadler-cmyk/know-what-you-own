@@ -14,11 +14,28 @@
   --elevate-1: rgba(0,0,0, .03);
   --elevate-2: rgba(0,0,0, .08);
 
-  --background: 0 0% 100%;
+  --background: 48 100% 99%;
 
-  --foreground: 0 0% 0%;
+  --foreground: 0 0% 10%;
 
-  --border: 240 5% 83%;
+  --border: 37 20% 88%;
+
+  /* Landing page design tokens */
+  --lp-warm-white: #fffef9;
+  --lp-cream: #faf8f4;
+  --lp-teal-deep: #0d4a47;
+  --lp-teal-mid: #1a6b66;
+  --lp-teal-brand: #2a8c85;
+  --lp-teal-light: #4db8b0;
+  --lp-teal-pale: #e8f5f4;
+  --lp-teal-ghost: #f2faf9;
+  --lp-ink: #1a1a18;
+  --lp-ink-mid: #3d3d38;
+  --lp-ink-light: #6b6b64;
+  --lp-ink-ghost: #9b9b92;
+  --lp-border: rgba(42,140,133,0.12);
+  --lp-shadow-soft: 0 4px 32px rgba(13,74,71,0.08);
+  --lp-shadow-card: 0 2px 16px rgba(13,74,71,0.06);
 
   --card: 0 0% 100%;
 
@@ -76,9 +93,9 @@
   --chart-4: 262 83% 58%;
   --chart-5: 340 82% 52%;
 
-  --font-sans: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-  --font-serif: Georgia, serif;
-  --font-mono: "JetBrains Mono", "SF Mono", Menlo, Monaco, "Courier New", monospace;
+  --font-sans: 'DM Sans', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  --font-serif: 'Playfair Display', Georgia, serif;
+  --font-mono: 'DM Mono', "SF Mono", Menlo, Monaco, "Courier New", monospace;
   --radius: .75rem;
   --shadow-2xs: 0px 1px 2px 0px hsl(0 0% 0% / 0.04);
   --shadow-xs: 0px 1px 2px 0px hsl(0 0% 0% / 0.05);

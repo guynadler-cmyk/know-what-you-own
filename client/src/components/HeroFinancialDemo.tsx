@@ -59,11 +59,12 @@ function TickerButton({
     <button
       onClick={onClick}
       data-testid={`hero-financial-ticker-btn-${ticker}`}
-      className={`px-6 py-2 rounded-full text-base font-semibold transition-colors border ${
+      className={`px-4 py-1.5 rounded-md text-sm font-medium font-mono transition-colors border ${
         selected
-          ? "bg-primary text-primary-foreground border-primary shadow-md scale-105"
-          : "bg-background text-foreground border-border hover:border-primary/50"
+          ? "text-white border-[var(--lp-teal-deep)]"
+          : "bg-background border-[var(--lp-border)] hover:border-[var(--lp-teal-brand)]"
       }`}
+      style={selected ? { background: "var(--lp-teal-deep)", color: "white" } : { color: "var(--lp-ink-light)" }}
     >
       {ticker}
     </button>

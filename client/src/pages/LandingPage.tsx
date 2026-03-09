@@ -31,19 +31,27 @@ export default function LandingPage() {
       <section
         id="hero"
         className={`${SECTION_PADDING} px-4 sm:px-6 lg:px-8`}
+        style={{
+          background: [
+            "radial-gradient(ellipse 60% 50% at 70% 40%, rgba(42,140,133,0.06) 0%, transparent 70%)",
+            "radial-gradient(ellipse 40% 60% at 20% 80%, rgba(13,74,71,0.04) 0%, transparent 60%)",
+          ].join(", "),
+        }}
         data-testid="section-hero"
       >
         {/* Headline + CTA */}
         <div className="mx-auto max-w-3xl text-center">
           <div className="space-y-4">
             <h1
-              className="text-4xl sm:text-5xl lg:text-6xl font-bold tracking-tight leading-[1.1]"
+              className="font-serif text-4xl sm:text-5xl lg:text-6xl font-semibold tracking-tight leading-[1.15]"
               data-testid="text-hero-headline"
             >
-              You look at your portfolio and think: what was I thinking?
+              You look at your portfolio and think:{" "}
+              <em style={{ color: "var(--lp-teal-brand)" }}>what was I thinking?</em>
             </h1>
             <p
-              className="text-xl sm:text-2xl text-muted-foreground max-w-2xl mx-auto leading-relaxed"
+              className="text-xl sm:text-2xl font-light leading-relaxed max-w-2xl mx-auto"
+              style={{ color: "var(--lp-ink-light)" }}
               data-testid="text-hero-subheadline"
             >
               Stop being embarrassed by your portfolio.<br />
@@ -54,7 +62,7 @@ export default function LandingPage() {
             <Link href="/app">
               <Button
                 size="lg"
-                className="rounded-full gap-2"
+                className="rounded-md gap-2"
                 data-testid="button-hero-cta"
               >
                 <Search className="h-5 w-5" />
@@ -62,7 +70,8 @@ export default function LandingPage() {
               </Button>
             </Link>
             <p
-              className="text-sm text-muted-foreground"
+              className="text-sm"
+              style={{ color: "var(--lp-ink-ghost)" }}
               data-testid="text-hero-microcopy"
             >
               No signup required · Takes seconds
@@ -79,15 +88,28 @@ export default function LandingPage() {
       {/* Demo Section 1 — Changes Over Time */}
       <section
         id="demo-temporal"
-        className={`${SECTION_PADDING} px-4 sm:px-6 lg:px-8 bg-muted/30`}
+        className={`${SECTION_PADDING} px-4 sm:px-6 lg:px-8`}
+        style={{ background: "var(--lp-cream)" }}
         data-testid="section-demo-temporal"
       >
         <div className="mx-auto max-w-6xl">
           <div className="text-center mb-10">
-            <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold tracking-tight leading-tight">
-              See how the story changes over time
+            <div
+              className="text-xs font-medium uppercase tracking-widest mb-3"
+              style={{ color: "var(--lp-teal-brand)", letterSpacing: "0.1em" }}
+            >
+              Changes Over Time
+            </div>
+            <h2
+              className="font-serif font-semibold text-2xl sm:text-3xl lg:text-4xl tracking-tight leading-tight"
+              style={{ color: "var(--lp-ink)" }}
+            >
+              See how the story changes <em style={{ color: "var(--lp-teal-brand)" }}>over time</em>
             </h2>
-            <p className="mt-3 text-lg text-muted-foreground leading-relaxed max-w-2xl mx-auto">
+            <p
+              className="mt-3 text-lg font-light leading-relaxed max-w-2xl mx-auto"
+              style={{ color: "var(--lp-ink-light)" }}
+            >
               Track what's new, what's been quietly dropped, and what's actually sticking — without reading a single filing.
             </p>
           </div>
@@ -99,14 +121,27 @@ export default function LandingPage() {
       <section
         id="demo-financial"
         className={`${SECTION_PADDING} px-4 sm:px-6 lg:px-8`}
+        style={{ background: "var(--lp-warm-white)" }}
         data-testid="section-demo-financial"
       >
         <div className="mx-auto max-w-6xl">
           <div className="text-center mb-10">
-            <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold tracking-tight leading-tight">
-              Is this business financially strong?
+            <div
+              className="text-xs font-medium uppercase tracking-widest mb-3"
+              style={{ color: "var(--lp-teal-brand)", letterSpacing: "0.1em" }}
+            >
+              Financial Analysis
+            </div>
+            <h2
+              className="font-serif font-semibold text-2xl sm:text-3xl lg:text-4xl tracking-tight leading-tight"
+              style={{ color: "var(--lp-ink)" }}
+            >
+              Is this business <em style={{ color: "var(--lp-teal-brand)" }}>financially strong?</em>
             </h2>
-            <p className="mt-3 text-lg text-muted-foreground leading-relaxed max-w-2xl mx-auto">
+            <p
+              className="mt-3 text-lg font-light leading-relaxed max-w-2xl mx-auto"
+              style={{ color: "var(--lp-ink-light)" }}
+            >
               Revenue growth means nothing if the cash isn't real. Restnvest checks the numbers that actually matter — margins, debt, cash flow, reinvestment — and gives you a straight answer.
             </p>
           </div>
@@ -117,15 +152,28 @@ export default function LandingPage() {
       {/* Demo Section 3 — Technical Analysis */}
       <section
         id="demo-timing"
-        className={`${SECTION_PADDING} px-4 sm:px-6 lg:px-8 bg-muted/30`}
+        className={`${SECTION_PADDING} px-4 sm:px-6 lg:px-8`}
+        style={{ background: "var(--lp-cream)" }}
         data-testid="section-demo-timing"
       >
         <div className="mx-auto max-w-6xl">
           <div className="text-center mb-10">
-            <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold tracking-tight leading-tight">
-              You've done the homework. Now what?
+            <div
+              className="text-xs font-medium uppercase tracking-widest mb-3"
+              style={{ color: "var(--lp-teal-brand)", letterSpacing: "0.1em" }}
+            >
+              Timing Conditions
+            </div>
+            <h2
+              className="font-serif font-semibold text-2xl sm:text-3xl lg:text-4xl tracking-tight leading-tight"
+              style={{ color: "var(--lp-ink)" }}
+            >
+              You've done the homework. <em style={{ color: "var(--lp-teal-brand)" }}>Now what?</em>
             </h2>
-            <p className="mt-3 text-lg text-muted-foreground leading-relaxed max-w-2xl mx-auto">
+            <p
+              className="mt-3 text-lg font-light leading-relaxed max-w-2xl mx-auto"
+              style={{ color: "var(--lp-ink-light)" }}
+            >
               Restnvest pairs everything you've learned about the business with market signals — so you can think clearly about timing and when to act.
             </p>
           </div>
@@ -136,19 +184,42 @@ export default function LandingPage() {
       {/* Final CTA Section */}
       <section
         id="cta"
-        className={`${SECTION_PADDING} px-4 sm:px-6 lg:px-8 bg-muted/30`}
+        className={`${SECTION_PADDING} px-4 sm:px-6 lg:px-8`}
+        style={{
+          background: "var(--lp-teal-deep)",
+          position: "relative",
+          overflow: "hidden",
+        }}
         data-testid="section-final-cta"
       >
-        <div className="mx-auto max-w-2xl text-center">
-          <div className="space-y-3">
+        <div
+          style={{
+            position: "absolute",
+            inset: 0,
+            background: [
+              "radial-gradient(ellipse 50% 80% at 50% 100%, rgba(77,184,176,0.15) 0%, transparent 60%)",
+              "radial-gradient(ellipse 30% 40% at 20% 0%, rgba(77,184,176,0.08) 0%, transparent 50%)",
+            ].join(", "),
+          }}
+        />
+        <div className="relative z-10 mx-auto max-w-2xl text-center">
+          <div
+            className="text-xs font-medium uppercase tracking-widest mb-6"
+            style={{ color: "var(--lp-teal-light)", letterSpacing: "0.12em" }}
+          >
+            Start for free · No signup required
+          </div>
+          <div className="space-y-4">
             <h2
-              className="text-2xl sm:text-3xl lg:text-4xl font-bold tracking-tight"
+              className="font-serif font-semibold text-2xl sm:text-3xl lg:text-4xl tracking-tight text-white"
               data-testid="text-final-cta-headline"
             >
-              Your next investment should have a reason behind it.
+              Your next investment should have a{" "}
+              <em style={{ color: "var(--lp-teal-light)" }}>reason</em> behind it.
             </h2>
             <p
-              className="text-lg text-muted-foreground leading-relaxed"
+              className="text-lg font-light leading-relaxed"
+              style={{ color: "rgba(255,255,255,0.6)" }}
               data-testid="text-final-cta-body"
             >
               Research any public company in seconds — business, finances, competition, and signals, all in one place.
@@ -158,7 +229,7 @@ export default function LandingPage() {
             <Link href="/app">
               <Button
                 size="lg"
-                className="rounded-full gap-2"
+                className="rounded-md gap-2 bg-white text-[var(--lp-teal-deep)] hover:bg-white"
                 data-testid="button-final-cta"
               >
                 <Search className="h-5 w-5" />
@@ -166,7 +237,8 @@ export default function LandingPage() {
               </Button>
             </Link>
             <p
-              className="text-sm text-muted-foreground"
+              className="text-sm"
+              style={{ color: "rgba(255,255,255,0.35)" }}
               data-testid="text-final-tagline"
             >
               Built for investors who think before they buy.
