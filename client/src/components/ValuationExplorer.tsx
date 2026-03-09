@@ -797,6 +797,23 @@ export function ValuationExplorer({ ticker, onQuadrantDataChange }: ValuationExp
       />
       
       <Card className="overflow-hidden">
+        <div
+          className="px-5 py-2.5 flex items-center justify-between gap-4"
+          style={{ background: "var(--lp-teal-deep)" }}
+        >
+          <span className="text-white/50 text-[10px] font-mono uppercase tracking-widest">
+            Stage 3 · Valuation
+          </span>
+          {ticker && (
+            <span className="text-white font-mono text-sm font-semibold tracking-wide">
+              {ticker}
+            </span>
+          )}
+          <span className="text-white/50 text-[10px] font-mono uppercase tracking-widest">
+            {selectedQuadrant.title}
+          </span>
+        </div>
+
         <div className="grid lg:grid-cols-2 gap-0">
           <div className="p-6 lg:p-8 flex items-center justify-center bg-muted/30">
             <ValuationQuadrantChart quadrant={selectedQuadrant} />
@@ -804,15 +821,19 @@ export function ValuationExplorer({ ticker, onQuadrantDataChange }: ValuationExp
           
           <div className="p-6 lg:p-8 flex flex-col justify-center space-y-5 border-t lg:border-t-0 lg:border-l border-border">
             <div>
-              <h3 className="text-2xl font-bold mb-2" data-testid="valuation-quadrant-title">
+              <h3
+                className="text-2xl font-bold mb-2 italic"
+                style={{ fontFamily: "var(--font-serif, 'Playfair Display', Georgia, serif)" }}
+                data-testid="valuation-quadrant-title"
+              >
                 {selectedQuadrant.title}
               </h3>
               <div className={cn(
-                "inline-flex items-center gap-2 px-4 py-2 rounded-full",
+                "inline-flex items-center gap-2 px-3 py-1.5 rounded-md",
                 getStrengthStyles(selectedQuadrant.strength).bg
               )}>
                 <span className={cn(
-                  "w-2.5 h-2.5 rounded-full",
+                  "w-2 h-2 rounded-full",
                   selectedQuadrant.strength === "sensible" && "bg-green-500",
                   selectedQuadrant.strength === "caution" && "bg-yellow-500",
                   selectedQuadrant.strength === "risky" && "bg-red-500"
@@ -826,7 +847,7 @@ export function ValuationExplorer({ ticker, onQuadrantDataChange }: ValuationExp
               </div>
             </div>
             
-            <div className="flex flex-wrap gap-3">
+            <div className="flex flex-wrap gap-2.5">
               {selectedQuadrant.signals.map((signal, idx) => (
                 <SignalTag key={idx} signal={signal} />
               ))}
@@ -836,15 +857,16 @@ export function ValuationExplorer({ ticker, onQuadrantDataChange }: ValuationExp
               <PriceDisciplineTag quadrant={priceDisciplineQuadrant} />
             ) : (
               <div className="space-y-3">
-                <div 
-                  className="bg-primary/5 rounded-lg p-4 border border-primary/10"
+                <div
+                  className="border-l-2 pl-4 py-0.5"
+                  style={{ borderColor: "var(--lp-teal-deep)" }}
                   data-testid="valuation-quadrant-insight"
                 >
-                  <p className="text-foreground leading-relaxed text-base">
+                  <p className="text-muted-foreground leading-relaxed text-base">
                     {selectedQuadrant.insightHighlight && selectedQuadrant.insight.includes(selectedQuadrant.insightHighlight) ? (
                       <>
                         {selectedQuadrant.insight.split(selectedQuadrant.insightHighlight)[0]}
-                        <span className="font-semibold text-primary">
+                        <span className="font-semibold text-foreground">
                           {selectedQuadrant.insightHighlight}
                         </span>
                         {selectedQuadrant.insight.split(selectedQuadrant.insightHighlight)[1] || ''}

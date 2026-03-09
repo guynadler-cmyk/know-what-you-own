@@ -3,7 +3,6 @@ import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Badge } from "@/components/ui/badge";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { 
   ChevronDown, ChevronUp, TrendingUp, TrendingDown, Activity, Info, 
@@ -11,7 +10,6 @@ import {
   Calendar, Clock, Bug
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { CompanyLogo } from "@/components/CompanyLogo";
 import type { TimingAnalysis, TimingSignalStatus, TimingTimeframe } from "@shared/schema";
 import { TimingQuadrantChart, type TimingQuadrantConfig } from "./timing/TimingQuadrantChart";
 import { TrendChart } from "./timing/TrendChart";
@@ -588,6 +586,21 @@ function TimingDetailPanel({ type, signal, deepDive, chartData }: TimingDetailPa
 
   return (
     <Card className="overflow-hidden" data-testid={`timing-detail-panel-${type}`}>
+      <div
+        className="px-5 py-2.5 flex items-center justify-between gap-4"
+        style={{ background: "var(--lp-teal-deep)" }}
+      >
+        <span className="text-white/50 text-[10px] font-mono uppercase tracking-widest">
+          Stage 4 · Timing
+        </span>
+        <span className="text-white font-mono text-sm font-semibold tracking-wide">
+          {METRIC_TITLES[type]}
+        </span>
+        <span className="text-white/50 text-[10px] font-mono uppercase tracking-widest">
+          {signal.label}
+        </span>
+      </div>
+
       <div className="grid lg:grid-cols-2 gap-0">
         <div className="p-6 lg:p-8 flex items-center justify-center bg-muted/30">
           <TimingQuadrantChart 
@@ -600,14 +613,18 @@ function TimingDetailPanel({ type, signal, deepDive, chartData }: TimingDetailPa
         
         <div className="p-6 lg:p-8 flex flex-col justify-center space-y-5 border-t lg:border-t-0 lg:border-l border-border">
           <div>
-            <h3 className="text-2xl font-bold mb-2" data-testid="timing-detail-title">
+            <h3
+              className="text-2xl font-bold mb-2 italic"
+              style={{ fontFamily: "var(--font-serif, 'Playfair Display', Georgia, serif)" }}
+              data-testid="timing-detail-title"
+            >
               {METRIC_TITLES[type]}
             </h3>
             <div className={cn(
-              "inline-flex items-center gap-2 px-4 py-2 rounded-full",
+              "inline-flex items-center gap-2 px-3 py-1.5 rounded-md",
               getStrengthStyles(statusToStrength(signal.status)).bg
             )}>
-              <span className={cn("w-2.5 h-2.5 rounded-full", getStrengthStyles(statusToStrength(signal.status)).dot)} />
+              <span className={cn("w-2 h-2 rounded-full", getStrengthStyles(statusToStrength(signal.status)).dot)} />
               <span className={cn("text-sm font-semibold", getStrengthStyles(statusToStrength(signal.status)).text)} data-testid="timing-detail-verdict">
                 {signal.label}
               </span>
@@ -615,7 +632,7 @@ function TimingDetailPanel({ type, signal, deepDive, chartData }: TimingDetailPa
           </div>
           
           {apiSignals.length > 0 && (
-            <div className="flex flex-wrap gap-3">
+            <div className="flex flex-wrap gap-2.5">
               {apiSignals.map((s, idx) => (
                 <SignalTag key={idx} label={s.label} value={s.value} metricType={type} />
               ))}
@@ -1015,62 +1032,38 @@ export function TimingStage({ ticker, companyName, homepage, placeholderData }: 
   const selectedChartData = data[selectedMetric].chartData;
 
   return (
-    <Card data-testid="timing-stage-content">
-      <CardHeader className="text-center pb-6">
-        {(companyName || ticker) && (
-          <div className="flex items-center justify-center gap-4 mb-6">
-            <CompanyLogo
-              homepage={homepage}
-              companyName={companyName || data.companyName || ""}
-              ticker={ticker || ""}
-              size="md"
-            />
-            <div className="text-left">
-              <h2 className="text-2xl font-bold">{companyName || data.companyName}</h2>
-              <p className="text-sm text-muted-foreground">{ticker}</p>
-            </div>
-          </div>
-        )}
-        <div className="flex items-center justify-center gap-2 mb-2">
-          <CardTitle className="text-2xl">Assess Timing Conditions</CardTitle>
-          <Badge variant="outline" className="text-xs" data-testid="timing-timeframe-badge">
-            {timeframe === 'weekly' ? 'Weekly' : 'Daily'}
-          </Badge>
-        </div>
-      </CardHeader>
-      <CardContent className="pb-12">
-        <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4 mb-6 pb-4 border-b border-border/40">
-          <TimeframeToggle timeframe={timeframe} onTimeframeChange={setTimeframe} />
-        </div>
+    <div data-testid="timing-stage-content">
+      <div className="mb-6">
+        <TimeframeToggle timeframe={timeframe} onTimeframeChange={setTimeframe} />
+      </div>
 
-        <TimingIntroBlock />
+      <TimingIntroBlock />
 
-        <div className="space-y-6">
-          <SummaryCardRow 
-            selectedId={selectedMetric}
-            onSelect={setSelectedMetric}
-            metrics={metrics}
-          />
-          
-          <TimingDetailPanel
-            key={selectedMetric}
-            type={selectedMetric}
-            signal={selectedSignal}
-            deepDive={selectedDeepDive}
-            chartData={selectedChartData}
-          />
-        </div>
+      <div className="space-y-6">
+        <SummaryCardRow 
+          selectedId={selectedMetric}
+          onSelect={setSelectedMetric}
+          metrics={metrics}
+        />
         
-        <TimingScorecard metrics={metrics} />
-        
-        {import.meta.env.DEV && (
-          <DebugDrawer 
-            debug={data.debug} 
-            isOpen={showDebug} 
-            onToggle={() => setShowDebug(!showDebug)} 
-          />
-        )}
-      </CardContent>
-    </Card>
+        <TimingDetailPanel
+          key={selectedMetric}
+          type={selectedMetric}
+          signal={selectedSignal}
+          deepDive={selectedDeepDive}
+          chartData={selectedChartData}
+        />
+      </div>
+      
+      <TimingScorecard metrics={metrics} />
+      
+      {import.meta.env.DEV && (
+        <DebugDrawer 
+          debug={data.debug} 
+          isOpen={showDebug} 
+          onToggle={() => setShowDebug(!showDebug)} 
+        />
+      )}
+    </div>
   );
 }

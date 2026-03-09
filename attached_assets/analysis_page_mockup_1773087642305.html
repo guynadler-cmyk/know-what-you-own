@@ -1,0 +1,898 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>restnvest — Performance Analysis</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400&family=DM+Sans:wght@300;400;500&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --teal-deep: #0d4a47;
+    --teal-mid: #1a6b66;
+    --teal-brand: #2a8c85;
+    --teal-light: #4db8b0;
+    --teal-pale: #e8f5f4;
+    --teal-ghost: #f2faf9;
+    --warm-white: #fffef9;
+    --cream: #faf8f4;
+    --ink: #1a1a18;
+    --ink-mid: #3d3d38;
+    --ink-light: #6b6b64;
+    --ink-ghost: #9b9b92;
+    --gold: #c9a84c;
+    --border: rgba(42,140,133,0.12);
+    --shadow-card: 0 2px 20px rgba(13,74,71,0.07);
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: var(--warm-white);
+    color: var(--ink);
+    min-height: 100vh;
+  }
+
+  /* TOP NAV */
+  .top-nav {
+    height: 48px;
+    background: var(--warm-white);
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 28px;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    backdrop-filter: blur(12px);
+  }
+
+  .back-btn {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 12px;
+    color: var(--ink-light);
+    text-decoration: none;
+    transition: color 0.2s;
+  }
+  .back-btn:hover { color: var(--teal-brand); }
+
+  .company-pill {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: white;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 5px 12px;
+  }
+
+  .company-logo-box {
+    width: 20px;
+    height: 20px;
+    background: var(--teal-deep);
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 9px;
+    color: white;
+    font-weight: 700;
+    font-family: 'DM Mono', monospace;
+  }
+
+  .company-name { font-size: 12px; font-weight: 500; color: var(--ink); }
+  .company-ticker { font-size: 10px; font-family: 'DM Mono', monospace; color: var(--ink-ghost); }
+
+  .nav-actions { display: flex; gap: 8px; }
+  .nav-btn {
+    font-size: 11px;
+    color: var(--ink-light);
+    background: none;
+    border: 1px solid var(--border);
+    border-radius: 5px;
+    padding: 4px 10px;
+    cursor: pointer;
+    font-family: 'DM Sans', sans-serif;
+    transition: all 0.15s;
+  }
+  .nav-btn:hover { border-color: var(--teal-brand); color: var(--teal-brand); }
+
+  /* STAGE PROGRESS */
+  .stage-bar {
+    background: white;
+    border-bottom: 1px solid var(--border);
+    padding: 0 28px;
+    display: flex;
+    justify-content: center;
+  }
+
+  .stage-bar-inner {
+    display: flex;
+    align-items: center;
+    height: 44px;
+    gap: 0;
+  }
+
+  .stage-step {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    padding: 0 14px;
+    height: 100%;
+    font-size: 11px;
+    color: var(--ink-ghost);
+    font-weight: 400;
+    border-bottom: 2px solid transparent;
+    cursor: pointer;
+    transition: all 0.2s;
+    white-space: nowrap;
+  }
+
+  .stage-step.active {
+    color: var(--teal-deep);
+    font-weight: 500;
+    border-bottom-color: var(--teal-brand);
+  }
+
+  .stage-step.completed { color: var(--teal-brand); }
+
+  .stage-num {
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 8px;
+    font-weight: 600;
+    flex-shrink: 0;
+  }
+
+  .stage-step.active .stage-num { background: var(--teal-brand); color: white; }
+  .stage-step.completed .stage-num { background: var(--teal-pale); color: var(--teal-brand); }
+  .stage-step:not(.active):not(.completed) .stage-num { background: var(--cream); color: var(--ink-ghost); border: 1px solid var(--border); }
+
+  .stage-sep { width: 20px; height: 1px; background: var(--border); }
+
+  /* MAIN */
+  .main {
+    max-width: 860px;
+    margin: 0 auto;
+    padding: 32px 24px 80px;
+  }
+
+  /* PHILOSOPHY */
+  .philosophy {
+    background: white;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 12px 18px;
+    margin-bottom: 28px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .philosophy-title { font-size: 11px; font-weight: 500; color: var(--ink); }
+  .philosophy-sub { font-size: 10px; font-weight: 300; color: var(--ink-ghost); margin-top: 1px; }
+  .philosophy-hide { font-size: 10px; color: var(--teal-brand); background: none; border: none; cursor: pointer; font-family: 'DM Sans', sans-serif; }
+
+  /* PAGE HEADER */
+  .page-header { margin-bottom: 28px; }
+  .page-eyebrow {
+    font-size: 10px;
+    font-weight: 500;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--teal-brand);
+    margin-bottom: 8px;
+  }
+  .page-headline {
+    font-family: 'Playfair Display', serif;
+    font-size: 26px;
+    font-weight: 700;
+    color: var(--ink);
+    letter-spacing: -0.01em;
+    line-height: 1.25;
+    margin-bottom: 8px;
+  }
+  .page-headline em { font-style: italic; color: var(--teal-brand); }
+  .page-sub {
+    font-size: 13px;
+    font-weight: 300;
+    color: var(--ink-light);
+    line-height: 1.6;
+    max-width: 520px;
+  }
+
+  /* METRIC TABS */
+  .metric-tabs {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 8px;
+    margin-bottom: 20px;
+  }
+
+  .metric-tab {
+    background: white;
+    border: 1.5px solid var(--border);
+    border-radius: 8px;
+    padding: 12px 14px;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  .metric-tab:hover { border-color: var(--teal-light); }
+  .metric-tab.active {
+    border-color: var(--teal-brand);
+    background: var(--teal-ghost);
+  }
+
+  .mt-title { font-size: 11px; font-weight: 500; color: var(--ink); margin-bottom: 2px; }
+  .mt-sub { font-size: 10px; color: var(--ink-ghost); font-weight: 300; margin-bottom: 7px; }
+  .mt-tags { display: flex; gap: 3px; flex-wrap: wrap; }
+  .mt-tag {
+    font-size: 9px;
+    font-family: 'DM Mono', monospace;
+    padding: 2px 5px;
+    border-radius: 3px;
+    background: var(--teal-pale);
+    color: var(--teal-mid);
+  }
+  .mt-tag.warn { background: rgba(201,168,76,0.1); color: var(--gold); }
+
+  /* MAIN CARD — mac window style */
+  .mac-card {
+    background: white;
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: var(--shadow-card);
+    border: 1px solid var(--border);
+    margin-bottom: 14px;
+  }
+
+  .mac-header {
+    background: var(--teal-deep);
+    padding: 10px 16px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+
+
+  .mac-title {
+    font-size: 11px;
+    font-family: 'DM Mono', monospace;
+    color: rgba(255,255,255,0.7);
+    letter-spacing: 0.04em;
+  }
+
+  .mac-badge {
+    font-size: 10px;
+    font-weight: 500;
+    padding: 3px 10px;
+    border-radius: 100px;
+    background: rgba(255,255,255,0.12);
+    color: rgba(255,255,255,0.9);
+    border: 1px solid rgba(255,255,255,0.2);
+  }
+  .mac-badge.green { background: rgba(40,200,64,0.2); color: #7ef08a; border-color: rgba(40,200,64,0.3); }
+
+  /* CARD BODY — split layout */
+  .card-body {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    min-height: 260px;
+  }
+
+  /* LEFT — chart */
+  .card-left {
+    padding: 20px;
+    border-right: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .chart-label {
+    font-size: 9px;
+    font-weight: 500;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--ink-ghost);
+  }
+
+  .quadrant-outer {
+    position: relative;
+    padding-left: 28px;
+    padding-bottom: 24px;
+    flex: 1;
+  }
+
+  .quadrant-y-label {
+    position: absolute;
+    left: 0;
+    top: 50%;
+    transform: translateY(-50%) rotate(-90deg);
+    font-size: 8px;
+    color: var(--ink-ghost);
+    white-space: nowrap;
+    font-weight: 300;
+  }
+
+  .quadrant-x-label {
+    position: absolute;
+    bottom: 4px;
+    left: 28px;
+    right: 0;
+    text-align: center;
+    font-size: 8px;
+    color: var(--ink-ghost);
+    font-weight: 300;
+  }
+
+  .quadrant {
+    width: 100%;
+    height: 180px;
+    border-radius: 6px;
+    overflow: hidden;
+    border: 1px solid var(--border);
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    grid-template-rows: 1fr 1fr;
+    position: relative;
+  }
+
+  .q { display: flex; align-items: flex-end; padding: 6px 8px; font-size: 8px; font-weight: 500; }
+  .q.tl { background: rgba(234,179,8,0.07); color: #ca8a04; align-items: flex-start; border-right: 1px solid var(--border); border-bottom: 1px solid var(--border); }
+  .q.tr { background: rgba(34,197,94,0.06); color: #16a34a; align-items: flex-start; justify-content: flex-end; border-bottom: 1px solid var(--border); }
+  .q.bl { background: rgba(239,68,68,0.05); color: #dc2626; border-right: 1px solid var(--border); }
+  .q.br { background: rgba(99,102,241,0.05); color: #6366f1; justify-content: flex-end; }
+
+  .q-dot {
+    position: absolute;
+    width: 10px;
+    height: 10px;
+    background: var(--teal-brand);
+    border-radius: 50%;
+    border: 2px solid white;
+    box-shadow: 0 2px 8px rgba(42,140,133,0.5);
+    top: 42%;
+    left: 62%;
+    transform: translate(-50%, -50%);
+  }
+
+  /* RIGHT — insight */
+  .card-right {
+    padding: 20px 22px;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+  }
+
+  .insight-eyebrow {
+    font-size: 9px;
+    font-weight: 500;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--teal-brand);
+  }
+
+  .insight-heading {
+    font-family: 'Playfair Display', serif;
+    font-size: 18px;
+    font-weight: 700;
+    color: var(--ink);
+    margin-top: 2px;
+  }
+
+  .insight-verdict-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 4px 10px;
+    background: rgba(34,197,94,0.08);
+    color: #16a34a;
+    border-radius: 5px;
+    font-size: 11px;
+    font-weight: 500;
+    border: 1px solid rgba(34,197,94,0.15);
+  }
+
+  .insight-signals {
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+  }
+
+  .insight-sig {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    padding: 4px 9px;
+    background: var(--teal-ghost);
+    border: 1px solid var(--border);
+    border-radius: 5px;
+    font-size: 10px;
+    color: var(--teal-mid);
+  }
+  .sig-arrow { font-size: 8px; color: #16a34a; }
+
+  .insight-body {
+    font-size: 12px;
+    font-weight: 300;
+    color: var(--ink-mid);
+    line-height: 1.65;
+    padding: 12px 14px;
+    background: var(--cream);
+    border-radius: 6px;
+    border-left: 3px solid var(--teal-light);
+  }
+
+  /* SCORECARD */
+  .scorecard {
+    background: white;
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: var(--shadow-card);
+    margin-bottom: 14px;
+  }
+
+  .scorecard-head {
+    padding: 14px 20px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .scorecard-head-left {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .sc-icon {
+    width: 28px;
+    height: 28px;
+    background: var(--teal-ghost);
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--teal-brand);
+    font-size: 12px;
+  }
+
+  .sc-title { font-size: 13px; font-weight: 500; color: var(--ink); }
+  .sc-score { font-size: 11px; font-weight: 300; color: var(--ink-light); margin-top: 1px; }
+
+  .sc-bar {
+    display: flex;
+    gap: 3px;
+  }
+  .sc-seg {
+    width: 28px;
+    height: 3px;
+    border-radius: 2px;
+    background: var(--border);
+  }
+  .sc-seg.on { background: var(--teal-brand); }
+  .sc-seg.warn { background: var(--gold); }
+
+  .scorecard-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .sc-item {
+    padding: 14px 20px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    border-bottom: 1px solid var(--border);
+    border-right: 1px solid var(--border);
+  }
+  .sc-item:nth-child(2n) { border-right: none; }
+  .sc-item:nth-last-child(-n+2) { border-bottom: none; }
+
+  .sc-status {
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 8px;
+    flex-shrink: 0;
+    font-weight: 700;
+  }
+  .sc-status.pass { background: rgba(34,197,94,0.1); color: #16a34a; }
+  .sc-status.warn { background: rgba(201,168,76,0.1); color: var(--gold); }
+  .sc-status.fail { background: rgba(239,68,68,0.08); color: #dc2626; }
+
+  .sc-item-label { font-size: 12px; font-weight: 500; color: var(--ink); }
+  .sc-item-val { font-size: 11px; color: var(--ink-light); font-weight: 300; margin-top: 1px; }
+
+  .verdict-bar {
+    padding: 12px 20px;
+    background: var(--teal-ghost);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .verdict-dot { width: 7px; height: 7px; border-radius: 50%; background: #16a34a; flex-shrink: 0; }
+  .verdict-text { font-size: 12px; color: var(--teal-deep); font-weight: 400; }
+
+  /* SIGNAL ROWS (for timing stage preview) */
+  .signal-rows { padding: 0 20px; }
+  .signal-row {
+    display: flex;
+    align-items: center;
+    padding: 12px 0;
+    border-bottom: 1px solid var(--border);
+    gap: 12px;
+  }
+  .signal-row:last-child { border-bottom: none; }
+
+  .signal-icon-box {
+    width: 28px;
+    height: 28px;
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+    flex-shrink: 0;
+  }
+  .sig-green { background: rgba(34,197,94,0.1); }
+  .sig-yellow { background: rgba(201,168,76,0.1); }
+  .sig-purple { background: rgba(99,102,241,0.1); }
+
+  .signal-info { flex: 1; }
+  .signal-name { font-size: 12px; font-weight: 500; color: var(--ink); display: flex; align-items: center; gap: 8px; }
+  .signal-desc { font-size: 11px; font-weight: 300; color: var(--ink-light); margin-top: 2px; }
+
+  .signal-badge {
+    font-size: 10px;
+    font-weight: 500;
+    padding: 2px 8px;
+    border-radius: 4px;
+  }
+  .badge-green { background: rgba(34,197,94,0.1); color: #16a34a; }
+  .badge-yellow { background: rgba(201,168,76,0.1); color: #ca8a04; }
+  .badge-purple { background: rgba(99,102,241,0.1); color: #6366f1; }
+
+  .timing-score-bar {
+    padding: 14px 20px;
+    border-top: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .ts-label { font-size: 12px; font-weight: 500; color: var(--ink); margin-bottom: 5px; }
+  .ts-segs { display: flex; gap: 3px; }
+  .ts-seg { width: 28px; height: 3px; border-radius: 2px; background: var(--border); }
+  .ts-seg.on { background: var(--teal-brand); }
+  .ts-count { font-size: 11px; color: var(--ink-light); font-weight: 300; }
+
+  /* FOOTER */
+  .footer-nav {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding-top: 24px;
+    border-top: 1px solid var(--border);
+    margin-top: 8px;
+  }
+
+  .foot-btn {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 12px;
+    font-weight: 400;
+    padding: 8px 16px;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.15s;
+    font-family: 'DM Sans', sans-serif;
+    text-decoration: none;
+  }
+  .btn-back { color: var(--ink-light); background: none; border: 1px solid var(--border); }
+  .btn-back:hover { border-color: var(--teal-brand); color: var(--teal-brand); }
+  .btn-fwd { color: white; background: var(--teal-deep); border: 1px solid var(--teal-deep); }
+  .btn-fwd:hover { background: var(--teal-mid); }
+
+  /* SECTION DIVIDER */
+  .section-divider {
+    text-align: center;
+    padding: 48px 0 32px;
+    border-top: 1px solid var(--border);
+    margin-top: 40px;
+  }
+  .divider-label {
+    font-size: 9px;
+    font-weight: 500;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--ink-ghost);
+    margin-bottom: 8px;
+  }
+  .divider-headline {
+    font-family: 'Playfair Display', serif;
+    font-size: 22px;
+    font-weight: 700;
+    color: var(--ink);
+  }
+  .divider-headline em { font-style: italic; color: var(--teal-brand); }
+  .divider-sub {
+    font-size: 13px;
+    font-weight: 300;
+    color: var(--ink-light);
+    margin-top: 8px;
+  }
+</style>
+</head>
+<body>
+
+<!-- TOP NAV -->
+<div class="top-nav">
+  <div style="display:flex;align-items:center;gap:20px">
+    <a href="#" class="back-btn">← New Search</a>
+    <div class="company-pill">
+      <div class="company-logo-box">P</div>
+      <span class="company-name">Palantir Technologies</span>
+      <span class="company-ticker">PLTR</span>
+    </div>
+  </div>
+  <div class="nav-actions">
+    <button class="nav-btn">Share</button>
+    <button class="nav-btn">Install</button>
+  </div>
+</div>
+
+<!-- STAGE BAR -->
+<div class="stage-bar">
+  <div class="stage-bar-inner">
+    <div class="stage-step completed">
+      <div class="stage-num">✓</div> Business
+    </div>
+    <div class="stage-sep"></div>
+    <div class="stage-step active">
+      <div class="stage-num">2</div> Performance
+    </div>
+    <div class="stage-sep"></div>
+    <div class="stage-step">
+      <div class="stage-num">3</div> Valuation
+    </div>
+    <div class="stage-sep"></div>
+    <div class="stage-step">
+      <div class="stage-num">4</div> Timing
+    </div>
+    <div class="stage-sep"></div>
+    <div class="stage-step">
+      <div class="stage-num">5</div> Strategy
+    </div>
+    <div class="stage-sep"></div>
+    <div class="stage-step">
+      <div class="stage-num">6</div> Protection
+    </div>
+  </div>
+</div>
+
+<!-- MAIN -->
+<div class="main">
+
+  <!-- PHILOSOPHY -->
+  <div class="philosophy">
+    <div>
+      <div class="philosophy-title">Our Investment Philosophy</div>
+      <div class="philosophy-sub">We only buy great businesses at great prices, entered wisely, protected carefully.</div>
+    </div>
+    <button class="philosophy-hide">Hide ↑</button>
+  </div>
+
+  <!-- PAGE HEADER -->
+  <div class="page-header">
+    <div class="page-eyebrow">Stage 2 of 6 · Financial Analysis</div>
+    <h1 class="page-headline">Is this business <em>financially strong?</em></h1>
+    <p class="page-sub">You've seen what this business does. Now let's look under the hood — is it strong enough to own? We'll guide you through revenue, earnings, cash flow, debt, and reinvestment.</p>
+  </div>
+
+  <!-- METRIC TABS -->
+  <div class="metric-tabs">
+    <div class="metric-tab active">
+      <div class="mt-title">Growth Quality</div>
+      <div class="mt-sub">Scalable Growth</div>
+      <div class="mt-tags">
+        <span class="mt-tag">↗ Revenue</span>
+        <span class="mt-tag">↗ Earnings</span>
+      </div>
+    </div>
+    <div class="metric-tab">
+      <div class="mt-title">Profit Quality</div>
+      <div class="mt-sub">Cash-Backed Profits</div>
+      <div class="mt-tags">
+        <span class="mt-tag">↗ Margins</span>
+        <span class="mt-tag">↗ FCF</span>
+      </div>
+    </div>
+    <div class="metric-tab">
+      <div class="mt-title">Debt Safety</div>
+      <div class="mt-sub">Leverage With Support</div>
+      <div class="mt-tags">
+        <span class="mt-tag warn">↘ Debt</span>
+        <span class="mt-tag">↗ Coverage</span>
+      </div>
+    </div>
+    <div class="metric-tab">
+      <div class="mt-title">Owner Value Quality</div>
+      <div class="mt-sub">Compounding Equity</div>
+      <div class="mt-tags">
+        <span class="mt-tag">↗ Book Value</span>
+        <span class="mt-tag">↗ ROIC</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- MAC CARD — Growth Quality -->
+  <div class="mac-card">
+    <div class="mac-header">
+      <div class="mac-title">Performance — PLTR</div>
+      <div class="mac-badge green">Scalable Growth ✓</div>
+    </div>
+    <div class="card-body">
+      <div class="card-left">
+        <div class="chart-label">Growth Map</div>
+        <div class="quadrant-outer">
+          <div class="quadrant-y-label">Earnings Growth</div>
+          <div class="quadrant">
+            <div class="q tl">Cost Cutting</div>
+            <div class="q tr">Efficient Growth</div>
+            <div class="q bl">Declining</div>
+            <div class="q br">Scaling Up</div>
+            <div class="q-dot"></div>
+          </div>
+          <div class="quadrant-x-label">Revenue Growth →</div>
+        </div>
+      </div>
+      <div class="card-right">
+        <div>
+          <div class="insight-eyebrow">Growth Quality</div>
+          <div class="insight-heading">Scalable Growth</div>
+        </div>
+        <div class="insight-verdict-badge">✓ Scalable Growth</div>
+        <div class="insight-signals">
+          <div class="insight-sig"><span class="sig-arrow">↗</span> Revenue</div>
+          <div class="insight-sig"><span class="sig-arrow">↗</span> Earnings</div>
+        </div>
+        <div class="insight-body">
+          The company is growing both revenue and earnings — a sign of scalable, healthy expansion. This is the hallmark of a quality compounder.
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SCORECARD -->
+  <div class="scorecard">
+    <div class="scorecard-head">
+      <div class="scorecard-head-left">
+        <div class="sc-icon">▣</div>
+        <div>
+          <div class="sc-title">Financial Health Score</div>
+          <div class="sc-score">4 out of 4 signals strong</div>
+        </div>
+      </div>
+      <div class="sc-bar">
+        <div class="sc-seg on"></div>
+        <div class="sc-seg on"></div>
+        <div class="sc-seg on"></div>
+        <div class="sc-seg on"></div>
+      </div>
+    </div>
+    <div class="scorecard-grid">
+      <div class="sc-item">
+        <div class="sc-status pass">✓</div>
+        <div>
+          <div class="sc-item-label">Growth Quality</div>
+          <div class="sc-item-val">Scalable Growth</div>
+        </div>
+      </div>
+      <div class="sc-item">
+        <div class="sc-status pass">✓</div>
+        <div>
+          <div class="sc-item-label">Profit Quality</div>
+          <div class="sc-item-val">Cash-Backed Profits</div>
+        </div>
+      </div>
+      <div class="sc-item">
+        <div class="sc-status warn">!</div>
+        <div>
+          <div class="sc-item-label">Debt Safety</div>
+          <div class="sc-item-val">Leverage With Support</div>
+        </div>
+      </div>
+      <div class="sc-item">
+        <div class="sc-status pass">✓</div>
+        <div>
+          <div class="sc-item-label">Owner Value Quality</div>
+          <div class="sc-item-val">Compounding Equity</div>
+        </div>
+      </div>
+    </div>
+    <div class="verdict-bar">
+      <div class="verdict-dot"></div>
+      <div class="verdict-text">Financially strong. Likely a solid foundation for a long-term investment.</div>
+    </div>
+  </div>
+
+  <!-- DIVIDER — Timing preview -->
+  <div class="section-divider">
+    <div class="divider-label">Coming up next</div>
+    <div class="divider-headline">You've done the homework. <em>Now what?</em></div>
+    <div class="divider-sub">Next we check market timing — so you know when to act on what you've learned.</div>
+  </div>
+
+  <!-- TIMING PREVIEW CARD -->
+  <div class="mac-card">
+    <div class="mac-header">
+      <div class="mac-title">Timing Conditions — PLTR</div>
+      <div class="mac-badge">2 of 3 signals supportive</div>
+    </div>
+    <div class="signal-rows">
+      <div class="signal-row">
+        <div class="signal-icon-box sig-green">↗</div>
+        <div class="signal-info">
+          <div class="signal-name">
+            Price Trend
+            <span class="signal-badge badge-green">Uptrend</span>
+          </div>
+          <div class="signal-desc">Higher highs and higher lows. Healthy structure.</div>
+        </div>
+      </div>
+      <div class="signal-row">
+        <div class="signal-icon-box sig-yellow">⟳</div>
+        <div class="signal-info">
+          <div class="signal-name">
+            MACD-H
+            <span class="signal-badge badge-yellow">Mild Buying</span>
+          </div>
+          <div class="signal-desc">Still positive, but energy is fading.</div>
+        </div>
+      </div>
+      <div class="signal-row">
+        <div class="signal-icon-box sig-purple">◎</div>
+        <div class="signal-info">
+          <div class="signal-name">
+            RSI Stretch
+            <span class="signal-badge badge-purple">Neutral (56)</span>
+          </div>
+          <div class="signal-desc">Not stretched in either direction.</div>
+        </div>
+      </div>
+    </div>
+    <div class="timing-score-bar">
+      <div>
+        <div class="ts-label">Timing Score</div>
+        <div class="ts-segs">
+          <div class="ts-seg on"></div>
+          <div class="ts-seg on"></div>
+          <div class="ts-seg"></div>
+        </div>
+      </div>
+      <div class="ts-count">2 of 3 signals supportive</div>
+    </div>
+  </div>
+
+  <!-- FOOTER NAV -->
+  <div class="footer-nav">
+    <a href="#" class="foot-btn btn-back">← Previous Stage</a>
+    <a href="#" class="foot-btn btn-fwd">Continue to Next Stage →</a>
+  </div>
+
+</div>
+</body>
+</html>

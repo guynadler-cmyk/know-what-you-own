@@ -12,7 +12,17 @@ Preferred communication style: Simple, everyday language.
 
 ### Frontend Architecture
 
-The frontend is built with React and TypeScript, leveraging Vite for development, Wouter for routing, and TanStack Query for data management. UI components are sourced from Shadcn UI (built on Radix UI) and styled with Tailwind CSS, adhering to a minimalist design system featuring a monochrome palette, teal accent, and Inter typography. It supports theme toggling and employs a component-based architecture without a global state management library. Key UI patterns include a hero section, structured results with visual clustering, and strong heading hierarchies. The application also supports Progressive Web App (PWA) installation.
+The frontend is built with React and TypeScript, leveraging Vite for development, Wouter for routing, and TanStack Query for data management. UI components are sourced from Shadcn UI (built on Radix UI) and styled with Tailwind CSS, adhering to a minimalist design system featuring a monochrome palette, teal accent (`--lp-teal-deep: #0d4a47`), and DM Sans / Playfair Display / DM Mono typography. It supports theme toggling and employs a component-based architecture without a global state management library. Key UI patterns include a hero section, structured results with visual clustering, and strong heading hierarchies. The application also supports Progressive Web App (PWA) installation.
+
+### Analysis Stage Design System (Stages 2–4)
+
+Each analysis stage follows a consistent visual pattern:
+- **Stage page header**: Small-caps teal eyebrow (e.g. "Stage 2 of 6 · Financial Performance") + Playfair Display italic serif headline + muted subtitle
+- **Stage navigation** (`StageNavigation.tsx`): Compact tab-bar with filled teal circles for active, outlined teal ✓ for completed, and muted circles for future stages
+- **Analysis card mac-header**: Dark teal (`--lp-teal-deep`) header bar on each analysis card showing stage label on left, ticker in DM Mono center, current module on right
+- **Insight panel**: Italic Playfair Display heading + teal left-border callout for insight text
+- **Scorecard rows**: Compact status dots (✓/!/✗ colored circles) with title + verdict label; teal-tinted verdict bar at bottom
+- **"Coming up next" preview sections**: Divider with serif headline + preview card at bottom of Stages 2, 3, and 4 (previewing the next stage)
 
 ### Backend Architecture
 

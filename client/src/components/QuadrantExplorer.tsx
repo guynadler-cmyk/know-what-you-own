@@ -629,9 +629,10 @@ function QuadrantChart({ quadrant }: { quadrant: QuadrantData }) {
 interface QuadrantExplorerProps {
   financialMetrics?: FinancialMetrics;
   balanceSheetMetrics?: BalanceSheetMetrics;
+  ticker?: string;
 }
 
-export function QuadrantExplorer({ financialMetrics, balanceSheetMetrics }: QuadrantExplorerProps) {
+export function QuadrantExplorer({ financialMetrics, balanceSheetMetrics, ticker }: QuadrantExplorerProps) {
   // Generate dynamic quadrant data based on real metrics
   const quadrantData = useMemo(
     () => generateQuadrantData(financialMetrics, balanceSheetMetrics),
@@ -651,6 +652,23 @@ export function QuadrantExplorer({ financialMetrics, balanceSheetMetrics }: Quad
       />
       
       <Card className="overflow-hidden">
+        <div
+          className="px-5 py-2.5 flex items-center justify-between gap-4"
+          style={{ background: "var(--lp-teal-deep)" }}
+        >
+          <span className="text-white/50 text-[10px] font-mono uppercase tracking-widest">
+            Stage 2 · Performance
+          </span>
+          {ticker && (
+            <span className="text-white font-mono text-sm font-semibold tracking-wide">
+              {ticker}
+            </span>
+          )}
+          <span className="text-white/50 text-[10px] font-mono uppercase tracking-widest">
+            {selectedQuadrant.title}
+          </span>
+        </div>
+
         <div className="grid lg:grid-cols-2 gap-0">
           <div className="p-6 lg:p-8 flex items-center justify-center bg-muted/30">
             <QuadrantChart quadrant={selectedQuadrant} />
@@ -658,29 +676,32 @@ export function QuadrantExplorer({ financialMetrics, balanceSheetMetrics }: Quad
           
           <div className="p-6 lg:p-8 flex flex-col justify-center space-y-5 border-t lg:border-t-0 lg:border-l border-border">
             <div>
-              <h3 className="text-2xl font-bold mb-2" data-testid="quadrant-title">
+              <h3
+                className="text-2xl font-bold mb-2 italic"
+                style={{ fontFamily: "var(--font-serif, 'Playfair Display', Georgia, serif)" }}
+                data-testid="quadrant-title"
+              >
                 {selectedQuadrant.title}
               </h3>
-              <div className="inline-flex items-center gap-2 px-4 py-2 bg-primary/10 rounded-full">
-                <span className="w-2.5 h-2.5 rounded-full bg-primary animate-pulse" />
+              <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-md bg-primary/10">
+                <span className="w-2 h-2 rounded-full bg-primary" />
                 <span className="text-sm font-semibold text-primary" data-testid="quadrant-verdict">
                   {selectedQuadrant.verdict}
                 </span>
               </div>
             </div>
             
-            <div className="flex flex-wrap gap-3">
+            <div className="flex flex-wrap gap-2.5">
               {selectedQuadrant.signals.map((signal, idx) => {
                 const isGood = selectedQuadrant.signalDirections[idx];
                 const isInverted = selectedQuadrant.invertedSignals?.[idx] ?? false;
-                // Color based on good/bad, arrow inverted for metrics like Debt
                 const showUpArrow = isInverted ? !isGood : isGood;
                 
                 return (
                   <div 
                     key={idx}
                     className={cn(
-                      "flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium",
+                      "flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-medium",
                       isGood 
                         ? "bg-green-500/10 text-green-700 dark:text-green-400" 
                         : "bg-red-500/10 text-red-700 dark:text-red-400"
@@ -688,23 +709,27 @@ export function QuadrantExplorer({ financialMetrics, balanceSheetMetrics }: Quad
                     data-testid={`signal-${idx}`}
                   >
                     {showUpArrow ? (
-                      <TrendingUp className="w-4 h-4" />
+                      <TrendingUp className="w-3.5 h-3.5" />
                     ) : (
-                      <TrendingDown className="w-4 h-4" />
+                      <TrendingDown className="w-3.5 h-3.5" />
                     )}
                     <TermWithTooltip term={signal} />
-                    {showUpArrow ? "↑" : "↓"}
                   </div>
                 );
               })}
             </div>
             
-            <p 
-              className="text-muted-foreground leading-relaxed text-base"
-              data-testid="quadrant-insight"
+            <div
+              className="border-l-2 pl-4 py-0.5"
+              style={{ borderColor: "var(--lp-teal-deep)" }}
             >
-              {selectedQuadrant.insight}
-            </p>
+              <p 
+                className="text-muted-foreground leading-relaxed text-base"
+                data-testid="quadrant-insight"
+              >
+                {selectedQuadrant.insight}
+              </p>
+            </div>
           </div>
         </div>
       </Card>

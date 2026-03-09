@@ -1,4 +1,5 @@
-import { Card, CardContent } from "@/components/ui/card";
+import { Check } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 interface StageNavigationProps {
   currentStage: number;
@@ -16,49 +17,73 @@ const STAGES = [
 
 export function StageNavigation({ currentStage, onStageChange }: StageNavigationProps) {
   return (
-    <Card className="mb-8" data-testid="stage-navigation">
-      <CardContent className="pt-6 pb-6">
-        <div className="flex items-center justify-center gap-1 sm:gap-4">
-          {STAGES.map((stage, index) => (
+    <div
+      className="mb-8 bg-card border border-border rounded-md px-4 py-3"
+      data-testid="stage-navigation"
+    >
+      <div className="flex items-center justify-center gap-0.5 sm:gap-1 overflow-x-auto">
+        {STAGES.map((stage, index) => {
+          const isCompleted = stage.number < currentStage;
+          const isActive = stage.number === currentStage;
+          const isFuture = stage.number > currentStage;
+
+          return (
             <div key={stage.number} className="flex items-center">
               <button
                 onClick={() => onStageChange(stage.number)}
-                className="flex flex-col items-center gap-1.5"
+                className={cn(
+                  "flex flex-col items-center gap-1 px-2 sm:px-3 py-1.5 rounded-md transition-all duration-200 hover-elevate active-elevate-2",
+                  "min-w-[48px] sm:min-w-[64px]"
+                )}
                 data-testid={`stage-button-${stage.number}`}
               >
                 <div
-                  className={`
-                    w-8 h-8 sm:w-12 sm:h-12 rounded-full flex items-center justify-center
-                    font-semibold text-xs sm:text-base transition-all
-                    ${
-                      currentStage === stage.number
-                        ? "bg-primary text-primary-foreground shadow-lg"
-                        : "bg-muted text-muted-foreground hover-elevate active-elevate-2"
-                    }
-                  `}
+                  className={cn(
+                    "w-7 h-7 rounded-full flex items-center justify-center text-xs font-semibold transition-all duration-200",
+                    isActive && "text-white shadow-sm",
+                    isCompleted && "border-2 border-[color:var(--lp-teal-deep)] text-[color:var(--lp-teal-deep)]",
+                    isFuture && "bg-muted text-muted-foreground"
+                  )}
+                  style={isActive ? { background: "var(--lp-teal-deep)" } : undefined}
                 >
-                  {stage.number}
+                  {isCompleted ? (
+                    <Check className="w-3.5 h-3.5" strokeWidth={2.5} />
+                  ) : (
+                    stage.number
+                  )}
                 </div>
                 <span
-                  className={`
-                    text-xs font-medium hidden sm:block transition-colors
-                    ${currentStage === stage.number ? "text-primary" : "text-muted-foreground"}
-                  `}
+                  className={cn(
+                    "text-[10px] sm:text-xs font-medium leading-tight transition-colors hidden sm:block whitespace-nowrap",
+                    isActive && "font-semibold",
+                    isFuture && "text-muted-foreground"
+                  )}
+                  style={isActive ? { color: "var(--lp-teal-deep)" } : isCompleted ? { color: "var(--lp-teal-deep)" } : undefined}
                 >
                   {stage.label}
                 </span>
+                {isActive && (
+                  <div
+                    className="h-0.5 w-full rounded-full"
+                    style={{ background: "var(--lp-teal-deep)" }}
+                  />
+                )}
               </button>
-              
+
               {index < STAGES.length - 1 && (
-                <div 
-                  className="w-3 sm:w-12 h-0.5 bg-border mx-0.5 sm:mx-2"
+                <div
+                  className={cn(
+                    "w-3 sm:w-6 h-px mx-0.5 transition-colors",
+                    stage.number < currentStage ? "opacity-50" : "bg-border"
+                  )}
+                  style={stage.number < currentStage ? { background: "var(--lp-teal-deep)" } : undefined}
                   aria-hidden="true"
                 />
               )}
             </div>
-          ))}
-        </div>
-      </CardContent>
-    </Card>
+          );
+        })}
+      </div>
+    </div>
   );
 }

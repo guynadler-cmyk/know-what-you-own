@@ -1,34 +1,14 @@
-import { Card, CardContent } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
-import { BarChart3, CheckCircle, AlertTriangle, XCircle } from "lucide-react";
 import type { ValuationSignalStrength, ValuationQuadrantData } from "./ValuationExplorer";
 
-function getStrengthStyles(strength: ValuationSignalStrength) {
+function getStrengthConfig(strength: ValuationSignalStrength) {
   switch (strength) {
     case "sensible":
-      return {
-        bg: "bg-green-500/10",
-        text: "text-green-700 dark:text-green-400",
-        icon: CheckCircle,
-        border: "border-green-500/20",
-        label: "Sensible",
-      };
+      return { dotColor: "bg-green-500", symbol: "✓", label: "Sensible", text: "text-green-700 dark:text-green-400" };
     case "caution":
-      return {
-        bg: "bg-yellow-500/10",
-        text: "text-yellow-700 dark:text-yellow-400",
-        icon: AlertTriangle,
-        border: "border-yellow-500/20",
-        label: "Caution",
-      };
+      return { dotColor: "bg-yellow-500", symbol: "!", label: "Caution", text: "text-yellow-700 dark:text-yellow-400" };
     case "risky":
-      return {
-        bg: "bg-red-500/10",
-        text: "text-red-700 dark:text-red-400",
-        icon: XCircle,
-        border: "border-red-500/20",
-        label: "Risky",
-      };
+      return { dotColor: "bg-red-500", symbol: "✗", label: "Risky", text: "text-red-700 dark:text-red-400" };
   }
 }
 
@@ -51,56 +31,6 @@ function getVerdict(sensibleCount: number) {
   }
 }
 
-function ProgressBar({ count, total }: { count: number; total: number }) {
-  return (
-    <div className="flex gap-1.5 w-full max-w-xs">
-      {Array.from({ length: total }).map((_, idx) => (
-        <div
-          key={idx}
-          className={cn(
-            "h-2 flex-1 rounded-full transition-colors",
-            idx < count
-              ? "bg-green-500"
-              : "bg-neutral-200 dark:bg-neutral-700"
-          )}
-          data-testid={`valuation-progress-segment-${idx}`}
-        />
-      ))}
-    </div>
-  );
-}
-
-interface SignalCardProps {
-  id: string;
-  title: string;
-  verdict: string;
-  strength: ValuationSignalStrength;
-}
-
-function SignalCard({ id, title, verdict, strength }: SignalCardProps) {
-  const styles = getStrengthStyles(strength);
-  const Icon = styles.icon;
-
-  return (
-    <div
-      className={cn(
-        "flex items-center justify-between p-4 rounded-xl border",
-        styles.bg,
-        styles.border
-      )}
-      data-testid={`valuation-signal-card-${id}`}
-    >
-      <div className="space-y-1">
-        <p className="text-sm font-medium text-foreground">{title}</p>
-        <div className={cn("flex items-center gap-2", styles.text)}>
-          <Icon className="w-4 h-4" />
-          <span className="text-sm font-semibold">{styles.label}</span>
-        </div>
-      </div>
-    </div>
-  );
-}
-
 interface ValuationScorecardProps {
   quadrantData: ValuationQuadrantData[];
 }
@@ -109,51 +39,57 @@ export function ValuationScorecard({ quadrantData }: ValuationScorecardProps) {
   const sensibleCount = quadrantData.filter(q => q.strength === "sensible").length;
   const verdict = getVerdict(sensibleCount);
 
+  const verdictDotColor =
+    verdict.tone === "positive" ? "bg-green-500" :
+    verdict.tone === "mixed" ? "bg-yellow-500" :
+    "bg-red-500";
+
   return (
-    <div className="mt-10 space-y-6" data-testid="valuation-scorecard">
-      <Card className="bg-neutral-50 dark:bg-neutral-900/50 border-border/60">
-        <CardContent className="p-6 space-y-8">
-          <div className="space-y-4">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
-                <BarChart3 className="w-5 h-5 text-primary" />
+    <div className="mt-10 space-y-4" data-testid="valuation-scorecard">
+      <div className="flex items-center gap-2 mb-1">
+        <h3 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
+          Valuation Scorecard
+        </h3>
+        <span className="text-xs text-muted-foreground">— {sensibleCount} of 4 signals sensible</span>
+      </div>
+
+      <div className="rounded-md border border-border overflow-hidden">
+        {quadrantData.map((quadrant, idx) => {
+          const config = getStrengthConfig(quadrant.strength);
+          return (
+            <div
+              key={quadrant.id}
+              className={cn(
+                "flex items-center gap-3 px-4 py-3 bg-card",
+                idx < quadrantData.length - 1 && "border-b border-border/60"
+              )}
+              data-testid={`valuation-signal-card-${quadrant.id}`}
+            >
+              <div className={cn(
+                "w-5 h-5 rounded-full flex-shrink-0 flex items-center justify-center text-white text-[10px] font-bold",
+                config.dotColor
+              )}>
+                {config.symbol}
               </div>
-              <div>
-                <h3 className="font-semibold text-lg" data-testid="valuation-score-title">
-                  Valuation Score: {sensibleCount} of 4 signals sensible
-                </h3>
-              </div>
+              <span className="text-sm font-medium text-foreground flex-1">{quadrant.title}</span>
+              <span className={cn("text-xs font-semibold", config.text)}>
+                {config.label}
+              </span>
             </div>
-            <ProgressBar count={sensibleCount} total={4} />
-          </div>
+          );
+        })}
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            {quadrantData.map((quadrant) => (
-              <SignalCard
-                key={quadrant.id}
-                id={quadrant.id}
-                title={quadrant.title}
-                verdict={quadrant.verdict}
-                strength={quadrant.strength}
-              />
-            ))}
-          </div>
-
-          <div
-            className={cn(
-              "p-5 rounded-xl",
-              verdict.tone === "positive" && "bg-green-500/5 border border-green-500/20",
-              verdict.tone === "mixed" && "bg-yellow-500/5 border border-yellow-500/20",
-              verdict.tone === "negative" && "bg-red-500/5 border border-red-500/20"
-            )}
-            data-testid="valuation-verdict-block"
-          >
-            <p className="text-foreground leading-relaxed font-medium">
-              {verdict.summary}
-            </p>
-          </div>
-        </CardContent>
-      </Card>
+        <div
+          className="flex items-start gap-3 px-4 py-3 border-t border-border/60"
+          style={{ background: "color-mix(in srgb, var(--lp-teal-deep) 6%, transparent)" }}
+          data-testid="valuation-verdict-block"
+        >
+          <div className={cn("w-2.5 h-2.5 rounded-full flex-shrink-0 mt-1", verdictDotColor)} />
+          <p className="text-sm text-foreground leading-relaxed">
+            {verdict.summary}
+          </p>
+        </div>
+      </div>
     </div>
   );
 }
