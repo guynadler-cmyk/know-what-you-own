@@ -10,6 +10,39 @@ import { HeroTimingDemo } from "@/components/HeroTimingDemo";
 
 const SECTION_PADDING = "py-20 sm:py-24 lg:py-28";
 
+const FEATURE_TILES = [
+  {
+    title: "Investment Thesis",
+    description:
+      "Strategic themes and competitive moats extracted directly from SEC filings — not opinions.",
+  },
+  {
+    title: "Financial Health",
+    description:
+      "Revenue, margins, debt, and cash flow scored across 4 signals. No ambiguity.",
+  },
+  {
+    title: "Changes Over Time",
+    description:
+      "Track what's new, what's been quietly dropped, and what's actually sticking — across 5 years of filings.",
+  },
+  {
+    title: "Timing Conditions",
+    description:
+      "Pair your business conviction with market signals — trend, momentum, stretch.",
+  },
+  {
+    title: "Competition Map",
+    description:
+      "See who the company is actually competing against and how it's positioned relative to peers.",
+  },
+  {
+    title: "Plain English. Always.",
+    description:
+      "No jargon. No noise. Every insight is written for an investor who wants to think, not just react.",
+  },
+];
+
 export default function LandingPage() {
   return (
     <SiteLayout>
@@ -27,7 +60,7 @@ export default function LandingPage() {
         <link rel="canonical" href="https://restnvest.com/" />
       </Helmet>
 
-      {/* Hero Section */}
+      {/* ─── HERO — structure kept as-is, copy updated ─── */}
       <section
         id="hero"
         className={`${SECTION_PADDING} px-4 sm:px-6 lg:px-8`}
@@ -39,23 +72,23 @@ export default function LandingPage() {
         }}
         data-testid="section-hero"
       >
-        {/* Headline + CTA */}
         <div className="mx-auto max-w-3xl text-center">
           <div className="space-y-4">
             <h1
               className="font-serif text-4xl sm:text-5xl lg:text-6xl font-semibold tracking-tight leading-[1.15]"
               data-testid="text-hero-headline"
             >
-              You look at your portfolio and think:{" "}
-              <em style={{ color: "var(--lp-teal-brand)" }}>what was I thinking?</em>
+              You're a smart person.{" "}
+              <em style={{ color: "var(--lp-teal-brand)" }}>
+                Your portfolio doesn't always look like it.
+              </em>
             </h1>
             <p
               className="text-xl sm:text-2xl font-light leading-relaxed max-w-2xl mx-auto"
               style={{ color: "var(--lp-ink-light)" }}
               data-testid="text-hero-subheadline"
             >
-              Stop being embarrassed by your portfolio.<br />
-              Invest like the person you're trying to become.
+              It's time to invest like the person you're trying to become.
             </p>
           </div>
           <div className="mt-8 space-y-3">
@@ -79,13 +112,13 @@ export default function LandingPage() {
           </div>
         </div>
 
-        {/* Live Investment Thesis Demo */}
+        {/* Live Investment Thesis Demo — Demo 1 */}
         <div className="mt-14 mx-auto max-w-6xl w-full px-0">
           <HeroThesisDemo />
         </div>
       </section>
 
-      {/* Demo Section 1 — Changes Over Time */}
+      {/* ─── DEMO 2 — Changes Over Time: copy left, card right ─── */}
       <section
         id="demo-temporal"
         className={`${SECTION_PADDING} px-4 sm:px-6 lg:px-8`}
@@ -93,95 +126,185 @@ export default function LandingPage() {
         data-testid="section-demo-temporal"
       >
         <div className="mx-auto max-w-6xl">
-          <div className="text-center mb-10">
-            <div
-              className="text-xs font-medium uppercase tracking-widest mb-3"
-              style={{ color: "var(--lp-teal-brand)", letterSpacing: "0.1em" }}
-            >
-              Changes Over Time
+          <div
+            className="flex flex-col lg:flex-row items-center"
+            style={{ gap: "clamp(32px, 5vw, 60px)" }}
+          >
+            {/* Copy — left */}
+            <div className="lg:w-1/2 flex-shrink-0">
+              <div
+                className="text-xs font-medium uppercase tracking-widest mb-3"
+                style={{ color: "var(--lp-teal-brand)", letterSpacing: "0.1em" }}
+              >
+                Changes Over Time
+              </div>
+              <h2
+                className="font-serif font-semibold text-2xl sm:text-3xl lg:text-4xl tracking-tight leading-tight mb-4"
+                style={{ color: "var(--lp-ink)" }}
+              >
+                See how the story changes{" "}
+                <em style={{ color: "var(--lp-teal-brand)" }}>over time</em>
+              </h2>
+              <p
+                className="text-lg font-light leading-relaxed"
+                style={{ color: "var(--lp-ink-light)" }}
+              >
+                Track what's new, what's been quietly dropped, and what's actually
+                sticking — without reading a single filing.
+              </p>
             </div>
-            <h2
-              className="font-serif font-semibold text-2xl sm:text-3xl lg:text-4xl tracking-tight leading-tight"
-              style={{ color: "var(--lp-ink)" }}
-            >
-              See how the story changes <em style={{ color: "var(--lp-teal-brand)" }}>over time</em>
-            </h2>
-            <p
-              className="mt-3 text-lg font-light leading-relaxed max-w-2xl mx-auto"
-              style={{ color: "var(--lp-ink-light)" }}
-            >
-              Track what's new, what's been quietly dropped, and what's actually sticking — without reading a single filing.
-            </p>
+
+            {/* Card — right */}
+            <div className="lg:w-1/2 w-full min-w-0">
+              <HeroTemporalDemo />
+            </div>
           </div>
-          <HeroTemporalDemo />
         </div>
       </section>
 
-      {/* Demo Section 2 — Financial Analysis */}
+      {/* ─── BREAK SECTION — feature grid ─── */}
+      <section
+        id="features"
+        className={`${SECTION_PADDING} px-4 sm:px-6 lg:px-8`}
+        style={{ background: "var(--lp-warm-white)" }}
+        data-testid="section-features"
+      >
+        <div className="mx-auto max-w-6xl">
+          <div className="text-center mb-14">
+            <h2
+              className="font-serif font-semibold text-3xl sm:text-4xl lg:text-5xl tracking-tight leading-tight mb-4"
+              style={{ color: "var(--lp-ink)" }}
+            >
+              Everything you need to own your decision.
+            </h2>
+            <p
+              className="text-lg font-light leading-relaxed max-w-2xl mx-auto"
+              style={{ color: "var(--lp-ink-light)" }}
+            >
+              Not a data dump. Not a recommendation engine. A framework for
+              thinking clearly before you commit capital.
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+            {FEATURE_TILES.map((tile) => (
+              <div
+                key={tile.title}
+                style={{
+                  background: "var(--lp-cream)",
+                  border: "1px solid var(--lp-border)",
+                  borderRadius: 10,
+                  padding: "24px 28px",
+                }}
+              >
+                <div
+                  className="text-sm font-medium mb-2"
+                  style={{ color: "var(--lp-ink)" }}
+                >
+                  {tile.title}
+                </div>
+                <p
+                  className="text-sm font-light leading-relaxed"
+                  style={{ color: "var(--lp-ink-light)" }}
+                >
+                  {tile.description}
+                </p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ─── DEMO 3 — Financial Health: card left, copy right ─── */}
       <section
         id="demo-financial"
         className={`${SECTION_PADDING} px-4 sm:px-6 lg:px-8`}
-        style={{ background: "var(--lp-warm-white)" }}
+        style={{ background: "var(--lp-cream)" }}
         data-testid="section-demo-financial"
       >
         <div className="mx-auto max-w-6xl">
-          <div className="text-center mb-10">
-            <div
-              className="text-xs font-medium uppercase tracking-widest mb-3"
-              style={{ color: "var(--lp-teal-brand)", letterSpacing: "0.1em" }}
-            >
-              Financial Analysis
+          <div
+            className="flex flex-col lg:flex-row items-center"
+            style={{ gap: "clamp(32px, 5vw, 60px)" }}
+          >
+            {/* Card — left */}
+            <div className="lg:w-1/2 w-full min-w-0 order-2 lg:order-1">
+              <HeroFinancialDemo />
             </div>
-            <h2
-              className="font-serif font-semibold text-2xl sm:text-3xl lg:text-4xl tracking-tight leading-tight"
-              style={{ color: "var(--lp-ink)" }}
-            >
-              Is this business <em style={{ color: "var(--lp-teal-brand)" }}>financially strong?</em>
-            </h2>
-            <p
-              className="mt-3 text-lg font-light leading-relaxed max-w-2xl mx-auto"
-              style={{ color: "var(--lp-ink-light)" }}
-            >
-              Revenue growth means nothing if the cash isn't real. Restnvest checks the numbers that actually matter — margins, debt, cash flow, reinvestment — and gives you a straight answer.
-            </p>
+
+            {/* Copy — right */}
+            <div className="lg:w-1/2 flex-shrink-0 order-1 lg:order-2">
+              <div
+                className="text-xs font-medium uppercase tracking-widest mb-3"
+                style={{ color: "var(--lp-teal-brand)", letterSpacing: "0.1em" }}
+              >
+                Financial Health
+              </div>
+              <h2
+                className="font-serif font-semibold text-2xl sm:text-3xl lg:text-4xl tracking-tight leading-tight mb-4"
+                style={{ color: "var(--lp-ink)" }}
+              >
+                Is this business{" "}
+                <em style={{ color: "var(--lp-teal-brand)" }}>financially strong?</em>
+              </h2>
+              <p
+                className="text-lg font-light leading-relaxed"
+                style={{ color: "var(--lp-ink-light)" }}
+              >
+                Revenue growth means nothing if the cash isn't real. Restnvest checks
+                the numbers that actually matter — margins, debt, cash flow,
+                reinvestment — and gives you a straight answer.
+              </p>
+            </div>
           </div>
-          <HeroFinancialDemo />
         </div>
       </section>
 
-      {/* Demo Section 3 — Technical Analysis */}
+      {/* ─── DEMO 4 — Timing Conditions: copy left, card right ─── */}
       <section
         id="demo-timing"
         className={`${SECTION_PADDING} px-4 sm:px-6 lg:px-8`}
-        style={{ background: "var(--lp-cream)" }}
+        style={{ background: "var(--lp-warm-white)" }}
         data-testid="section-demo-timing"
       >
         <div className="mx-auto max-w-6xl">
-          <div className="text-center mb-10">
-            <div
-              className="text-xs font-medium uppercase tracking-widest mb-3"
-              style={{ color: "var(--lp-teal-brand)", letterSpacing: "0.1em" }}
-            >
-              Timing Conditions
+          <div
+            className="flex flex-col lg:flex-row items-center"
+            style={{ gap: "clamp(32px, 5vw, 60px)" }}
+          >
+            {/* Copy — left */}
+            <div className="lg:w-1/2 flex-shrink-0">
+              <div
+                className="text-xs font-medium uppercase tracking-widest mb-3"
+                style={{ color: "var(--lp-teal-brand)", letterSpacing: "0.1em" }}
+              >
+                Timing Conditions
+              </div>
+              <h2
+                className="font-serif font-semibold text-2xl sm:text-3xl lg:text-4xl tracking-tight leading-tight mb-4"
+                style={{ color: "var(--lp-ink)" }}
+              >
+                You've done the homework.{" "}
+                <em style={{ color: "var(--lp-teal-brand)" }}>Now what?</em>
+              </h2>
+              <p
+                className="text-lg font-light leading-relaxed"
+                style={{ color: "var(--lp-ink-light)" }}
+              >
+                Restnvest pairs everything you've learned about the business with
+                market signals — so you can think clearly about timing and when to act.
+              </p>
             </div>
-            <h2
-              className="font-serif font-semibold text-2xl sm:text-3xl lg:text-4xl tracking-tight leading-tight"
-              style={{ color: "var(--lp-ink)" }}
-            >
-              You've done the homework. <em style={{ color: "var(--lp-teal-brand)" }}>Now what?</em>
-            </h2>
-            <p
-              className="mt-3 text-lg font-light leading-relaxed max-w-2xl mx-auto"
-              style={{ color: "var(--lp-ink-light)" }}
-            >
-              Restnvest pairs everything you've learned about the business with market signals — so you can think clearly about timing and when to act.
-            </p>
+
+            {/* Card — right */}
+            <div className="lg:w-1/2 w-full min-w-0">
+              <HeroTimingDemo />
+            </div>
           </div>
-          <HeroTimingDemo />
         </div>
       </section>
 
-      {/* Final CTA Section */}
+      {/* ─── FINAL CTA ─── */}
       <section
         id="cta"
         className={`${SECTION_PADDING} px-4 sm:px-6 lg:px-8`}
@@ -222,7 +345,8 @@ export default function LandingPage() {
               style={{ color: "rgba(255,255,255,0.6)" }}
               data-testid="text-final-cta-body"
             >
-              Research any public company in seconds — business, finances, competition, and signals, all in one place.
+              Research any public company in seconds — business, finances,
+              competition, and signals, all in one place.
             </p>
           </div>
           <div className="mt-8 space-y-3">

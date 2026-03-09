@@ -1,0 +1,79 @@
+I want to restructure the landing page layout. No new 
+functionality. No new components. Just rearranging 
+existing elements and updating copy.
+
+HERO — keep exactly as is.
+
+─────────────────────────────────────
+SECTION LAYOUT: SIDE BY SIDE DEMOS
+─────────────────────────────────────
+Convert each demo section from stacked (copy above, 
+card below) to side-by-side (copy one side, card 
+other side). Alternate which side the card sits on.
+
+Demo 1 — Investment Thesis:
+  Left: card/demo widget
+  Right: copy
+
+Demo 2 — Changes Over Time:
+  Left: copy
+  Right: card/demo widget
+
+Demo 3 — Financial Health:
+  Left: card/demo widget
+  Right: copy
+
+Demo 4 — Timing Conditions:
+  Left: copy
+  Right: card/demo widget
+
+Each side-by-side row: equal columns (50/50), 
+vertically centered, gap between columns ~60px.
+
+─────────────────────────────────────
+ADD: BREAK SECTION between Demo 2 and Demo 3
+─────────────────────────────────────
+Headline: "Everything you need to own your decision."
+Subheadline: "Not a data dump. Not a recommendation 
+engine. A framework for thinking clearly before you 
+commit capital."
+
+6-tile feature grid (2 rows of 3):
+1. Investment Thesis — "Strategic themes and 
+   competitive moats extracted directly from 
+   SEC filings — not opinions."
+2. Financial Health — "Revenue, margins, debt, 
+   and cash flow scored across 4 signals. 
+   No ambiguity."
+3. Changes Over Time — "Track what's new, what's 
+   been quietly dropped, and what's actually 
+   sticking — across 5 years of filings."
+4. Timing Conditions — "Pair your business 
+   conviction with market signals — trend, 
+   momentum, stretch."
+5. Competition Map — "See who the company is 
+   actually competing against and how it's 
+   positioned relative to peers."
+6. Plain English. Always. — "No jargon. No noise. 
+   Every insight is written for an investor who 
+   wants to think, not just react."
+
+─────────────────────────────────────
+HERO COPY UPDATE
+─────────────────────────────────────
+Replace current hero headline with:
+"You're a smart person. Your portfolio doesn't 
+always look like it."
+
+Replace current hero subtext with:
+"It's time to invest like the person you're 
+trying to become."
+
+─────────────────────────────────────
+REMOVE mac window dots (red/yellow/green circles)
+from all demo card headers if present.
+─────────────────────────────────────
+
+Do not change any functionality, data, or 
+interactive behavior. Layout and copy only.
+Screenshot the full page when done.
