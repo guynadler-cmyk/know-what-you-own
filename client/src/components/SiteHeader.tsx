@@ -21,6 +21,7 @@ import { queryClient, getQueryFn } from "@/lib/queryClient";
 import ChatGPT_Image_Jan_22__2026__01_43_07_PM_cropped from "@assets/ChatGPT Image Jan 22, 2026, 01_43_07 PM_cropped.png";
 
 const navLinks = [
+  { label: "Discover", href: "/discover" },
   { label: "Product", href: "/product" },
   { label: "How It Works", href: "/how-it-works" },
   { label: "Pricing", href: "/pricing" },

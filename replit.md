@@ -61,6 +61,10 @@ A three-state paywall (`locked` | `skipped` | `unlocked`) gates analysis stages 
 
 Google Sign-In is implemented via Firebase Authentication (Google provider with popup flow). The frontend uses `firebase/auth` for sign-in/sign-out and passes Firebase ID tokens via `Authorization: Bearer <token>` headers. The backend uses `firebase-admin` to verify tokens and upsert users. The client uses a `useAuth()` hook (based on `onAuthStateChanged`) to provide user authentication status. Auth module: `server/firebaseAuth.ts`, client config: `client/src/lib/firebase.ts`.
 
+### Discover Page
+
+The Discover page (`/discover`) displays a filterable grid of all cached stock analyses. The `GET /api/discover` endpoint queries the external DB's `ai_business_analysis` table, deduplicates by ticker (latest entry), and derives a letter grade (A–F) from high-emphasis moat/theme/value/opportunity counts. The frontend (`client/src/pages/DiscoverPage.tsx`) renders a responsive tile grid with client-side search, grade filtering, and sorting. Each tile links to `/stocks/:ticker`. A "Discover" nav link is in the site header.
+
 ### Watchlist
 
 The watchlist (`/watchlist`) lets authenticated users save stock analyses with snapshot history tracking. Each watchlist entry stores the current analysis snapshot plus a `snapshotHistory` array of past snapshots with timestamps, enabling progression tracking over time. Features include: save/update snapshot from analysis page (`SaveToWatchlist` component), search by ticker/company/notes, sort (recently updated, oldest, A-Z, Z-A), inline notes editing, expandable snapshot history timeline with visual dot indicators, and remove with confirmation. Backend routes: `GET /api/watchlist`, `GET /api/watchlist/check/:ticker`, `POST /api/watchlist`, `PATCH /api/watchlist/:id/notes`, `PATCH /api/watchlist/:id/snapshot`, `DELETE /api/watchlist/:id`.

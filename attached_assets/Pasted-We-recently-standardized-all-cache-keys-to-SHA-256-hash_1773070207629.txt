@@ -1,0 +1,97 @@
+We recently standardized all cache keys to SHA-256 hashes using the function:
+
+makeCacheKey(type, ticker, fiscalYear)
+
+Example payload:
+sha256("business:PLTR:2025")
+
+Expected cache key format:
+64-character lowercase hex string
+Example:
+e2fd8213a0f9aea19993ad66894bc78d8b4f1b809df7330a2b3889b6945e1750
+
+Please verify the following across the entire codebase.
+
+Tasks
+
+1. Confirm that server/utils/cacheKey.ts contains the following implementation and no other key generators exist:
+
+import crypto from "node:crypto";
+
+export type CacheKeyType = "business" | "footnotes" | "temporal";
+
+export function makeCacheKey(
+  type: CacheKeyType,
+  ticker: string,
+  fiscalYear: string | number
+): string {
+  const payload = `${type}:${ticker.toUpperCase().trim()}:${fiscalYear}`;
+  return crypto.createHash("sha256").update(payload).digest("hex");
+}
+
+2. Search the entire project and confirm that the following functions are no longer used anywhere:
+
+businessCacheKey
+footnotesCacheKey
+temporalCacheKey
+
+3. Confirm that all cache keys are now generated using:
+
+makeCacheKey("business", ticker, fiscalYear)
+makeCacheKey("footnotes", ticker, fiscalYear)
+makeCacheKey("temporal", ticker, fiscalYear)
+
+4. Verify the following files correctly call makeCacheKey:
+
+server/services/openai.ts
+server/routes.ts
+
+5. Ensure the repository insert functions contain validation guards:
+
+if (!params.cacheKey) {
+  throw new Error("cacheKey is required");
+}
+
+Check these files:
+
+server/repositories/businessAnalysis.repo.ts
+server/repositories/footnotesAnalysis.repo.ts
+server/repositories/temporalAnalysis.repo.ts
+
+6. Confirm there is no logic anywhere in the codebase generating cache keys with:
+
+route:
+TICKER:YEAR
+footnotes:TICKER:YEAR
+temporal:TICKER:YEAR
+
+7. Verify database records only contain SHA-256 keys by running:
+
+SELECT cache_key FROM ai_business_analysis LIMIT 10;
+SELECT cache_key FROM ai_footnotes_analysis LIMIT 10;
+SELECT cache_key FROM ai_temporal_analysis LIMIT 10;
+
+All returned values should match:
+
+^[0-9a-f]{64}$
+
+8. Confirm the caching workflow:
+
+First request for a ticker
+→ cache miss
+→ OpenAI analysis
+→ record inserted
+
+Second request for the same ticker
+→ cache hit
+→ no OpenAI call
+
+9. Confirm logs show no errors, no duplicate inserts, and no constraint violations.
+
+Expected final state:
+
+- All cache_key values are SHA-256 hashes
+- No route-prefixed keys exist
+- No TICKER:YEAR keys exist
+- All services use the same shared key generator
+- Cache hits work correctly

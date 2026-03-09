@@ -1076,6 +1076,101 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // --------------------------------------------------------------------------
+  // DISCOVER — list all cached companies with derived grades
+  // --------------------------------------------------------------------------
+  app.get("/api/discover", async (req, res) => {
+    try {
+      const { db: extDb } = await import("./db");
+      const { aiBusinessAnalysis } = await import("../shared/schema");
+      const { desc } = await import("drizzle-orm");
+
+      const rows = await extDb
+        .select({
+          ticker: aiBusinessAnalysis.ticker,
+          companyName: aiBusinessAnalysis.companyName,
+          fiscalYear: aiBusinessAnalysis.fiscalYear,
+          result: aiBusinessAnalysis.result,
+        })
+        .from(aiBusinessAnalysis)
+        .orderBy(desc(aiBusinessAnalysis.createdAt));
+
+      const seen = new Set<string>();
+      const companies: Array<{
+        ticker: string;
+        name: string;
+        tagline: string;
+        grade: string;
+        gradeScore: number;
+        moatCount: number;
+        themeCount: number;
+        valueCount: number;
+        topMoat: string;
+        topTheme: string;
+        topValue: string;
+        analysisDepth: string;
+        fiscalYear: string;
+      }> = [];
+
+      for (const row of rows) {
+        const t = row.ticker.toUpperCase();
+        if (seen.has(t)) continue;
+        seen.add(t);
+
+        const r = row.result as any;
+        if (!r || r.businessAnalysisUnavailable) continue;
+
+        const countHigh = (arr: any[]) =>
+          (arr || []).filter((x: any) => x.emphasis === "high").length;
+        const countAll = (arr: any[]) => (arr || []).length;
+
+        const highMoats = countHigh(r.moats);
+        const highThemes = countHigh(r.investmentThemes);
+        const highValue = countHigh(r.valueCreation);
+        const highOpp = countHigh(r.marketOpportunity);
+
+        let score = highMoats * 2 + highThemes + highValue + highOpp;
+        if (r.analysisDepth === "full") score += 1;
+        if (r.analysisDepth === "limited") score -= 1;
+
+        let grade: string;
+        if (score >= 8) grade = "A";
+        else if (score >= 6) grade = "B";
+        else if (score >= 4) grade = "C";
+        else if (score >= 2) grade = "D";
+        else grade = "F";
+
+        const topOf = (arr: any[]) => {
+          const h = (arr || []).find((x: any) => x.emphasis === "high");
+          return h?.name || (arr || [])[0]?.name || "";
+        };
+
+        companies.push({
+          ticker: t,
+          name: stripLegalSuffix(r.companyName || row.companyName),
+          tagline: r.tagline || "",
+          grade,
+          gradeScore: score,
+          moatCount: countAll(r.moats),
+          themeCount: countAll(r.investmentThemes),
+          valueCount: countAll(r.valueCreation),
+          topMoat: topOf(r.moats),
+          topTheme: topOf(r.investmentThemes),
+          topValue: topOf(r.valueCreation),
+          analysisDepth: r.analysisDepth || "full",
+          fiscalYear: row.fiscalYear,
+        });
+      }
+
+      companies.sort((a, b) => b.gradeScore - a.gradeScore);
+
+      res.json({ companies });
+    } catch (err: any) {
+      console.error("[DISCOVER]", err.message);
+      res.status(500).json({ error: "Failed to load discover data" });
+    }
+  });
+
+  // --------------------------------------------------------------------------
   // COMPANY SEARCH
   // --------------------------------------------------------------------------
   app.get("/api/search", async (req: any, res) => {

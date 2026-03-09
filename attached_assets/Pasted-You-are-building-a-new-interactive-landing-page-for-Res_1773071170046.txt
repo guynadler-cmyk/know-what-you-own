@@ -1,0 +1,75 @@
+You are building a new interactive landing page for Restnvest (stock research platform). 
+Goal: make the homepage feel “alive” and clickable by showing a grid of stock tiles graded by the Restnvest engine. Users can click a tile to open a dedicated 10-K analysis page for that ticker.
+
+TECH REQUIREMENTS
+- Create a NEW web app in this Replit project with its own URL.
+- Use Next.js (App Router) + TypeScript + Tailwind CSS.
+- Keep it clean, premium, calm (no hype), matching Restnvest branding (teal/emerald accents, lots of whitespace, modern typography).
+- No external paid APIs required. Use mock data in code for now.
+- The code must run immediately on Replit with `npm install` then `npm run dev`.
+
+INFORMATION ARCHITECTURE / PAGES
+1) Landing page: `/`
+   - Top nav similar to Restnvest (logo left, links: Product, How it Works, Pricing, For Advisors, For Institutions, About; CTA button: “Research a Stock”)
+   - Hero section:
+     - Headline: “Invest with clarity and conviction”
+     - Subtext: “Restnvest turns complex business performance and market signals into a clear, structured view — so you can understand what you own, why you own it, and when to act.”
+     - Primary CTA: “Research a stock”
+     - Secondary CTA: “See sample 10-K analysis”
+   - NEW section: “Today’s Research Picks” (interactive)
+     - Show a responsive grid of stock tiles (8–12 tiles) with mock grades.
+     - Each tile includes:
+       - Company name
+       - Ticker
+       - Engine grade (A, B, C, D, F) with a calm badge style (not neon)
+       - A small “Health / Valuation / Moat” mini-summary (3 short labels or 3 small bars)
+       - Optional: small sparkline placeholder (simple SVG line, no chart library required)
+     - Tiles are clickable and route to `/10k/[ticker]`
+     - Add a small filter bar above tiles:
+       - Search input (filter by ticker or company name)
+       - Grade filter dropdown (All, A, B, C, D, F)
+       - Sort dropdown (Highest grade, Lowest grade, Alphabetical)
+   - Add a “How it works” mini-section below tiles:
+     - 3–4 cards describing:
+       - Understand the Business
+       - Understand Performance
+       - Evaluate the Stock
+       - Protect What You Own
+   - Footer with calm microcopy: “Informed investing, built to last.”
+
+2) 10-K analysis page: `/10k/[ticker]`
+   - Dedicated page that looks like a “report overview”
+   - Display:
+     - Header: Company name, ticker, grade badge
+     - Tabs or sections:
+       - Business Overview
+       - Key Risks (Fine Print Analysis)
+       - Changes Over Time
+       - Financial Health (mock score breakdown)
+     - Use mock content (static text) but structure it like the real product.
+   - Include a “Back to picks” link.
+
+DATA REQUIREMENTS (MOCK)
+- Create a local data file (e.g. `lib/mockStocks.ts`) exporting an array of stock objects:
+  - ticker, name, grade, healthScore, valuationSignal, moatSignal, summary bullets, risks bullets, changes bullets
+- Use this data for both the tile grid and the 10-K pages.
+
+DESIGN REQUIREMENTS
+- Calm, premium aesthetic:
+  - Soft gradient background accents, subtle borders, rounded 2xl cards, gentle shadows
+  - Use Tailwind; no heavy animations
+  - Use accessible color contrast
+- Make tiles feel clickable:
+  - Hover state (slight lift + border change)
+  - Entire tile is a link
+- Mobile-first responsive design.
+
+DELIVERABLES
+- Provide all code changes with clear file structure.
+- Ensure routes work:
+  - `/` shows interactive graded tiles
+  - Clicking a tile navigates to `/10k/AAPL` (etc.)
+- Include a small README section in comments: how to run, where to change mock stock list.
+
+IMPORTANT: Do not build a full backend. No authentication. No database. Mock only.
+But architect it so later we can swap mock data for real API data easily (e.g. by keeping a clean data interface).
