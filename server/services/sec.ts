@@ -311,6 +311,11 @@ async function retryWithBackoff<T>(
 
 
 
+const TICKER_ALIASES: Record<string, string> = {
+  'FI': 'FISV',   // Fiserv: NYSE ticker "FI" but SEC-registered as "FISV"
+  'MMC': 'MRSH',  // Marsh & McLennan: NYSE ticker "MMC" but SEC-registered as "MRSH"
+};
+
 export class SECService {
   private tickerCache: Map<string, CompanyTickerMapping> = new Map();
   private submissionsCache = new MemoryCache(24 * 60 * 60 * 1000); // 24h
@@ -318,12 +323,13 @@ export class SECService {
 
   async getCompanyInfo(ticker: string): Promise<{ cik: string; name: string }> {
     const upperTicker = ticker.toUpperCase();
+    const secTicker = TICKER_ALIASES[upperTicker] ?? upperTicker;
 
     if (!this.tickerCache.size) {
       await this.loadTickerMappings();
     }
 
-    const company = this.tickerCache.get(upperTicker);
+    const company = this.tickerCache.get(secTicker);
     if (!company) {
       throw new Error(`Ticker ${ticker} not found`);
     }
@@ -454,53 +460,91 @@ export class SECService {
       raw
         .replace(/<[^>]*>/g, ' ')
         .replace(/&nbsp;/g, ' ')
-        .replace(/&[a-z]+;/g, ' ')
+        .replace(/&[a-z]+;/gi, ' ')
         .replace(/&#\d+;/g, ' ')
         .replace(/\s+/g, ' ')
         .trim();
 
-    // Tier 1: Standard ITEM 1 / ITEM 1A patterns
+    // Pre-clean the full document so iXBRL inline tags (which split "ITEM 1." and "Business"
+    // across separate <span> elements) are collapsed before regex matching.
+    // Truncate to 2MB of raw HTML to handle large filings like AXP (5MB).
+    const rawTruncated = typeof text === 'string' ? text.slice(0, 2_000_000) : text;
+    const cleanedDoc = cleanHtml(rawTruncated);
+
+    // Helper: find the best (longest) non-TOC match across all occurrences of a pattern
+    const findBestMatch = (pattern: string, doc: string, minLength = 500): string | null => {
+      const re = new RegExp(pattern, 'gis');
+      let best: string | null = null;
+      let m: RegExpExecArray | null;
+      while ((m = re.exec(doc)) !== null) {
+        const candidate = (m[1] || m[2] || '').trim();
+        if (candidate.length > minLength && (!best || candidate.length > best.length)) {
+          best = candidate;
+        }
+      }
+      return best;
+    };
+
+    // Tier 1: Standard ITEM 1 / ITEM 1A patterns — run on clean plain text
+    // We try all occurrences and pick the longest non-TOC match (>500 chars)
     const tier1Patterns = [
+      'Item\\s+1[\\.\\:\\-]?\\s*Business\\s+(.*?)(?:Item\\s+1A|ITEM\\s+1A)',
+      'ITEM\\s+1[\\.\\:\\-]?\\s*Business\\s+(.*?)(?:Item\\s+1A|ITEM\\s+1A)',
       'ITEM\\s+1[\\.\\:\\-]?\\s*Business(.*?)ITEM\\s+1A',
-      'ITEM\\s+1[\\.\\:\\-]?\\s*[\\r\\n]*(.*?)ITEM\\s+1A',
-      'ITEM\\s+1[\\.\\:\\-]?\\s*(?:Business)?[\\r\\n]*(.*?)(?:ITEM\\s+(?:1A|1B|2))',
+      'ITEM\\s+1[\\.\\:\\-]?\\s*(.*?)(?:ITEM\\s+(?:1A|1B|2))',
     ];
 
     for (const pattern of tier1Patterns) {
-      const match = text.match(new RegExp(pattern, 'is'));
-      if (match?.[1]) {
-        return { text: cleanHtml(match[1]).slice(0, 15000), depth: 'full' };
+      const best = findBestMatch(pattern, cleanedDoc);
+      if (best) {
+        console.log(`[SEC] Tier 1 extraction succeeded for CIK ${cik} (${best.length} chars)`);
+        return { text: best.slice(0, 12000), depth: 'full' };
       }
     }
 
-    // Tier 2: Financial note fallbacks for SPACs / early-stage / non-standard filers
-    console.warn(`[SEC] Standard ITEM 1 extraction failed for CIK ${cik}, trying financial note fallbacks`);
-    const tier2Patterns = [
+    // Tier 2a: Named-section patterns for filings that use descriptive headings
+    // (e.g., McDonald's uses "BUSINESS SUMMARY" / "DESCRIPTION OF THE BUSINESS")
+    console.warn(`[SEC] Standard ITEM 1 extraction failed for CIK ${cik}, trying named-section fallbacks`);
+    const tier2aPatterns = [
+      // McDonald's-style: "DESCRIPTION OF THE BUSINESS ... RISK FACTORS"
+      'DESCRIPTION\\s+OF\\s+THE\\s+BUSINESS\\s+(.*?)(?:RISK\\s+FACTORS|ITEM\\s+1A)',
+      // Generic "BUSINESS SUMMARY / OVERVIEW" heading followed by content
+      'BUSINESS\\s+(?:SUMMARY|OVERVIEW|DESCRIPTION)[\\s\\S]{0,50}((?:(?!RISK\\s+FACTORS|ITEM\\s+1A)[\\s\\S]){500,30000})',
+      // ABOUT [COMPANY] header sometimes used instead of Item 1
+      'ABOUT\\s+[A-Z][A-Z\\s\']{2,30}(?:CORPORATION|COMPANY|INC|LLC|CORP)?\\s+(.*?)(?:RISK\\s+FACTORS|ITEM\\s+1A|FORWARD.LOOKING)',
+    ];
+
+    for (const pattern of tier2aPatterns) {
+      const best = findBestMatch(pattern, cleanedDoc, 300);
+      if (best) {
+        console.warn(`[SEC] Named-section extraction succeeded for CIK ${cik} (${best.length} chars)`);
+        return { text: best.slice(0, 12000), depth: 'full' };
+      }
+    }
+
+    // Tier 2b: Financial note fallbacks for SPACs / early-stage / non-standard filers
+    const tier2bPatterns = [
       'Note\\s*1\\s+Organization and Description of Business(.*?)(?:Note\\s*2|Going Concern|Basis of Presentation|Significant Accounting)',
       'Organization and Description of Business(.*?)(?:Note\\s*\\d|Going Concern|Basis of Presentation|Significant Accounting)',
       'PART\\s+I[\\s\\.:]+(?:ITEM\\s+1[\\s\\.:]*)?(.*?)PART\\s+II',
     ];
 
-    for (const pattern of tier2Patterns) {
-      const match = text.match(new RegExp(pattern, 'is'));
-      if (match?.[1]) {
-        const cleaned = cleanHtml(match[1]).slice(0, 15000);
-        if (cleaned.length > 200) {
-          console.warn(`[SEC] Extracted limited content from financial notes for CIK ${cik} (${cleaned.length} chars)`);
-          return { text: cleaned, depth: 'limited' };
-        }
+    for (const pattern of tier2bPatterns) {
+      const best = findBestMatch(pattern, cleanedDoc, 200);
+      if (best) {
+        console.warn(`[SEC] Extracted limited content from financial notes for CIK ${cik} (${best.length} chars)`);
+        return { text: best.slice(0, 12000), depth: 'limited' };
       }
     }
 
     // Tier 3: Full-document fallback for small filings (≤40KB stripped)
-    const strippedFull = cleanHtml(text);
-    if (strippedFull.length <= 40000) {
-      // Skip leading XBRL metadata — find first human-readable sentence (capital letter after whitespace)
-      const humanStart = strippedFull.search(/[A-Z][a-z]{3,}/);
-      const usable = humanStart > 0 ? strippedFull.slice(humanStart) : strippedFull;
-      const excerpt = usable.slice(0, 15000);
+    if (cleanedDoc.length <= 40000) {
+      // Skip leading XBRL metadata — find first human-readable sentence
+      const humanStart = cleanedDoc.search(/[A-Z][a-z]{3,}/);
+      const usable = humanStart > 0 ? cleanedDoc.slice(humanStart) : cleanedDoc;
+      const excerpt = usable.slice(0, 12000);
       if (excerpt.length > 200) {
-        console.warn(`[SEC] Using full-document fallback for CIK ${cik} (stripped text: ${strippedFull.length} chars)`);
+        console.warn(`[SEC] Using full-document fallback for CIK ${cik} (stripped text: ${cleanedDoc.length} chars)`);
         return { text: excerpt, depth: 'full_doc' };
       }
     }

@@ -1,0 +1,131 @@
+We identified the root causes of several ticker analysis failures in the SEC extraction and analysis pipeline. Please implement the following fixes.
+
+Root Causes
+
+1. MCD (2.1MB) and AXP (5MB)
+
+These filings use iXBRL format where section headers are split across multiple span tags:
+
+<span>ITEM 1</span><span>.</span><span> </span><span>Business</span>
+
+Our Tier 1 regex runs on raw HTML, so it never finds "ITEM 1. Business" as a contiguous string.
+
+Fix
+
+Strip HTML before running the section extraction regex.
+
+Implementation:
+
+* After downloading the filing HTML, convert it to plain text before running extraction.
+* Remove all HTML tags.
+* Collapse whitespace so section headers become normal text.
+* Then run the existing section regex patterns on the cleaned text.
+
+Example approach:
+
+const cleanText = html
+.replace(/<[^>]*>/g, " ")
+.replace(/\s+/g, " ")
+.trim();
+
+Then run the section detection regex on cleanText instead of raw HTML.
+
+Goal:
+Ensure "ITEM 1. Business" can be detected even when broken across HTML spans.
+
+---
+
+2. BAC failure — OpenAI JSON truncation
+
+The OpenAI response is being truncated mid-JSON because the response exceeds what is returned when max_tokens is not explicitly controlled.
+
+Fix:
+
+Add a max_tokens limit and implement JSON recovery.
+
+Implementation:
+
+In server/services/openai.ts:
+
+* Add max_tokens to the request
+* Catch JSON parsing errors
+* Attempt recovery if response truncates
+
+Example:
+
+const response = await openai.responses.create({
+model: "gpt-4.1",
+input: prompt,
+max_tokens: 2000
+});
+
+Add try/catch around JSON.parse:
+
+try {
+const result = JSON.parse(responseText);
+} catch (err) {
+console.error("JSON parse failed, attempting recovery");
+}
+
+Goal:
+Prevent truncated responses from breaking the analysis pipeline.
+
+---
+
+3. SEC ticker alias mapping
+
+Some companies are registered in the SEC database under different tickers.
+
+Examples:
+
+MMC → MRSH (CIK 62709)
+FI → FISV (CIK 798354)
+
+Fix:
+
+Add a ticker alias map so user tickers resolve to the correct SEC ticker.
+
+Implementation:
+
+Create a mapping in the SEC service layer.
+
+Example:
+
+const tickerAlias: Record<string, string> = {
+MMC: "MRSH",
+FI: "FISV"
+};
+
+When fetching filings:
+
+const resolvedTicker = tickerAlias[ticker] ?? ticker;
+
+Use resolvedTicker when querying SEC.
+
+Goal:
+Ensure these companies can be successfully located in SEC filings.
+
+---
+
+Verification
+
+After implementing fixes:
+
+1. Re-run the analysis pipeline for:
+
+MCD
+AXP
+BAC
+MMC
+FI
+
+2. Confirm:
+
+* Business section extraction succeeds
+* OpenAI response parses correctly
+* Results are stored in cache tables
+* No extraction or JSON errors appear in logs
+
+Expected outcome
+
+All five tickers successfully complete the pipeline and cache their analysis results.

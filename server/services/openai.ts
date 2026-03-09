@@ -228,10 +228,18 @@ IMPORTANT — LIMITED FILING NOTICE: This text was extracted from financial note
         ],
         response_format: { type: "json_object" },
         temperature: 0.3,
+        max_tokens: 4096,
       });
     });
 
-    const result = JSON.parse(completion.choices[0].message.content || "{}");
+    let result: any;
+    try {
+      result = JSON.parse(completion.choices[0].message.content || "{}");
+    } catch (parseErr) {
+      console.error(`[OpenAI] JSON parse error in analyzeBusiness for ${ticker}:`, parseErr);
+      console.error(`[OpenAI] Raw content length: ${completion.choices[0].message.content?.length}`);
+      throw new Error(`OpenAI returned malformed JSON for ${ticker} — response may have been truncated`);
+    }
 
     const products = result.products?.map((p: any) => ({
       ...p,
