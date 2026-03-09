@@ -29,9 +29,9 @@ function TickerButton({
     <button
       onClick={onClick}
       data-testid={`hero-ticker-btn-${ticker}`}
-      className={`px-5 py-2 rounded-full text-sm font-semibold transition-colors border ${
+      className={`px-6 py-2 rounded-full text-base font-semibold transition-colors border ${
         selected
-          ? "bg-primary text-primary-foreground border-primary"
+          ? "bg-primary text-primary-foreground border-primary shadow-md scale-105"
           : "bg-background text-foreground border-border hover:border-primary/50"
       }`}
     >
@@ -89,12 +89,12 @@ export function HeroThesisDemo() {
   return (
     <div className="w-full max-w-6xl mx-auto" data-testid="hero-thesis-demo">
       {/* Label */}
-      <p className="text-center text-xs font-semibold uppercase tracking-widest text-muted-foreground mb-4">
-        Live from our analysis engine
+      <p className="text-sm text-muted-foreground mb-3">
+        See a real analysis — pick a company:
       </p>
 
       {/* Ticker Toggle */}
-      <div className="flex items-center justify-center gap-2 mb-6" data-testid="hero-ticker-toggle">
+      <div className="flex items-center gap-3 mb-6" data-testid="hero-ticker-toggle">
         {DEMO_TICKERS.map((ticker) => (
           <TickerButton
             key={ticker}
@@ -119,10 +119,10 @@ export function HeroThesisDemo() {
       )}
 
       {/* Deep link */}
-      <div className="flex justify-center mt-5">
+      <div className="flex justify-center mt-6">
         <Link href={`/stocks/${selected}`}>
           <span
-            className="inline-flex items-center gap-1.5 text-sm text-primary font-medium hover:underline"
+            className="inline-flex items-center gap-1.5 text-base text-primary font-medium hover:underline"
             data-testid={`hero-link-full-analysis-${selected}`}
           >
             See {selected}'s full analysis
