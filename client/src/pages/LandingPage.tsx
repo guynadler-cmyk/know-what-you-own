@@ -124,22 +124,6 @@ export default function LandingPage() {
           </div>
         </section>
 
-        {/* Narrative Bridge */}
-        <section 
-          id="bridge" 
-          className={`${BRIDGE_PADDING} px-4 sm:px-6 lg:px-8 bg-muted/30`}
-          data-testid="section-bridge"
-        >
-          <div className="mx-auto max-w-3xl text-center">
-            <p 
-              className="text-lg sm:text-xl text-muted-foreground leading-relaxed"
-              data-testid="text-bridge"
-            >
-              Restnvest guides you through an investment the same way a professional would — from understanding the business, to tracking how it evolves, to evaluating strength, and finally acting with confidence.
-            </p>
-          </div>
-        </section>
-
         {/* Feature Sections with Mid-Page CTA after Section 3 */}
         {sections.map((section, index) => (
           <div key={index}>

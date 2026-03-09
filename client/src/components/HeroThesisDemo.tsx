@@ -88,21 +88,23 @@ export function HeroThesisDemo() {
 
   return (
     <div className="w-full max-w-6xl mx-auto" data-testid="hero-thesis-demo">
-      {/* Label */}
-      <p className="text-sm text-muted-foreground mb-3">
-        See a real analysis — pick a company:
-      </p>
+      <div className="flex flex-col items-center text-center w-full mb-6">
+        {/* Label */}
+        <p className="text-sm text-muted-foreground mb-3">
+          See a real analysis — pick a company:
+        </p>
 
-      {/* Ticker Toggle */}
-      <div className="flex items-center gap-3 mb-6" data-testid="hero-ticker-toggle">
-        {DEMO_TICKERS.map((ticker) => (
-          <TickerButton
-            key={ticker}
-            ticker={ticker}
-            selected={selected === ticker}
-            onClick={() => setSelected(ticker)}
-          />
-        ))}
+        {/* Ticker Toggle */}
+        <div className="flex items-center gap-3" data-testid="hero-ticker-toggle">
+          {DEMO_TICKERS.map((ticker) => (
+            <TickerButton
+              key={ticker}
+              ticker={ticker}
+              selected={selected === ticker}
+              onClick={() => setSelected(ticker)}
+            />
+          ))}
+        </div>
       </div>
 
       {/* Card */}
