@@ -20,36 +20,36 @@ interface FeatureSection {
 
 const sections: FeatureSection[] = [
   {
-    headline: "Know what you're actually investing in",
-    body: "Restnvest breaks companies down into what they build, who they serve, and how they operate — so you understand the business behind the ticker.",
+    headline: "Know the business, not just the ticker",
+    body: "Before you buy anything, understand what the company actually does, how it makes money, and whether the business model holds up.",
     image: businessOverviewImg,
     imageAlt: "Business overview showing investment thesis and strategic themes",
     imageFirst: false,
   },
   {
     headline: "See how the story changes over time",
-    body: "Companies evolve. Restnvest tracks what's new, what's sustained, and what's fading — so you can follow the business narrative without reading filings.",
+    body: "Most investors miss how much a company changes year to year. Restnvest tracks what's new, what's been quietly dropped, and what's actually sticking — without you reading a single filing.",
     image: changesImg,
     imageAlt: "Changes over time tracking business evolution",
     imageFirst: true,
   },
   {
-    headline: "Understand the competitive landscape",
-    body: "Every business operates in a market. Restnvest shows who the real competitors are, helping you understand positioning and differentiation.",
+    headline: "Who else is in the room?",
+    body: "Every business has competition. Restnvest shows you who they're up against and how they're positioned — so you're not surprised later.",
     image: competitionImg,
     imageAlt: "Competition analysis showing market competitors",
     imageFirst: false,
   },
   {
     headline: "Is this business financially strong?",
-    body: "Restnvest summarizes revenue growth, profitability, cash flow, debt, and reinvestment into clear signals — helping you decide if a business is worth holding.",
+    body: "Revenue growth means nothing if the cash isn't real. Restnvest checks the numbers that actually matter — margins, debt, cash flow, reinvestment — and gives you a straight answer.",
     image: performanceImg,
     imageAlt: "Financial performance metrics and health score",
     imageFirst: true,
   },
   {
-    headline: "Turn understanding into confident action",
-    body: "Restnvest pairs business fundamentals with technical analysis to help you think clearly about timing, risk, and potential entry or exit — without noise.",
+    headline: "You've done the homework. Now what?",
+    body: "Restnvest pairs everything you've learned about the business with market signals — so you can think clearly about timing, sizing, and when to act.",
     image: technicalImg,
     imageAlt: "Technical analysis with aligned signals",
     imageFirst: false,
@@ -87,13 +87,13 @@ export default function LandingPage() {
                 className="text-4xl sm:text-5xl lg:text-6xl font-bold tracking-tight leading-[1.1]"
                 data-testid="text-hero-headline"
               >
-                Invest with clarity and conviction
+                You look at your portfolio and think: what was I thinking?
               </h1>
               <p 
                 className="text-xl sm:text-2xl text-muted-foreground max-w-2xl mx-auto leading-relaxed"
                 data-testid="text-hero-subheadline"
               >
-                Restnvest turns complex business performance and market signals into a clear, structured view — so you can understand what you own, why you own it, and when to act.
+                Finding a good company is the easy part. Knowing what to do about it is where you get stuck. Restnvest gives you the process.
               </p>
             </div>
             <div className="mt-8 space-y-3">
@@ -104,7 +104,7 @@ export default function LandingPage() {
                   data-testid="button-hero-cta"
                 >
                   <Search className="h-5 w-5" />
-                  Research a stock
+                  Research a stock →
                 </Button>
               </Link>
               <p 
@@ -235,13 +235,13 @@ export default function LandingPage() {
                 className="text-2xl sm:text-3xl lg:text-4xl font-bold tracking-tight"
                 data-testid="text-final-cta-headline"
               >
-                Invest with clarity. Act with confidence.
+                Your next investment should have a reason behind it.
               </h2>
               <p 
                 className="text-lg text-muted-foreground leading-relaxed"
                 data-testid="text-final-cta-body"
               >
-                See the full picture behind any stock — business fundamentals, financial strength, and technical signals — all in one place.
+                Research any public company in seconds — business, finances, competition, and signals, all in one place.
               </p>
             </div>
             <div className="mt-8 space-y-3">
@@ -252,14 +252,14 @@ export default function LandingPage() {
                   data-testid="button-final-cta"
                 >
                   <Search className="h-5 w-5" />
-                  Research a stock
+                  Research a stock →
                 </Button>
               </Link>
               <p 
                 className="text-sm text-muted-foreground"
                 data-testid="text-final-tagline"
               >
-                Built for long-term thinkers
+                Built for investors who think before they buy.
               </p>
             </div>
           </div>
