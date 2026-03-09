@@ -4,7 +4,7 @@ import { useQuery } from "@tanstack/react-query";
 import { TemporalAnalysis } from "@/components/TemporalAnalysis";
 import { ArrowRight } from "lucide-react";
 
-const DEMO_TICKERS = ["AAPL", "NVDA", "MSFT"] as const;
+const DEMO_TICKERS = ["PLTR", "CRM", "F"] as const;
 type DemoTicker = (typeof DEMO_TICKERS)[number];
 
 function useTickerAnalysis(ticker: DemoTicker) {
@@ -65,16 +65,16 @@ function TemporalSkeleton() {
 }
 
 export function HeroTemporalDemo() {
-  const [selected, setSelected] = useState<DemoTicker>("NVDA");
+  const [selected, setSelected] = useState<DemoTicker>("CRM");
 
-  const aaplQuery = useTickerAnalysis("AAPL");
-  const nvdaQuery = useTickerAnalysis("NVDA");
-  const msftQuery = useTickerAnalysis("MSFT");
+  const pltrQuery = useTickerAnalysis("PLTR");
+  const crmQuery = useTickerAnalysis("CRM");
+  const fordQuery = useTickerAnalysis("F");
 
-  const queryMap: Record<DemoTicker, typeof aaplQuery> = {
-    AAPL: aaplQuery,
-    NVDA: nvdaQuery,
-    MSFT: msftQuery,
+  const queryMap: Record<DemoTicker, typeof pltrQuery> = {
+    PLTR: pltrQuery,
+    CRM: crmQuery,
+    F: fordQuery,
   };
 
   const activeQuery = queryMap[selected];
@@ -85,9 +85,6 @@ export function HeroTemporalDemo() {
   return (
     <div className="w-full max-w-6xl mx-auto" data-testid="hero-temporal-demo">
       <div className="flex flex-col items-center text-center w-full mb-6">
-        <p className="text-sm text-muted-foreground mb-3">
-          See how the story changes over time — pick a company:
-        </p>
         <div className="flex items-center gap-3" data-testid="hero-temporal-ticker-toggle">
           {DEMO_TICKERS.map((ticker) => (
             <TickerButton

@@ -8,34 +8,6 @@ import { HeroTemporalDemo } from "@/components/HeroTemporalDemo";
 import { HeroFinancialDemo } from "@/components/HeroFinancialDemo";
 import { HeroTimingDemo } from "@/components/HeroTimingDemo";
 
-import businessOverviewImg from "@assets/Business_Overview_1766161245319.png";
-import competitionImg from "@assets/Competition_1766161245321.png";
-
-interface FeatureSection {
-  headline: string;
-  body: string;
-  image: string;
-  imageAlt: string;
-  imageFirst: boolean;
-}
-
-const sections: FeatureSection[] = [
-  {
-    headline: "Know the business, not just the ticker",
-    body: "Before you buy anything, understand what the company actually does, how it makes money, and whether the business model holds up.",
-    image: businessOverviewImg,
-    imageAlt: "Business overview showing investment thesis and strategic themes",
-    imageFirst: false,
-  },
-  {
-    headline: "Who else is in the room?",
-    body: "Every business has competition. Restnvest shows you who they're up against and how they're positioned — so you're not surprised later.",
-    image: competitionImg,
-    imageAlt: "Competition analysis showing market competitors",
-    imageFirst: false,
-  },
-];
-
 const SECTION_PADDING = "py-20 sm:py-24 lg:py-28";
 
 export default function LandingPage() {
@@ -74,7 +46,8 @@ export default function LandingPage() {
               className="text-xl sm:text-2xl text-muted-foreground max-w-2xl mx-auto leading-relaxed"
               data-testid="text-hero-subheadline"
             >
-              Finding a good company is the easy part. Knowing what to do about it is where you get stuck. Restnvest gives you the process.
+              Stop being embarrassed by your portfolio.<br />
+              Invest like the person you're trying to become.
             </p>
           </div>
           <div className="mt-8 space-y-3">
@@ -159,94 +132,6 @@ export default function LandingPage() {
           <HeroTimingDemo />
         </div>
       </section>
-
-      {/* Feature Sections */}
-      {sections.map((section, index) => (
-        <div key={index}>
-          <section
-            className={`${SECTION_PADDING} px-4 sm:px-6 lg:px-8 ${
-              index % 2 === 0 ? "" : "bg-muted/30"
-            }`}
-            data-testid={`section-feature-${index + 1}`}
-          >
-            <div className="mx-auto max-w-6xl">
-              <div
-                className={`grid lg:grid-cols-2 gap-8 lg:gap-16 items-center ${
-                  section.imageFirst ? "lg:grid-flow-dense" : ""
-                }`}
-              >
-                {/* Text Column */}
-                <div
-                  className={`space-y-6 ${
-                    section.imageFirst ? "lg:col-start-2" : ""
-                  }`}
-                >
-                  <h2
-                    className="text-2xl sm:text-3xl lg:text-4xl font-bold tracking-tight leading-tight"
-                    data-testid={`text-headline-${index + 1}`}
-                  >
-                    {section.headline}
-                  </h2>
-                  <p
-                    className="text-lg text-muted-foreground leading-relaxed"
-                    data-testid={`text-body-${index + 1}`}
-                  >
-                    {section.body}
-                  </p>
-                </div>
-
-                {/* Image Column */}
-                <div className={`${section.imageFirst ? "lg:col-start-1" : ""}`}>
-                  <img
-                    src={section.image}
-                    alt={section.imageAlt}
-                    className="w-full rounded-lg shadow-sm border border-border"
-                    data-testid={`img-feature-${index + 1}`}
-                  />
-                </div>
-              </div>
-            </div>
-          </section>
-
-          {/* Mid-Page CTA after Competition (last feature section) */}
-          {index === 1 && (
-            <section
-              id="mid-cta"
-              className={`${SECTION_PADDING} px-4 sm:px-6 lg:px-8 bg-muted/30`}
-              data-testid="section-mid-cta"
-            >
-              <div className="mx-auto max-w-2xl text-center">
-                <div className="space-y-2">
-                  <h3
-                    className="text-xl sm:text-2xl font-semibold"
-                    data-testid="text-mid-cta-headline"
-                  >
-                    Ready to see this on a stock you care about?
-                  </h3>
-                  <p
-                    className="text-muted-foreground"
-                    data-testid="text-mid-cta-body"
-                  >
-                    Research any public company in seconds — no signup required.
-                  </p>
-                </div>
-                <div className="mt-6">
-                  <Link href="/app">
-                    <Button
-                      size="lg"
-                      className="rounded-full gap-2"
-                      data-testid="button-mid-cta"
-                    >
-                      <Search className="h-5 w-5" />
-                      Research a stock
-                    </Button>
-                  </Link>
-                </div>
-              </div>
-            </section>
-          )}
-        </div>
-      ))}
 
       {/* Final CTA Section */}
       <section
