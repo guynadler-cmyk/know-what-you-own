@@ -245,10 +245,6 @@ export default function StockPage() {
     }
   };
 
-  const handleNextStage = () => {
-    if (currentStage < 6) handleStageChange(currentStage + 1);
-  };
-
   const handlePreviousStage = () => {
     if (currentStage > 1) handleStageChange(currentStage - 1);
   };
@@ -262,20 +258,7 @@ export default function StockPage() {
     navigate("/app");
   };
 
-  const getStageButtonText = () => {
-    if (currentStage === 1) {
-      return {
-        next: "I like this business - let's check performance →",
-        previous: null
-      };
-    }
-    return {
-      next: currentStage < 6 ? "Continue to Next Stage →" : null,
-      previous: "← Previous Stage"
-    };
-  };
-
-  const buttonText = getStageButtonText();
+  const showPreviousStageButton = currentStage > 1;
 
   const getWatchlistSnapshot = (): WatchlistSnapshot => {
     const snapshot: WatchlistSnapshot = {};
@@ -447,28 +430,16 @@ export default function StockPage() {
               );
             })()}
 
-            {(!shouldShowPaywall(currentStage) || paywallState === "unlocked") && (
-              <div className="mt-8 flex items-center justify-between gap-4">
-                {buttonText.previous && (
-                  <Button
-                    variant="outline"
-                    onClick={handlePreviousStage}
-                    className="h-12 px-8"
-                    data-testid="button-previous-stage"
-                  >
-                    {buttonText.previous}
-                  </Button>
-                )}
-                <div className="flex-1" />
-                {buttonText.next && (
-                  <Button
-                    onClick={handleNextStage}
-                    className="h-12 px-8"
-                    data-testid="button-next-stage"
-                  >
-                    {buttonText.next}
-                  </Button>
-                )}
+            {showPreviousStageButton && (!shouldShowPaywall(currentStage) || paywallState === "unlocked") && (
+              <div className="mt-8">
+                <Button
+                  variant="outline"
+                  onClick={handlePreviousStage}
+                  className="h-12 px-8"
+                  data-testid="button-previous-stage"
+                >
+                  ← Previous Stage
+                </Button>
               </div>
             )}
           </div>

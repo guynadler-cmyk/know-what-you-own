@@ -9,10 +9,8 @@ import { FinancialScorecard } from "@/components/FinancialScorecard";
 import { ValuationExplorer, VALUATION_QUADRANT_DATA, type ValuationQuadrantData } from "@/components/ValuationExplorer";
 import { ValuationScorecard } from "@/components/ValuationScorecard";
 import { AlertDialog, AlertDialogAction, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
-import { Smartphone, Laptop, Tablet, Watch, Car, Zap, Battery, Server, Cloud, Gamepad2, Package, Code, Globe, Music, Video, Tv, Search, Cpu, FileX2, ChevronRight } from "lucide-react";
+import { Smartphone, Laptop, Tablet, Watch, Car, Zap, Battery, Server, Cloud, Gamepad2, Package, Code, Globe, Music, Video, Tv, Search, Cpu, FileX2 } from "lucide-react";
 import { CompanySummary, FinancialMetrics, BalanceSheetMetrics } from "@shared/schema";
-import { Button } from "@/components/ui/button";
-import { cn } from "@/lib/utils";
 
 const iconMap: Record<string, any> = {
   Smartphone, Laptop, Tablet, Watch, Car, Zap, Battery, Server, 
@@ -67,15 +65,34 @@ function StagePageHeader({ eyebrow, headline, sub }: StagePageHeaderProps) {
 }
 
 interface ComingUpNextProps {
-  stageNumber: number;
-  stageLabel: string;
-  headline: React.ReactNode;
-  sub: string;
+  completedStageNumber: number;
+  nextStageNumber: number;
+  nextStageLabel: string;
+  previewHeadline: React.ReactNode;
+  previewSub: string;
   previewItems: Array<{ label: string; value: string }>;
+  bannerCompleteLabel: string;
+  bannerHeadline: React.ReactNode;
+  bannerSub: string;
+  bannerButtonLabel: string;
   onNavigate?: () => void;
 }
 
-function ComingUpNext({ stageNumber, stageLabel, headline, sub, previewItems, onNavigate }: ComingUpNextProps) {
+const tealDeep = "#0d4a47";
+
+function ComingUpNext({
+  completedStageNumber,
+  nextStageNumber,
+  nextStageLabel,
+  previewHeadline,
+  previewSub,
+  previewItems,
+  bannerCompleteLabel,
+  bannerHeadline,
+  bannerSub,
+  bannerButtonLabel,
+  onNavigate,
+}: ComingUpNextProps) {
   return (
     <div className="mt-16 pt-10 border-t border-border/40">
       <div className="mb-6">
@@ -89,10 +106,10 @@ function ComingUpNext({ stageNumber, stageLabel, headline, sub, previewItems, on
           className="text-2xl font-bold mb-2 leading-snug"
           style={{ fontFamily: "var(--font-serif, 'Playfair Display', Georgia, serif)" }}
         >
-          {headline}
+          {previewHeadline}
         </h3>
         <p className="text-muted-foreground text-sm leading-relaxed max-w-xl">
-          {sub}
+          {previewSub}
         </p>
       </div>
 
@@ -102,7 +119,7 @@ function ComingUpNext({ stageNumber, stageLabel, headline, sub, previewItems, on
           style={{ background: "var(--lp-teal-deep)" }}
         >
           <span className="text-white/50 text-[10px] font-mono uppercase tracking-widest">
-            Stage {stageNumber} · {stageLabel}
+            Stage {nextStageNumber} · {nextStageLabel}
           </span>
           <span className="text-white/30 text-[10px] font-mono uppercase tracking-widest">
             Preview
@@ -119,18 +136,44 @@ function ComingUpNext({ stageNumber, stageLabel, headline, sub, previewItems, on
         </div>
       </div>
 
-      {onNavigate && (
-        <div className="mt-6 flex justify-start">
-          <Button
-            onClick={onNavigate}
-            className="gap-2"
-            data-testid={`button-next-stage-${stageNumber}`}
+      {/* Stage-complete banner — matches Stage 1's SummaryCard approach */}
+      <div
+        className="mt-6 relative flex items-center justify-between gap-6 rounded-xl px-7 py-5 overflow-hidden"
+        style={{ background: tealDeep }}
+        data-testid={`banner-stage-${completedStageNumber}-complete`}
+      >
+        <div
+          className="absolute inset-0 pointer-events-none"
+          style={{ background: "radial-gradient(ellipse 50% 80% at 100% 50%, rgba(77,184,176,0.15) 0%, transparent 60%)" }}
+        />
+        <div className="relative z-10">
+          <p
+            className="text-[9px] font-medium uppercase tracking-widest mb-1"
+            style={{ color: "rgba(255,255,255,0.45)" }}
           >
-            Continue to {stageLabel}
-            <ChevronRight className="w-4 h-4" />
-          </Button>
+            {bannerCompleteLabel}
+          </p>
+          <p
+            className="text-[17px] font-bold text-white"
+            style={{ fontFamily: "'Playfair Display', serif" }}
+          >
+            {bannerHeadline}
+          </p>
+          <p className="text-[11px] mt-1" style={{ color: "rgba(255,255,255,0.5)" }}>
+            {bannerSub}
+          </p>
         </div>
-      )}
+        {onNavigate && (
+          <button
+            className="relative z-10 flex items-center gap-2 rounded-lg text-[12px] font-medium px-5 py-2.5 flex-shrink-0 ml-6 transition-opacity hover:opacity-90"
+            style={{ background: "white", color: tealDeep, fontFamily: "'DM Sans', sans-serif" }}
+            data-testid={`button-next-stage-${nextStageNumber}`}
+            onClick={onNavigate}
+          >
+            {bannerButtonLabel}
+          </button>
+        )}
+      </div>
     </div>
   );
 }
@@ -226,20 +269,30 @@ export function StageContent({ stage, summaryData, financialMetrics, balanceShee
         <FinancialScorecard quadrantData={quadrantData} />
 
         <ComingUpNext
-          stageNumber={3}
-          stageLabel="Valuation"
-          headline={
+          completedStageNumber={2}
+          nextStageNumber={3}
+          nextStageLabel="Valuation"
+          previewHeadline={
             <>
               What are you actually <em style={{ color: "var(--lp-teal-deep)", fontStyle: "italic" }}>paying</em> for this?
             </>
           }
-          sub="Now that you've seen the financial picture, let's look at whether the current price makes sense — relative to earnings, history, and future potential."
+          previewSub="Now that you've seen the financial picture, let's look at whether the current price makes sense — relative to earnings, history, and future potential."
           previewItems={[
             { label: "Price Discipline", value: "—" },
             { label: "Price Tag", value: "—" },
             { label: "Capital Discipline", value: "—" },
             { label: "Doubling Potential", value: "—" },
           ]}
+          bannerCompleteLabel="Stage 2 complete"
+          bannerHeadline={
+            <>
+              You know the financials.{" "}
+              <em className="italic" style={{ color: "var(--lp-teal-light)" }}>Is the price worth it?</em>
+            </>
+          }
+          bannerSub="Next: P/E ratio, earnings yield, price history, and return potential — all scored."
+          bannerButtonLabel="Check Valuation →"
           onNavigate={onStageChange ? () => onStageChange(3) : undefined}
         />
       </div>
@@ -264,19 +317,29 @@ export function StageContent({ stage, summaryData, financialMetrics, balanceShee
         <ValuationScorecard quadrantData={valuationQuadrantData} />
 
         <ComingUpNext
-          stageNumber={4}
-          stageLabel="Timing"
-          headline={
+          completedStageNumber={3}
+          nextStageNumber={4}
+          nextStageLabel="Timing"
+          previewHeadline={
             <>
               Is the <em style={{ color: "var(--lp-teal-deep)", fontStyle: "italic" }}>timing</em> right to act?
             </>
           }
-          sub="You know the fundamentals and the valuation. Now let's check whether current market conditions are aligned before you make your move."
+          previewSub="You know the fundamentals and the valuation. Now let's check whether current market conditions are aligned before you make your move."
           previewItems={[
             { label: "Trend", value: "—" },
             { label: "Momentum", value: "—" },
             { label: "Stretch", value: "—" },
           ]}
+          bannerCompleteLabel="Stage 3 complete"
+          bannerHeadline={
+            <>
+              You know the valuation.{" "}
+              <em className="italic" style={{ color: "var(--lp-teal-light)" }}>Is the timing right?</em>
+            </>
+          }
+          bannerSub="Next: trend, momentum, and stretch — market signals before you pull the trigger."
+          bannerButtonLabel="Check Timing →"
           onNavigate={onStageChange ? () => onStageChange(4) : undefined}
         />
       </div>
@@ -303,20 +366,30 @@ export function StageContent({ stage, summaryData, financialMetrics, balanceShee
         />
 
         <ComingUpNext
-          stageNumber={5}
-          stageLabel="Strategy"
-          headline={
+          completedStageNumber={4}
+          nextStageNumber={5}
+          nextStageLabel="Strategy"
+          previewHeadline={
             <>
               Build your <em style={{ color: "var(--lp-teal-deep)", fontStyle: "italic" }}>investment plan</em>
             </>
           }
-          sub="You've done the analysis. Now structure your thinking into a clear, personalized investment plan — conviction level, tranche sizing, and your 'I'm wrong if' rules."
+          previewSub="You've done the analysis. Now structure your thinking into a clear, personalized investment plan — conviction level, tranche sizing, and your 'I'm wrong if' rules."
           previewItems={[
             { label: "Conviction level", value: "—" },
             { label: "Investment amount", value: "—" },
             { label: "Tranche schedule", value: "—" },
             { label: "Exit conditions", value: "—" },
           ]}
+          bannerCompleteLabel="Stage 4 complete"
+          bannerHeadline={
+            <>
+              You've read the signals.{" "}
+              <em className="italic" style={{ color: "var(--lp-teal-light)" }}>Time to build your plan.</em>
+            </>
+          }
+          bannerSub="Next: conviction level, tranche sizing, and your personal 'I'm wrong if' rules."
+          bannerButtonLabel="Build Your Strategy →"
           onNavigate={onStageChange ? () => onStageChange(5) : undefined}
         />
       </div>
