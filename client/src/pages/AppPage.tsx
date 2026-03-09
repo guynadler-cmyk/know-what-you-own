@@ -351,11 +351,9 @@ export default function AppPage() {
       
       <main className="flex-1">
         {viewState === "input" && (
-          <div className="mx-auto max-w-7xl px-4 pb-24 sm:px-6 lg:px-8">
+          <div className="flex flex-col items-center justify-center px-6 pt-16 pb-12" style={{ minHeight: "calc(100vh - 64px)" }}>
             <HeroSection />
-            <div className="mt-8">
-              <TickerInput onSubmit={handleTickerSubmit} isLoading={false} />
-            </div>
+            <TickerInput onSubmit={handleTickerSubmit} isLoading={false} />
           </div>
         )}
 

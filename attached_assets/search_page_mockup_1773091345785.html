@@ -1,0 +1,602 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>restnvest — Know What You Own</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400&family=DM+Sans:wght@300;400;500&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --teal-deep: #0d4a47;
+    --teal-mid: #1a6b66;
+    --teal-brand: #2a8c85;
+    --teal-light: #4db8b0;
+    --teal-pale: #e8f5f4;
+    --teal-ghost: #f2faf9;
+    --warm-white: #fffef9;
+    --cream: #faf8f4;
+    --ink: #1a1a18;
+    --ink-mid: #3d3d38;
+    --ink-light: #6b6b64;
+    --ink-ghost: #9b9b92;
+    --gold: #c9a84c;
+    --border: rgba(42,140,133,0.12);
+    --shadow-card: 0 2px 20px rgba(13,74,71,0.07);
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: var(--warm-white);
+    color: var(--ink);
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+  }
+
+  /* NAV */
+  .nav {
+    height: 52px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 32px;
+    border-bottom: 1px solid var(--border);
+    background: var(--warm-white);
+    position: sticky;
+    top: 0;
+    z-index: 100;
+  }
+
+  .nav-logo {
+    font-family: 'DM Sans', sans-serif;
+    font-size: 15px;
+    font-weight: 500;
+    color: var(--ink);
+    letter-spacing: -0.02em;
+    text-decoration: none;
+  }
+
+  .nav-logo span { color: var(--teal-brand); }
+
+  .nav-right { display: flex; align-items: center; gap: 8px; }
+
+  .nav-link {
+    font-size: 12px;
+    color: var(--ink-light);
+    text-decoration: none;
+    padding: 5px 10px;
+    border-radius: 5px;
+    transition: color 0.15s;
+  }
+  .nav-link:hover { color: var(--teal-brand); }
+
+  .nav-btn {
+    font-size: 11px;
+    color: var(--ink-light);
+    background: none;
+    border: 1px solid var(--border);
+    border-radius: 5px;
+    padding: 5px 12px;
+    cursor: pointer;
+    font-family: 'DM Sans', sans-serif;
+    transition: all 0.15s;
+  }
+  .nav-btn:hover { border-color: var(--teal-brand); color: var(--teal-brand); }
+
+  /* HERO */
+  .hero {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 60px 24px 40px;
+    text-align: center;
+  }
+
+  .hero-eyebrow {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 10px;
+    font-weight: 500;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--teal-brand);
+    background: var(--teal-ghost);
+    border: 1px solid var(--border);
+    border-radius: 100px;
+    padding: 4px 12px;
+    margin-bottom: 22px;
+  }
+
+  .hero-eyebrow-dot {
+    width: 5px;
+    height: 5px;
+    border-radius: 50%;
+    background: var(--teal-brand);
+  }
+
+  .hero-headline {
+    font-family: 'Playfair Display', serif;
+    font-size: 52px;
+    font-weight: 700;
+    color: var(--ink);
+    letter-spacing: -0.02em;
+    line-height: 1.1;
+    margin-bottom: 16px;
+    max-width: 600px;
+  }
+
+  .hero-headline em {
+    font-style: italic;
+    color: var(--teal-brand);
+  }
+
+  .hero-sub {
+    font-size: 15px;
+    font-weight: 300;
+    color: var(--ink-light);
+    line-height: 1.6;
+    max-width: 420px;
+    margin-bottom: 36px;
+  }
+
+  /* SEARCH */
+  .search-wrap {
+    width: 100%;
+    max-width: 480px;
+    margin-bottom: 12px;
+  }
+
+  .search-box {
+    display: flex;
+    align-items: center;
+    background: white;
+    border: 1.5px solid var(--border);
+    border-radius: 10px;
+    padding: 4px 4px 4px 16px;
+    gap: 10px;
+    box-shadow: 0 4px 24px rgba(13,74,71,0.07);
+    transition: border-color 0.2s, box-shadow 0.2s;
+  }
+
+  .search-box:focus-within {
+    border-color: var(--teal-brand);
+    box-shadow: 0 4px 24px rgba(42,140,133,0.14);
+  }
+
+  .search-icon { color: var(--ink-ghost); font-size: 14px; flex-shrink: 0; }
+
+  .search-input {
+    flex: 1;
+    border: none;
+    outline: none;
+    font-size: 14px;
+    font-family: 'DM Sans', sans-serif;
+    color: var(--ink);
+    background: transparent;
+    padding: 10px 0;
+  }
+
+  .search-input::placeholder { color: var(--ink-ghost); font-weight: 300; }
+
+  .search-btn {
+    background: var(--teal-deep);
+    color: white;
+    border: none;
+    border-radius: 7px;
+    padding: 10px 22px;
+    font-size: 13px;
+    font-weight: 500;
+    font-family: 'DM Sans', sans-serif;
+    cursor: pointer;
+    transition: background 0.15s;
+    white-space: nowrap;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .search-btn:hover { background: var(--teal-mid); }
+
+  /* TRUST LINE */
+  .trust-line {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    margin-bottom: 52px;
+  }
+
+  .trust-item {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 11px;
+    font-weight: 300;
+    color: var(--ink-ghost);
+  }
+
+  .trust-dot { color: var(--border); }
+
+  /* SAMPLE CARDS LABEL */
+  .cards-label {
+    font-size: 11px;
+    font-weight: 400;
+    color: var(--ink-ghost);
+    margin-bottom: 16px;
+    letter-spacing: 0.01em;
+  }
+
+  /* SAMPLE ANALYSIS CARDS */
+  .sample-cards {
+    display: grid;
+    grid-template-columns: repeat(3, 280px);
+    gap: 14px;
+    justify-content: center;
+    width: 100%;
+  }
+
+  .sample-card {
+    background: white;
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: var(--shadow-card);
+    cursor: pointer;
+    transition: transform 0.15s, box-shadow 0.15s;
+    text-align: left;
+  }
+
+  .sample-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 32px rgba(13,74,71,0.12);
+  }
+
+  .sc-header {
+    background: var(--teal-deep);
+    padding: 10px 14px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .sc-header-left { display: flex; align-items: center; gap: 8px; }
+
+  .sc-logo {
+    width: 22px;
+    height: 22px;
+    background: rgba(255,255,255,0.12);
+    border: 1px solid rgba(255,255,255,0.18);
+    border-radius: 5px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 9px;
+    color: white;
+    font-weight: 700;
+    font-family: 'DM Mono', monospace;
+    flex-shrink: 0;
+  }
+
+  .sc-company { font-size: 11px; font-weight: 500; color: white; }
+  .sc-ticker { font-size: 9px; font-family: 'DM Mono', monospace; color: rgba(255,255,255,0.5); margin-top: 1px; }
+
+  .sc-status-badge {
+    font-size: 9px;
+    font-weight: 500;
+    padding: 2px 8px;
+    border-radius: 100px;
+    white-space: nowrap;
+  }
+
+  .badge-aligned {
+    background: rgba(40,200,64,0.18);
+    color: #7ef08a;
+    border: 1px solid rgba(40,200,64,0.25);
+  }
+
+  .badge-caution {
+    background: rgba(201,168,76,0.2);
+    color: #f5d77e;
+    border: 1px solid rgba(201,168,76,0.3);
+  }
+
+  .badge-watch {
+    background: rgba(99,102,241,0.2);
+    color: #c4b5fd;
+    border: 1px solid rgba(99,102,241,0.3);
+  }
+
+  .sc-body { padding: 14px; }
+
+  .sc-signal-rows { display: flex; flex-direction: column; gap: 7px; margin-bottom: 12px; }
+
+  .sc-signal-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 6px 9px;
+    background: var(--cream);
+    border-radius: 5px;
+    border: 1px solid var(--border);
+  }
+
+  .sc-signal-name { font-size: 10px; font-weight: 400; color: var(--ink-mid); }
+
+  .sc-signal-val {
+    font-size: 10px;
+    font-weight: 500;
+    padding: 1px 6px;
+    border-radius: 3px;
+  }
+
+  .val-green { background: rgba(34,197,94,0.08); color: #16a34a; }
+  .val-yellow { background: rgba(201,168,76,0.08); color: #ca8a04; }
+  .val-blue { background: rgba(59,130,246,0.08); color: #2563eb; }
+  .val-purple { background: rgba(139,92,246,0.08); color: #7c3aed; }
+  .val-red { background: rgba(239,68,68,0.08); color: #dc2626; }
+
+  .sc-footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding-top: 10px;
+    border-top: 1px solid var(--border);
+  }
+
+  .sc-health {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+  }
+
+  .sc-health-segs { display: flex; gap: 2px; }
+  .sc-health-seg { width: 16px; height: 2px; border-radius: 1px; background: var(--border); }
+  .sc-health-seg.on { background: var(--teal-brand); }
+  .sc-health-seg.warn { background: var(--gold); }
+
+  .sc-health-label { font-size: 9px; color: var(--ink-ghost); font-weight: 300; }
+
+  .sc-cta {
+    font-size: 10px;
+    color: var(--teal-brand);
+    font-weight: 500;
+    display: flex;
+    align-items: center;
+    gap: 3px;
+  }
+
+  /* FOOTER */
+  .footer {
+    padding: 20px 32px;
+    border-top: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .footer-brand {
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--ink-light);
+  }
+
+  .footer-links {
+    display: flex;
+    gap: 20px;
+  }
+
+  .footer-link {
+    font-size: 11px;
+    color: var(--ink-ghost);
+    text-decoration: none;
+    font-weight: 300;
+    transition: color 0.15s;
+  }
+  .footer-link:hover { color: var(--teal-brand); }
+
+  .footer-disclaimer {
+    font-size: 10px;
+    font-weight: 300;
+    color: var(--ink-ghost);
+  }
+</style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav class="nav">
+  <a href="#" class="nav-logo">rest<span>n</span>vest</a>
+  <div class="nav-right">
+    <a href="#" class="nav-link">Product</a>
+    <a href="#" class="nav-link">How It Works</a>
+    <a href="#" class="nav-link">Pricing</a>
+    <a href="#" class="nav-link">For Advisors</a>
+    <button class="nav-btn">Share</button>
+    <button class="nav-btn">Install</button>
+  </div>
+</nav>
+
+<!-- HERO -->
+<div class="hero">
+
+  <div class="hero-eyebrow">
+    <div class="hero-eyebrow-dot"></div>
+    For long-term investors
+  </div>
+
+  <h1 class="hero-headline">Know what<br>you <em>own.</em></h1>
+
+  <p class="hero-sub">Understand any public company in minutes. Business fundamentals, financial health, and timing signals — all in plain English.</p>
+
+  <!-- SEARCH -->
+  <div class="search-wrap">
+    <div class="search-box">
+      <span class="search-icon">🔍</span>
+      <input class="search-input" type="text" placeholder="Company name or ticker...">
+      <button class="search-btn">Analyze →</button>
+    </div>
+  </div>
+
+  <!-- TRUST -->
+  <div class="trust-line">
+    <div class="trust-item">No signup required</div>
+    <div class="trust-dot">·</div>
+    <div class="trust-item">Takes seconds</div>
+    <div class="trust-dot">·</div>
+    <div class="trust-item">Real company data</div>
+    <div class="trust-dot">·</div>
+    <div class="trust-item">88+ companies pre-analyzed</div>
+  </div>
+
+  <!-- SAMPLE CARDS LABEL -->
+  <div class="cards-label">Try a recent analysis</div>
+
+  <!-- SAMPLE CARDS -->
+  <div class="sample-cards">
+
+    <!-- PLTR -->
+    <div class="sample-card">
+      <div class="sc-header">
+        <div class="sc-header-left">
+          <div class="sc-logo">P</div>
+          <div>
+            <div class="sc-company">Palantir Technologies</div>
+            <div class="sc-ticker">PLTR · NYSE</div>
+          </div>
+        </div>
+        <div class="sc-status-badge badge-aligned">Signals Aligned ✓</div>
+      </div>
+      <div class="sc-body">
+        <div class="sc-signal-rows">
+          <div class="sc-signal-row">
+            <span class="sc-signal-name">Growth Quality</span>
+            <span class="sc-signal-val val-green">Scalable Growth</span>
+          </div>
+          <div class="sc-signal-row">
+            <span class="sc-signal-name">Price Trend</span>
+            <span class="sc-signal-val val-green">Uptrend</span>
+          </div>
+          <div class="sc-signal-row">
+            <span class="sc-signal-name">RSI Stretch</span>
+            <span class="sc-signal-val val-purple">Neutral (56)</span>
+          </div>
+        </div>
+        <div class="sc-footer">
+          <div class="sc-health">
+            <div class="sc-health-segs">
+              <div class="sc-health-seg on"></div>
+              <div class="sc-health-seg on"></div>
+              <div class="sc-health-seg on"></div>
+              <div class="sc-health-seg on"></div>
+            </div>
+            <div class="sc-health-label">4/4 financial health</div>
+          </div>
+          <div class="sc-cta">View analysis →</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- NVDA -->
+    <div class="sample-card">
+      <div class="sc-header">
+        <div class="sc-header-left">
+          <div class="sc-logo">N</div>
+          <div>
+            <div class="sc-company">NVIDIA Corporation</div>
+            <div class="sc-ticker">NVDA · NASDAQ</div>
+          </div>
+        </div>
+        <div class="sc-status-badge badge-caution">Monitor Closely</div>
+      </div>
+      <div class="sc-body">
+        <div class="sc-signal-rows">
+          <div class="sc-signal-row">
+            <span class="sc-signal-name">Growth Quality</span>
+            <span class="sc-signal-val val-green">Scalable Growth</span>
+          </div>
+          <div class="sc-signal-row">
+            <span class="sc-signal-name">Price Trend</span>
+            <span class="sc-signal-val val-yellow">Consolidating</span>
+          </div>
+          <div class="sc-signal-row">
+            <span class="sc-signal-name">RSI Stretch</span>
+            <span class="sc-signal-val val-yellow">Elevated (68)</span>
+          </div>
+        </div>
+        <div class="sc-footer">
+          <div class="sc-health">
+            <div class="sc-health-segs">
+              <div class="sc-health-seg on"></div>
+              <div class="sc-health-seg on"></div>
+              <div class="sc-health-seg on"></div>
+              <div class="sc-health-seg warn"></div>
+            </div>
+            <div class="sc-health-label">3/4 financial health</div>
+          </div>
+          <div class="sc-cta">View analysis →</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- AAPL -->
+    <div class="sample-card">
+      <div class="sc-header">
+        <div class="sc-header-left">
+          <div class="sc-logo">A</div>
+          <div>
+            <div class="sc-company">Apple Inc.</div>
+            <div class="sc-ticker">AAPL · NASDAQ</div>
+          </div>
+        </div>
+        <div class="sc-status-badge badge-watch">Patience Warranted</div>
+      </div>
+      <div class="sc-body">
+        <div class="sc-signal-rows">
+          <div class="sc-signal-row">
+            <span class="sc-signal-name">Growth Quality</span>
+            <span class="sc-signal-val val-yellow">Moderate Growth</span>
+          </div>
+          <div class="sc-signal-row">
+            <span class="sc-signal-name">Price Trend</span>
+            <span class="sc-signal-val val-red">Downtrend</span>
+          </div>
+          <div class="sc-signal-row">
+            <span class="sc-signal-name">RSI Stretch</span>
+            <span class="sc-signal-val val-green">Oversold (38)</span>
+          </div>
+        </div>
+        <div class="sc-footer">
+          <div class="sc-health">
+            <div class="sc-health-segs">
+              <div class="sc-health-seg on"></div>
+              <div class="sc-health-seg on"></div>
+              <div class="sc-health-seg on"></div>
+              <div class="sc-health-seg on"></div>
+            </div>
+            <div class="sc-health-label">4/4 financial health</div>
+          </div>
+          <div class="sc-cta">View analysis →</div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- FOOTER -->
+<footer class="footer">
+  <div class="footer-brand">restnvest — Sensible Investing</div>
+  <div class="footer-links">
+    <a href="#" class="footer-link">About</a>
+    <a href="#" class="footer-link">Terms</a>
+    <a href="#" class="footer-link">Privacy</a>
+    <a href="#" class="footer-link">Contact</a>
+  </div>
+  <div class="footer-disclaimer">AI-generated summaries. Not investment advice.</div>
+</footer>
+
+</body>
+</html>

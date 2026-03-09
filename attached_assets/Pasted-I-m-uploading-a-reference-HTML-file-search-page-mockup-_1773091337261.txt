@@ -1,0 +1,60 @@
+I'm uploading a reference HTML file (search_page_mockup.html) 
+that shows the exact visual design I want for the stock search 
+/ home page (the page users see before they search).
+
+Please update the home/search page to match this reference 
+visually, with the sample cards fully functional.
+
+RULES:
+- Do NOT change search functionality, routing, or any existing 
+  logic
+- Visual and layout changes only, except where noted below
+- Use existing fonts: Playfair Display, DM Sans, DM Mono
+- Use existing CSS variables already in globals.css
+- Match the reference as closely as possible
+
+LAYOUT CHANGES:
+1. Keep the headline "Know what you own." and search bar 
+   centered — match the typography and sizing in the reference 
+   (Playfair Display, large, with italic teal "own.")
+
+2. Replace the trust line copy with:
+   "No signup required · Takes seconds · Real company data · 
+   88+ companies pre-analyzed"
+
+3. Replace the ticker pills (IOT, PATH, AI, PLTR, SMCI) with 
+   a label + 3 sample analysis cards in a row, as shown in the 
+   reference. Label reads: "Try a recent analysis"
+
+SAMPLE CARDS — FUNCTIONAL:
+- Use tickers: PLTR, NVDA, AAPL
+- Each card must pull real data from the existing 
+  /api/analyze/:ticker endpoint (same call used by the 
+  landing page demo components)
+- Each card displays:
+    · Dark teal card header: company logo box (letter), 
+      company name, ticker, and a status badge (top-level 
+      verdict from the analysis)
+    · 3 signal rows: Growth Quality, Price Trend, RSI Stretch 
+      — each with its label and colored verdict badge
+    · Footer: financial health score segments + score label 
+      on left, "View analysis →" link on right
+- Clicking anywhere on a card navigates to the full analysis 
+  for that ticker (same route as searching for it manually)
+- Show a skeleton loading state while data fetches
+- If data fails to load for a card, hide that card silently 
+  (do not show an error)
+
+CARD HEADER STYLE (consistent with stages 1–4):
+- Background: #0d4a47
+- Company name: white, DM Sans 500
+- Ticker: DM Mono, rgba(255,255,255,0.5)
+- Status badge: pill, colored per verdict 
+  (green = aligned, amber = caution, purple = patience)
+
+REMOVE:
+- The existing ticker pill row entirely
+- "Test your knowledge with hot AI stocks" label
+
+Do not touch any other pages or components.
+Screenshot the result when complete.
