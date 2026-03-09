@@ -991,6 +991,7 @@ import {
   getBusinessByCacheKey,
   insertBusinessAnalysis,
   getLatestCompanyInfoByTicker,
+  getLatestBusinessByTicker,
 } from "./repositories/businessAnalysis.repo";
 import {
   getFootnotesByCacheKey,
@@ -2350,6 +2351,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
         .optional(),
       createdAt: z.string(),
     }),
+  });
+
+  app.get("/api/memo/:ticker", async (req: any, res) => {
+    try {
+      const { ticker } = req.params;
+      const upperTicker = ticker?.toUpperCase();
+      if (!ticker || !/^[A-Z]{1,5}$/i.test(ticker)) {
+        return res.status(400).json({ error: "Invalid ticker format" });
+      }
+      const analysis = await getLatestBusinessByTicker(upperTicker);
+      if (!analysis) {
+        return res.status(404).json({ error: "No cached analysis found for this ticker. Please run a business analysis first." });
+      }
+      const memo = await openaiService.generateMemo(analysis);
+      return res.json(memo);
+    } catch (err: any) {
+      console.error("[memo] Error:", err?.message || err);
+      return res.status(500).json({ error: "Failed to generate investment memo" });
+    }
   });
 
   app.post("/api/strategy-email", async (req: any, res) => {

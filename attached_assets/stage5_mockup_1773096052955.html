@@ -1,0 +1,802 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>restnvest — Strategy</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400&family=DM+Sans:wght@300;400;500&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --teal-deep: #0d4a47;
+    --teal-mid: #1a6b66;
+    --teal-brand: #2a8c85;
+    --teal-light: #4db8b0;
+    --teal-pale: #e8f5f4;
+    --teal-ghost: #f2faf9;
+    --warm-white: #fffef9;
+    --cream: #faf8f4;
+    --ink: #1a1a18;
+    --ink-mid: #3d3d38;
+    --ink-light: #6b6b64;
+    --ink-ghost: #9b9b92;
+    --gold: #c9a84c;
+    --gold-light: rgba(201,168,76,0.1);
+    --border: rgba(42,140,133,0.12);
+    --border-strong: rgba(42,140,133,0.2);
+    --shadow-card: 0 2px 20px rgba(13,74,71,0.07);
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: var(--warm-white);
+    color: var(--ink);
+    min-height: 100vh;
+  }
+
+  /* NAV */
+  .nav {
+    height: 52px;
+    background: var(--warm-white);
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 24px;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+  }
+
+  .nav-left { display: flex; align-items: center; gap: 12px; }
+  .nav-logo { font-size: 15px; font-weight: 500; color: var(--ink); letter-spacing: -0.02em; text-decoration: none; }
+  .nav-logo span { color: var(--teal-brand); }
+
+  .company-pill {
+    display: flex; align-items: center; gap: 8px;
+    background: white; border: 1px solid var(--border);
+    border-radius: 6px; padding: 5px 10px;
+  }
+  .company-logo-box {
+    width: 20px; height: 20px; background: var(--teal-deep);
+    border-radius: 4px; display: flex; align-items: center;
+    justify-content: center; font-size: 9px; color: white;
+    font-weight: 700; font-family: 'DM Mono', monospace;
+  }
+  .company-pill-name { font-size: 12px; font-weight: 500; }
+  .company-pill-ticker { font-size: 10px; font-family: 'DM Mono', monospace; color: var(--ink-ghost); }
+
+  .nav-search {
+    display: flex; align-items: center;
+    background: white; border: 1.5px solid var(--border);
+    border-radius: 7px; padding: 0 4px 0 10px;
+    gap: 8px; height: 34px; flex: 1; max-width: 320px; margin: 0 16px;
+  }
+  .nav-search input {
+    flex: 1; border: none; outline: none;
+    font-size: 12px; font-family: 'DM Sans', sans-serif;
+    color: var(--ink); background: transparent;
+  }
+  .nav-search input::placeholder { color: var(--ink-ghost); font-weight: 300; }
+  .nav-search-btn {
+    background: var(--teal-deep); color: white; border: none;
+    border-radius: 5px; padding: 5px 12px; font-size: 11px;
+    font-weight: 500; font-family: 'DM Sans', sans-serif;
+    cursor: pointer; height: 26px;
+  }
+
+  .nav-right { display: flex; align-items: center; gap: 6px; }
+  .nav-btn {
+    font-size: 11px; color: var(--ink-light); background: none;
+    border: 1px solid var(--border); border-radius: 5px;
+    padding: 5px 10px; cursor: pointer; font-family: 'DM Sans', sans-serif;
+  }
+  .nav-btn.active { background: var(--teal-ghost); border-color: var(--teal-brand); color: var(--teal-brand); }
+
+  /* STAGE BAR */
+  .stage-bar {
+    background: white; border-bottom: 1px solid var(--border);
+    display: flex; justify-content: center;
+  }
+  .stage-bar-inner { display: flex; align-items: center; height: 44px; }
+  .stage-step {
+    display: flex; align-items: center; gap: 7px;
+    padding: 0 14px; height: 100%; font-size: 11px;
+    color: var(--ink-ghost); font-weight: 400;
+    border-bottom: 2px solid transparent; cursor: pointer;
+    white-space: nowrap;
+  }
+  .stage-step.active { color: var(--teal-deep); font-weight: 500; border-bottom-color: var(--teal-brand); }
+  .stage-step.completed { color: var(--teal-brand); }
+  .stage-num {
+    width: 16px; height: 16px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 8px; font-weight: 600; flex-shrink: 0;
+  }
+  .stage-step.active .stage-num { background: var(--teal-brand); color: white; }
+  .stage-step.completed .stage-num { background: var(--teal-pale); color: var(--teal-brand); }
+  .stage-step:not(.active):not(.completed) .stage-num { background: var(--cream); color: var(--ink-ghost); border: 1px solid var(--border); }
+  .stage-sep { width: 20px; height: 1px; background: var(--border); }
+
+  /* PHILOSOPHY */
+  .philosophy {
+    background: white; border-bottom: 1px solid var(--border);
+    padding: 10px 28px; display: flex;
+    align-items: center; justify-content: space-between;
+  }
+  .philosophy-title { font-size: 11px; font-weight: 500; }
+  .philosophy-sub { font-size: 10px; font-weight: 300; color: var(--ink-ghost); margin-top: 1px; }
+  .philosophy-hide { font-size: 10px; color: var(--teal-brand); background: none; border: none; cursor: pointer; font-family: 'DM Sans', sans-serif; }
+
+  /* MAIN */
+  .main { max-width: 860px; margin: 0 auto; padding: 32px 24px 80px; }
+
+  /* PAGE HEADER */
+  .page-header { margin-bottom: 28px; }
+  .page-eyebrow { font-size: 10px; font-weight: 500; letter-spacing: 0.12em; text-transform: uppercase; color: var(--teal-brand); margin-bottom: 8px; }
+  .page-headline { font-family: 'Playfair Display', serif; font-size: 26px; font-weight: 700; color: var(--ink); letter-spacing: -0.01em; line-height: 1.25; margin-bottom: 8px; }
+  .page-headline em { font-style: italic; color: var(--teal-brand); }
+  .page-sub { font-size: 13px; font-weight: 300; color: var(--ink-light); line-height: 1.6; max-width: 520px; }
+
+  /* RESEARCH RECAP */
+  .recap-card {
+    background: white; border: 1px solid var(--border);
+    border-radius: 12px; overflow: hidden;
+    box-shadow: var(--shadow-card); margin-bottom: 16px;
+  }
+  .card-header {
+    background: var(--teal-deep); padding: 10px 16px;
+    display: flex; align-items: center; justify-content: space-between;
+  }
+  .card-header-title { font-size: 11px; font-family: 'DM Mono', monospace; color: rgba(255,255,255,0.7); letter-spacing: 0.04em; }
+  .card-header-badge {
+    font-size: 10px; font-weight: 500; padding: 2px 8px;
+    border-radius: 100px; background: rgba(255,255,255,0.1);
+    color: rgba(255,255,255,0.8); border: 1px solid rgba(255,255,255,0.15);
+  }
+
+  .recap-grid { display: grid; grid-template-columns: repeat(4, 1fr); }
+  .recap-item {
+    padding: 14px 16px; border-right: 1px solid var(--border);
+    cursor: pointer; transition: background 0.15s; text-decoration: none;
+  }
+  .recap-item:last-child { border-right: none; }
+  .recap-item:hover { background: var(--teal-ghost); }
+
+  .recap-stage { font-size: 9px; font-weight: 500; letter-spacing: 0.1em; text-transform: uppercase; color: var(--ink-ghost); margin-bottom: 5px; }
+  .recap-verdict { font-size: 12px; font-weight: 500; color: var(--ink); margin-bottom: 3px; display: flex; align-items: center; gap: 6px; }
+  .recap-sub { font-size: 10px; font-weight: 300; color: var(--ink-light); line-height: 1.4; }
+
+  .status-dot { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; }
+  .dot-green { background: #16a34a; }
+  .dot-amber { background: var(--gold); }
+  .dot-red { background: #dc2626; }
+  .dot-blue { background: #2563eb; }
+
+  .recap-view { font-size: 10px; color: var(--teal-brand); margin-top: 6px; }
+
+  /* SECTION DIVIDERS */
+  .section-label-row {
+    display: flex; align-items: center; gap: 12px; margin: 28px 0 16px;
+  }
+  .section-num {
+    width: 24px; height: 24px; background: var(--teal-deep); color: white;
+    border-radius: 50%; display: flex; align-items: center; justify-content: center;
+    font-size: 10px; font-weight: 700; flex-shrink: 0;
+  }
+  .section-label-text { font-size: 13px; font-weight: 500; color: var(--ink); }
+  .section-label-sub { font-size: 11px; font-weight: 300; color: var(--ink-ghost); }
+
+  /* CONVICTION */
+  .conviction-card {
+    background: white; border: 1px solid var(--border);
+    border-radius: 12px; overflow: hidden;
+    box-shadow: var(--shadow-card); margin-bottom: 16px;
+  }
+
+  .conviction-body { padding: 20px; }
+
+  .conviction-levels { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 20px; }
+
+  .conviction-level {
+    padding: 14px; border-radius: 8px; border: 1.5px solid var(--border);
+    cursor: pointer; transition: all 0.15s; position: relative;
+  }
+  .conviction-level:hover { border-color: var(--teal-light); }
+  .conviction-level.selected {
+    border-color: var(--teal-brand);
+    background: var(--teal-ghost);
+  }
+
+  .cl-icon { font-size: 18px; margin-bottom: 8px; }
+  .cl-label { font-size: 12px; font-weight: 500; color: var(--ink); margin-bottom: 4px; }
+  .cl-desc { font-size: 10px; font-weight: 300; color: var(--ink-light); line-height: 1.4; }
+  .cl-check {
+    position: absolute; top: 10px; right: 10px;
+    width: 16px; height: 16px; background: var(--teal-brand);
+    border-radius: 50%; display: none; align-items: center;
+    justify-content: center; font-size: 8px; color: white;
+  }
+  .conviction-level.selected .cl-check { display: flex; }
+
+  .conviction-insight {
+    padding: 14px 16px;
+    background: var(--teal-ghost); border-radius: 8px;
+    border-left: 3px solid var(--teal-brand);
+    font-size: 12px; font-weight: 300; color: var(--ink-mid); line-height: 1.6;
+  }
+
+  /* MEMO */
+  .memo-card {
+    background: white; border: 1px solid var(--border);
+    border-radius: 12px; overflow: hidden;
+    box-shadow: var(--shadow-card); margin-bottom: 16px;
+  }
+  .memo-body { padding: 20px; display: flex; flex-direction: column; gap: 14px; }
+
+  .memo-row { display: flex; flex-direction: column; gap: 6px; }
+  .memo-label {
+    font-size: 10px; font-weight: 500; letter-spacing: 0.08em;
+    text-transform: uppercase; color: var(--ink-ghost);
+    display: flex; align-items: center; gap: 6px;
+  }
+  .memo-label-icon { font-size: 11px; }
+
+  .memo-generated {
+    font-size: 12px; font-weight: 300; color: var(--ink-mid);
+    line-height: 1.65; padding: 12px 14px;
+    background: var(--cream); border-radius: 6px;
+    border: 1px solid var(--border);
+  }
+
+  .memo-input {
+    width: 100%; font-size: 12px; font-weight: 300;
+    color: var(--ink); font-family: 'DM Sans', sans-serif;
+    background: var(--cream); border: 1px solid var(--border);
+    border-radius: 6px; padding: 12px 14px; resize: none;
+    outline: none; transition: border-color 0.2s; line-height: 1.6;
+  }
+  .memo-input:focus { border-color: var(--teal-brand); }
+  .memo-input::placeholder { color: var(--ink-ghost); }
+
+  .memo-divider { height: 1px; background: var(--border); }
+
+  /* GUARDRAILS */
+  .guardrails-card {
+    background: white; border: 1px solid var(--border);
+    border-radius: 12px; overflow: hidden;
+    box-shadow: var(--shadow-card); margin-bottom: 16px;
+  }
+  .guardrails-body { padding: 20px; }
+
+  .guardrails-intro {
+    font-size: 12px; font-weight: 300; color: var(--ink-light);
+    margin-bottom: 16px; line-height: 1.6;
+    padding: 12px 14px; background: var(--gold-light);
+    border-radius: 6px; border-left: 3px solid var(--gold);
+  }
+
+  .guardrails-builder { display: flex; flex-direction: column; gap: 10px; }
+
+  .guardrail-row {
+    display: flex; align-items: flex-start; gap: 10px;
+    padding: 12px 14px; background: var(--cream);
+    border: 1px solid var(--border); border-radius: 8px;
+  }
+
+  .guardrail-num {
+    width: 18px; height: 18px; background: var(--teal-ghost);
+    border-radius: 50%; display: flex; align-items: center;
+    justify-content: center; font-size: 9px; font-weight: 600;
+    color: var(--teal-brand); flex-shrink: 0; margin-top: 1px;
+  }
+
+  .guardrail-content { flex: 1; }
+  .guardrail-prefix { font-size: 11px; font-weight: 500; color: var(--ink-ghost); margin-bottom: 6px; }
+
+  .guardrail-tags { display: flex; flex-wrap: wrap; gap: 5px; margin-bottom: 8px; }
+  .gtag {
+    font-size: 10px; padding: 3px 9px; border-radius: 4px;
+    border: 1px solid var(--border); cursor: pointer;
+    transition: all 0.15s; background: white; color: var(--ink-light);
+  }
+  .gtag:hover { border-color: var(--teal-brand); color: var(--teal-brand); }
+  .gtag.selected { background: var(--teal-deep); color: white; border-color: var(--teal-deep); }
+
+  .guardrail-or { font-size: 10px; color: var(--ink-ghost); margin: 4px 0 6px; }
+
+  .guardrail-input {
+    width: 100%; font-size: 11px; font-family: 'DM Sans', sans-serif;
+    color: var(--ink); background: white; border: 1px solid var(--border);
+    border-radius: 5px; padding: 7px 10px; outline: none;
+    transition: border-color 0.2s;
+  }
+  .guardrail-input:focus { border-color: var(--teal-brand); }
+  .guardrail-input::placeholder { color: var(--ink-ghost); }
+
+  .add-guardrail {
+    display: flex; align-items: center; gap: 6px;
+    font-size: 11px; color: var(--teal-brand);
+    background: none; border: 1px dashed var(--border);
+    border-radius: 7px; padding: 9px 14px; cursor: pointer;
+    font-family: 'DM Sans', sans-serif; width: 100%;
+    transition: border-color 0.15s;
+  }
+  .add-guardrail:hover { border-color: var(--teal-brand); }
+
+  /* PLAN */
+  .plan-card {
+    background: white; border: 1px solid var(--border);
+    border-radius: 12px; overflow: hidden;
+    box-shadow: var(--shadow-card); margin-bottom: 16px;
+  }
+  .plan-body { padding: 20px; }
+
+  .plan-intro {
+    font-size: 12px; font-weight: 300; color: var(--ink-light);
+    margin-bottom: 20px; line-height: 1.6;
+  }
+
+  .plan-controls {
+    display: flex; gap: 12px; margin-bottom: 20px; align-items: flex-end;
+  }
+
+  .plan-control { display: flex; flex-direction: column; gap: 5px; }
+  .plan-control-label { font-size: 10px; font-weight: 500; letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink-ghost); }
+
+  .plan-input {
+    font-size: 13px; font-weight: 500; font-family: 'DM Sans', sans-serif;
+    color: var(--ink); background: var(--cream); border: 1px solid var(--border);
+    border-radius: 6px; padding: 9px 12px; outline: none; width: 140px;
+    transition: border-color 0.2s;
+  }
+  .plan-input:focus { border-color: var(--teal-brand); }
+
+  .plan-select {
+    font-size: 12px; font-family: 'DM Sans', sans-serif;
+    color: var(--ink); background: var(--cream); border: 1px solid var(--border);
+    border-radius: 6px; padding: 9px 12px; outline: none;
+    cursor: pointer; appearance: none; padding-right: 28px;
+    background-image: url("data:image/svg+xml,%3Csvg width='10' height='6' viewBox='0 0 10 6' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M1 1L5 5L9 1' stroke='%239b9b92' stroke-width='1.5' stroke-linecap='round'/%3E%3C/svg%3E");
+    background-repeat: no-repeat; background-position: right 10px center;
+  }
+
+  .tranche-list { display: flex; flex-direction: column; gap: 8px; margin-bottom: 16px; }
+
+  .tranche-row {
+    display: grid; grid-template-columns: 24px 1fr 1fr 1fr 28px;
+    gap: 10px; align-items: center;
+    padding: 11px 14px; background: var(--cream);
+    border: 1px solid var(--border); border-radius: 8px;
+  }
+
+  .tranche-num { font-size: 10px; font-weight: 600; color: var(--ink-ghost); font-family: 'DM Mono', monospace; }
+
+  .tranche-input {
+    font-size: 12px; font-family: 'DM Sans', sans-serif;
+    color: var(--ink); background: white; border: 1px solid var(--border);
+    border-radius: 5px; padding: 6px 9px; outline: none; width: 100%;
+    transition: border-color 0.2s;
+  }
+  .tranche-input:focus { border-color: var(--teal-brand); }
+
+  .tranche-select {
+    font-size: 11px; font-family: 'DM Sans', sans-serif;
+    color: var(--ink); background: white; border: 1px solid var(--border);
+    border-radius: 5px; padding: 6px 9px; outline: none;
+    cursor: pointer; appearance: none; width: 100%;
+  }
+
+  .tranche-condition {
+    font-size: 10px; font-weight: 300; color: var(--ink-ghost);
+    display: flex; align-items: center; gap: 4px;
+  }
+
+  .tranche-remove {
+    background: none; border: none; cursor: pointer;
+    color: var(--ink-ghost); font-size: 13px;
+    display: flex; align-items: center; justify-content: center;
+    transition: color 0.15s;
+  }
+  .tranche-remove:hover { color: #dc2626; }
+
+  .plan-summary {
+    padding: 14px 16px; background: var(--teal-ghost);
+    border-radius: 8px; border: 1px solid var(--border);
+    display: flex; align-items: center; justify-content: space-between;
+  }
+  .ps-label { font-size: 11px; font-weight: 300; color: var(--ink-light); }
+  .ps-value { font-family: 'Playfair Display', serif; font-size: 20px; font-weight: 700; color: var(--ink); }
+  .ps-breakdown { font-size: 10px; color: var(--ink-ghost); margin-top: 2px; }
+
+  /* EXPORT */
+  .export-card {
+    background: var(--teal-deep); border-radius: 12px;
+    padding: 20px 24px; margin-bottom: 16px;
+    display: flex; align-items: center; justify-content: space-between;
+    position: relative; overflow: hidden;
+  }
+  .export-card::before {
+    content: ''; position: absolute; inset: 0;
+    background: radial-gradient(ellipse 50% 80% at 100% 50%, rgba(77,184,176,0.15) 0%, transparent 60%);
+    pointer-events: none;
+  }
+  .export-left { position: relative; z-index: 1; }
+  .export-eyebrow { font-size: 9px; font-weight: 500; letter-spacing: 0.12em; text-transform: uppercase; color: rgba(255,255,255,0.45); margin-bottom: 5px; }
+  .export-headline { font-family: 'Playfair Display', serif; font-size: 17px; font-weight: 700; color: white; }
+  .export-headline em { font-style: italic; color: var(--teal-light); }
+  .export-sub { font-size: 11px; font-weight: 300; color: rgba(255,255,255,0.5); margin-top: 4px; }
+
+  .export-actions { display: flex; gap: 8px; position: relative; z-index: 1; }
+
+  .export-btn {
+    display: flex; align-items: center; gap: 6px;
+    font-size: 12px; font-weight: 500; padding: 9px 18px;
+    border-radius: 7px; cursor: pointer; transition: all 0.15s;
+    font-family: 'DM Sans', sans-serif; text-decoration: none;
+    white-space: nowrap;
+  }
+  .btn-white { background: white; color: var(--teal-deep); border: 1px solid white; }
+  .btn-white:hover { background: var(--teal-ghost); }
+  .btn-outline-white { background: rgba(255,255,255,0.08); color: white; border: 1px solid rgba(255,255,255,0.2); }
+  .btn-outline-white:hover { background: rgba(255,255,255,0.15); }
+
+  /* FOOTER NAV */
+  .footer-nav {
+    display: flex; align-items: center; justify-content: space-between;
+    padding-top: 24px; border-top: 1px solid var(--border); margin-top: 8px;
+  }
+  .foot-btn {
+    display: flex; align-items: center; gap: 6px;
+    font-size: 12px; font-weight: 400; padding: 8px 16px;
+    border-radius: 6px; cursor: pointer; transition: all 0.15s;
+    font-family: 'DM Sans', sans-serif; text-decoration: none;
+  }
+  .btn-back { color: var(--ink-light); background: none; border: 1px solid var(--border); }
+  .btn-back:hover { border-color: var(--teal-brand); color: var(--teal-brand); }
+  .btn-fwd { color: white; background: var(--teal-deep); border: 1px solid var(--teal-deep); }
+  .btn-fwd:hover { background: var(--teal-mid); }
+</style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav class="nav">
+  <div class="nav-left">
+    <a href="#" class="nav-logo">rest<span>n</span>vest</a>
+    <div class="company-pill">
+      <div class="company-logo-box">N</div>
+      <span class="company-pill-name">NVIDIA Corp</span>
+      <span class="company-pill-ticker">NVDA</span>
+    </div>
+  </div>
+  <div class="nav-search">
+    <input type="text" placeholder="Search another company...">
+    <button class="nav-search-btn">Analyze →</button>
+  </div>
+  <div style="flex:1"></div>
+  <div class="nav-right">
+    <button class="nav-btn active">🔖 Saved (2)</button>
+    <button class="nav-btn">↻ Update</button>
+    <button class="nav-btn">Share</button>
+  </div>
+</nav>
+
+<!-- STAGE BAR -->
+<div class="stage-bar">
+  <div class="stage-bar-inner">
+    <div class="stage-step completed"><div class="stage-num">✓</div> Business</div>
+    <div class="stage-sep"></div>
+    <div class="stage-step completed"><div class="stage-num">✓</div> Performance</div>
+    <div class="stage-sep"></div>
+    <div class="stage-step completed"><div class="stage-num">✓</div> Valuation</div>
+    <div class="stage-sep"></div>
+    <div class="stage-step completed"><div class="stage-num">✓</div> Timing</div>
+    <div class="stage-sep"></div>
+    <div class="stage-step active"><div class="stage-num">5</div> Strategy</div>
+    <div class="stage-sep"></div>
+    <div class="stage-step"><div class="stage-num">6</div> Protection</div>
+  </div>
+</div>
+
+<!-- PHILOSOPHY -->
+<div class="philosophy">
+  <div>
+    <div class="philosophy-title">Our Investment Philosophy</div>
+    <div class="philosophy-sub">We only buy great businesses at great prices, entered wisely, protected carefully.</div>
+  </div>
+  <button class="philosophy-hide">Hide ↑</button>
+</div>
+
+<!-- MAIN -->
+<div class="main">
+
+  <!-- PAGE HEADER -->
+  <div class="page-header">
+    <div class="page-eyebrow">Stage 5 of 6 · Strategy</div>
+    <h1 class="page-headline">You've done the research. <em>Now make a plan.</em></h1>
+    <p class="page-sub">Turn what you've learned into a decision you can stand behind. Set your conviction level, write your thesis, define what would change your mind, then build your entry plan.</p>
+  </div>
+
+  <!-- SECTION 1: RESEARCH RECAP -->
+  <div class="section-label-row">
+    <div class="section-num">↑</div>
+    <div>
+      <div class="section-label-text">What you learned</div>
+      <div class="section-label-sub">Your research across 4 stages — click any to revisit</div>
+    </div>
+  </div>
+
+  <div class="recap-card">
+    <div class="card-header">
+      <span class="card-header-title">Research Summary — NVDA</span>
+      <span class="card-header-badge">4 stages complete</span>
+    </div>
+    <div class="recap-grid">
+      <div class="recap-item">
+        <div class="recap-stage">Performance</div>
+        <div class="recap-verdict"><div class="status-dot dot-green"></div> 4/4 Strong</div>
+        <div class="recap-sub">Financially strong across all four dimensions.</div>
+        <div class="recap-view">View details →</div>
+      </div>
+      <div class="recap-item">
+        <div class="recap-stage">Valuation</div>
+        <div class="recap-verdict"><div class="status-dot dot-amber"></div> 2/4 Sensible</div>
+        <div class="recap-sub">Some signals look reasonable, others warrant a closer look.</div>
+        <div class="recap-view">View details →</div>
+      </div>
+      <div class="recap-item">
+        <div class="recap-stage">Timing</div>
+        <div class="recap-verdict"><div class="status-dot dot-amber"></div> 0/3 Supportive</div>
+        <div class="recap-sub">Timing conditions are currently challenging.</div>
+        <div class="recap-view">View details →</div>
+      </div>
+      <div class="recap-item">
+        <div class="recap-stage">Business</div>
+        <div class="recap-verdict"><div class="status-dot dot-green"></div> Strong Moat</div>
+        <div class="recap-sub">AI/ML platform with high switching costs and brand power.</div>
+        <div class="recap-view">View details →</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SECTION 2: CONVICTION -->
+  <div class="section-label-row">
+    <div class="section-num">1</div>
+    <div>
+      <div class="section-label-text">How convicted are you?</div>
+      <div class="section-label-sub">This shapes how much you allocate and how you enter</div>
+    </div>
+  </div>
+
+  <div class="conviction-card">
+    <div class="card-header">
+      <span class="card-header-title">Conviction Level — NVDA</span>
+      <span class="card-header-badge">Select one</span>
+    </div>
+    <div class="conviction-body">
+      <div class="conviction-levels">
+        <div class="conviction-level">
+          <div class="cl-check">✓</div>
+          <div class="cl-icon">🔍</div>
+          <div class="cl-label">Exploring</div>
+          <div class="cl-desc">Interested but not ready to commit. Want to watch it first.</div>
+        </div>
+        <div class="conviction-level selected">
+          <div class="cl-check">✓</div>
+          <div class="cl-icon">📌</div>
+          <div class="cl-label">Interested</div>
+          <div class="cl-desc">I understand the business and see a real case. Ready to enter in stages.</div>
+        </div>
+        <div class="conviction-level">
+          <div class="cl-check">✓</div>
+          <div class="cl-icon">🎯</div>
+          <div class="cl-label">High Conviction</div>
+          <div class="cl-desc">Strong thesis, comfortable with position size. Prepared to add on dips.</div>
+        </div>
+      </div>
+      <div class="conviction-insight">
+        <strong style="font-weight:500;color:var(--ink);">Interested</strong> — We suggest entering in 2–3 tranches over 30–60 days. This lets you average in without committing everything at once, especially given mixed timing signals.
+      </div>
+    </div>
+  </div>
+
+  <!-- SECTION 3: INVESTMENT MEMO -->
+  <div class="section-label-row">
+    <div class="section-num">2</div>
+    <div>
+      <div class="section-label-text">Write your thesis</div>
+      <div class="section-label-sub">Pre-filled from your research — edit to make it yours</div>
+    </div>
+  </div>
+
+  <div class="memo-card">
+    <div class="card-header">
+      <span class="card-header-title">Investment Memo — NVDA</span>
+      <span class="card-header-badge">Editable</span>
+    </div>
+    <div class="memo-body">
+      <div class="memo-row">
+        <div class="memo-label"><span class="memo-label-icon">📋</span> Why I own this</div>
+        <div class="memo-generated">NVIDIA is the dominant platform for AI/ML compute. Its CUDA ecosystem creates deep switching costs — customers build workflows on NVIDIA and rarely leave. With AI infrastructure spend accelerating and NVDA expanding into enterprise software (NIM, AIP), the business has durable pricing power and expanding margins.</div>
+      </div>
+      <div class="memo-divider"></div>
+      <div class="memo-row">
+        <div class="memo-label"><span class="memo-label-icon">⏳</span> My time horizon</div>
+        <textarea class="memo-input" rows="2" placeholder="e.g. 3–5 years. I believe AI infrastructure spend is a multi-year cycle...">3–5 years. I believe AI infrastructure spend is a multi-year cycle and NVDA is the picks-and-shovels play.</textarea>
+      </div>
+      <div class="memo-divider"></div>
+      <div class="memo-row">
+        <div class="memo-label"><span class="memo-label-icon">⚠️</span> What I'm watching</div>
+        <textarea class="memo-input" rows="2" placeholder="e.g. Margin compression if AMD/Intel close the gap on CUDA...">Margin compression if AMD closes the CUDA gap. Export restrictions limiting China revenue. Valuation multiple contraction if AI growth disappoints.</textarea>
+      </div>
+    </div>
+  </div>
+
+  <!-- SECTION 4: GUARDRAILS -->
+  <div class="section-label-row">
+    <div class="section-num">3</div>
+    <div>
+      <div class="section-label-text">Define your guardrails</div>
+      <div class="section-label-sub">What would make you reconsider or exit?</div>
+    </div>
+  </div>
+
+  <div class="guardrails-card">
+    <div class="card-header">
+      <span class="card-header-title">I'm Wrong If... — NVDA</span>
+      <span class="card-header-badge">2 guardrails set</span>
+    </div>
+    <div class="guardrails-body">
+      <div class="guardrails-intro">
+        Decide now what would change your mind — before emotion gets involved. These become your exit rules.
+      </div>
+      <div class="guardrails-builder">
+
+        <div class="guardrail-row">
+          <div class="guardrail-num">1</div>
+          <div class="guardrail-content">
+            <div class="guardrail-prefix">I'm wrong if...</div>
+            <div class="guardrail-tags">
+              <span class="gtag selected">Revenue</span>
+              <span class="gtag">Margins</span>
+              <span class="gtag">Debt</span>
+              <span class="gtag">Cash Flow</span>
+              <span class="gtag">Competition</span>
+              <span class="gtag">Management</span>
+            </div>
+            <div class="guardrail-tags">
+              <span class="gtag selected">declines</span>
+              <span class="gtag">stalls</span>
+              <span class="gtag">deteriorates</span>
+              <span class="gtag">compresses</span>
+            </div>
+            <div class="guardrail-tags">
+              <span class="gtag selected">for 2+ quarters</span>
+              <span class="gtag">by &gt;10%</span>
+              <span class="gtag">without recovery</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="guardrail-row">
+          <div class="guardrail-num">2</div>
+          <div class="guardrail-content">
+            <div class="guardrail-prefix">I'm wrong if...</div>
+            <div class="guardrail-tags">
+              <span class="gtag selected">Competition</span>
+              <span class="gtag">Revenue</span>
+              <span class="gtag">Margins</span>
+            </div>
+            <div class="guardrail-tags">
+              <span class="gtag selected">deteriorates</span>
+              <span class="gtag">declines</span>
+              <span class="gtag">stalls</span>
+            </div>
+            <div class="guardrail-or">or type your own:</div>
+            <input class="guardrail-input" type="text" placeholder="e.g. AMD gains meaningful share in data center GPU market...">
+          </div>
+        </div>
+
+        <button class="add-guardrail">+ Add another guardrail</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- SECTION 5: ENTRY PLAN -->
+  <div class="section-label-row">
+    <div class="section-num">4</div>
+    <div>
+      <div class="section-label-text">Build your entry plan</div>
+      <div class="section-label-sub">How much, when, and under what conditions</div>
+    </div>
+  </div>
+
+  <div class="plan-card">
+    <div class="card-header">
+      <span class="card-header-title">Entry Plan — NVDA</span>
+      <span class="card-header-badge">3 tranches · $10,000</span>
+    </div>
+    <div class="plan-body">
+      <div class="plan-intro">Based on your <strong style="font-weight:500">Interested</strong> conviction level, we suggest 2–3 tranches. Adjust the amounts and timing to fit your situation.</div>
+
+      <div class="plan-controls">
+        <div class="plan-control">
+          <div class="plan-control-label">Total amount</div>
+          <input class="plan-input" type="text" value="$ 10,000">
+        </div>
+        <div class="plan-control">
+          <div class="plan-control-label">Split</div>
+          <select class="plan-select">
+            <option>Even (33 / 33 / 33)</option>
+            <option>Front-loaded (50 / 30 / 20)</option>
+            <option>Back-loaded (20 / 30 / 50)</option>
+            <option>Custom</option>
+          </select>
+        </div>
+
+      </div>
+
+      <div class="tranche-list">
+        <div style="display:grid;grid-template-columns:24px 1fr 1fr 1fr 28px;gap:10px;padding:0 14px;margin-bottom:4px;">
+          <div></div>
+          <div style="font-size:9px;font-weight:500;letter-spacing:0.08em;text-transform:uppercase;color:var(--ink-ghost)">Amount</div>
+          <div style="font-size:9px;font-weight:500;letter-spacing:0.08em;text-transform:uppercase;color:var(--ink-ghost)">Timing</div>
+          <div style="font-size:9px;font-weight:500;letter-spacing:0.08em;text-transform:uppercase;color:var(--ink-ghost)">Condition (optional)</div>
+          <div></div>
+        </div>
+        <div class="tranche-row">
+          <div class="tranche-num">1</div>
+          <input class="tranche-input" type="text" value="$ 3,500">
+          <select class="tranche-select"><option>Now / soon</option><option>In 30 days</option><option>In 60 days</option><option>On dip &gt;5%</option></select>
+          <div class="tranche-condition">— no condition</div>
+          <button class="tranche-remove">×</button>
+        </div>
+        <div class="tranche-row">
+          <div class="tranche-num">2</div>
+          <input class="tranche-input" type="text" value="$ 3,300">
+          <select class="tranche-select"><option>In 30 days</option><option>Now / soon</option><option>In 60 days</option><option>On dip &gt;5%</option></select>
+          <div class="tranche-condition">— no condition</div>
+          <button class="tranche-remove">×</button>
+        </div>
+        <div class="tranche-row">
+          <div class="tranche-num">3</div>
+          <input class="tranche-input" type="text" value="$ 3,200">
+          <select class="tranche-select"><option>In 60 days</option><option>Now / soon</option><option>In 30 days</option><option>On dip &gt;5%</option></select>
+          <div class="tranche-condition">if signals improve</div>
+          <button class="tranche-remove">×</button>
+        </div>
+      </div>
+
+      <div class="plan-summary">
+        <div>
+          <div class="ps-label">Total allocated</div>
+          <div class="ps-breakdown">3 tranches · over ~60 days</div>
+        </div>
+        <div class="ps-value">$10,000</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- EXPORT -->
+  <div class="export-card">
+    <div class="export-left">
+      <div class="export-eyebrow">Your plan is ready</div>
+      <div class="export-headline">Save it. <em>Don't forget it.</em></div>
+      <div class="export-sub">Email yourself the full memo + entry plan so you have it when you're ready to act.</div>
+    </div>
+    <div class="export-actions">
+      <a href="#" class="export-btn btn-white">📧 Email me this plan</a>
+      <a href="#" class="export-btn btn-outline-white">Continue to Protection →</a>
+    </div>
+  </div>
+
+  <!-- FOOTER NAV -->
+  <div class="footer-nav">
+    <a href="#" class="foot-btn btn-back">← Previous Stage</a>
+    <a href="#" class="foot-btn btn-fwd">Continue to Protection →</a>
+  </div>
+
+</div>
+</body>
+</html>

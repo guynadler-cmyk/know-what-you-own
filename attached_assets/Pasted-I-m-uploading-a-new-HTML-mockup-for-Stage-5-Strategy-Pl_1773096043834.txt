@@ -1,0 +1,126 @@
+I'm uploading a new HTML mockup for Stage 5 (Strategy). 
+Please rebuild this stage to match the mockup visually 
+AND implement the new functionality described below.
+
+─────────────────────────────────────
+VISUAL — match the mockup exactly:
+─────────────────────────────────────
+- Page header with eyebrow, Playfair Display headline, 
+  subtext
+- Research recap card (dark teal header, 4-column grid 
+  pulling existing stage verdicts)
+- 4 numbered sections with section-label-rows
+- Conviction cards (3 cards) replacing the slider
+- Investment memo card with editable fields
+- Guardrail tag-builder
+- Entry plan with tranche table
+- Dark teal export bar at bottom
+
+─────────────────────────────────────
+FUNCTIONALITY 1 — Conviction Cards
+─────────────────────────────────────
+Replace the conviction slider with 3 clickable cards:
+- Exploring / Interested / High Conviction
+- Selecting a card updates the conviction state
+- Each selection shows a different insight below:
+  - Exploring: "We suggest watching before committing. 
+    Consider a small starter position only."
+  - Interested: "We suggest 2–3 tranches over 30–60 
+    days. Average in without committing everything 
+    at once."
+  - High Conviction: "You can enter more aggressively. 
+    Consider a larger first tranche with planned adds."
+- Selected conviction level auto-sets the tranche 
+  count in the entry plan:
+  - Exploring → 1 tranche
+  - Interested → 3 tranches
+  - High Conviction → 2 tranches (larger sizes)
+
+─────────────────────────────────────
+FUNCTIONALITY 2 — AI Investment Memo
+─────────────────────────────────────
+Create a new API endpoint: GET /api/memo/:ticker
+
+This endpoint:
+1. Fetches the existing cached analysis data for 
+   the ticker (same data used in Stages 1–4)
+2. Calls the Claude API with this prompt:
+
+   "Based on this research on [TICKER]:
+   - Business thesis: [thesis from stage 1]
+   - Financial health: [signals + verdicts from stage 2]
+   - Valuation: [signals from stage 3]
+   - Timing: [signals from stage 4]
+   
+   Write three short editable fields for an investment 
+   memo. Return JSON with exactly these keys:
+   {
+     why_own: "2-3 sentences. Why this business is 
+               worth owning. First person. Plain English.",
+     time_horizon: "1-2 sentences. Suggested holding 
+                    period and why.",
+     watching: "2-3 sentences. Key risks and signals 
+                to monitor."
+   }
+   
+   No jargon. No bullet points. Write as if the 
+   investor is writing in their own journal.
+   Return only the JSON object, nothing else."
+
+3. Returns the JSON to the frontend
+
+In the UI:
+- Show a "Generate memo →" button when user first 
+  arrives at Stage 5
+- On click: show loading state ("Generating your 
+  memo..."), call /api/memo/:ticker, populate the 
+  three text fields with the response
+- All three fields remain fully editable after 
+  generation
+- If memo was already generated this session, 
+  show the saved version (no regenerate needed)
+- Add a small "Regenerate" link below the fields 
+  for if they want a fresh version
+
+─────────────────────────────────────
+FUNCTIONALITY 3 — Guardrail Tag Builder
+─────────────────────────────────────
+Replace the free-text guardrail box with a 
+structured tag builder.
+
+Each guardrail row has three tag groups:
+- Area: Revenue · Margins · Debt · Cash Flow · 
+  Competition · Management · Strategy
+- Change: declines · stalls · deteriorates · 
+  compresses · breaks · rises
+- Threshold: for 2+ quarters · by >10% · 
+  without recovery · below prior level
+
+Clicking a tag toggles it selected/unselected.
+Each row also has a free-text fallback input: 
+"or describe in your own words..."
+
+"+ Add another guardrail" adds a new empty row.
+Store all selections in component state.
+Include guardrail text in the emailed plan.
+
+─────────────────────────────────────
+ENTRY PLAN CONTROLS — two fields only:
+─────────────────────────────────────
+- Total amount (input)
+- Split: Even (33/33/33) · Front-loaded (50/30/20) 
+  · Back-loaded (20/30/50) · Custom
+No chart view field. Remove it entirely.
+
+─────────────────────────────────────
+KEEP UNCHANGED:
+─────────────────────────────────────
+- Tranche plan functionality (just restyle to 
+  match mockup table layout)
+- "Email me this plan" functionality
+- Stage navigation (Previous / Continue to 
+  Protection)
+- All other stages — do not touch
+
+Screenshot Stage 5 when complete, showing the 
+conviction cards and the memo generate button.

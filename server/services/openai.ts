@@ -743,6 +743,40 @@ Requirements:
 
     return resp
   }
+
+  async generateMemo(analysis: CompanySummary): Promise<{ why_own: string; time_horizon: string; watching: string }> {
+    const thesisText = (analysis.investmentThesis || "").substring(0, 600);
+    const moatsText = (analysis.moats || []).slice(0, 3).map((m: any) => m.name).join(", ");
+    const themesText = (analysis.investmentThemes || []).slice(0, 3).map((t: any) => t.name).join(", ");
+    const opportunitiesText = (analysis.marketOpportunity || []).slice(0, 2).map((o: any) => o.name).join(", ");
+
+    const prompt = `Based on this investment research on ${analysis.ticker} (${analysis.companyName}):
+- Business thesis: ${thesisText}
+- Key competitive moats: ${moatsText}
+- Investment themes: ${themesText}
+- Market opportunity: ${opportunitiesText}
+
+Write three short, editable fields for a personal investment memo. Return ONLY a JSON object with exactly these keys:
+{
+  "why_own": "2-3 sentences. Why this business is worth owning long-term. Plain English, first person, no jargon.",
+  "time_horizon": "1-2 sentences. Suggested holding period and why, given the business model.",
+  "watching": "2-3 sentences. Key risks and signals that would change the thesis. Be specific."
+}
+
+Write as if the investor is writing in their own journal. No bullet points. No markdown. Return only valid JSON.`;
+
+    const response = await openai.chat.completions.create({
+      model: "gpt-4o-mini",
+      messages: [{ role: "user", content: prompt }],
+      temperature: 0.7,
+      max_tokens: 500,
+    });
+
+    const content = response.choices[0]?.message?.content?.trim() || "";
+    const jsonMatch = content.match(/\{[\s\S]*\}/);
+    if (!jsonMatch) throw new Error("No JSON found in memo response");
+    return JSON.parse(jsonMatch[0]);
+  }
 }
 
 export const openaiService = new OpenAIService();

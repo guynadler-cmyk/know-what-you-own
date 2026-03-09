@@ -15,6 +15,18 @@ export async function getBusinessByCacheKey(
   return rows.length ? (rows[0].result as CompanySummary) : null;
 }
 
+export async function getLatestBusinessByTicker(
+  ticker: string
+): Promise<CompanySummary | null> {
+  const rows = await db
+    .select({ result: aiBusinessAnalysis.result })
+    .from(aiBusinessAnalysis)
+    .where(eq(aiBusinessAnalysis.ticker, ticker.toUpperCase()))
+    .orderBy(desc(aiBusinessAnalysis.filingDate))
+    .limit(1);
+  return rows.length ? (rows[0].result as CompanySummary) : null;
+}
+
 export async function getLatestCompanyInfoByTicker(
   ticker: string
 ): Promise<{ companyName: string } | null> {
