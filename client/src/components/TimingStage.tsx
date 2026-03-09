@@ -25,6 +25,7 @@ interface TimingStageProps {
   ticker?: string;
   companyName?: string;
   homepage?: string;
+  placeholderData?: TimingAnalysis;
 }
 
 type TimingMetricType = "trend" | "momentum" | "stretch";
@@ -947,7 +948,7 @@ function DebugDrawer({ debug, isOpen, onToggle }: { debug: TimingAnalysis['debug
   );
 }
 
-export function TimingStage({ ticker, companyName, homepage }: TimingStageProps) {
+export function TimingStage({ ticker, companyName, homepage, placeholderData }: TimingStageProps) {
   const [selectedMetric, setSelectedMetric] = useState<TimingMetricType>("trend");
   const [showDebug, setShowDebug] = useState(false);
   
@@ -976,9 +977,10 @@ export function TimingStage({ ticker, companyName, homepage }: TimingStageProps)
     },
     enabled: !!ticker,
     retry: false,
+    placeholderData: placeholderData,
   });
 
-  if (!ticker) {
+  if (!ticker && !placeholderData) {
     return (
       <Card data-testid="timing-no-ticker">
         <CardContent className="p-8 text-center">
