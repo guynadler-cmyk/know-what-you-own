@@ -186,7 +186,7 @@ export default function AppPage() {
     window.history.pushState({}, '', window.location.pathname);
   };
 
-  const STAGE_NAMES = ['Business', 'Performance', 'Valuation', 'Strategy', 'Timing', 'Protection'];
+  const STAGE_NAMES = ['Business', 'Performance', 'Valuation', 'Strategy', 'Timing', 'Manage'];
   
   const handleStageChange = (stage: number) => {
     setCurrentStage(stage);

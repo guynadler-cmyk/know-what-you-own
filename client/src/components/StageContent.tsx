@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react";
 import { SummaryCard } from "@/components/SummaryCard";
 import { ComingSoonStage } from "@/components/ComingSoonStage";
-import { ProtectStage } from "@/components/ProtectStage";
+import { ManageStage } from "@/components/ManageStage";
 import { TimingStage } from "@/components/TimingStage";
 import { StrategyStage } from "@/components/StrategyStage";
 import { QuadrantExplorer, generateQuadrantData } from "@/components/QuadrantExplorer";
@@ -28,11 +28,11 @@ interface StageContentProps {
 
 const COMING_SOON_STAGES = {
   6: {
-    stageTitle: "Protect What You Own",
+    stageTitle: "Manage",
     icon: "shield",
-    hook: "Don't just buy smart. Hold smart.",
-    summary: "Every investor eventually hits doubt. This step gives you the tools to stay steady when it matters — with check-ins, exit rules, and guardrails that protect your peace and your portfolio.",
-    cta: "Build resilience into your portfolio. Join the waitlist for early access."
+    hook: "Stay honest with yourself.",
+    summary: "The research is done. Now build the habit of checking in — so you act on facts, not feelings.",
+    cta: "Set your check-in cadence and position rules. Join the waitlist for early access."
   }
 };
 
@@ -210,7 +210,19 @@ export function StageContent({ stage, summaryData, financialMetrics, balanceShee
   }
 
   if (stage === 6) {
-    return <ProtectStage ticker={ticker} />;
+    const strongCount = quadrantData.filter(q => q.strength === "strong").length;
+    const fundamentalsScore = quadrantData.length > 0
+      ? `${strongCount}/${quadrantData.length} strong`
+      : undefined;
+
+    return (
+      <ManageStage
+        ticker={ticker}
+        companyName={summaryData?.companyName}
+        fundamentalsScore={fundamentalsScore}
+        onStageChange={onStageChange}
+      />
+    );
   }
 
   if (stage === 1 && summaryData) {
@@ -224,7 +236,7 @@ export function StageContent({ stage, summaryData, financialMetrics, balanceShee
               </div>
               <AlertDialogTitle className="text-center">No 10-K Analysis Available</AlertDialogTitle>
               <AlertDialogDescription className="text-center">
-                {summaryData.companyName} doesn't file a 10-K with the SEC — it may be a foreign company (which files a 20-F instead) or a fund. Business analysis isn't available, but Performance, Valuation, Timing, Strategy and Protection are all fully accessible using market data.
+                {summaryData.companyName} doesn't file a 10-K with the SEC — it may be a foreign company (which files a 20-F instead) or a fund. Business analysis isn't available, but Performance, Valuation, Timing, Strategy and Manage are all fully accessible using market data.
               </AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter className="justify-center sm:justify-center">

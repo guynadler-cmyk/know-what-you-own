@@ -681,6 +681,20 @@ export interface WatchlistSnapshot {
     selectedCheckins?: string[];
     reminderDates?: { type: string; date: string }[];
   };
+  manage?: {
+    cadence?: string;
+    nextCheckinDate?: string;
+    monitorSignals?: Array<{
+      label: string;
+      stage: string;
+      status: "green" | "amber" | "red";
+      description: string;
+    }>;
+    positionRules?: Array<{ type: string; text: string }>;
+    positionOn?: boolean;
+    positionNote?: { entryPrice: string; entryDate: string; sharesAmount: string };
+    messageToFutureSelf?: string;
+  };
 }
 
 export interface HistoricalSnapshot {
