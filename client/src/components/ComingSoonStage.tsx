@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Construction, CheckCircle, AlertCircle, Loader2, Shield, Map, type LucideIcon } from "lucide-react";
 import { apiRequest } from "@/lib/queryClient";
+import { analytics } from "@/lib/analytics";
 
 const iconMap: Record<string, LucideIcon> = {
   shield: Shield,
@@ -27,6 +28,11 @@ export function ComingSoonStage({ stageTitle, icon, hook, summary, cta }: Coming
     mutationFn: async (data: { email: string; stageName: string }) => {
       const response = await apiRequest("POST", "/api/waitlist", data);
       return response.json();
+    },
+    onSuccess: (data) => {
+      if (data?.isNewLead) {
+        analytics.trackNewLead({ lead_source: "coming_soon" });
+      }
     },
   });
 

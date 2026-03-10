@@ -1936,45 +1936,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-
-  // --------------------------------------------------------------------------
-  // WAITLIST SIGNUP (FIXED stageName ERROR)
-  // --------------------------------------------------------------------------
-  app.post("/api/waitlist", async (req: any, res) => {
-    try {
-      const validatedData = insertWaitlistSignupSchema.parse(req.body);
-
-      const signup = await storage.createWaitlistSignup(validatedData);
-
-      // FIX: stageName might not exist in schema
-      console.log(
-        `Waitlist signup: ${validatedData.email} for "${(validatedData as any).stageName ?? "N/A"}"`,
-      );
-
-      res.status(201).json({
-        success: true,
-        message:
-          "You're on the list! We'll notify you when this feature launches.",
-        id: signup.id,
-      });
-    } catch (error: any) {
-      console.error("Waitlist signup error:", error);
-
-      if (error.name === "ZodError") {
-        return res.status(400).json({
-          error: "Invalid input",
-          message:
-            error.errors[0]?.message || "Please check your email address.",
-        });
-      }
-
-      res.status(500).json({
-        error: "Signup failed",
-        message: "Something went wrong. Please try again.",
-      });
-    }
-  });
-
   app.get("/api/waitlist", async (req: any, res) => {
     try {
       const signups = await storage.getWaitlistSignups();
