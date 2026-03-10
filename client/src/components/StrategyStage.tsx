@@ -24,7 +24,6 @@ interface SimpleTranche {
   id: number;
   amount: number;
   amountDisplay: string;
-  timing: string;
   condition: string;
 }
 
@@ -107,18 +106,6 @@ const SPLIT_WEIGHTS: Record<SplitType, Record<number, number[]>> = {
   custom: { 1: [1], 2: [0.5, 0.5], 3: [0.334, 0.333, 0.333] },
 };
 
-const DEFAULT_TIMINGS: Record<number, string[]> = {
-  1: ["now"],
-  2: ["now", "30days"],
-  3: ["now", "30days", "60days"],
-};
-
-const TIMING_OPTIONS = [
-  { value: "now", label: "Now / soon" },
-  { value: "30days", label: "In 30 days" },
-  { value: "60days", label: "In 60 days" },
-  { value: "dip5", label: "On dip >5%" },
-];
 
 const GUARDRAIL_AREAS = ["Revenue", "Margins", "Debt", "Cash Flow", "Competition", "Management", "Strategy"];
 const GUARDRAIL_CHANGES = ["declines", "stalls", "deteriorates", "compresses", "breaks"];
@@ -148,7 +135,6 @@ function buildTranches(
   existing?: SimpleTranche[],
 ): SimpleTranche[] {
   const weights = SPLIT_WEIGHTS[split]?.[count] || SPLIT_WEIGHTS.even[count] || [1];
-  const timings = DEFAULT_TIMINGS[count] || ["now"];
   const rawAmounts = weights.map(w => Math.floor(total * w));
   const allocated = rawAmounts.reduce((s, a) => s + a, 0);
   rawAmounts[rawAmounts.length - 1] += total - allocated;
@@ -157,7 +143,6 @@ function buildTranches(
     id: i + 1,
     amount: rawAmounts[i],
     amountDisplay: `$ ${formatNumber(rawAmounts[i])}`,
-    timing: existing?.[i]?.timing || timings[i] || "now",
     condition: existing?.[i]?.condition || "",
   }));
 }
@@ -463,10 +448,6 @@ export function StrategyStage({
     });
   };
 
-  const handleTrancheTiming = (id: number, timing: string) => {
-    setTranches(prev => prev.map(t => t.id === id ? { ...t, timing } : t));
-  };
-
   const handleTrancheCondition = (id: number, condition: string) => {
     setTranches(prev => prev.map(t => t.id === id ? { ...t, condition } : t));
   };
@@ -487,7 +468,7 @@ export function StrategyStage({
     setTranches(prev => {
       const withNew = [
         ...prev,
-        { id: prev.length + 1, amount: 0, amountDisplay: "$ 0", timing: "30days", condition: "" },
+        { id: prev.length + 1, amount: 0, amountDisplay: "$ 0", condition: "" },
       ];
       const rebalanced = applyEvenSplit(withNew, totalAmountRaw);
       triggerRebalanced();
@@ -584,7 +565,7 @@ export function StrategyStage({
     tranches: tranches.map(t => ({
       index: t.id,
       amount: t.amount,
-      when: { type: t.timing === "now" ? "now" as const : "days" as const, days: t.timing === "30days" ? 30 : t.timing === "60days" ? 60 : undefined },
+      condition: t.condition,
       gate: { type: "none" as const },
       gateEnabled: false,
       manual: false,
@@ -741,7 +722,7 @@ export function StrategyStage({
         />
         <div className="p-4 space-y-4">
           <p className="text-sm" style={{ color: "var(--lp-ink-mid)" }}>
-            Based on your <strong className="font-semibold" style={{ color: "var(--lp-ink)" }}>{CONVICTION_CONFIGS[conviction].label}</strong> conviction level, we suggest {CONVICTION_CONFIGS[conviction].trancheCount} tranche{CONVICTION_CONFIGS[conviction].trancheCount !== 1 ? "s" : ""}. Adjust the amounts and timing to fit your situation.
+            Based on your <strong className="font-semibold" style={{ color: "var(--lp-ink)" }}>{CONVICTION_CONFIGS[conviction].label}</strong> conviction level, we suggest {CONVICTION_CONFIGS[conviction].trancheCount} tranche{CONVICTION_CONFIGS[conviction].trancheCount !== 1 ? "s" : ""}. Adjust the amounts and conditions to fit your situation.
           </p>
 
           {/* Controls row */}
@@ -779,7 +760,7 @@ export function StrategyStage({
             <div
               className="grid gap-2 px-3 py-2 text-xs font-semibold uppercase tracking-wide"
               style={{
-                gridTemplateColumns: "24px 1fr 1fr 1fr 28px",
+                gridTemplateColumns: "24px 1fr 2fr 28px",
                 color: "var(--lp-ink-ghost)",
                 borderBottom: "1px solid var(--lp-border)",
                 background: "var(--lp-warm-white)",
@@ -787,8 +768,7 @@ export function StrategyStage({
             >
               <div />
               <div>Amount</div>
-              <div>Timing</div>
-              <div>Condition</div>
+              <div>Condition <span className="normal-case font-normal">(optional)</span></div>
               <div />
             </div>
 
@@ -797,7 +777,7 @@ export function StrategyStage({
                 key={t.id}
                 className="grid gap-2 px-3 py-2.5 items-center"
                 style={{
-                  gridTemplateColumns: "24px 1fr 1fr 1fr 28px",
+                  gridTemplateColumns: "24px 1fr 2fr 28px",
                   borderBottom: "1px solid var(--lp-border)",
                 }}
                 data-testid={`tranche-row-${t.id}`}
@@ -817,21 +797,11 @@ export function StrategyStage({
                   className="text-sm h-8"
                   data-testid={`input-tranche-amount-${t.id}`}
                 />
-                <Select value={t.timing} onValueChange={(v) => handleTrancheTiming(t.id, v)}>
-                  <SelectTrigger className="text-xs h-8" data-testid={`select-timing-${t.id}`}>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {TIMING_OPTIONS.map(o => (
-                      <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
                 <Input
                   type="text"
                   value={t.condition}
                   onChange={(e) => handleTrancheCondition(t.id, e.target.value)}
-                  placeholder="no condition"
+                  placeholder="e.g. if it pulls back to $140, after next earnings, if momentum improves..."
                   className="text-xs h-8 placeholder:text-muted-foreground/50"
                   data-testid={`input-tranche-condition-${t.id}`}
                 />
@@ -869,7 +839,6 @@ export function StrategyStage({
                 <div className="text-xs font-semibold" style={{ color: "var(--lp-ink-mid)" }}>Total allocated</div>
                 <div className="text-xs" style={{ color: "var(--lp-ink-ghost)" }}>
                   {tranches.length} tranche{tranches.length !== 1 ? "s" : ""}
-                  {tranches.some(t => t.timing === "30days") || tranches.some(t => t.timing === "60days") ? " · over ~60 days" : ""}
                 </div>
               </div>
               <div className="text-base font-semibold" style={{ color: "var(--lp-ink)" }}>{formatCurrency(totalAmountRaw)}</div>
