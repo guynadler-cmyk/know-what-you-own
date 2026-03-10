@@ -220,7 +220,6 @@ export function StageContent({ stage, summaryData, financialMetrics, balanceShee
         ticker={ticker}
         companyName={summaryData?.companyName}
         fundamentalsScore={fundamentalsScore}
-        onStageChange={onStageChange}
       />
     );
   }

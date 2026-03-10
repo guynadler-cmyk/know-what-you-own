@@ -108,19 +108,22 @@ function NavWatchlistActions({
 
   return (
     <>
-      <button
-        onClick={isSaved ? undefined : () => setDialogOpen(true)}
-        className={`nav-icon-btn${isSaved ? " active" : ""}`}
-        style={{ cursor: isSaved ? "default" : "pointer" }}
-        data-testid="button-nav-saved"
-      >
-        {isSaved ? (
+      {isSaved ? (
+        <Link href="/watchlist" data-testid="button-nav-saved" className={`nav-icon-btn active`} style={{ cursor: "pointer", textDecoration: "none" }}>
           <BookmarkCheck style={{ width: 11, height: 11 }} />
-        ) : (
+          {`Saved${historyCount > 0 ? ` (${historyCount + 1})` : ""}`}
+        </Link>
+      ) : (
+        <button
+          onClick={() => setDialogOpen(true)}
+          className="nav-icon-btn"
+          style={{ cursor: "pointer" }}
+          data-testid="button-nav-saved"
+        >
           <Bookmark style={{ width: 11, height: 11 }} />
-        )}
-        {isSaved ? `Saved${historyCount > 0 ? ` (${historyCount + 1})` : ""}` : "Save"}
-      </button>
+          Save
+        </button>
+      )}
 
       {isSaved && (
         <button

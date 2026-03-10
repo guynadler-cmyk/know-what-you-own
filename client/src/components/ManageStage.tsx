@@ -9,7 +9,7 @@ import { useAuth } from "@/hooks/use-auth";
 import { addWeeks, addMonths, format } from "date-fns";
 import {
   TrendingUp, BarChart3, Activity, Shield, Plus, X,
-  ChevronLeft, Mail, Calendar, Loader2, MapPin,
+  Mail, Calendar, Loader2, MapPin,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -19,7 +19,6 @@ interface ManageStageProps {
   ticker?: string;
   companyName?: string;
   fundamentalsScore?: string;
-  onStageChange?: (stage: number) => void;
 }
 
 interface PositionRule {
@@ -138,7 +137,7 @@ function statusClasses(status: "green" | "amber" | "red") {
 
 // ── Main component ──────────────────────────────────────────────────────────
 
-export function ManageStage({ ticker, companyName, fundamentalsScore, onStageChange }: ManageStageProps) {
+export function ManageStage({ ticker, companyName, fundamentalsScore }: ManageStageProps) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const { isAuthenticated } = useAuth();
@@ -952,21 +951,6 @@ export function ManageStage({ ticker, companyName, fundamentalsScore, onStageCha
         </div>
       </div>
 
-      {/* FOOTER NAV */}
-      <div
-        className="flex items-center justify-start pt-6 border-t"
-        style={{ borderColor: "var(--lp-border)" }}
-      >
-        <Button
-          variant="outline"
-          onClick={() => onStageChange?.(5)}
-          className="flex items-center gap-1.5 text-sm"
-          data-testid="btn-previous-stage"
-        >
-          <ChevronLeft className="w-4 h-4" />
-          Previous Stage
-        </Button>
-      </div>
     </div>
   );
 }
