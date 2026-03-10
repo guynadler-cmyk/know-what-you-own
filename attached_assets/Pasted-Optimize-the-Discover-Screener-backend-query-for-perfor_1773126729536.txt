@@ -1,0 +1,81 @@
+Optimize the Discover / Screener backend query for performance on PostgreSQL (Cloud SQL).
+
+Context
+The screener reads tags from ai_business_analysis.result (JSONB). As the dataset grows to thousands of companies, tag filtering must remain fast.
+
+Goal
+Add the correct PostgreSQL indexes and update the query used in /api/discover so tag filtering and sorting remain performant.
+
+--------------------------------------------------
+
+Step 1 — Add Database Indexes (run once)
+
+Create indexes to accelerate JSONB lookups and sorting.
+
+CREATE INDEX IF NOT EXISTS idx_business_themes
+ON ai_business_analysis
+USING GIN ((result->'themes'));
+
+CREATE INDEX IF NOT EXISTS idx_business_moat
+ON ai_business_analysis
+USING GIN ((result->'moat'));
+
+CREATE INDEX IF NOT EXISTS idx_quality_score
+ON ai_business_analysis (((result->>'quality_score')::float));
+
+These indexes will improve performance when filtering by tags and sorting results.
+
+--------------------------------------------------
+
+Step 2 — Update the Screener Query
+
+Update the query used in /api/discover to use the optimized PostgreSQL JSON operator ?|, which checks if ANY tag in an array exists.
+
+SELECT
+  ticker,
+  company_name,
+  result->'themes' AS themes,
+  result->'moat' AS moat,
+  (result->>'quality_score')::float AS quality_score,
+  (result->>'valuation_score')::float AS valuation_score,
+  result->>'quadrant' AS quadrant
+FROM ai_business_analysis
+WHERE
+  (result->'themes' ?| $1)
+  OR
+  (result->'moat' ?| $1)
+ORDER BY
+  (result->>'quality_score')::float DESC
+LIMIT 50;
+
+--------------------------------------------------
+
+Step 3 — Pass Tags from the API
+
+The frontend will send an array of selected tags.
+
+Example input:
+
+["AI", "Network Effects"]
+
+Ensure the backend passes this array as a PostgreSQL parameter.
+
+Example:
+
+db.query(query, [selectedTags])
+
+--------------------------------------------------
+
+Step 4 — Maintain Existing Frontend Behavior
+
+Do not change the existing UI logic or filtering behavior.
+
+Only implement:
+• database indexes
+• optimized query
+
+--------------------------------------------------
+
+Expected Result
+
+The screener should remain extremely fast (<100ms query time) even when the ai_business_analysis table grows to 5,000+ companies.
