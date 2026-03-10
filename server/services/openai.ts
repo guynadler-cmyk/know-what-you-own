@@ -744,26 +744,55 @@ Requirements:
     return resp
   }
 
-  async generateMemo(analysis: CompanySummary): Promise<{ why_own: string; time_horizon: string; watching: string }> {
-    const thesisText = (analysis.investmentThesis || "").substring(0, 600);
-    const moatsText = (analysis.moats || []).slice(0, 3).map((m: any) => m.name).join(", ");
-    const themesText = (analysis.investmentThemes || []).slice(0, 3).map((t: any) => t.name).join(", ");
-    const opportunitiesText = (analysis.marketOpportunity || []).slice(0, 2).map((o: any) => o.name).join(", ");
+  async generateMemo(
+    analysis: CompanySummary,
+    signals: {
+      businessThesis?: string;
+      strategicThemes?: string[];
+      competitiveMoats?: string[];
+      performanceScore?: string;
+      performanceSummary?: string;
+      valuationScore?: string;
+      valuationSummary?: string;
+      timingScore?: string;
+      timingSummary?: string;
+    }
+  ): Promise<{ why_own: string; time_horizon: string; watching: string }> {
+    const thesisText = (signals.businessThesis || analysis.investmentThesis || "").substring(0, 800);
+    const themesText = (signals.strategicThemes?.length
+      ? signals.strategicThemes
+      : (analysis.investmentThemes || []).slice(0, 5).map((t: any) => t.name)
+    ).join(", ") || "Not specified";
+    const moatsText = (signals.competitiveMoats?.length
+      ? signals.competitiveMoats
+      : (analysis.moats || []).slice(0, 4).map((m: any) => m.name)
+    ).join(", ") || "Not specified";
 
-    const prompt = `Based on this investment research on ${analysis.ticker} (${analysis.companyName}):
+    const perfScore = signals.performanceScore || "unknown";
+    const perfSummary = signals.performanceSummary || "Financial health data not available";
+    const valScore = signals.valuationScore || "unknown";
+    const valSummary = signals.valuationSummary || "Valuation data not available";
+    const timScore = signals.timingScore || "unknown";
+    const timSummary = signals.timingSummary || "Timing data not available";
+
+    const prompt = `You are writing a personal investment memo based ONLY on the following research data. Do not add any external context, macroeconomic commentary, or information not present in this data.
+
+Research data for ${analysis.ticker} (${analysis.companyName}):
 - Business thesis: ${thesisText}
-- Key competitive moats: ${moatsText}
-- Investment themes: ${themesText}
-- Market opportunity: ${opportunitiesText}
+- Strategic themes: ${themesText}
+- Competitive moats: ${moatsText}
+- Financial health: ${perfScore} — ${perfSummary}
+- Valuation: ${valScore} — ${valSummary}
+- Timing: ${timScore} — ${timSummary}
 
-Write three short, editable fields for a personal investment memo. Return ONLY a JSON object with exactly these keys:
+Write three fields. Return only valid JSON:
 {
-  "why_own": "2-3 sentences. Why this business is worth owning long-term. Plain English, first person, no jargon.",
-  "time_horizon": "1-2 sentences. Suggested holding period and why, given the business model.",
-  "watching": "2-3 sentences. Key risks and signals that would change the thesis. Be specific."
+  "why_own": "2-3 sentences. The core investment case based strictly on the business thesis and competitive moats above. First person. Plain English. Nothing outside this data.",
+  "time_horizon": "1-2 sentences. Suggested holding period based only on the business quality and financial health signals above. No external market commentary.",
+  "watching": "2-3 sentences. Specific risks based only on what the signals above flagged as weak or uncertain. Do not invent risks that are not reflected in the data."
 }
 
-Write as if the investor is writing in their own journal. No bullet points. No markdown. Return only valid JSON.`;
+If a signal is strong, say so. If something was flagged as a warning in the data, reference it specifically. Stay inside the research.`;
 
     const response = await openai.chat.completions.create({
       model: "gpt-4o-mini",

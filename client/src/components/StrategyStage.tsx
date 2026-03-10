@@ -261,10 +261,20 @@ export function StrategyStage({
   const [emailModalOpen, setEmailModalOpen] = useState(false);
   const [emailAddress, setEmailAddress] = useState("");
   const [emailError, setEmailError] = useState("");
+  const [showRebalanced, setShowRebalanced] = useState(false);
 
   const prevConvictionRef = useRef<ConvictionLevel>(conviction);
+  const rebalanceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // ── Remote data ────────────────────────────────────────────────────────────
+  const { data: analysisData } = useQuery<{
+    investmentThesis?: string;
+    investmentThemes?: { name: string }[];
+    moats?: { name: string }[];
+  }>({
+    queryKey: [`/api/analyze/${upperTicker}`],
+    enabled: !!ticker,
+  });
   const { data: timingData } = useQuery<TimingAnalysisResponse>({
     queryKey: [`/api/timing/${upperTicker}`],
     enabled: !!ticker,
@@ -302,9 +312,9 @@ export function StrategyStage({
   const valLabel = valuationSensible >= 3 ? "Sensible" : valuationSensible >= 2 ? "Mixed" : "Elevated";
   const timingLabel = timingRatio >= 0.8 ? "Supportive" : timingRatio >= 0.4 ? "Mixed" : "Challenging";
 
-  // ── Tranche sum ────────────────────────────────────────────────────────────
-  const trancheSum = useMemo(() => tranches.reduce((s, t) => s + t.amount, 0), [tranches]);
-  const trancheDiff = totalAmountRaw - trancheSum;
+  const perfSummary = perfTone === "positive" ? "Financially strong across all four dimensions." : perfTone === "mixed" ? "Mixed financial signals across the scorecard." : "Financial picture shows weakness in most areas.";
+  const valSummary = valTone === "positive" ? "All valuation signals look sensible." : valTone === "mixed" ? "Some valuation signals look reasonable, others warrant a closer look." : "Multiple valuation signals suggest elevated pricing.";
+  const timSummary = timingTone === "positive" ? "Timing conditions are aligned and supportive." : timingTone === "mixed" ? "Mixed timing signals across trend, momentum, and stretch." : "Timing conditions are currently challenging.";
 
   // ── Load from localStorage ─────────────────────────────────────────────────
   useEffect(() => {
@@ -397,6 +407,41 @@ export function StrategyStage({
     }
   };
 
+  // ── Tranche rebalancing helpers ────────────────────────────────────────────
+  const triggerRebalanced = () => {
+    if (rebalanceTimerRef.current) clearTimeout(rebalanceTimerRef.current);
+    setShowRebalanced(true);
+    rebalanceTimerRef.current = setTimeout(() => setShowRebalanced(false), 1500);
+  };
+
+  const applyEvenSplit = (list: SimpleTranche[], total: number): SimpleTranche[] => {
+    if (!list.length) return list;
+    const base = Math.floor(total / list.length);
+    const remainder = total - base * list.length;
+    return list.map((t, i) => ({
+      ...t,
+      amount: i === 0 ? base + remainder : base,
+      amountDisplay: `$ ${formatNumber(i === 0 ? base + remainder : base)}`,
+    }));
+  };
+
+  const applyRemainderSplit = (list: SimpleTranche[], editedId: number, editedAmount: number, total: number): SimpleTranche[] => {
+    const others = list.filter(t => t.id !== editedId);
+    if (!others.length) {
+      return list.map(t => t.id === editedId ? { ...t, amount: total, amountDisplay: `$ ${formatNumber(total)}` } : t);
+    }
+    const remaining = Math.max(0, total - editedAmount);
+    const base = Math.floor(remaining / others.length);
+    const remainder = remaining - base * others.length;
+    let firstOther = true;
+    return list.map(t => {
+      if (t.id === editedId) return { ...t, amount: editedAmount, amountDisplay: `$ ${formatNumber(editedAmount)}` };
+      const amt = firstOther ? base + remainder : base;
+      firstOther = false;
+      return { ...t, amount: amt, amountDisplay: `$ ${formatNumber(amt)}` };
+    });
+  };
+
   // ── Handlers: tranches ─────────────────────────────────────────────────────
   const handleTrancheAmount = (id: number, raw: string) => {
     const digits = sanitizeToDigits(raw);
@@ -408,9 +453,14 @@ export function StrategyStage({
   };
 
   const handleTrancheAmountBlur = (id: number) => {
-    setTranches(prev => prev.map(t =>
-      t.id === id ? { ...t, amountDisplay: `$ ${formatNumber(t.amount)}` } : t
-    ));
+    setTranches(prev => {
+      const editedTranche = prev.find(t => t.id === id);
+      if (!editedTranche) return prev;
+      const clampedAmount = Math.min(editedTranche.amount, totalAmountRaw);
+      const rebalanced = applyRemainderSplit(prev, id, clampedAmount, totalAmountRaw);
+      triggerRebalanced();
+      return rebalanced;
+    });
   };
 
   const handleTrancheTiming = (id: number, timing: string) => {
@@ -424,17 +474,25 @@ export function StrategyStage({
   const handleRemoveTranche = (id: number) => {
     setSplit("custom");
     setTranches(prev => {
-      const next = prev.filter(t => t.id !== id);
-      return next.map((t, i) => ({ ...t, id: i + 1 }));
+      const remaining = prev.filter(t => t.id !== id).map((t, i) => ({ ...t, id: i + 1 }));
+      if (!remaining.length) return prev;
+      const rebalanced = applyEvenSplit(remaining, totalAmountRaw);
+      triggerRebalanced();
+      return rebalanced;
     });
   };
 
   const handleAddTranche = () => {
     setSplit("custom");
-    setTranches(prev => [
-      ...prev,
-      { id: prev.length + 1, amount: 0, amountDisplay: "$ 0", timing: "30days", condition: "" },
-    ]);
+    setTranches(prev => {
+      const withNew = [
+        ...prev,
+        { id: prev.length + 1, amount: 0, amountDisplay: "$ 0", timing: "30days", condition: "" },
+      ];
+      const rebalanced = applyEvenSplit(withNew, totalAmountRaw);
+      triggerRebalanced();
+      return rebalanced;
+    });
   };
 
   // ── Handlers: guardrails ───────────────────────────────────────────────────
@@ -469,7 +527,25 @@ export function StrategyStage({
   // ── Handlers: memo ─────────────────────────────────────────────────────────
   const memoMutation = useMutation({
     mutationFn: async () => {
-      const res = await fetch(`/api/memo/${upperTicker}`);
+      const businessThesis = (analysisData?.investmentThesis || "").substring(0, 800);
+      const strategicThemes = (analysisData?.investmentThemes || []).map(t => t.name);
+      const competitiveMoats = (analysisData?.moats || []).map(m => m.name);
+      const body = {
+        businessThesis,
+        strategicThemes,
+        competitiveMoats,
+        performanceScore: `${performanceStrong}/4 strong`,
+        performanceSummary: perfSummary,
+        valuationScore: `${valuationSensible}/4 sensible`,
+        valuationSummary: valSummary,
+        timingScore: `${timingSupported}/${timingTotal} supportive`,
+        timingSummary: timSummary,
+      };
+      const res = await fetch(`/api/memo/${upperTicker}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+      });
       if (!res.ok) {
         const err = await res.json().catch(() => ({}));
         throw new Error(err.error || "Failed to generate memo");
@@ -933,11 +1009,13 @@ export function StrategyStage({
               >
                 <Plus className="w-3.5 h-3.5" /> Add tranche
               </button>
-              {split === "custom" && Math.abs(trancheDiff) > 0 && (
-                <span className={cn("text-xs", trancheDiff > 0 ? "text-amber-600 dark:text-amber-400" : "text-red-600 dark:text-red-400")}>
-                  {trancheDiff > 0 ? `${formatCurrency(trancheDiff)} unallocated` : `${formatCurrency(Math.abs(trancheDiff))} over budget`}
-                </span>
-              )}
+              <span
+                className={cn("text-xs transition-opacity duration-500", showRebalanced ? "opacity-100" : "opacity-0")}
+                style={{ color: "var(--lp-teal-deep)" }}
+                data-testid="indicator-rebalanced"
+              >
+                ↻ Recalculated
+              </span>
             </div>
 
             <div className="px-3 py-3 flex items-center justify-between">
@@ -948,7 +1026,7 @@ export function StrategyStage({
                   {tranches.some(t => t.timing === "30days") || tranches.some(t => t.timing === "60days") ? " · over ~60 days" : ""}
                 </div>
               </div>
-              <div className="text-base font-semibold" style={{ color: "var(--lp-ink)" }}>{formatCurrency(trancheSum)}</div>
+              <div className="text-base font-semibold" style={{ color: "var(--lp-ink)" }}>{formatCurrency(totalAmountRaw)}</div>
             </div>
           </div>
         </div>

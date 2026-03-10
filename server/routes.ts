@@ -2353,7 +2353,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }),
   });
 
-  app.get("/api/memo/:ticker", async (req: any, res) => {
+  app.post("/api/memo/:ticker", async (req: any, res) => {
     try {
       const { ticker } = req.params;
       const upperTicker = ticker?.toUpperCase();
@@ -2364,7 +2364,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (!analysis) {
         return res.status(404).json({ error: "No cached analysis found for this ticker. Please run a business analysis first." });
       }
-      const memo = await openaiService.generateMemo(analysis);
+      const signals = req.body || {};
+      const memo = await openaiService.generateMemo(analysis, signals);
       return res.json(memo);
     } catch (err: any) {
       console.error("[memo] Error:", err?.message || err);
