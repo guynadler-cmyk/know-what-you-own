@@ -1083,17 +1083,45 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const { db: extDb } = await import("./db");
       const { aiBusinessAnalysis } = await import("../shared/schema");
-      const { desc } = await import("drizzle-orm");
+      const { sql, desc, or } = await import("drizzle-orm");
 
-      const rows = await extDb
+      // Parse optional ?tags param (comma-separated or repeated &tags=)
+      const rawTags = req.query.tags;
+      const filterTags: string[] = rawTags
+        ? (Array.isArray(rawTags) ? rawTags : String(rawTags).split(","))
+            .map((t) => t.trim())
+            .filter(Boolean)
+        : [];
+
+      // Build WHERE conditions using @> containment (uses idx_business_result_gin)
+      const tagConditions = filterTags.flatMap((tag) => [
+        sql`result->'moats' @> jsonb_build_array(jsonb_build_object('name', ${tag}::text))`,
+        sql`result->'investmentThemes' @> jsonb_build_array(jsonb_build_object('name', ${tag}::text))`,
+      ]);
+
+      // Slim SELECT: extract only the specific JSONB subfields we need
+      const baseQuery = extDb
         .select({
           ticker: aiBusinessAnalysis.ticker,
           companyName: aiBusinessAnalysis.companyName,
           fiscalYear: aiBusinessAnalysis.fiscalYear,
-          result: aiBusinessAnalysis.result,
+          rCompanyName: sql<string>`result->>'companyName'`,
+          tagline: sql<string>`result->>'tagline'`,
+          analysisDepth: sql<string>`result->>'analysisDepth'`,
+          unavailable: sql<string>`result->>'businessAnalysisUnavailable'`,
+          moats: sql<any[]>`result->'moats'`,
+          investmentThemes: sql<any[]>`result->'investmentThemes'`,
+          valueCreation: sql<any[]>`result->'valueCreation'`,
+          marketOpportunity: sql<any[]>`result->'marketOpportunity'`,
+          quadrant: sql<string>`result->'valuationData'->'positioning'->>'quadrant'`,
         })
         .from(aiBusinessAnalysis)
         .orderBy(desc(aiBusinessAnalysis.createdAt));
+
+      const rows =
+        tagConditions.length > 0
+          ? await baseQuery.where(or(...tagConditions))
+          : await baseQuery;
 
       const seen = new Set<string>();
       const companies: Array<{
@@ -1120,21 +1148,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
         if (seen.has(t)) continue;
         seen.add(t);
 
-        const r = row.result as any;
-        if (!r || r.businessAnalysisUnavailable) continue;
+        if (row.unavailable === "true") continue;
+
+        const moats: any[] = row.moats || [];
+        const themes: any[] = row.investmentThemes || [];
+        const valueCreation: any[] = row.valueCreation || [];
+        const marketOpportunity: any[] = row.marketOpportunity || [];
 
         const countHigh = (arr: any[]) =>
-          (arr || []).filter((x: any) => x.emphasis === "high").length;
-        const countAll = (arr: any[]) => (arr || []).length;
+          arr.filter((x: any) => x.emphasis === "high").length;
 
-        const highMoats = countHigh(r.moats);
-        const highThemes = countHigh(r.investmentThemes);
-        const highValue = countHigh(r.valueCreation);
-        const highOpp = countHigh(r.marketOpportunity);
+        const highMoats = countHigh(moats);
+        const highThemes = countHigh(themes);
+        const highValue = countHigh(valueCreation);
+        const highOpp = countHigh(marketOpportunity);
 
         let score = highMoats * 2 + highThemes + highValue + highOpp;
-        if (r.analysisDepth === "full") score += 1;
-        if (r.analysisDepth === "limited") score -= 1;
+        const depth = row.analysisDepth || "full";
+        if (depth === "full") score += 1;
+        if (depth === "limited") score -= 1;
 
         let grade: string;
         if (score >= 8) grade = "A";
@@ -1144,31 +1176,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
         else grade = "F";
 
         const topOf = (arr: any[]) => {
-          const h = (arr || []).find((x: any) => x.emphasis === "high");
-          return h?.name || (arr || [])[0]?.name || "";
+          const h = arr.find((x: any) => x.emphasis === "high");
+          return h?.name || arr[0]?.name || "";
         };
-
-        const moatTags = (r.moats || []).map((m: any) => m.name).filter(Boolean);
-        const themeTags = (r.investmentThemes || []).map((t: any) => t.name).filter(Boolean);
-        const quadrant = r.valuationData?.positioning?.quadrant || r.quadrant || "";
 
         companies.push({
           ticker: t,
-          name: stripLegalSuffix(r.companyName || row.companyName),
-          tagline: r.tagline || "",
+          name: stripLegalSuffix(row.rCompanyName || row.companyName),
+          tagline: row.tagline || "",
           grade,
           gradeScore: score,
-          moatCount: countAll(r.moats),
-          themeCount: countAll(r.investmentThemes),
-          valueCount: countAll(r.valueCreation),
-          topMoat: topOf(r.moats),
-          topTheme: topOf(r.investmentThemes),
-          topValue: topOf(r.valueCreation),
-          analysisDepth: r.analysisDepth || "full",
+          moatCount: moats.length,
+          themeCount: themes.length,
+          valueCount: valueCreation.length,
+          topMoat: topOf(moats),
+          topTheme: topOf(themes),
+          topValue: topOf(valueCreation),
+          analysisDepth: depth,
           fiscalYear: row.fiscalYear,
-          moatTags,
-          themeTags,
-          quadrant,
+          moatTags: moats.map((m: any) => m.name).filter(Boolean),
+          themeTags: themes.map((t: any) => t.name).filter(Boolean),
+          quadrant: row.quadrant || "",
         });
       }
 
