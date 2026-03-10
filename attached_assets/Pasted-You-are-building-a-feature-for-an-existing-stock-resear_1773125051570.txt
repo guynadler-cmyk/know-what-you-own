@@ -1,0 +1,217 @@
+You are building a feature for an existing stock research web app called "Know What You Own".
+
+The app already stores structured company analysis data from SEC filings including:
+- moat
+- themes
+- strengths
+- valuation_score
+- quality_score
+- quadrant
+- marketCapBucket
+- embeddings
+
+These are stored in a database table called:
+
+companyDiscoveryIndex
+
+Goal
+Build a STOCK DISCOVERY / SCREENER feature where users can discover companies by selecting tags like:
+
+Enterprise Software
+Recurring Revenue
+AI
+Cybersecurity
+Marketplace
+Network Effects
+High Switching Costs
+Developer Tools
+Cloud Infrastructure
+Data Platforms
+
+Users should be able to:
+
+1. Select tags
+2. Drag-and-drop tags into a filter box
+3. Click SEARCH
+4. Get companies with similar attributes from the database.
+
+Think through the feature step-by-step before coding.
+
+--------------------------------
+
+Step 1 — UX Design
+
+Design a modern UI similar to a SaaS analytics dashboard.
+
+Page layout:
+
+Header
+"Discover Companies"
+
+Left Panel
+Tag Library (draggable)
+
+Tags appear as pills:
+
+[Enterprise Software]
+[Recurring Revenue]
+[AI]
+[Cybersecurity]
+[Developer Tools]
+[Cloud]
+[Marketplace]
+[Network Effects]
+[High Margins]
+
+Users drag tags into a box called:
+
+"Your Filters"
+
+Inside the filter box selected tags appear as removable chips.
+
+Example:
+
+Your Filters
+[Enterprise Software] [Recurring Revenue] [High Margin]
+
+Search Button
+
+--------------------------------
+
+Step 2 — Search Logic
+
+When user clicks SEARCH:
+
+Query companyDiscoveryIndex where
+
+themes overlap selected tags
+OR
+moat overlap selected tags
+
+Sort results by:
+
+1. qualityScore descending
+2. valuationScore descending
+
+Return:
+
+ticker
+companyName
+themes
+moat
+qualityScore
+valuationScore
+quadrant
+
+--------------------------------
+
+Step 3 — Results UI
+
+Display companies as cards.
+
+Example card:
+
+--------------------------------
+MSFT
+Microsoft
+
+Themes:
+Cloud Infrastructure
+Enterprise Software
+
+Moat:
+Switching Costs
+Ecosystem
+
+Quality Score: 9.1
+Valuation Score: 7.4
+Quadrant: quality_high
+
+[View Full Analysis]
+--------------------------------
+
+Grid layout responsive:
+3 cards per row desktop
+1 card mobile
+
+--------------------------------
+
+Step 4 — Smart Similarity (optional)
+
+If embeddings exist in the database:
+
+Use vector similarity search to find companies most similar to selected tags.
+
+--------------------------------
+
+Step 5 — Tech Stack
+
+Frontend
+React
+Tailwind
+Drag and drop using:
+dnd-kit
+
+Backend
+Node / Express
+
+Database query example:
+
+SELECT *
+FROM companyDiscoveryIndex
+WHERE themes && ARRAY[selectedTags]
+OR moat && ARRAY[selectedTags]
+ORDER BY qualityScore DESC
+LIMIT 50
+
+--------------------------------
+
+Step 6 — Nice UI Features
+
+Add:
+
+Tag search
+Clear filters
+Result count
+Loading skeleton
+Hover card animations
+
+--------------------------------
+
+Step 7 — Deliverables
+
+Generate:
+
+1. UI wireframe mockups
+2. React components
+3. Tailwind styling
+4. Drag-and-drop logic
+5. API endpoint
+
+GET /api/discovery
+
+POST body
+
+{
+  "tags": ["Enterprise Software", "Recurring Revenue"]
+}
+
+6. SQL query
+7. Example result UI
+
+--------------------------------
+
+Goal
+
+Make this a powerful **"Stock Discovery Engine"** similar to:
+
+- Crunchbase discovery
+- VC deal sourcing tools
+
+Users should be able to quickly discover:
+
+"AI enterprise software companies with recurring revenue and strong moats".
+
+--------------------------------
+
+Now think through the best UX, create mockups, and then implement the full feature.
