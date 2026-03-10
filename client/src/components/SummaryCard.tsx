@@ -3,7 +3,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-import { Globe, ChevronDown, AlertTriangle, Info, ArrowRight } from "lucide-react";
+import { Globe, ChevronDown, AlertTriangle, Info, ArrowRight, ShieldCheck } from "lucide-react";
 import { LucideIcon } from "lucide-react";
 import { Link } from "wouter";
 
@@ -210,6 +210,13 @@ export function SummaryCard({
   const yearsLabel = temporalAnalysis?.summary?.yearsAnalyzed?.length
     ? `${temporalAnalysis.summary.yearsAnalyzed.length} yrs`
     : undefined;
+
+  const temporalHasItems = temporalAnalysis != null && (
+    temporalAnalysis.discontinued.length +
+    temporalAnalysis.newAndSustained.length +
+    temporalAnalysis.evolved.length +
+    temporalAnalysis.newProducts.length
+  ) > 0;
 
   return (
     <TooltipProvider>
@@ -519,7 +526,7 @@ export function SummaryCard({
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
 
         {/* Changes Over Time */}
-        {temporalAnalysis ? (
+        {temporalHasItems ? (
           <SectionCard header="Changes Over Time" badge={yearsLabel}>
             <div className="grid grid-cols-2 gap-2 mb-3">
               {temporalCounters.map((c) => (
@@ -562,10 +569,31 @@ export function SummaryCard({
               </div>
             )}
           </SectionCard>
+        ) : temporalAnalysis ? (
+          <SectionCard header="Changes Over Time" badge={yearsLabel}>
+            <div className="flex flex-col items-center justify-center py-4 gap-3 text-center">
+              <div
+                className="rounded-full p-2.5"
+                style={{ background: 'var(--lp-teal-pale)' }}
+              >
+                <ShieldCheck className="w-5 h-5" style={{ color: 'var(--lp-teal-deep)' }} />
+              </div>
+              <div>
+                <p className="text-xs font-medium mb-1" style={{ color: 'var(--lp-ink)' }}>
+                  No significant changes detected
+                </p>
+                <p className="text-[10px] leading-relaxed" style={{ color: 'var(--lp-ink-light)' }}>
+                  {yearsLabel
+                    ? `Across ${yearsLabel} of filings reviewed, strategy, products, and competitive focus appear stable and consistent.`
+                    : 'Strategy, products, and competitive focus appear stable and consistent across filings reviewed.'}
+                </p>
+              </div>
+            </div>
+          </SectionCard>
         ) : (
           <SectionCard header="Changes Over Time" badge="—">
             <p className="text-xs py-4 text-center" style={{ color: 'var(--lp-ink-ghost)' }}>
-              Temporal analysis not yet available.
+              Multi-year comparison not yet available for this company.
             </p>
           </SectionCard>
         )}
