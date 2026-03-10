@@ -146,7 +146,6 @@ export function SummaryCard({
 }: SummaryCardProps) {
   const [thesisOpen, setThesisOpen] = useState(false);
   const [expandedCompetitor, setExpandedCompetitor] = useState<number | null>(null);
-  const [showTemporalDetail, setShowTemporalDetail] = useState(false);
 
   const filteredCompetitors = competitors.filter(
     (c) => !c.ticker || c.ticker.toUpperCase() !== ticker.toUpperCase()
@@ -519,80 +518,48 @@ export function SummaryCard({
 
         {/* Changes Over Time */}
         {temporalHasItems ? (
-          <div
-            className="rounded-xl overflow-hidden border cursor-pointer"
-            style={{ borderColor: border, boxShadow: '0 2px 20px rgba(13,74,71,0.07)' }}
-            onClick={() => setShowTemporalDetail((v) => !v)}
-            data-testid="changes-over-time-card"
-          >
-            <div
-              className="flex items-center justify-between px-4 py-2.5"
-              style={{ background: showTemporalDetail ? 'var(--lp-teal-mid, #1a6b68)' : tealDeep }}
-            >
-              <span className="font-mono text-[11px] tracking-wider" style={{ color: 'rgba(255,255,255,0.7)' }}>
-                Changes Over Time
-              </span>
-              <div className="flex items-center gap-2">
-                {yearsLabel && (
-                  <span
-                    className="text-[10px] px-2 py-0.5 rounded-full border"
-                    style={{ background: 'rgba(255,255,255,0.1)', borderColor: 'rgba(255,255,255,0.15)', color: 'rgba(255,255,255,0.8)' }}
-                  >
-                    {yearsLabel}
-                  </span>
-                )}
-                {showTemporalDetail
-                  ? <ChevronUp className="h-3 w-3" style={{ color: 'rgba(255,255,255,0.7)' }} />
-                  : <ChevronDown className="h-3 w-3" style={{ color: 'rgba(255,255,255,0.7)' }} />
-                }
-              </div>
+          <SectionCard header="Changes Over Time" badge={yearsLabel} data-testid="changes-over-time-card">
+            <div className="grid grid-cols-2 gap-2 mb-3">
+              {temporalCounters.map((c) => (
+                <div
+                  key={c.label}
+                  className="rounded-lg p-2.5 text-center border"
+                  style={{ background: c.bg, borderColor: c.borderColor }}
+                >
+                  <p className="font-serif text-[22px] font-bold leading-none mb-1" style={{ color: c.color }}>
+                    {c.count}
+                  </p>
+                  <p className="text-[9px]" style={{ color: 'var(--lp-ink-ghost)' }}>{c.label}</p>
+                </div>
+              ))}
             </div>
-            <div className="bg-white p-4">
-              <div className="grid grid-cols-2 gap-2 mb-3">
-                {temporalCounters.map((c) => (
-                  <div
-                    key={c.label}
-                    className="rounded-lg p-2.5 text-center border"
-                    style={{ background: c.bg, borderColor: c.borderColor }}
-                  >
-                    <p className="font-serif text-[22px] font-bold leading-none mb-1" style={{ color: c.color }}>
-                      {c.count}
-                    </p>
-                    <p className="text-[9px]" style={{ color: 'var(--lp-ink-ghost)' }}>{c.label}</p>
+            {temporalPreviewItems.length > 0 && (
+              <div className="pt-3 border-t space-y-2" style={{ borderColor: border }}>
+                {temporalPreviewItems.map((item, i) => (
+                  <div key={i} className="flex items-start gap-2 py-1.5 border-b last:border-b-0" style={{ borderColor: border }}>
+                    <span
+                      className="text-[8px] px-1.5 py-0.5 rounded-sm font-medium flex-shrink-0 mt-0.5"
+                      style={
+                        item.type === 'product'
+                          ? { background: 'var(--lp-teal-pale)', color: 'var(--lp-teal-mid)' }
+                          : { background: 'rgba(201,168,76,0.1)', color: '#c9a84c' }
+                      }
+                    >
+                      {item.label}
+                    </span>
+                    <span className="text-[10px] leading-[1.4] flex-1" style={{ color: 'var(--lp-ink-light)' }}>
+                      {item.text}
+                    </span>
+                    {item.year && (
+                      <span className="font-mono text-[9px] flex-shrink-0" style={{ color: 'var(--lp-ink-ghost)' }}>
+                        {item.year}
+                      </span>
+                    )}
                   </div>
                 ))}
               </div>
-              {temporalPreviewItems.length > 0 && (
-                <div className="pt-3 border-t space-y-2" style={{ borderColor: border }}>
-                  {temporalPreviewItems.map((item, i) => (
-                    <div key={i} className="flex items-start gap-2 py-1.5 border-b last:border-b-0" style={{ borderColor: border }}>
-                      <span
-                        className="text-[8px] px-1.5 py-0.5 rounded-sm font-medium flex-shrink-0 mt-0.5"
-                        style={
-                          item.type === 'product'
-                            ? { background: 'var(--lp-teal-pale)', color: 'var(--lp-teal-mid)' }
-                            : { background: 'rgba(201,168,76,0.1)', color: '#c9a84c' }
-                        }
-                      >
-                        {item.label}
-                      </span>
-                      <span className="text-[10px] leading-[1.4] flex-1" style={{ color: 'var(--lp-ink-light)' }}>
-                        {item.text}
-                      </span>
-                      {item.year && (
-                        <span className="font-mono text-[9px] flex-shrink-0" style={{ color: 'var(--lp-ink-ghost)' }}>
-                          {item.year}
-                        </span>
-                      )}
-                    </div>
-                  ))}
-                </div>
-              )}
-              <p className="text-[10px] mt-3 text-center" style={{ color: 'var(--lp-teal-deep)' }}>
-                {showTemporalDetail ? 'Click to collapse' : 'Click to view full analysis'}
-              </p>
-            </div>
-          </div>
+            )}
+          </SectionCard>
         ) : (
           <SectionCard header="Changes Over Time" badge={yearsLabel ?? "—"}>
             <div className="flex flex-col items-center justify-center py-4 gap-3 text-center">
@@ -714,8 +681,8 @@ export function SummaryCard({
         </SectionCard>
       </div>
 
-      {/* ── temporal detail (full view, toggled by clicking the Changes Over Time card) ── */}
-      {showTemporalDetail && temporalAnalysis && (
+      {/* ── temporal detail (full view, always visible when data exists) ── */}
+      {temporalHasItems && temporalAnalysis && (
         <TemporalAnalysis analysis={temporalAnalysis} companyName={companyName} />
       )}
 
