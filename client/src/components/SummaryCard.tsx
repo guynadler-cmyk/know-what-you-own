@@ -3,7 +3,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-import { Globe, ChevronDown, ChevronUp, AlertTriangle, Info, ArrowRight, ShieldCheck, ExternalLink } from "lucide-react";
+import { Globe, ChevronDown, ChevronUp, AlertTriangle, Info, ArrowRight, ExternalLink } from "lucide-react";
 import { LucideIcon } from "lucide-react";
 import { Link } from "wouter";
 
@@ -146,6 +146,8 @@ export function SummaryCard({
 }: SummaryCardProps) {
   const [thesisOpen, setThesisOpen] = useState(false);
   const [expandedCompetitor, setExpandedCompetitor] = useState<number | null>(null);
+  const [showTemporalDetail, setShowTemporalDetail] = useState(true);
+  const [showFinePrintDetail, setShowFinePrintDetail] = useState(true);
 
   const filteredCompetitors = competitors.filter(
     (c) => !c.ticker || c.ticker.toUpperCase() !== ticker.toUpperCase()
@@ -513,75 +515,8 @@ export function SummaryCard({
         </SectionCard>
       </div>
 
-      {/* ── three-col row: Changes · Performance · Competition ── */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-
-        {/* Changes Over Time */}
-        {temporalHasItems ? (
-          <SectionCard header="Changes Over Time" badge={yearsLabel} data-testid="changes-over-time-card">
-            <div className="grid grid-cols-2 gap-2 mb-3">
-              {temporalCounters.map((c) => (
-                <div
-                  key={c.label}
-                  className="rounded-lg p-2.5 text-center border"
-                  style={{ background: c.bg, borderColor: c.borderColor }}
-                >
-                  <p className="font-serif text-[22px] font-bold leading-none mb-1" style={{ color: c.color }}>
-                    {c.count}
-                  </p>
-                  <p className="text-[9px]" style={{ color: 'var(--lp-ink-ghost)' }}>{c.label}</p>
-                </div>
-              ))}
-            </div>
-            {temporalPreviewItems.length > 0 && (
-              <div className="pt-3 border-t space-y-2" style={{ borderColor: border }}>
-                {temporalPreviewItems.map((item, i) => (
-                  <div key={i} className="flex items-start gap-2 py-1.5 border-b last:border-b-0" style={{ borderColor: border }}>
-                    <span
-                      className="text-[8px] px-1.5 py-0.5 rounded-sm font-medium flex-shrink-0 mt-0.5"
-                      style={
-                        item.type === 'product'
-                          ? { background: 'var(--lp-teal-pale)', color: 'var(--lp-teal-mid)' }
-                          : { background: 'rgba(201,168,76,0.1)', color: '#c9a84c' }
-                      }
-                    >
-                      {item.label}
-                    </span>
-                    <span className="text-[10px] leading-[1.4] flex-1" style={{ color: 'var(--lp-ink-light)' }}>
-                      {item.text}
-                    </span>
-                    {item.year && (
-                      <span className="font-mono text-[9px] flex-shrink-0" style={{ color: 'var(--lp-ink-ghost)' }}>
-                        {item.year}
-                      </span>
-                    )}
-                  </div>
-                ))}
-              </div>
-            )}
-          </SectionCard>
-        ) : (
-          <SectionCard header="Changes Over Time" badge={yearsLabel ?? "—"}>
-            <div className="flex flex-col items-center justify-center py-4 gap-3 text-center">
-              <div
-                className="rounded-full p-2.5"
-                style={{ background: 'var(--lp-teal-pale)' }}
-              >
-                <ShieldCheck className="w-5 h-5" style={{ color: 'var(--lp-teal-deep)' }} />
-              </div>
-              <div>
-                <p className="text-xs font-medium mb-1" style={{ color: 'var(--lp-ink)' }}>
-                  No significant changes detected
-                </p>
-                <p className="text-[10px] leading-relaxed" style={{ color: 'var(--lp-ink-light)' }}>
-                  {yearsLabel
-                    ? `Across ${yearsLabel} of filings reviewed, strategy, products, and competitive focus appear stable and consistent.`
-                    : 'Strategy, products, and competitive focus appear stable and consistent across filings reviewed.'}
-                </p>
-              </div>
-            </div>
-          </SectionCard>
-        )}
+      {/* ── two-col row: Performance · Competition ── */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
 
         {/* Performance Snapshot */}
         <SectionCard header="Performance Snapshot" badge={fiscalYear ? `FY ${fiscalYear}` : undefined}>
@@ -681,14 +616,78 @@ export function SummaryCard({
         </SectionCard>
       </div>
 
-      {/* ── temporal detail (full view, always visible when data exists) ── */}
+      {/* ── Changes Over Time (collapsible) ── */}
       {temporalHasItems && temporalAnalysis && (
-        <TemporalAnalysis analysis={temporalAnalysis} companyName={companyName} />
+        <div className="relative" data-testid="changes-over-time-wrapper">
+          {!showTemporalDetail ? (
+            /* collapsed: show full header bar */
+            <button
+              className="w-full flex items-center justify-between px-5 py-3.5 rounded-xl text-left"
+              style={{ background: tealDeep }}
+              onClick={() => setShowTemporalDetail(true)}
+              data-testid="button-toggle-temporal"
+            >
+              <div className="flex items-center gap-3">
+                <span className="font-mono text-[11px] tracking-wider text-white/70">Changes Over Time</span>
+                {yearsLabel && (
+                  <span
+                    className="text-[10px] px-2 py-0.5 rounded-full border"
+                    style={{ background: 'rgba(255,255,255,0.1)', borderColor: 'rgba(255,255,255,0.15)', color: 'rgba(255,255,255,0.8)' }}
+                  >
+                    {yearsLabel}
+                  </span>
+                )}
+              </div>
+              <ChevronDown className="h-4 w-4 text-white/60 flex-shrink-0" />
+            </button>
+          ) : (
+            /* expanded: show component with small collapse button overlaid top-right */
+            <>
+              <button
+                className="absolute top-4 right-4 z-20 flex items-center gap-1.5 text-[10px] font-medium px-2.5 py-1 rounded-md border"
+                style={{ background: 'var(--lp-teal-pale)', color: 'var(--lp-teal-deep)', borderColor: 'rgba(13,74,71,0.2)' }}
+                onClick={() => setShowTemporalDetail(false)}
+                data-testid="button-toggle-temporal"
+              >
+                Collapse <ChevronUp className="h-3 w-3" />
+              </button>
+              <div data-testid="temporal-analysis-section">
+                <TemporalAnalysis analysis={temporalAnalysis} companyName={companyName} />
+              </div>
+            </>
+          )}
+        </div>
       )}
 
-      {/* ── fine print ── */}
+      {/* ── Fine Print (collapsible) ── */}
       {finePrintAnalysis && (
-        <FinePrintAnalysis analysis={finePrintAnalysis} companyName={companyName} />
+        <div className="relative" data-testid="fine-print-wrapper">
+          {!showFinePrintDetail ? (
+            /* collapsed: show full header bar */
+            <button
+              className="w-full flex items-center justify-between px-5 py-3.5 rounded-xl text-left"
+              style={{ background: tealDeep }}
+              onClick={() => setShowFinePrintDetail(true)}
+              data-testid="button-toggle-fine-print"
+            >
+              <span className="font-mono text-[11px] tracking-wider text-white/70">Fine Print Analysis</span>
+              <ChevronDown className="h-4 w-4 text-white/60 flex-shrink-0" />
+            </button>
+          ) : (
+            /* expanded: show component with small collapse button overlaid top-right */
+            <>
+              <button
+                className="absolute top-4 right-4 z-20 flex items-center gap-1.5 text-[10px] font-medium px-2.5 py-1 rounded-md border"
+                style={{ background: 'var(--lp-teal-pale)', color: 'var(--lp-teal-deep)', borderColor: 'rgba(13,74,71,0.2)' }}
+                onClick={() => setShowFinePrintDetail(false)}
+                data-testid="button-toggle-fine-print"
+              >
+                Collapse <ChevronUp className="h-3 w-3" />
+              </button>
+              <FinePrintAnalysis analysis={finePrintAnalysis} companyName={companyName} />
+            </>
+          )}
+        </div>
       )}
 
       {/* ── bottom CTA: teaser for Stage 2 ── */}
