@@ -1,4 +1,3 @@
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { TrendingDown, TrendingUp, ArrowUpRight, Package, Calendar, Info } from "lucide-react";
@@ -18,8 +17,10 @@ const CATEGORY_COLORS: Record<string, string> = {
   description: "bg-gray-500/10 text-gray-700 dark:text-gray-300 border-gray-500/20",
 };
 
+const tileBase = "h-auto py-4 px-3 flex-col items-center rounded-lg border bg-white data-[state=inactive]:border-[var(--border)] hover-elevate";
+
 export function TemporalAnalysis({ analysis, companyName }: TemporalAnalysisProps) {
-  const hasAnyChanges = 
+  const hasAnyChanges =
     analysis.summary.discontinuedCount > 0 ||
     analysis.summary.newSustainedCount > 0 ||
     analysis.summary.evolvedCount > 0 ||
@@ -33,249 +34,236 @@ export function TemporalAnalysis({ analysis, companyName }: TemporalAnalysisProp
     ? `${analysis.summary.yearsAnalyzed[0]}–${analysis.summary.yearsAnalyzed[analysis.summary.yearsAnalyzed.length - 1]}`
     : "Multiple Years";
 
-  const defaultTab = 
+  const defaultTab =
     analysis.discontinued.length > 0 ? "discontinued" :
     analysis.newAndSustained.length > 0 ? "new" :
     analysis.evolved.length > 0 ? "evolved" :
     "products";
 
   return (
-    <Card className="w-full" data-testid="temporal-analysis-section">
-      <CardHeader className="space-y-3">
-        <div className="flex items-start justify-between gap-4">
-          <div className="space-y-2">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
-                <Calendar className="w-5 h-5 text-primary" />
-              </div>
-              <CardTitle className="text-2xl">Changes Over Time</CardTitle>
-            </div>
-            <CardDescription className="text-base leading-relaxed max-w-3xl">
-              Track how {companyName} has evolved across {analysis.summary.yearsAnalyzed.length} years 
-              of filings ({yearsRange}). See what strategies were abandoned, what new initiatives took hold, 
-              and how the business narrative has shifted.
-            </CardDescription>
-          </div>
-        </div>
-      </CardHeader>
-
-      <CardContent>
-        <Tabs defaultValue={defaultTab} className="w-full">
-          {/* Stat Cards as Tab Triggers */}
-          <TabsList className="grid w-full grid-cols-2 md:grid-cols-4 gap-3 h-auto bg-transparent p-0 mb-6">
-            {analysis.discontinued.length > 0 && (
-              <TabsTrigger 
-                value="discontinued" 
-                className="h-auto p-6 flex-col items-center border-2 rounded-lg data-[state=active]:border-red-500 data-[state=active]:bg-red-500/10 data-[state=inactive]:border-border hover-elevate"
-                data-testid="stat-discontinued"
-              >
-                <TrendingDown className="w-6 h-6 text-red-600 dark:text-red-400 mb-2" />
-                <div className="text-3xl font-bold text-red-600 dark:text-red-400">
-                  {analysis.summary.discontinuedCount}
-                </div>
-                <div className="text-sm text-muted-foreground mt-1">Discontinued</div>
-              </TabsTrigger>
-            )}
-            {analysis.newAndSustained.length > 0 && (
-              <TabsTrigger 
-                value="new" 
-                className="h-auto p-6 flex-col items-center border-2 rounded-lg data-[state=active]:border-green-500 data-[state=active]:bg-green-500/10 data-[state=inactive]:border-border hover-elevate"
-                data-testid="stat-new-sustained"
-              >
-                <TrendingUp className="w-6 h-6 text-green-600 dark:text-green-400 mb-2" />
-                <div className="text-3xl font-bold text-green-600 dark:text-green-400">
-                  {analysis.summary.newSustainedCount}
-                </div>
-                <div className="text-sm text-muted-foreground mt-1">New & Sustained</div>
-              </TabsTrigger>
-            )}
-            {analysis.evolved.length > 0 && (
-              <TabsTrigger 
-                value="evolved" 
-                className="h-auto p-6 flex-col items-center border-2 rounded-lg data-[state=active]:border-blue-500 data-[state=active]:bg-blue-500/10 data-[state=inactive]:border-border hover-elevate"
-                data-testid="stat-evolved"
-              >
-                <ArrowUpRight className="w-6 h-6 text-blue-600 dark:text-blue-400 mb-2" />
-                <div className="text-3xl font-bold text-blue-600 dark:text-blue-400">
-                  {analysis.summary.evolvedCount}
-                </div>
-                <div className="text-sm text-muted-foreground mt-1">Evolved</div>
-              </TabsTrigger>
-            )}
-            {analysis.newProducts.length > 0 && (
-              <TabsTrigger 
-                value="products" 
-                className="h-auto p-6 flex-col items-center border-2 rounded-lg data-[state=active]:border-purple-500 data-[state=active]:bg-purple-500/10 data-[state=inactive]:border-border hover-elevate"
-                data-testid="stat-new-products"
-              >
-                <Package className="w-6 h-6 text-purple-600 dark:text-purple-400 mb-2" />
-                <div className="text-3xl font-bold text-purple-600 dark:text-purple-400">
-                  {analysis.summary.newProductsCount}
-                </div>
-                <div className="text-sm text-muted-foreground mt-1">New Products</div>
-              </TabsTrigger>
-            )}
-          </TabsList>
-
-          {/* Discontinued Tab */}
+    <div data-testid="temporal-analysis-section">
+      <Tabs defaultValue={defaultTab} className="w-full">
+        <TabsList className="grid w-full grid-cols-2 md:grid-cols-4 gap-2.5 h-auto bg-transparent p-0 mb-5">
           {analysis.discontinued.length > 0 && (
-            <TabsContent value="discontinued" className="mt-6 space-y-4" data-testid="content-discontinued">
-              <div className="flex items-start gap-3 p-4 bg-muted/30 rounded-lg border border-border">
-                <Info className="w-5 h-5 text-muted-foreground flex-shrink-0 mt-0.5" />
-                <p className="text-sm text-muted-foreground leading-relaxed">
-                  Items that appeared in earlier filings but were later dropped. This could signal 
-                  strategic pivots, unsuccessful initiatives, or markets the company has exited.
-                </p>
+            <TabsTrigger
+              value="discontinued"
+              className={`${tileBase} data-[state=active]:border-red-400 data-[state=active]:bg-red-50`}
+              data-testid="stat-discontinued"
+            >
+              <TrendingDown className="w-4 h-4 text-red-500 mb-1.5" />
+              <div className="text-[24px] font-bold leading-none text-red-600 dark:text-red-400 mb-1">
+                {analysis.summary.discontinuedCount}
               </div>
-              <div className="grid gap-4">
-                {analysis.discontinued.map((item, index) => (
-                  <Card key={index} className="hover-elevate" data-testid={`discontinued-item-${index}`}>
-                    <CardContent className="p-6">
-                      <div className="flex items-start justify-between gap-4">
-                        <div className="flex-1 space-y-3">
-                          <div className="flex items-center gap-2 flex-wrap">
-                            <h4 className="font-semibold text-lg">{item.item}</h4>
-                            <Badge className={CATEGORY_COLORS[item.category] || CATEGORY_COLORS.description}>
-                              {item.category}
-                            </Badge>
-                          </div>
-                          <p className="text-base text-muted-foreground leading-relaxed">{item.context}</p>
-                        </div>
-                        <div className="text-right space-y-2 min-w-fit">
-                          <Badge variant="outline" className="text-xs">
-                            Last: {item.lastMentionedYear}
-                          </Badge>
-                          <div className="text-xs text-muted-foreground whitespace-nowrap">
-                            Active: {item.yearsActive}
-                          </div>
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-                ))}
-              </div>
-            </TabsContent>
+              <div className="text-[11px]" style={{ color: 'var(--lp-ink-ghost)' }}>Discontinued</div>
+            </TabsTrigger>
           )}
-
-          {/* New & Sustained Tab */}
           {analysis.newAndSustained.length > 0 && (
-            <TabsContent value="new" className="mt-6 space-y-4" data-testid="content-new-sustained">
-              <div className="flex items-start gap-3 p-4 bg-muted/30 rounded-lg border border-border">
-                <Info className="w-5 h-5 text-muted-foreground flex-shrink-0 mt-0.5" />
-                <p className="text-sm text-muted-foreground leading-relaxed">
-                  Initiatives introduced in recent years that have been consistently reported since. 
-                  These represent the company's newest strategic priorities and growth areas.
-                </p>
+            <TabsTrigger
+              value="new"
+              className={`${tileBase} data-[state=active]:border-green-400 data-[state=active]:bg-green-50`}
+              data-testid="stat-new-sustained"
+            >
+              <TrendingUp className="w-4 h-4 text-green-500 mb-1.5" />
+              <div className="text-[24px] font-bold leading-none text-green-600 dark:text-green-400 mb-1">
+                {analysis.summary.newSustainedCount}
               </div>
-              <div className="grid gap-4">
-                {analysis.newAndSustained.map((item, index) => (
-                  <Card key={index} className="hover-elevate" data-testid={`new-sustained-item-${index}`}>
-                    <CardContent className="p-6">
-                      <div className="flex items-start justify-between gap-4">
-                        <div className="flex-1 space-y-3">
-                          <div className="flex items-center gap-2 flex-wrap">
-                            <h4 className="font-semibold text-lg">{item.item}</h4>
-                            <Badge className={CATEGORY_COLORS[item.category] || CATEGORY_COLORS.description}>
-                              {item.category}
-                            </Badge>
-                          </div>
-                          <p className="text-base text-muted-foreground leading-relaxed">{item.context}</p>
-                        </div>
-                        <Badge variant="outline" className="text-xs whitespace-nowrap">
-                          Since {item.introducedYear}
+              <div className="text-[11px]" style={{ color: 'var(--lp-ink-ghost)' }}>New & Sustained</div>
+            </TabsTrigger>
+          )}
+          {analysis.evolved.length > 0 && (
+            <TabsTrigger
+              value="evolved"
+              className={`${tileBase} data-[state=active]:border-blue-400 data-[state=active]:bg-blue-50`}
+              data-testid="stat-evolved"
+            >
+              <ArrowUpRight className="w-4 h-4 text-blue-500 mb-1.5" />
+              <div className="text-[24px] font-bold leading-none text-blue-600 dark:text-blue-400 mb-1">
+                {analysis.summary.evolvedCount}
+              </div>
+              <div className="text-[11px]" style={{ color: 'var(--lp-ink-ghost)' }}>Evolved</div>
+            </TabsTrigger>
+          )}
+          {analysis.newProducts.length > 0 && (
+            <TabsTrigger
+              value="products"
+              className={`${tileBase} data-[state=active]:border-purple-400 data-[state=active]:bg-purple-50`}
+              data-testid="stat-new-products"
+            >
+              <Package className="w-4 h-4 text-purple-500 mb-1.5" />
+              <div className="text-[24px] font-bold leading-none text-purple-600 dark:text-purple-400 mb-1">
+                {analysis.summary.newProductsCount}
+              </div>
+              <div className="text-[11px]" style={{ color: 'var(--lp-ink-ghost)' }}>New Products</div>
+            </TabsTrigger>
+          )}
+        </TabsList>
+
+        {/* Discontinued Tab */}
+        {analysis.discontinued.length > 0 && (
+          <TabsContent value="discontinued" className="mt-5 space-y-3" data-testid="content-discontinued">
+            <div className="flex items-start gap-2.5 px-4 py-3 rounded-lg border" style={{ background: 'var(--lp-cream, #faf8f4)', borderColor: 'var(--border)' }}>
+              <Info className="w-4 h-4 flex-shrink-0 mt-0.5" style={{ color: 'var(--lp-ink-ghost)' }} />
+              <p className="text-sm leading-relaxed" style={{ color: 'var(--lp-ink-light)' }}>
+                Items that appeared in earlier filings but were later dropped. This could signal
+                strategic pivots, unsuccessful initiatives, or markets the company has exited.
+              </p>
+            </div>
+            <div className="grid gap-3">
+              {analysis.discontinued.map((item, index) => (
+                <div
+                  key={index}
+                  className="rounded-lg border"
+                  style={{ background: 'var(--lp-cream, #faf8f4)', borderColor: 'var(--border)', padding: '14px 16px' }}
+                  data-testid={`discontinued-item-${index}`}
+                >
+                  <div className="flex items-start justify-between gap-4">
+                    <div className="flex-1 space-y-1.5">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <h4 className="font-semibold text-sm" style={{ color: 'var(--lp-ink)' }}>{item.item}</h4>
+                        <Badge className={CATEGORY_COLORS[item.category] || CATEGORY_COLORS.description}>
+                          {item.category}
                         </Badge>
                       </div>
-                    </CardContent>
-                  </Card>
-                ))}
-              </div>
-            </TabsContent>
-          )}
-
-          {/* Evolved Tab */}
-          {analysis.evolved.length > 0 && (
-            <TabsContent value="evolved" className="mt-6 space-y-4" data-testid="content-evolved">
-              <div className="flex items-start gap-3 p-4 bg-muted/30 rounded-lg border border-border">
-                <Info className="w-5 h-5 text-muted-foreground flex-shrink-0 mt-0.5" />
-                <p className="text-sm text-muted-foreground leading-relaxed">
-                  Products, strategies, or descriptions that have meaningfully changed over time. 
-                  Track how the company's language and positioning has evolved.
-                </p>
-              </div>
-              <div className="grid gap-4">
-                {analysis.evolved.map((item, index) => (
-                  <Card key={index} className="hover-elevate" data-testid={`evolved-item-${index}`}>
-                    <CardContent className="p-6">
-                      <div className="space-y-4">
-                        <div className="flex items-start justify-between gap-4">
-                          <div className="flex items-center gap-2 flex-wrap">
-                            <h4 className="font-semibold text-lg">{item.item}</h4>
-                            <Badge className={CATEGORY_COLORS[item.category] || CATEGORY_COLORS.description}>
-                              {item.category}
-                            </Badge>
-                          </div>
-                          <Badge variant="outline" className="text-xs whitespace-nowrap">
-                            {item.yearRange}
-                          </Badge>
-                        </div>
-                        <p className="text-base font-medium text-foreground">{item.changeDescription}</p>
-                        <div className="grid md:grid-cols-2 gap-4 pt-2">
-                          <div className="p-4 bg-muted/40 rounded-lg border border-border">
-                            <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2">Before</div>
-                            <p className="text-sm leading-relaxed">{item.beforeSnapshot}</p>
-                          </div>
-                          <div className="p-4 bg-muted/40 rounded-lg border border-border">
-                            <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2">After</div>
-                            <p className="text-sm leading-relaxed">{item.afterSnapshot}</p>
-                          </div>
-                        </div>
+                      <p className="text-sm leading-relaxed" style={{ color: 'var(--lp-ink-light)' }}>{item.context}</p>
+                    </div>
+                    <div className="text-right space-y-1 min-w-fit flex-shrink-0">
+                      <Badge variant="outline" className="text-xs">
+                        Last: {item.lastMentionedYear}
+                      </Badge>
+                      <div className="text-xs whitespace-nowrap" style={{ color: 'var(--lp-ink-ghost)' }}>
+                        Active: {item.yearsActive}
                       </div>
-                    </CardContent>
-                  </Card>
-                ))}
-              </div>
-            </TabsContent>
-          )}
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </TabsContent>
+        )}
 
-          {/* New Products Tab */}
-          {analysis.newProducts.length > 0 && (
-            <TabsContent value="products" className="mt-6 space-y-4" data-testid="content-new-products">
-              <div className="flex items-start gap-3 p-4 bg-muted/30 rounded-lg border border-border">
-                <Info className="w-5 h-5 text-muted-foreground flex-shrink-0 mt-0.5" />
-                <p className="text-sm text-muted-foreground leading-relaxed">
-                  New products and offerings introduced during this period. Understanding product 
-                  launches helps investors gauge innovation pace and market expansion.
-                </p>
-              </div>
-              <div className="grid gap-4">
-                {analysis.newProducts.map((product, index) => (
-                  <Card key={index} className="hover-elevate" data-testid={`new-product-${index}`}>
-                    <CardContent className="p-6">
-                      <div className="flex items-start gap-4">
-                        <div className="w-12 h-12 rounded-lg bg-purple-500/10 flex items-center justify-center flex-shrink-0">
-                          <Package className="w-6 h-6 text-purple-600 dark:text-purple-400" />
-                        </div>
-                        <div className="flex-1 space-y-3">
-                          <div className="flex items-center justify-between gap-4 flex-wrap">
-                            <h4 className="font-semibold text-lg">{product.name}</h4>
-                            <Badge variant="outline" className="text-xs whitespace-nowrap">
-                              Launched {product.introducedYear}
-                            </Badge>
-                          </div>
-                          <p className="text-base text-muted-foreground">{product.description}</p>
-                          <div className="pt-2 pl-4 border-l-2 border-primary/30">
-                            <p className="text-sm font-medium text-foreground italic">{product.significance}</p>
-                          </div>
-                        </div>
+        {/* New & Sustained Tab */}
+        {analysis.newAndSustained.length > 0 && (
+          <TabsContent value="new" className="mt-5 space-y-3" data-testid="content-new-sustained">
+            <div className="flex items-start gap-2.5 px-4 py-3 rounded-lg border" style={{ background: 'var(--lp-cream, #faf8f4)', borderColor: 'var(--border)' }}>
+              <Info className="w-4 h-4 flex-shrink-0 mt-0.5" style={{ color: 'var(--lp-ink-ghost)' }} />
+              <p className="text-sm leading-relaxed" style={{ color: 'var(--lp-ink-light)' }}>
+                Initiatives introduced in recent years that have been consistently reported since.
+                These represent the company's newest strategic priorities and growth areas.
+              </p>
+            </div>
+            <div className="grid gap-3">
+              {analysis.newAndSustained.map((item, index) => (
+                <div
+                  key={index}
+                  className="rounded-lg border flex items-start justify-between gap-4"
+                  style={{ background: 'var(--lp-cream, #faf8f4)', borderColor: 'var(--border)', padding: '14px 16px' }}
+                  data-testid={`new-sustained-item-${index}`}
+                >
+                  <div className="flex-1 space-y-1.5">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <h4 className="font-semibold text-sm" style={{ color: 'var(--lp-ink)' }}>{item.item}</h4>
+                      <Badge className={CATEGORY_COLORS[item.category] || CATEGORY_COLORS.description}>
+                        {item.category}
+                      </Badge>
+                    </div>
+                    <p className="text-sm leading-relaxed" style={{ color: 'var(--lp-ink-light)' }}>{item.context}</p>
+                  </div>
+                  <Badge variant="outline" className="text-xs whitespace-nowrap flex-shrink-0">
+                    Since {item.introducedYear}
+                  </Badge>
+                </div>
+              ))}
+            </div>
+          </TabsContent>
+        )}
+
+        {/* Evolved Tab */}
+        {analysis.evolved.length > 0 && (
+          <TabsContent value="evolved" className="mt-5 space-y-3" data-testid="content-evolved">
+            <div className="flex items-start gap-2.5 px-4 py-3 rounded-lg border" style={{ background: 'var(--lp-cream, #faf8f4)', borderColor: 'var(--border)' }}>
+              <Info className="w-4 h-4 flex-shrink-0 mt-0.5" style={{ color: 'var(--lp-ink-ghost)' }} />
+              <p className="text-sm leading-relaxed" style={{ color: 'var(--lp-ink-light)' }}>
+                Products, strategies, or descriptions that have meaningfully changed over time.
+                Track how the company's language and positioning has evolved.
+              </p>
+            </div>
+            <div className="grid gap-3">
+              {analysis.evolved.map((item, index) => (
+                <div
+                  key={index}
+                  className="rounded-lg border"
+                  style={{ background: 'var(--lp-cream, #faf8f4)', borderColor: 'var(--border)', padding: '14px 16px' }}
+                  data-testid={`evolved-item-${index}`}
+                >
+                  <div className="space-y-3">
+                    <div className="flex items-start justify-between gap-4">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <h4 className="font-semibold text-sm" style={{ color: 'var(--lp-ink)' }}>{item.item}</h4>
+                        <Badge className={CATEGORY_COLORS[item.category] || CATEGORY_COLORS.description}>
+                          {item.category}
+                        </Badge>
                       </div>
-                    </CardContent>
-                  </Card>
-                ))}
-              </div>
-            </TabsContent>
-          )}
-        </Tabs>
-      </CardContent>
-    </Card>
+                      <Badge variant="outline" className="text-xs whitespace-nowrap flex-shrink-0">
+                        {item.yearRange}
+                      </Badge>
+                    </div>
+                    <p className="text-sm font-medium" style={{ color: 'var(--lp-ink)' }}>{item.changeDescription}</p>
+                    <div className="grid md:grid-cols-2 gap-3">
+                      <div className="p-3 rounded-lg border bg-white" style={{ borderColor: 'var(--border)' }}>
+                        <div className="text-[9px] font-semibold uppercase tracking-widest mb-1.5" style={{ color: 'var(--lp-ink-ghost)' }}>Before</div>
+                        <p className="text-sm leading-relaxed" style={{ color: 'var(--lp-ink-light)' }}>{item.beforeSnapshot}</p>
+                      </div>
+                      <div className="p-3 rounded-lg border bg-white" style={{ borderColor: 'var(--border)' }}>
+                        <div className="text-[9px] font-semibold uppercase tracking-widest mb-1.5" style={{ color: 'var(--lp-ink-ghost)' }}>After</div>
+                        <p className="text-sm leading-relaxed" style={{ color: 'var(--lp-ink-light)' }}>{item.afterSnapshot}</p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </TabsContent>
+        )}
+
+        {/* New Products Tab */}
+        {analysis.newProducts.length > 0 && (
+          <TabsContent value="products" className="mt-5 space-y-3" data-testid="content-new-products">
+            <div className="flex items-start gap-2.5 px-4 py-3 rounded-lg border" style={{ background: 'var(--lp-cream, #faf8f4)', borderColor: 'var(--border)' }}>
+              <Info className="w-4 h-4 flex-shrink-0 mt-0.5" style={{ color: 'var(--lp-ink-ghost)' }} />
+              <p className="text-sm leading-relaxed" style={{ color: 'var(--lp-ink-light)' }}>
+                New products and offerings introduced during this period. Understanding product
+                launches helps investors gauge innovation pace and market expansion.
+              </p>
+            </div>
+            <div className="grid gap-3">
+              {analysis.newProducts.map((product, index) => (
+                <div
+                  key={index}
+                  className="rounded-lg border flex items-start gap-4"
+                  style={{ background: 'var(--lp-cream, #faf8f4)', borderColor: 'var(--border)', padding: '14px 16px' }}
+                  data-testid={`new-product-${index}`}
+                >
+                  <div className="w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0" style={{ background: 'rgba(139,92,246,0.08)' }}>
+                    <Package className="w-4 h-4 text-purple-500" />
+                  </div>
+                  <div className="flex-1 space-y-1.5">
+                    <div className="flex items-center justify-between gap-4 flex-wrap">
+                      <h4 className="font-semibold text-sm" style={{ color: 'var(--lp-ink)' }}>{product.name}</h4>
+                      <Badge variant="outline" className="text-xs whitespace-nowrap">
+                        Launched {product.introducedYear}
+                      </Badge>
+                    </div>
+                    <p className="text-sm" style={{ color: 'var(--lp-ink-light)' }}>{product.description}</p>
+                    <div className="pt-1 pl-3 border-l-2" style={{ borderColor: 'var(--lp-teal-pale)' }}>
+                      <p className="text-sm italic" style={{ color: 'var(--lp-ink-mid)' }}>{product.significance}</p>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </TabsContent>
+        )}
+      </Tabs>
+    </div>
   );
 }

@@ -616,76 +616,88 @@ export function SummaryCard({
         </SectionCard>
       </div>
 
-      {/* ── Changes Over Time (collapsible) ── */}
+      {/* ── Changes Over Time (collapsible card) ── */}
       {temporalHasItems && temporalAnalysis && (
-        <div className="relative" data-testid="changes-over-time-wrapper">
-          {!showTemporalDetail ? (
-            /* collapsed: show full header bar */
-            <button
-              className="w-full flex items-center justify-between px-5 py-3.5 rounded-xl text-left"
-              style={{ background: tealDeep }}
-              onClick={() => setShowTemporalDetail(true)}
-              data-testid="button-toggle-temporal"
-            >
-              <div className="flex items-center gap-3">
-                <span className="font-mono text-[11px] tracking-wider text-white/70">Changes Over Time</span>
-                {yearsLabel && (
-                  <span
-                    className="text-[10px] px-2 py-0.5 rounded-full border"
-                    style={{ background: 'rgba(255,255,255,0.1)', borderColor: 'rgba(255,255,255,0.15)', color: 'rgba(255,255,255,0.8)' }}
-                  >
-                    {yearsLabel}
-                  </span>
-                )}
-              </div>
-              <ChevronDown className="h-4 w-4 text-white/60 flex-shrink-0" />
-            </button>
-          ) : (
-            /* expanded: show component with small collapse button overlaid top-right */
-            <>
-              <button
-                className="absolute top-4 right-4 z-20 flex items-center gap-1.5 text-[10px] font-medium px-2.5 py-1 rounded-md border"
-                style={{ background: 'var(--lp-teal-pale)', color: 'var(--lp-teal-deep)', borderColor: 'rgba(13,74,71,0.2)' }}
-                onClick={() => setShowTemporalDetail(false)}
-                data-testid="button-toggle-temporal"
+        <div
+          className="rounded-xl border overflow-hidden bg-white"
+          style={{ borderColor: border, boxShadow: '0 2px 20px rgba(13,74,71,0.07)' }}
+          data-testid="changes-over-time-wrapper"
+        >
+          <button
+            className="w-full flex items-center justify-between text-left"
+            style={{ background: tealDeep, padding: '10px 16px' }}
+            onClick={() => setShowTemporalDetail((v) => !v)}
+            data-testid="button-toggle-temporal"
+          >
+            <div className="flex items-center gap-2.5">
+              <span
+                className="font-mono tracking-[0.04em]"
+                style={{ fontSize: '11px', color: 'rgba(255,255,255,0.7)', fontFamily: "'DM Mono', monospace" }}
               >
-                Collapse <ChevronUp className="h-3 w-3" />
-              </button>
-              <div data-testid="temporal-analysis-section">
-                <TemporalAnalysis analysis={temporalAnalysis} companyName={companyName} />
-              </div>
-            </>
+                Changes Over Time
+              </span>
+              {yearsLabel && (
+                <span
+                  className="text-[10px] px-2 py-0.5 rounded-full border"
+                  style={{ background: 'rgba(255,255,255,0.1)', borderColor: 'rgba(255,255,255,0.15)', color: 'rgba(255,255,255,0.75)' }}
+                >
+                  {yearsLabel}
+                </span>
+              )}
+            </div>
+            <span
+              className="text-[10px] font-medium px-2.5 py-1 rounded-full border flex items-center gap-1.5"
+              style={{ background: 'rgba(255,255,255,0.1)', borderColor: 'rgba(255,255,255,0.18)', color: 'rgba(255,255,255,0.7)' }}
+            >
+              {showTemporalDetail ? 'Collapse' : 'Expand'}
+              {showTemporalDetail
+                ? <ChevronUp className="h-3 w-3" />
+                : <ChevronDown className="h-3 w-3" />
+              }
+            </span>
+          </button>
+          {showTemporalDetail && (
+            <div style={{ padding: '20px', background: 'white' }}>
+              <TemporalAnalysis analysis={temporalAnalysis} companyName={companyName} />
+            </div>
           )}
         </div>
       )}
 
-      {/* ── Fine Print (collapsible) ── */}
+      {/* ── Fine Print (collapsible card) ── */}
       {finePrintAnalysis && (
-        <div className="relative" data-testid="fine-print-wrapper">
-          {!showFinePrintDetail ? (
-            /* collapsed: show full header bar */
-            <button
-              className="w-full flex items-center justify-between px-5 py-3.5 rounded-xl text-left"
-              style={{ background: tealDeep }}
-              onClick={() => setShowFinePrintDetail(true)}
-              data-testid="button-toggle-fine-print"
+        <div
+          className="rounded-xl border overflow-hidden bg-white"
+          style={{ borderColor: border, boxShadow: '0 2px 20px rgba(13,74,71,0.07)' }}
+          data-testid="fine-print-wrapper"
+        >
+          <button
+            className="w-full flex items-center justify-between text-left"
+            style={{ background: tealDeep, padding: '10px 16px' }}
+            onClick={() => setShowFinePrintDetail((v) => !v)}
+            data-testid="button-toggle-fine-print"
+          >
+            <span
+              className="font-mono tracking-[0.04em]"
+              style={{ fontSize: '11px', color: 'rgba(255,255,255,0.7)', fontFamily: "'DM Mono', monospace" }}
             >
-              <span className="font-mono text-[11px] tracking-wider text-white/70">Fine Print Analysis</span>
-              <ChevronDown className="h-4 w-4 text-white/60 flex-shrink-0" />
-            </button>
-          ) : (
-            /* expanded: show component with small collapse button overlaid top-right */
-            <>
-              <button
-                className="absolute top-4 right-4 z-20 flex items-center gap-1.5 text-[10px] font-medium px-2.5 py-1 rounded-md border"
-                style={{ background: 'var(--lp-teal-pale)', color: 'var(--lp-teal-deep)', borderColor: 'rgba(13,74,71,0.2)' }}
-                onClick={() => setShowFinePrintDetail(false)}
-                data-testid="button-toggle-fine-print"
-              >
-                Collapse <ChevronUp className="h-3 w-3" />
-              </button>
+              Fine Print Analysis
+            </span>
+            <span
+              className="text-[10px] font-medium px-2.5 py-1 rounded-full border flex items-center gap-1.5"
+              style={{ background: 'rgba(255,255,255,0.1)', borderColor: 'rgba(255,255,255,0.18)', color: 'rgba(255,255,255,0.7)' }}
+            >
+              {showFinePrintDetail ? 'Collapse' : 'Expand'}
+              {showFinePrintDetail
+                ? <ChevronUp className="h-3 w-3" />
+                : <ChevronDown className="h-3 w-3" />
+              }
+            </span>
+          </button>
+          {showFinePrintDetail && (
+            <div style={{ padding: '20px', background: 'white' }}>
               <FinePrintAnalysis analysis={finePrintAnalysis} companyName={companyName} />
-            </>
+            </div>
           )}
         </div>
       )}
