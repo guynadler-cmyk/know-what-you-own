@@ -730,162 +730,8 @@ export function StrategyStage({
         </div>
       </div>
 
-      {/* ── Section 2: Investment Memo ── */}
-      <SectionRow num={2} title="Write your thesis" sub="Pre-filled from your research — edit to make it yours" />
-
-      <div className="rounded-md border overflow-hidden">
-        <CardMacHeader label="Investment Memo" ticker={upperTicker} badge={memoState === "done" ? "Editable" : "AI-generated"} />
-        <div className="p-4 space-y-0">
-          {memoState === "idle" && (
-            <div className="py-8 flex flex-col items-center gap-3 text-center">
-              <Sparkles className="w-8 h-8" style={{ color: "var(--lp-teal-deep)" }} />
-              <div>
-                <p className="text-sm font-medium" style={{ color: "var(--lp-ink)" }}>Generate your investment memo</p>
-                <p className="text-xs mt-1" style={{ color: "var(--lp-ink-mid)" }}>We'll use your research to pre-fill the key fields — you can edit them after.</p>
-              </div>
-              <Button onClick={handleGenerateMemo} data-testid="button-generate-memo">
-                <Sparkles className="w-4 h-4 mr-2" />
-                Generate memo
-              </Button>
-            </div>
-          )}
-
-          {memoState === "generating" && (
-            <div className="py-8 flex flex-col items-center gap-3 text-center">
-              <Loader2 className="w-8 h-8 animate-spin" style={{ color: "var(--lp-teal-deep)" }} />
-              <p className="text-sm" style={{ color: "var(--lp-ink-mid)" }}>Generating your investment memo...</p>
-            </div>
-          )}
-
-          {memoState === "done" && memo && (
-            <div className="divide-y" style={{ borderColor: "var(--lp-border)" }}>
-              {[
-                { key: "why_own" as const, icon: "📋", label: "Why I own this", rows: 3 },
-                { key: "time_horizon" as const, icon: "⏳", label: "My time horizon", rows: 2 },
-                { key: "watching" as const, icon: "⚠️", label: "What I'm watching", rows: 3 },
-              ].map(({ key, icon, label, rows }) => (
-                <div key={key} className="py-4">
-                  <div className="flex items-center gap-2 mb-2">
-                    <span className="text-base" role="img" aria-label={label}>{icon}</span>
-                    <span className="text-xs font-semibold tracking-wide uppercase" style={{ color: "var(--lp-ink-mid)" }}>{label}</span>
-                  </div>
-                  <Textarea
-                    value={memo[key]}
-                    onChange={(e) => handleMemoField(key, e.target.value)}
-                    rows={rows}
-                    className="resize-none text-sm border-0 bg-transparent p-0 focus-visible:ring-0 shadow-none"
-                    style={{ color: "var(--lp-ink)" }}
-                    data-testid={`memo-${key}`}
-                  />
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-      </div>
-
-      {/* ── Section 3: Guardrails ── */}
-      <SectionRow num={3} title="Define your guardrails" sub="What would make you reconsider or exit?" />
-
-      <div className="rounded-md border overflow-hidden">
-        <CardMacHeader
-          label="I'm Wrong If..."
-          ticker={upperTicker}
-          badge={`${guardrails.filter(g => buildGuardrailStatement(g)).length} guardrail${guardrails.filter(g => buildGuardrailStatement(g)).length !== 1 ? "s" : ""} set`}
-        />
-        <div className="p-4 space-y-4">
-          <p className="text-sm" style={{ color: "var(--lp-ink-mid)" }}>
-            Decide now what would change your mind — before emotion gets involved. These become your exit rules.
-          </p>
-
-          {guardrails.map((row, idx) => (
-            <div key={row.id} className="rounded-md border p-4 space-y-3" style={{ borderColor: "var(--lp-border)" }} data-testid={`guardrail-row-${row.id}`}>
-              <div className="flex items-start gap-3">
-                <div
-                  className="w-6 h-6 rounded-full flex items-center justify-center text-xs font-semibold flex-shrink-0 mt-0.5"
-                  style={{ background: "var(--lp-teal-deep)", color: "white" }}
-                >
-                  {idx + 1}
-                </div>
-                <div className="flex-1 space-y-3">
-                  <div className="text-xs font-semibold uppercase tracking-wide" style={{ color: "var(--lp-ink-ghost)" }}>
-                    I'm wrong if...
-                  </div>
-
-                  <div className="space-y-2">
-                    <div className="text-xs" style={{ color: "var(--lp-ink-mid)" }}>Area</div>
-                    <div className="flex flex-wrap gap-1.5">
-                      {GUARDRAIL_AREAS.map(a => (
-                        <TagChip
-                          key={a} label={a}
-                          selected={row.selectedAreas.includes(a)}
-                          onClick={() => toggleGuardrailTag(row.id, "areas", a)}
-                        />
-                      ))}
-                    </div>
-                  </div>
-
-                  <div className="space-y-2">
-                    <div className="text-xs" style={{ color: "var(--lp-ink-mid)" }}>Change</div>
-                    <div className="flex flex-wrap gap-1.5">
-                      {GUARDRAIL_CHANGES.map(c => (
-                        <TagChip
-                          key={c} label={c}
-                          selected={row.selectedChanges.includes(c)}
-                          onClick={() => toggleGuardrailTag(row.id, "changes", c)}
-                        />
-                      ))}
-                    </div>
-                  </div>
-
-                  <div className="space-y-2">
-                    <div className="text-xs" style={{ color: "var(--lp-ink-mid)" }}>Threshold</div>
-                    <div className="flex flex-wrap gap-1.5">
-                      {GUARDRAIL_THRESHOLDS.map(t => (
-                        <TagChip
-                          key={t} label={t}
-                          selected={row.selectedThresholds.includes(t)}
-                          onClick={() => toggleGuardrailTag(row.id, "thresholds", t)}
-                        />
-                      ))}
-                    </div>
-                  </div>
-
-                  <div>
-                    <div className="text-xs mb-1.5" style={{ color: "var(--lp-ink-mid)" }}>Or type your own:</div>
-                    <Input
-                      value={row.customText}
-                      onChange={(e) => handleGuardrailCustomText(row.id, e.target.value)}
-                      placeholder="e.g. AMD gains meaningful share in data center GPU market..."
-                      className="text-sm"
-                      data-testid={`guardrail-input-${row.id}`}
-                    />
-                  </div>
-                </div>
-
-                {guardrails.length > 1 && (
-                  <button
-                    type="button"
-                    onClick={() => removeGuardrail(row.id)}
-                    className="p-1 rounded text-muted-foreground hover:text-foreground transition-colors flex-shrink-0"
-                    data-testid={`button-remove-guardrail-${row.id}`}
-                  >
-                    <X className="w-4 h-4" />
-                  </button>
-                )}
-              </div>
-            </div>
-          ))}
-
-          <Button variant="outline" size="sm" onClick={addGuardrail} className="gap-1.5" data-testid="button-add-guardrail">
-            <Plus className="w-3.5 h-3.5" />
-            Add another guardrail
-          </Button>
-        </div>
-      </div>
-
-      {/* ── Section 4: Entry Plan ── */}
-      <SectionRow num={4} title="Build your entry plan" sub="How much, when, and under what conditions" />
+      {/* ── Section 3: Entry Plan ── */}
+      <SectionRow num={3} title="Build your entry plan" sub="How much, when, and under what conditions" />
 
       <div className="rounded-md border overflow-hidden">
         <CardMacHeader
@@ -1029,6 +875,160 @@ export function StrategyStage({
               <div className="text-base font-semibold" style={{ color: "var(--lp-ink)" }}>{formatCurrency(totalAmountRaw)}</div>
             </div>
           </div>
+        </div>
+      </div>
+
+      {/* ── Section 4: Investment Memo ── */}
+      <SectionRow num={4} title="Write your thesis" sub="Pre-filled from your research — edit to make it yours" />
+
+      <div className="rounded-md border overflow-hidden">
+        <CardMacHeader label="Investment Memo" ticker={upperTicker} badge={memoState === "done" ? "Editable" : "AI-generated"} />
+        <div className="p-4 space-y-0">
+          {memoState === "idle" && (
+            <div className="py-8 flex flex-col items-center gap-3 text-center">
+              <Sparkles className="w-8 h-8" style={{ color: "var(--lp-teal-deep)" }} />
+              <div>
+                <p className="text-sm font-medium" style={{ color: "var(--lp-ink)" }}>Generate your investment memo</p>
+                <p className="text-xs mt-1" style={{ color: "var(--lp-ink-mid)" }}>We'll use your research to pre-fill the key fields — you can edit them after.</p>
+              </div>
+              <Button onClick={handleGenerateMemo} data-testid="button-generate-memo">
+                <Sparkles className="w-4 h-4 mr-2" />
+                Generate memo
+              </Button>
+            </div>
+          )}
+
+          {memoState === "generating" && (
+            <div className="py-8 flex flex-col items-center gap-3 text-center">
+              <Loader2 className="w-8 h-8 animate-spin" style={{ color: "var(--lp-teal-deep)" }} />
+              <p className="text-sm" style={{ color: "var(--lp-ink-mid)" }}>Generating your investment memo...</p>
+            </div>
+          )}
+
+          {memoState === "done" && memo && (
+            <div className="divide-y" style={{ borderColor: "var(--lp-border)" }}>
+              {[
+                { key: "why_own" as const, icon: "📋", label: "Why I own this", rows: 3 },
+                { key: "time_horizon" as const, icon: "⏳", label: "My time horizon", rows: 2 },
+                { key: "watching" as const, icon: "⚠️", label: "What I'm watching", rows: 3 },
+              ].map(({ key, icon, label, rows }) => (
+                <div key={key} className="py-4">
+                  <div className="flex items-center gap-2 mb-2">
+                    <span className="text-base" role="img" aria-label={label}>{icon}</span>
+                    <span className="text-xs font-semibold tracking-wide uppercase" style={{ color: "var(--lp-ink-mid)" }}>{label}</span>
+                  </div>
+                  <Textarea
+                    value={memo[key]}
+                    onChange={(e) => handleMemoField(key, e.target.value)}
+                    rows={rows}
+                    className="resize-none text-sm border-0 bg-transparent p-0 focus-visible:ring-0 shadow-none"
+                    style={{ color: "var(--lp-ink)" }}
+                    data-testid={`memo-${key}`}
+                  />
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* ── Section 5: Guardrails ── */}
+      <SectionRow num={5} title="Define your guardrails" sub="What would make you reconsider or exit?" />
+
+      <div className="rounded-md border overflow-hidden">
+        <CardMacHeader
+          label="I'm Wrong If..."
+          ticker={upperTicker}
+          badge={`${guardrails.filter(g => buildGuardrailStatement(g)).length} guardrail${guardrails.filter(g => buildGuardrailStatement(g)).length !== 1 ? "s" : ""} set`}
+        />
+        <div className="p-4 space-y-4">
+          <p className="text-sm" style={{ color: "var(--lp-ink-mid)" }}>
+            Decide now what would change your mind — before emotion gets involved. These become your exit rules.
+          </p>
+
+          {guardrails.map((row, idx) => (
+            <div key={row.id} className="rounded-md border p-4 space-y-3" style={{ borderColor: "var(--lp-border)" }} data-testid={`guardrail-row-${row.id}`}>
+              <div className="flex items-start gap-3">
+                <div
+                  className="w-6 h-6 rounded-full flex items-center justify-center text-xs font-semibold flex-shrink-0 mt-0.5"
+                  style={{ background: "var(--lp-teal-deep)", color: "white" }}
+                >
+                  {idx + 1}
+                </div>
+                <div className="flex-1 space-y-3">
+                  <div className="text-xs font-semibold uppercase tracking-wide" style={{ color: "var(--lp-ink-ghost)" }}>
+                    I'm wrong if...
+                  </div>
+
+                  <div className="space-y-2">
+                    <div className="text-xs" style={{ color: "var(--lp-ink-mid)" }}>Area</div>
+                    <div className="flex flex-wrap gap-1.5">
+                      {GUARDRAIL_AREAS.map(a => (
+                        <TagChip
+                          key={a} label={a}
+                          selected={row.selectedAreas.includes(a)}
+                          onClick={() => toggleGuardrailTag(row.id, "areas", a)}
+                        />
+                      ))}
+                    </div>
+                  </div>
+
+                  <div className="space-y-2">
+                    <div className="text-xs" style={{ color: "var(--lp-ink-mid)" }}>Change</div>
+                    <div className="flex flex-wrap gap-1.5">
+                      {GUARDRAIL_CHANGES.map(c => (
+                        <TagChip
+                          key={c} label={c}
+                          selected={row.selectedChanges.includes(c)}
+                          onClick={() => toggleGuardrailTag(row.id, "changes", c)}
+                        />
+                      ))}
+                    </div>
+                  </div>
+
+                  <div className="space-y-2">
+                    <div className="text-xs" style={{ color: "var(--lp-ink-mid)" }}>Threshold</div>
+                    <div className="flex flex-wrap gap-1.5">
+                      {GUARDRAIL_THRESHOLDS.map(t => (
+                        <TagChip
+                          key={t} label={t}
+                          selected={row.selectedThresholds.includes(t)}
+                          onClick={() => toggleGuardrailTag(row.id, "thresholds", t)}
+                        />
+                      ))}
+                    </div>
+                  </div>
+
+                  <div>
+                    <div className="text-xs mb-1.5" style={{ color: "var(--lp-ink-mid)" }}>Or type your own:</div>
+                    <Input
+                      value={row.customText}
+                      onChange={(e) => handleGuardrailCustomText(row.id, e.target.value)}
+                      placeholder="e.g. AMD gains meaningful share in data center GPU market..."
+                      className="text-sm"
+                      data-testid={`guardrail-input-${row.id}`}
+                    />
+                  </div>
+                </div>
+
+                {guardrails.length > 1 && (
+                  <button
+                    type="button"
+                    onClick={() => removeGuardrail(row.id)}
+                    className="p-1 rounded text-muted-foreground hover:text-foreground transition-colors flex-shrink-0"
+                    data-testid={`button-remove-guardrail-${row.id}`}
+                  >
+                    <X className="w-4 h-4" />
+                  </button>
+                )}
+              </div>
+            </div>
+          ))}
+
+          <Button variant="outline" size="sm" onClick={addGuardrail} className="gap-1.5" data-testid="button-add-guardrail">
+            <Plus className="w-3.5 h-3.5" />
+            Add another guardrail
+          </Button>
         </div>
       </div>
 
