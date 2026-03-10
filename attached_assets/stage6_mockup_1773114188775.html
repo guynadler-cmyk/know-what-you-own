@@ -1,0 +1,573 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>restnvest — Manage</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400&family=DM+Sans:wght@300;400;500&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --teal-deep: #0d4a47;
+    --teal-mid: #1a6b66;
+    --teal-brand: #2a8c85;
+    --teal-light: #4db8b0;
+    --teal-pale: #e8f5f4;
+    --teal-ghost: #f2faf9;
+    --warm-white: #fffef9;
+    --cream: #faf8f4;
+    --ink: #1a1a18;
+    --ink-mid: #3d3d38;
+    --ink-light: #6b6b64;
+    --ink-ghost: #9b9b92;
+    --gold: #c9a84c;
+    --gold-light: rgba(201,168,76,0.1);
+    --red-light: rgba(220,38,38,0.08);
+    --green-light: rgba(22,163,74,0.08);
+    --border: rgba(42,140,133,0.12);
+    --shadow-card: 0 2px 20px rgba(13,74,71,0.07);
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: 'DM Sans', sans-serif; background: var(--warm-white); color: var(--ink); }
+
+  /* NAV */
+  .nav {
+    height: 52px; background: var(--warm-white);
+    border-bottom: 1px solid var(--border);
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 0 24px; position: sticky; top: 0; z-index: 100;
+  }
+  .nav-left { display: flex; align-items: center; gap: 12px; }
+  .nav-logo { font-size: 15px; font-weight: 500; color: var(--ink); letter-spacing: -0.02em; text-decoration: none; }
+  .nav-logo span { color: var(--teal-brand); }
+  .company-pill { display: flex; align-items: center; gap: 8px; background: white; border: 1px solid var(--border); border-radius: 6px; padding: 5px 10px; }
+  .company-logo-box { width: 20px; height: 20px; background: var(--teal-deep); border-radius: 4px; display: flex; align-items: center; justify-content: center; font-size: 9px; color: white; font-weight: 700; font-family: 'DM Mono', monospace; }
+  .company-pill-name { font-size: 12px; font-weight: 500; }
+  .company-pill-ticker { font-size: 10px; font-family: 'DM Mono', monospace; color: var(--ink-ghost); }
+  .nav-search { display: flex; align-items: center; background: white; border: 1.5px solid var(--border); border-radius: 7px; padding: 0 4px 0 10px; gap: 8px; height: 34px; flex: 1; max-width: 280px; margin: 0 16px; }
+  .nav-search input { flex: 1; border: none; outline: none; font-size: 12px; font-family: 'DM Sans', sans-serif; color: var(--ink); background: transparent; }
+  .nav-search input::placeholder { color: var(--ink-ghost); font-weight: 300; }
+  .nav-search-btn { background: var(--teal-deep); color: white; border: none; border-radius: 5px; padding: 5px 12px; font-size: 11px; font-weight: 500; font-family: 'DM Sans', sans-serif; cursor: pointer; height: 26px; }
+  .nav-right { display: flex; align-items: center; gap: 6px; }
+  .nav-btn { font-size: 11px; color: var(--ink-light); background: none; border: 1px solid var(--border); border-radius: 5px; padding: 5px 10px; cursor: pointer; font-family: 'DM Sans', sans-serif; }
+  .nav-btn.active { background: var(--teal-ghost); border-color: var(--teal-brand); color: var(--teal-brand); }
+
+  /* STAGE BAR */
+  .stage-bar { background: white; border-bottom: 1px solid var(--border); display: flex; justify-content: center; }
+  .stage-bar-inner { display: flex; align-items: center; height: 44px; }
+  .stage-step { display: flex; align-items: center; gap: 7px; padding: 0 14px; height: 100%; font-size: 11px; color: var(--ink-ghost); font-weight: 400; border-bottom: 2px solid transparent; cursor: pointer; white-space: nowrap; }
+  .stage-step.active { color: var(--teal-deep); font-weight: 500; border-bottom-color: var(--teal-brand); }
+  .stage-step.completed { color: var(--teal-brand); }
+  .stage-num { width: 16px; height: 16px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 8px; font-weight: 600; flex-shrink: 0; }
+  .stage-step.active .stage-num { background: var(--teal-brand); color: white; }
+  .stage-step.completed .stage-num { background: var(--teal-pale); color: var(--teal-brand); }
+  .stage-step:not(.active):not(.completed) .stage-num { background: var(--cream); color: var(--ink-ghost); border: 1px solid var(--border); }
+  .stage-sep { width: 20px; height: 1px; background: var(--border); }
+
+  /* PHILOSOPHY */
+  .philosophy { background: white; border-bottom: 1px solid var(--border); padding: 10px 28px; display: flex; align-items: center; justify-content: space-between; }
+  .philosophy-title { font-size: 11px; font-weight: 500; }
+  .philosophy-sub { font-size: 10px; font-weight: 300; color: var(--ink-ghost); margin-top: 1px; }
+  .philosophy-hide { font-size: 10px; color: var(--teal-brand); background: none; border: none; cursor: pointer; font-family: 'DM Sans', sans-serif; }
+
+  /* MAIN */
+  .main { max-width: 860px; margin: 0 auto; padding: 32px 24px 80px; }
+
+  /* PAGE HEADER */
+  .page-header { margin-bottom: 28px; }
+  .page-eyebrow { font-size: 10px; font-weight: 500; letter-spacing: 0.12em; text-transform: uppercase; color: var(--teal-brand); margin-bottom: 8px; }
+  .page-headline { font-family: 'Playfair Display', serif; font-size: 26px; font-weight: 700; color: var(--ink); letter-spacing: -0.01em; line-height: 1.25; margin-bottom: 8px; }
+  .page-headline em { font-style: italic; color: var(--teal-brand); }
+  .page-sub { font-size: 13px; font-weight: 300; color: var(--ink-light); line-height: 1.6; max-width: 520px; }
+
+  /* POSITION TOGGLE */
+  .position-toggle {
+    background: white; border: 1px solid var(--border);
+    border-radius: 12px; padding: 16px 20px;
+    display: flex; align-items: center; justify-content: space-between;
+    margin-bottom: 20px; box-shadow: var(--shadow-card);
+    cursor: pointer;
+  }
+  .pt-left { display: flex; align-items: center; gap: 12px; }
+  .pt-icon { width: 32px; height: 32px; background: var(--teal-ghost); border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 14px; }
+  .pt-label { font-size: 13px; font-weight: 500; color: var(--ink); }
+  .pt-sub { font-size: 11px; font-weight: 300; color: var(--ink-ghost); margin-top: 1px; }
+  .toggle-switch { width: 40px; height: 22px; background: var(--border); border-radius: 100px; position: relative; transition: background 0.2s; cursor: pointer; flex-shrink: 0; }
+  .toggle-switch.on { background: var(--teal-brand); }
+  .toggle-knob { width: 18px; height: 18px; background: white; border-radius: 50%; position: absolute; top: 2px; left: 2px; transition: left 0.2s; box-shadow: 0 1px 4px rgba(0,0,0,0.15); }
+  .toggle-switch.on .toggle-knob { left: 20px; }
+
+  /* POSITION ENTRY PANEL — shown when toggle is ON */
+  .position-panel {
+    background: var(--teal-ghost); border: 1px solid var(--border);
+    border-radius: 10px; padding: 16px 20px; margin-bottom: 20px;
+    display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px;
+  }
+  .pp-field { display: flex; flex-direction: column; gap: 5px; }
+  .pp-label { font-size: 10px; font-weight: 500; letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink-ghost); }
+  .pp-input { font-size: 13px; font-weight: 500; font-family: 'DM Sans', sans-serif; color: var(--ink); background: white; border: 1px solid var(--border); border-radius: 6px; padding: 8px 12px; outline: none; transition: border-color 0.2s; }
+  .pp-input:focus { border-color: var(--teal-brand); }
+
+  /* SECTION LABEL */
+  .section-label-row { display: flex; align-items: center; gap: 12px; margin: 24px 0 14px; }
+  .section-num { width: 24px; height: 24px; background: var(--teal-deep); color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 10px; font-weight: 700; flex-shrink: 0; }
+  .section-label-text { font-size: 13px; font-weight: 500; color: var(--ink); }
+  .section-label-sub { font-size: 11px; font-weight: 300; color: var(--ink-ghost); }
+
+  /* CARD BASE */
+  .card { background: white; border: 1px solid var(--border); border-radius: 12px; overflow: hidden; box-shadow: var(--shadow-card); margin-bottom: 14px; }
+  .card-header { background: var(--teal-deep); padding: 10px 16px; display: flex; align-items: center; justify-content: space-between; }
+  .card-header-title { font-size: 11px; font-family: 'DM Mono', monospace; color: rgba(255,255,255,0.7); letter-spacing: 0.04em; }
+  .card-header-badge { font-size: 10px; font-weight: 500; padding: 2px 8px; border-radius: 100px; background: rgba(255,255,255,0.1); color: rgba(255,255,255,0.8); border: 1px solid rgba(255,255,255,0.15); }
+  .card-body { padding: 20px; }
+
+  /* WHAT TO WATCH */
+  .watch-grid { display: flex; flex-direction: column; gap: 10px; }
+  .watch-row {
+    display: flex; align-items: flex-start; gap: 12px;
+    padding: 12px 14px; background: var(--cream);
+    border: 1px solid var(--border); border-radius: 8px;
+  }
+  .watch-icon { width: 28px; height: 28px; border-radius: 6px; display: flex; align-items: center; justify-content: center; font-size: 12px; flex-shrink: 0; }
+  .watch-icon.green { background: var(--green-light); }
+  .watch-icon.amber { background: var(--gold-light); }
+  .watch-icon.red { background: var(--red-light); }
+  .watch-content { flex: 1; }
+  .watch-label { font-size: 11px; font-weight: 500; color: var(--ink); margin-bottom: 2px; display: flex; align-items: center; gap: 6px; }
+  .watch-source { font-size: 9px; font-weight: 500; letter-spacing: 0.06em; text-transform: uppercase; color: var(--ink-ghost); background: var(--border); padding: 1px 6px; border-radius: 3px; }
+  .watch-desc { font-size: 11px; font-weight: 300; color: var(--ink-light); line-height: 1.5; }
+  .watch-status { font-size: 10px; font-weight: 500; padding: 2px 8px; border-radius: 4px; flex-shrink: 0; margin-top: 2px; }
+  .status-good { background: var(--green-light); color: #16a34a; }
+  .status-watch { background: var(--gold-light); color: #ca8a04; }
+  .status-alert { background: var(--red-light); color: #dc2626; }
+
+  /* CADENCE */
+  .cadence-options { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-bottom: 16px; }
+  .cadence-opt {
+    padding: 12px; border-radius: 8px; border: 1.5px solid var(--border);
+    cursor: pointer; text-align: center; transition: all 0.15s;
+  }
+  .cadence-opt:hover { border-color: var(--teal-light); }
+  .cadence-opt.selected { border-color: var(--teal-brand); background: var(--teal-ghost); }
+  .cadence-opt-label { font-size: 12px; font-weight: 500; color: var(--ink); margin-bottom: 3px; }
+  .cadence-opt-desc { font-size: 10px; font-weight: 300; color: var(--ink-ghost); line-height: 1.4; }
+  .cadence-next { font-size: 12px; font-weight: 300; color: var(--ink-light); padding: 10px 14px; background: var(--cream); border-radius: 6px; border: 1px solid var(--border); }
+  .cadence-next strong { font-weight: 500; color: var(--ink); }
+
+  /* RULES — position management, shown when toggle ON */
+  .rules-grid { display: flex; flex-direction: column; gap: 8px; }
+  .rule-row {
+    display: flex; align-items: flex-start; gap: 10px;
+    padding: 12px 14px; border-radius: 8px; border: 1px solid var(--border);
+  }
+  .rule-row.add-rule { background: var(--green-light); border-color: rgba(22,163,74,0.15); }
+  .rule-row.trim-rule { background: var(--gold-light); border-color: rgba(201,168,76,0.15); }
+  .rule-row.exit-rule { background: var(--red-light); border-color: rgba(220,38,38,0.1); }
+  .rule-badge { font-size: 9px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; padding: 3px 8px; border-radius: 4px; flex-shrink: 0; margin-top: 1px; }
+  .badge-add { background: rgba(22,163,74,0.12); color: #16a34a; }
+  .badge-trim { background: rgba(201,168,76,0.12); color: #ca8a04; }
+  .badge-exit { background: rgba(220,38,38,0.08); color: #dc2626; }
+  .rule-input {
+    flex: 1; font-size: 12px; font-family: 'DM Sans', sans-serif;
+    color: var(--ink); background: white; border: 1px solid var(--border);
+    border-radius: 5px; padding: 7px 10px; outline: none;
+    transition: border-color 0.2s; resize: none;
+  }
+  .rule-input:focus { border-color: var(--teal-brand); }
+  .rule-input::placeholder { color: var(--ink-ghost); font-weight: 300; }
+  .add-rule-btn { display: flex; align-items: center; gap: 6px; font-size: 11px; color: var(--teal-brand); background: none; border: 1px dashed var(--border); border-radius: 7px; padding: 9px 14px; cursor: pointer; font-family: 'DM Sans', sans-serif; width: 100%; transition: border-color 0.15s; margin-top: 4px; }
+  .add-rule-btn:hover { border-color: var(--teal-brand); }
+
+  /* DELIVERY */
+  .delivery-options { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 16px; }
+  .delivery-opt {
+    padding: 14px 16px; border-radius: 8px; border: 1.5px solid var(--border);
+    cursor: pointer; transition: all 0.15s; display: flex; align-items: flex-start; gap: 10px;
+  }
+  .delivery-opt:hover { border-color: var(--teal-light); }
+  .delivery-opt.selected { border-color: var(--teal-brand); background: var(--teal-ghost); }
+  .delivery-icon { font-size: 18px; flex-shrink: 0; }
+  .delivery-label { font-size: 12px; font-weight: 500; color: var(--ink); margin-bottom: 3px; }
+  .delivery-desc { font-size: 10px; font-weight: 300; color: var(--ink-ghost); line-height: 1.4; }
+  .delivery-check { width: 14px; height: 14px; background: var(--teal-brand); border-radius: 50%; display: none; align-items: center; justify-content: center; font-size: 7px; color: white; margin-left: auto; flex-shrink: 0; }
+  .delivery-opt.selected .delivery-check { display: flex; }
+
+  .email-input-row { display: flex; gap: 8px; }
+  .email-input { flex: 1; font-size: 12px; font-family: 'DM Sans', sans-serif; color: var(--ink); background: var(--cream); border: 1px solid var(--border); border-radius: 6px; padding: 9px 12px; outline: none; transition: border-color 0.2s; }
+  .email-input:focus { border-color: var(--teal-brand); }
+  .email-input::placeholder { color: var(--ink-ghost); }
+
+  /* MESSAGE TO FUTURE SELF */
+  .future-msg { width: 100%; font-size: 12px; font-family: 'DM Sans', sans-serif; color: var(--ink); background: var(--cream); border: 1px solid var(--border); border-radius: 6px; padding: 12px 14px; outline: none; transition: border-color 0.2s; resize: none; line-height: 1.6; }
+  .future-msg:focus { border-color: var(--teal-brand); }
+  .future-msg::placeholder { color: var(--ink-ghost); font-weight: 300; font-style: italic; }
+  .char-count { font-size: 10px; color: var(--ink-ghost); text-align: right; margin-top: 4px; }
+
+  /* EXPORT BAR */
+  .export-bar {
+    background: var(--teal-deep); border-radius: 12px;
+    padding: 20px 24px; margin-bottom: 16px;
+    display: flex; align-items: center; justify-content: space-between;
+    position: relative; overflow: hidden;
+  }
+  .export-bar::before { content: ''; position: absolute; inset: 0; background: radial-gradient(ellipse 50% 80% at 100% 50%, rgba(77,184,176,0.15) 0%, transparent 60%); pointer-events: none; }
+  .export-left { position: relative; z-index: 1; }
+  .export-eyebrow { font-size: 9px; font-weight: 500; letter-spacing: 0.12em; text-transform: uppercase; color: rgba(255,255,255,0.45); margin-bottom: 5px; }
+  .export-headline { font-family: 'Playfair Display', serif; font-size: 17px; font-weight: 700; color: white; }
+  .export-headline em { font-style: italic; color: var(--teal-light); }
+  .export-sub { font-size: 11px; font-weight: 300; color: rgba(255,255,255,0.5); margin-top: 4px; }
+  .export-actions { display: flex; gap: 8px; position: relative; z-index: 1; }
+  .export-btn { display: flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 500; padding: 9px 18px; border-radius: 7px; cursor: pointer; transition: all 0.15s; font-family: 'DM Sans', sans-serif; text-decoration: none; white-space: nowrap; }
+  .btn-white { background: white; color: var(--teal-deep); border: 1px solid white; }
+  .btn-white:hover { background: var(--teal-ghost); }
+  .btn-outline-white { background: rgba(255,255,255,0.08); color: white; border: 1px solid rgba(255,255,255,0.2); }
+  .btn-outline-white:hover { background: rgba(255,255,255,0.15); }
+
+  /* FOOTER NAV */
+  .footer-nav { display: flex; align-items: center; justify-content: space-between; padding-top: 24px; border-top: 1px solid var(--border); }
+  .foot-btn { display: flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 400; padding: 8px 16px; border-radius: 6px; cursor: pointer; transition: all 0.15s; font-family: 'DM Sans', sans-serif; text-decoration: none; }
+  .btn-back { color: var(--ink-light); background: none; border: 1px solid var(--border); }
+  .btn-back:hover { border-color: var(--teal-brand); color: var(--teal-brand); }
+
+  /* HIDDEN STATE */
+  .hidden { display: none; }
+  .position-section { display: none; }
+  .position-section.visible { display: block; }
+</style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav class="nav">
+  <div class="nav-left">
+    <a href="#" class="nav-logo">rest<span>n</span>vest</a>
+    <div class="company-pill">
+      <div class="company-logo-box">A</div>
+      <span class="company-pill-name">Apple Inc.</span>
+      <span class="company-pill-ticker">AAPL</span>
+    </div>
+  </div>
+  <div class="nav-search">
+    <input type="text" placeholder="Search another company...">
+    <button class="nav-search-btn">Analyze →</button>
+  </div>
+  <div style="flex:1"></div>
+  <div class="nav-right">
+    <button class="nav-btn active">🔖 Saved (2)</button>
+    <button class="nav-btn">↻ Update</button>
+    <button class="nav-btn">Share</button>
+  </div>
+</nav>
+
+<!-- STAGE BAR -->
+<div class="stage-bar">
+  <div class="stage-bar-inner">
+    <div class="stage-step completed"><div class="stage-num">✓</div> Business</div>
+    <div class="stage-sep"></div>
+    <div class="stage-step completed"><div class="stage-num">✓</div> Performance</div>
+    <div class="stage-sep"></div>
+    <div class="stage-step completed"><div class="stage-num">✓</div> Valuation</div>
+    <div class="stage-sep"></div>
+    <div class="stage-step completed"><div class="stage-num">✓</div> Timing</div>
+    <div class="stage-sep"></div>
+    <div class="stage-step completed"><div class="stage-num">✓</div> Strategy</div>
+    <div class="stage-sep"></div>
+    <div class="stage-step active"><div class="stage-num">6</div> Manage</div>
+  </div>
+</div>
+
+<!-- PHILOSOPHY -->
+<div class="philosophy">
+  <div>
+    <div class="philosophy-title">Our Investment Philosophy</div>
+    <div class="philosophy-sub">We only buy great businesses at great prices, entered wisely, protected carefully.</div>
+  </div>
+  <button class="philosophy-hide">Hide ↑</button>
+</div>
+
+<!-- MAIN -->
+<div class="main">
+
+  <!-- PAGE HEADER -->
+  <div class="page-header">
+    <div class="page-eyebrow">Stage 6 of 6 · Manage</div>
+    <h1 class="page-headline">Stay honest <em>with yourself.</em></h1>
+    <p class="page-sub">The research is done. Now build the habit of checking in — so you act on facts, not feelings. Works whether you own this stock yet or not.</p>
+  </div>
+
+  <!-- POSITION TOGGLE -->
+  <div class="position-toggle" onclick="togglePosition()">
+    <div class="pt-left">
+      <div class="pt-icon">📌</div>
+      <div>
+        <div class="pt-label">I've entered this position</div>
+        <div class="pt-sub">Turn on to log your entry and unlock position management</div>
+      </div>
+    </div>
+    <div class="toggle-switch" id="posToggle">
+      <div class="toggle-knob"></div>
+    </div>
+  </div>
+
+  <!-- POSITION PANEL — shown when toggle ON -->
+  <div class="position-panel hidden" id="posPanel">
+    <div class="pp-field">
+      <div class="pp-label">Entry price</div>
+      <input class="pp-input" type="text" placeholder="$ 0.00">
+    </div>
+    <div class="pp-field">
+      <div class="pp-label">Entry date</div>
+      <input class="pp-input" type="date" value="2026-03-09">
+    </div>
+    <div class="pp-field">
+      <div class="pp-label">Shares / amount</div>
+      <input class="pp-input" type="text" placeholder="e.g. 10 shares or $1,500">
+    </div>
+  </div>
+
+  <!-- SECTION 1: WHAT TO WATCH -->
+  <div class="section-label-row">
+    <div class="section-num">1</div>
+    <div>
+      <div class="section-label-text">What to watch</div>
+      <div class="section-label-sub">Signals pulled from your research — the ones that matter most</div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-header">
+      <span class="card-header-title">Monitor List — AAPL</span>
+      <span class="card-header-badge">3 signals · 1 needs attention</span>
+    </div>
+    <div class="card-body">
+      <div class="watch-grid">
+
+        <div class="watch-row">
+          <div class="watch-icon green">📈</div>
+          <div class="watch-content">
+            <div class="watch-label">
+              Revenue & Earnings Growth
+              <span class="watch-source">Performance</span>
+            </div>
+            <div class="watch-desc">Both growing — the hallmark of scalable expansion. Watch for any quarter where earnings growth decouples from revenue growth.</div>
+          </div>
+          <div class="watch-status status-good">On track</div>
+        </div>
+
+        <div class="watch-row">
+          <div class="watch-icon amber">⚖️</div>
+          <div class="watch-content">
+            <div class="watch-label">
+              Valuation Stretch
+              <span class="watch-source">Valuation</span>
+            </div>
+            <div class="watch-desc">2 of 4 valuation signals flagged as stretched. P/E and EV/EBITDA are above historical norms. Monitor for further expansion.</div>
+          </div>
+          <div class="watch-status status-watch">Watch</div>
+        </div>
+
+        <div class="watch-row">
+          <div class="watch-icon amber">📡</div>
+          <div class="watch-content">
+            <div class="watch-label">
+              Timing Conditions
+              <span class="watch-source">Timing</span>
+            </div>
+            <div class="watch-desc">Trend stabilizing but momentum is mixed. Not a strong entry signal yet. Watch for MACD crossover and RSI returning to neutral.</div>
+          </div>
+          <div class="watch-status status-watch">Mixed</div>
+        </div>
+
+        <div class="watch-row">
+          <div class="watch-icon green">🏰</div>
+          <div class="watch-content">
+            <div class="watch-label">
+              Competitive Moat
+              <span class="watch-source">Business</span>
+            </div>
+            <div class="watch-desc">Ecosystem lock-in and brand power remain strong. Watch for any meaningful shift in iPhone retention or services growth deceleration.</div>
+          </div>
+          <div class="watch-status status-good">Strong</div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <!-- SECTION 2: REVIEW CADENCE -->
+  <div class="section-label-row">
+    <div class="section-num">2</div>
+    <div>
+      <div class="section-label-text">How often will you check in?</div>
+      <div class="section-label-sub">Pick a cadence that fits how you invest</div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-header">
+      <span class="card-header-title">Review Cadence — AAPL</span>
+      <span class="card-header-badge">Select one</span>
+    </div>
+    <div class="card-body">
+      <div class="cadence-options">
+        <div class="cadence-opt">
+          <div class="cadence-opt-label">Weekly</div>
+          <div class="cadence-opt-desc">Active monitoring. Good for new positions or volatile periods.</div>
+        </div>
+        <div class="cadence-opt selected">
+          <div class="cadence-opt-label">Monthly</div>
+          <div class="cadence-opt-desc">Balanced. Enough to catch changes without over-reacting.</div>
+        </div>
+        <div class="cadence-opt">
+          <div class="cadence-opt-label">Quarterly</div>
+          <div class="cadence-opt-desc">Aligned with earnings. Good for high-conviction long-term holds.</div>
+        </div>
+        <div class="cadence-opt">
+          <div class="cadence-opt-label">On trigger</div>
+          <div class="cadence-opt-desc">Only check when a guardrail condition is met.</div>
+        </div>
+      </div>
+      <div class="cadence-next">
+        Next check-in: <strong>April 9, 2026</strong> · We'll remind you by email with a fresh snapshot of your monitor list.
+      </div>
+    </div>
+  </div>
+
+  <!-- SECTION 3: POSITION RULES — only shown when toggle ON -->
+  <div class="position-section" id="posRules">
+    <div class="section-label-row">
+      <div class="section-num">3</div>
+      <div>
+        <div class="section-label-text">Position rules</div>
+        <div class="section-label-sub">When will you add, trim, or exit?</div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header">
+        <span class="card-header-title">Position Rules — AAPL</span>
+        <span class="card-header-badge">Pulled from your guardrails</span>
+      </div>
+      <div class="card-body">
+        <div class="rules-grid">
+
+          <div class="rule-row add-rule">
+            <span class="rule-badge badge-add">Add</span>
+            <input class="rule-input" type="text" placeholder="I'll add more if..." value="Timing signals improve and RSI returns to neutral zone">
+          </div>
+
+          <div class="rule-row trim-rule">
+            <span class="rule-badge badge-trim">Trim</span>
+            <input class="rule-input" type="text" placeholder="I'll reduce if..." value="Valuation stretch exceeds 3 of 4 signals for 2+ quarters">
+          </div>
+
+          <div class="rule-row exit-rule">
+            <span class="rule-badge badge-exit">Exit</span>
+            <input class="rule-input" type="text" placeholder="I'll exit if..." value="Revenue declines for 2+ consecutive quarters without recovery">
+          </div>
+
+          <button class="add-rule-btn">+ Add another rule</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SECTION 4 (or 3): DELIVERY -->
+  <div class="section-label-row">
+    <div class="section-num" id="deliveryNum">3</div>
+    <div>
+      <div class="section-label-text">How do you want your reminders?</div>
+      <div class="section-label-sub">We'll send you a check-in at your chosen cadence</div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-header">
+      <span class="card-header-title">Reminder Delivery — AAPL</span>
+      <span class="card-header-badge">Choose delivery</span>
+    </div>
+    <div class="card-body">
+      <div class="delivery-options">
+        <div class="delivery-opt selected">
+          <div class="delivery-icon">📧</div>
+          <div>
+            <div class="delivery-label">Email reminder</div>
+            <div class="delivery-desc">Get a check-in email with your monitor list refreshed and any signals that have changed.</div>
+          </div>
+          <div class="delivery-check">✓</div>
+        </div>
+        <div class="delivery-opt">
+          <div class="delivery-icon">📅</div>
+          <div>
+            <div class="delivery-label">Calendar invite</div>
+            <div class="delivery-desc">Add a recurring calendar event so the review is already blocked in your schedule.</div>
+          </div>
+          <div class="delivery-check">✓</div>
+        </div>
+      </div>
+
+      <div class="email-input-row">
+        <input class="email-input" type="email" placeholder="your@email.com">
+      </div>
+
+      <div style="margin-top:16px;">
+        <div style="font-size:10px;font-weight:500;letter-spacing:0.08em;text-transform:uppercase;color:var(--ink-ghost);margin-bottom:8px;">Message to your future self (optional)</div>
+        <textarea class="future-msg" rows="3" placeholder="e.g. Don't sell just because it's down — check margins and story first. You bought this for the long term..."></textarea>
+        <div class="char-count">0 / 280</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- EXPORT BAR -->
+  <div class="export-bar">
+    <div class="export-left">
+      <div class="export-eyebrow">Your plan is complete</div>
+      <div class="export-headline">Research done. Plan made. <em>Stay the course.</em></div>
+      <div class="export-sub">We'll check in at your chosen cadence with a fresh signal snapshot.</div>
+    </div>
+    <div class="export-actions">
+      <a href="#" class="export-btn btn-white">✓ Activate my plan</a>
+      <a href="#" class="export-btn btn-outline-white">📄 Download full report</a>
+    </div>
+  </div>
+
+  <!-- FOOTER NAV -->
+  <div class="footer-nav">
+    <a href="#" class="foot-btn btn-back">← Previous Stage</a>
+  </div>
+
+</div>
+
+<script>
+  function togglePosition() {
+    const toggle = document.getElementById('posToggle');
+    const panel = document.getElementById('posPanel');
+    const rules = document.getElementById('posRules');
+    const deliveryNum = document.getElementById('deliveryNum');
+
+    toggle.classList.toggle('on');
+    panel.classList.toggle('hidden');
+    rules.classList.toggle('visible');
+    deliveryNum.textContent = toggle.classList.contains('on') ? '4' : '3';
+  }
+
+  // Cadence selection
+  document.querySelectorAll('.cadence-opt').forEach(opt => {
+    opt.addEventListener('click', () => {
+      document.querySelectorAll('.cadence-opt').forEach(o => o.classList.remove('selected'));
+      opt.classList.add('selected');
+    });
+  });
+
+  // Delivery selection
+  document.querySelectorAll('.delivery-opt').forEach(opt => {
+    opt.addEventListener('click', () => opt.classList.toggle('selected'));
+  });
+
+  // Char count
+  document.querySelector('.future-msg').addEventListener('input', function() {
+    document.querySelector('.char-count').textContent = this.value.length + ' / 280';
+  });
+</script>
+</body>
+</html>

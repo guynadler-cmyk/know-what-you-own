@@ -1,0 +1,125 @@
+I'm uploading a new HTML mockup for Stage 6. 
+Please rename this stage from "Protection" to 
+"Manage" everywhere it appears (stage bar, page 
+header, navigation, any references in the codebase).
+
+Rebuild Stage 6 to match the mockup visually AND 
+implement the functionality below.
+
+─────────────────────────────────────
+VISUAL — match the mockup exactly:
+─────────────────────────────────────
+- Page header: eyebrow "Stage 6 of 6 · Manage", 
+  Playfair Display headline "Stay honest with 
+  yourself.", subtext as shown
+- Position toggle row at top (off by default)
+- Position entry panel (hidden until toggle on)
+- 4 numbered sections with section-label-rows
+- Monitor list card (dark teal header, signal rows 
+  with colored status badges)
+- Review cadence card (4 selectable options)
+- Position rules card (hidden until toggle on, 
+  add/trim/exit rows with colored badges)
+- Reminder delivery card (email + calendar options, 
+  email input, message to future self textarea)
+- Dark teal export bar at bottom
+- Footer nav: Previous Stage only (no Next)
+
+─────────────────────────────────────
+FUNCTIONALITY 1 — Position Toggle
+─────────────────────────────────────
+- Toggle is off by default
+- When turned on:
+  - Show position entry panel (entry price, 
+    entry date, shares/amount) — free text fields, 
+    no calculation needed
+  - Show position rules section (section 3)
+  - Bump delivery section number from 3 to 4
+- Store toggle state per ticker in component state
+
+─────────────────────────────────────
+FUNCTIONALITY 2 — Monitor List
+─────────────────────────────────────
+Auto-generate the monitor list from existing 
+research data — no AI call needed, pure logic:
+
+Pull the worst and best signals from each stage:
+- Performance: use fundamentalsScore signals
+- Valuation: use valuation signal verdicts
+- Timing: use timing signal verdicts  
+- Business: use competitive moats + thesis
+
+Rules:
+- Any signal flagged as warning or weak → 
+  status: "Watch" (amber)
+- Any signal flagged as strong/pass → 
+  status: "On track" (green)
+- Any signal flagged as fail/challenged → 
+  status: "Alert" (red)
+
+Show the 4 most significant signals (mix of 
+stages). Each row shows: icon, label, source 
+stage badge, description, status badge.
+
+─────────────────────────────────────
+FUNCTIONALITY 3 — Review Cadence
+─────────────────────────────────────
+- 4 options: Weekly / Monthly / Quarterly / 
+  On trigger
+- Selecting one calculates and displays 
+  next check-in date from today
+- Store selection in component state
+
+─────────────────────────────────────
+FUNCTIONALITY 4 — Position Rules
+─────────────────────────────────────
+- Pre-populate Add / Trim / Exit fields from 
+  Stage 5 guardrails if they were set
+- If no guardrails set, show empty placeholder
+- Each field is free text and fully editable
+- "Add another rule" adds a new free text row
+- Store all rules in component state
+
+─────────────────────────────────────
+FUNCTIONALITY 5 — Activate My Plan
+─────────────────────────────────────
+When user clicks "Activate my plan", save the 
+following to the existing wishlist/saved 
+functionality for this ticker:
+- Review cadence selected
+- Monitor signals and their current status
+- Position rules (add/trim/exit text)
+- Message to future self
+- Position note if toggle is on 
+  (entry price, date, amount as text)
+
+After saving show confirmation message:
+"AAPL added to your watchlist with a [monthly] 
+check-in."
+
+If ticker is already in wishlist, update the 
+existing entry rather than creating a duplicate.
+
+─────────────────────────────────────
+FUNCTIONALITY 6 — Reminder delivery
+─────────────────────────────────────
+- Email and Calendar options are independently 
+  toggleable (can select both)
+- Email input: save to user profile if logged in, 
+  otherwise store in component state
+- Message to future self: 280 char limit with 
+  live counter
+- For now, save cadence + email + next_checkin_date 
+  to the database so the reminder infrastructure 
+  is ready even if scheduled sending comes later
+
+─────────────────────────────────────
+KEEP UNCHANGED:
+─────────────────────────────────────
+- All other stages
+- Existing wishlist/saved functionality
+- Existing email delivery for Stage 5 plan
+
+Screenshot Stage 6 when complete showing the 
+monitor list and cadence selection. Then toggle 
+the position switch on and screenshot again.
