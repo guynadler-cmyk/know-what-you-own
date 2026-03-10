@@ -1,5 +1,5 @@
 import { useState, useMemo } from "react";
-import { Link } from "wouter";
+import { useLocation } from "wouter";
 import { useQuery } from "@tanstack/react-query";
 import { Helmet } from "react-helmet-async";
 import { SiteLayout } from "@/components/SiteLayout";
@@ -24,7 +24,11 @@ import {
   Zap,
   X,
   SlidersHorizontal,
+  Users,
+  Sparkles,
 } from "lucide-react";
+
+// ─── Types ───────────────────────────────────────────────────────────────────
 
 interface DiscoverCompany {
   ticker: string;
@@ -45,6 +49,17 @@ interface DiscoverCompany {
   quadrant: string;
 }
 
+interface SimilarResponse {
+  ticker: string;
+  baseName: string;
+  similar: DiscoverCompany[];
+}
+
+type SortMode = "highest" | "lowest" | "az" | "za" | "moats" | "newest";
+type FilterMode = "any" | "all";
+
+// ─── Helpers ─────────────────────────────────────────────────────────────────
+
 const gradeColors: Record<string, string> = {
   A: "bg-teal-100 text-teal-800 dark:bg-teal-900/40 dark:text-teal-300",
   B: "bg-sky-100 text-sky-800 dark:bg-sky-900/40 dark:text-sky-300",
@@ -52,18 +67,6 @@ const gradeColors: Record<string, string> = {
   D: "bg-orange-100 text-orange-800 dark:bg-orange-900/40 dark:text-orange-300",
   F: "bg-red-100 text-red-800 dark:bg-red-900/40 dark:text-red-300",
 };
-
-
-function GradeBadge({ grade }: { grade: string }) {
-  return (
-    <span
-      className={`inline-flex items-center justify-center w-8 h-8 rounded-md text-sm font-bold ${gradeColors[grade] || gradeColors.C}`}
-      data-testid={`badge-grade-${grade}`}
-    >
-      {grade}
-    </span>
-  );
-}
 
 function tagMatchesCompany(tag: string, company: DiscoverCompany): boolean {
   const t = tag.toLowerCase();
@@ -77,21 +80,107 @@ function getMatchedTags(selectedTags: string[], company: DiscoverCompany): strin
   return selectedTags.filter((tag) => tagMatchesCompany(tag, company));
 }
 
-function StockTile({ company, selectedTags }: { company: DiscoverCompany; selectedTags: string[] }) {
+function buildTagFreqs(companies: DiscoverCompany[], field: "moatTags" | "themeTags") {
+  const countMap = new Map<string, number>();
+  const displayForm = new Map<string, string>();
+  for (const c of companies) {
+    const seen = new Set<string>();
+    for (const tag of c[field]) {
+      const trimmed = tag.trim();
+      if (!trimmed) continue;
+      const key = trimmed.toLowerCase();
+      if (seen.has(key)) continue;
+      seen.add(key);
+      if (!displayForm.has(key)) displayForm.set(key, trimmed);
+      countMap.set(key, (countMap.get(key) || 0) + 1);
+    }
+  }
+  return Array.from(countMap.entries())
+    .filter(([, count]) => count >= 2)
+    .sort((a, b) => b[1] - a[1])
+    .map(([key, count]) => ({ tag: displayForm.get(key)!, count }));
+}
+
+// ─── GradeBadge ──────────────────────────────────────────────────────────────
+
+function GradeBadge({ grade }: { grade: string }) {
+  return (
+    <span
+      className={`inline-flex items-center justify-center w-8 h-8 rounded-md text-sm font-bold flex-shrink-0 ${gradeColors[grade] || gradeColors.C}`}
+      data-testid={`badge-grade-${grade}`}
+    >
+      {grade}
+    </span>
+  );
+}
+
+// ─── SimilarMiniCard ─────────────────────────────────────────────────────────
+
+function SimilarMiniCard({
+  company,
+  baseMoatTags,
+  baseThemeTags,
+}: {
+  company: DiscoverCompany;
+  baseMoatTags: string[];
+  baseThemeTags: string[];
+}) {
+  const [, navigate] = useLocation();
+  const overlapTags = [
+    ...company.moatTags.filter((t) => baseMoatTags.includes(t)),
+    ...company.themeTags.filter((t) => baseThemeTags.includes(t)),
+  ].slice(0, 2);
+
+  return (
+    <Card
+      className="p-3 hover-elevate cursor-pointer flex-shrink-0 w-44 flex flex-col gap-1.5"
+      onClick={() => navigate(`/stocks/${company.ticker}`)}
+    >
+      <div className="flex items-start justify-between gap-1">
+        <p className="text-xs font-semibold leading-tight line-clamp-2 flex-1">{company.name}</p>
+        <GradeBadge grade={company.grade} />
+      </div>
+      <Badge variant="secondary" className="text-[10px] self-start">{company.ticker}</Badge>
+      {overlapTags.length > 0 && (
+        <div className="flex flex-wrap gap-1 mt-0.5">
+          {overlapTags.map((tag) => (
+            <span
+              key={tag}
+              className="text-[9px] px-1.5 py-0.5 rounded-sm font-medium leading-tight"
+              style={{ background: "var(--lp-teal-pale, #e8f5f4)", color: "var(--lp-teal-deep, #0d4a47)" }}
+            >
+              {tag}
+            </span>
+          ))}
+        </div>
+      )}
+    </Card>
+  );
+}
+
+// ─── StockTile ───────────────────────────────────────────────────────────────
+
+function StockTile({
+  company,
+  selectedTags,
+  onFindSimilar,
+}: {
+  company: DiscoverCompany;
+  selectedTags: string[];
+  onFindSimilar: (ticker: string) => void;
+}) {
+  const [, navigate] = useLocation();
   const matchedTags = selectedTags.length > 0 ? getMatchedTags(selectedTags, company) : [];
 
   return (
-    <Link href={`/stocks/${company.ticker}`}>
+    <div className="relative h-full group" data-testid={`card-stock-${company.ticker}`}>
       <Card
-        className="h-full p-4 hover-elevate cursor-pointer transition-colors flex flex-col"
-        data-testid={`card-stock-${company.ticker}`}
+        className="h-full p-4 hover-elevate cursor-pointer flex flex-col"
+        onClick={() => navigate(`/stocks/${company.ticker}`)}
       >
         <div className="flex items-start justify-between gap-2 mb-2">
-          <div className="min-w-0">
-            <p
-              className="text-sm font-semibold truncate"
-              data-testid={`text-name-${company.ticker}`}
-            >
+          <div className="min-w-0 flex-1">
+            <p className="text-sm font-semibold truncate" data-testid={`text-name-${company.ticker}`}>
               {company.name}
             </p>
             <Badge variant="secondary" className="text-xs mt-1">
@@ -114,7 +203,7 @@ function StockTile({ company, selectedTags }: { company: DiscoverCompany; select
               <span
                 key={tag}
                 className="text-[10px] px-1.5 py-0.5 rounded-sm font-medium"
-                style={{ background: 'var(--lp-teal-pale, #e8f5f4)', color: 'var(--lp-teal-deep, #0d4a47)' }}
+                style={{ background: "var(--lp-teal-pale, #e8f5f4)", color: "var(--lp-teal-deep, #0d4a47)" }}
               >
                 {tag}
               </span>
@@ -137,9 +226,22 @@ function StockTile({ company, selectedTags }: { company: DiscoverCompany; select
           </span>
         </div>
       </Card>
-    </Link>
+
+      <button
+        className="absolute bottom-3 right-3 z-10 flex items-center gap-1 text-[10px] px-2 py-1 rounded border font-medium opacity-0 group-hover:opacity-100 transition-opacity"
+        style={{ background: "var(--background)", borderColor: "var(--border)", color: "var(--lp-teal-deep, #0d4a47)" }}
+        onClick={(e) => { e.stopPropagation(); onFindSimilar(company.ticker); }}
+        data-testid={`button-find-similar-${company.ticker}`}
+        title="Find similar companies"
+      >
+        <Users className="h-3 w-3" />
+        Similar
+      </button>
+    </div>
   );
 }
+
+// ─── SkeletonTile ─────────────────────────────────────────────────────────────
 
 function SkeletonTile() {
   return (
@@ -149,7 +251,7 @@ function SkeletonTile() {
           <div className="h-4 w-3/4 bg-muted rounded animate-pulse" />
           <div className="h-5 w-12 bg-muted rounded animate-pulse" />
         </div>
-        <div className="h-8 w-8 bg-muted rounded animate-pulse" />
+        <div className="h-8 w-8 bg-muted rounded animate-pulse flex-shrink-0" />
       </div>
       <div className="space-y-1.5 mb-3">
         <div className="h-3 w-full bg-muted rounded animate-pulse" />
@@ -163,6 +265,8 @@ function SkeletonTile() {
     </Card>
   );
 }
+
+// ─── How it works ─────────────────────────────────────────────────────────────
 
 const howItWorks = [
   {
@@ -187,40 +291,71 @@ const howItWorks = [
   },
 ];
 
-type SortMode = "highest" | "lowest" | "az" | "za";
+// ─── Tag pill ─────────────────────────────────────────────────────────────────
+
+function TagPill({
+  tag,
+  count,
+  active,
+  onClick,
+}: {
+  tag: string;
+  count?: number;
+  active: boolean;
+  onClick: () => void;
+}) {
+  return (
+    <button
+      onClick={onClick}
+      className="inline-flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-full border font-medium transition-colors"
+      style={
+        active
+          ? { background: "var(--lp-teal-deep, #0d4a47)", color: "white", borderColor: "var(--lp-teal-deep, #0d4a47)" }
+          : { background: "transparent", color: "var(--lp-ink-light)", borderColor: "var(--border)" }
+      }
+      data-testid={`tag-${tag.replace(/\s+/g, "-").toLowerCase()}`}
+    >
+      {tag}
+      {count !== undefined && (
+        <span
+          className="text-[10px] opacity-60 font-normal"
+        >
+          {count}
+        </span>
+      )}
+    </button>
+  );
+}
+
+// ─── Page ─────────────────────────────────────────────────────────────────────
 
 export default function DiscoverPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [gradeFilter, setGradeFilter] = useState("all");
   const [sortMode, setSortMode] = useState<SortMode>("highest");
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
+  const [filterMode, setFilterMode] = useState<FilterMode>("any");
+  const [similarTicker, setSimilarTicker] = useState<string | null>(null);
+
+  // ── Queries ────────────────────────────────────────────────────────────────
 
   const { data, isLoading } = useQuery<{ companies: DiscoverCompany[] }>({
     queryKey: ["/api/discover"],
   });
 
+  const { data: similarData, isLoading: similarLoading } = useQuery<SimilarResponse>({
+    queryKey: [`/api/discover/similar?ticker=${similarTicker}`],
+    enabled: !!similarTicker,
+  });
+
   const companies = data?.companies || [];
 
-  const availableTags = useMemo(() => {
-    const countMap = new Map<string, number>();
-    const displayForm = new Map<string, string>();
-    for (const c of companies) {
-      const seen = new Set<string>();
-      for (const tag of [...c.moatTags, ...c.themeTags]) {
-        const trimmed = tag.trim();
-        if (!trimmed) continue;
-        const key = trimmed.toLowerCase();
-        if (seen.has(key)) continue;
-        seen.add(key);
-        if (!displayForm.has(key)) displayForm.set(key, trimmed);
-        countMap.set(key, (countMap.get(key) || 0) + 1);
-      }
-    }
-    return Array.from(countMap.entries())
-      .filter(([, count]) => count >= 2)
-      .sort((a, b) => b[1] - a[1])
-      .map(([key]) => displayForm.get(key)!);
-  }, [companies]);
+  // ── Tag frequency memos ───────────────────────────────────────────────────
+
+  const moatTagFreqs = useMemo(() => buildTagFreqs(companies, "moatTags"), [companies]);
+  const themeTagFreqs = useMemo(() => buildTagFreqs(companies, "themeTags"), [companies]);
+
+  // ── Handlers ──────────────────────────────────────────────────────────────
 
   const toggleTag = (tag: string) => {
     setSelectedTags((prev) =>
@@ -228,14 +363,21 @@ export default function DiscoverPage() {
     );
   };
 
-  const clearTags = () => setSelectedTags([]);
+  const clearTags = () => {
+    setSelectedTags([]);
+    setFilterMode("any");
+  };
+
+  // ── Filtered + sorted companies ───────────────────────────────────────────
 
   const filtered = useMemo(() => {
     let list = [...companies];
 
     if (selectedTags.length > 0) {
       list = list.filter((c) =>
-        selectedTags.some((tag) => tagMatchesCompany(tag, c))
+        filterMode === "all"
+          ? selectedTags.every((tag) => tagMatchesCompany(tag, c))
+          : selectedTags.some((tag) => tagMatchesCompany(tag, c))
       );
     }
 
@@ -244,7 +386,9 @@ export default function DiscoverPage() {
       list = list.filter(
         (c) =>
           c.ticker.toLowerCase().includes(q) ||
-          c.name.toLowerCase().includes(q)
+          c.name.toLowerCase().includes(q) ||
+          c.moatTags.some((t) => t.toLowerCase().includes(q)) ||
+          c.themeTags.some((t) => t.toLowerCase().includes(q))
       );
     }
 
@@ -265,10 +409,16 @@ export default function DiscoverPage() {
       case "za":
         list.sort((a, b) => b.ticker.localeCompare(a.ticker));
         break;
+      case "moats":
+        list.sort((a, b) => b.moatCount - a.moatCount || b.gradeScore - a.gradeScore);
+        break;
+      case "newest":
+        list.sort((a, b) => Number(b.fiscalYear) - Number(a.fiscalYear) || b.gradeScore - a.gradeScore);
+        break;
     }
 
     return list;
-  }, [companies, searchQuery, gradeFilter, sortMode, selectedTags]);
+  }, [companies, searchQuery, gradeFilter, sortMode, selectedTags, filterMode]);
 
   const gradeCounts = useMemo(() => {
     const counts: Record<string, number> = { A: 0, B: 0, C: 0, D: 0, F: 0 };
@@ -278,7 +428,48 @@ export default function DiscoverPage() {
     return counts;
   }, [companies]);
 
+  // ── Related tags ──────────────────────────────────────────────────────────
+
+  const relatedTags = useMemo(() => {
+    if (selectedTags.length === 0) return [];
+    const freq = new Map<string, number>();
+    for (const c of filtered) {
+      for (const tag of [...c.moatTags, ...c.themeTags]) {
+        const key = tag.toLowerCase();
+        if (selectedTags.some((s) => s.toLowerCase() === key)) continue;
+        freq.set(tag, (freq.get(tag) || 0) + 1);
+      }
+    }
+    return Array.from(freq.entries())
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 6)
+      .map(([tag]) => tag);
+  }, [filtered, selectedTags]);
+
+  // ── Insights ──────────────────────────────────────────────────────────────
+
+  const insights = useMemo(() => {
+    if (filtered.length === companies.length && selectedTags.length === 0) return null;
+    const moatFreq = new Map<string, number>();
+    const themeFreq = new Map<string, number>();
+    const grades: Record<string, number> = { A: 0, B: 0, C: 0, D: 0, F: 0 };
+    for (const c of filtered) {
+      for (const t of c.moatTags) moatFreq.set(t, (moatFreq.get(t) || 0) + 1);
+      for (const t of c.themeTags) themeFreq.set(t, (themeFreq.get(t) || 0) + 1);
+      if (grades[c.grade] !== undefined) grades[c.grade]++;
+    }
+    const topMoat = Array.from(moatFreq.entries()).sort((a, b) => b[1] - a[1])[0]?.[0] || "";
+    const topTheme = Array.from(themeFreq.entries()).sort((a, b) => b[1] - a[1])[0]?.[0] || "";
+    return { topMoat, topTheme, grades };
+  }, [filtered, companies, selectedTags]);
+
   const isScreenerActive = selectedTags.length > 0;
+
+  // ── Find similar company data ─────────────────────────────────────────────
+
+  const similarCompanyBase = similarTicker
+    ? companies.find((c) => c.ticker === similarTicker)
+    : null;
 
   return (
     <SiteLayout>
@@ -291,6 +482,7 @@ export default function DiscoverPage() {
         <link rel="canonical" href="https://restnvest.com/discover" />
       </Helmet>
 
+      {/* ── Hero ── */}
       <section className="py-16 sm:py-20 px-4 sm:px-6 lg:px-8" data-testid="section-discover-hero">
         <div className="mx-auto max-w-3xl text-center">
           <h1
@@ -300,86 +492,144 @@ export default function DiscoverPage() {
             Discover Companies
           </h1>
           <p className="mt-4 text-lg text-muted-foreground max-w-2xl mx-auto leading-relaxed">
-            Filter by investment themes and competitive moats to find companies that match your criteria.
+            Filter by competitive moats and investment themes to find companies that match your criteria.
           </p>
           <div className="mt-6">
-            <Link href="/app">
-              <Button size="lg" className="rounded-full gap-2" data-testid="button-discover-cta">
-                <Search className="h-5 w-5" />
-                Research a stock
-              </Button>
-            </Link>
+            <Button
+              size="lg"
+              className="rounded-full gap-2"
+              data-testid="button-discover-cta"
+              onClick={() => window.location.href = "/app"}
+            >
+              <Search className="h-5 w-5" />
+              Research a stock
+            </Button>
           </div>
         </div>
       </section>
 
-      <section
-        className="px-4 sm:px-6 lg:px-8 pb-16"
-        data-testid="section-discover-grid"
-      >
+      <section className="px-4 sm:px-6 lg:px-8 pb-16" data-testid="section-discover-grid">
         <div className="mx-auto max-w-7xl">
 
-          {/* ── Tag Screener ── */}
+          {/* ── Tag Screener Panel ── */}
           <div
             className="rounded-xl border mb-6 overflow-hidden"
-            style={{ borderColor: 'var(--border)' }}
+            style={{ borderColor: "var(--border)" }}
             data-testid="screener-panel"
           >
+            {/* Header */}
             <div
               className="flex items-center gap-2.5 px-4 py-3 border-b"
-              style={{ background: 'var(--lp-teal-deep, #0d4a47)', borderColor: 'rgba(255,255,255,0.1)' }}
+              style={{ background: "var(--lp-teal-deep, #0d4a47)", borderColor: "rgba(255,255,255,0.1)" }}
             >
-              <SlidersHorizontal className="h-3.5 w-3.5" style={{ color: 'rgba(255,255,255,0.6)' }} />
+              <SlidersHorizontal className="h-3.5 w-3.5 flex-shrink-0" style={{ color: "rgba(255,255,255,0.6)" }} />
               <span
                 className="font-mono text-[11px] tracking-[0.04em]"
-                style={{ color: 'rgba(255,255,255,0.7)' }}
+                style={{ color: "rgba(255,255,255,0.7)" }}
               >
-                Screen by Theme or Moat
+                Screen by Moat or Theme
               </span>
-              {isScreenerActive && (
-                <span
-                  className="ml-auto text-[10px] px-2 py-0.5 rounded-full border"
-                  style={{ background: 'rgba(255,255,255,0.1)', borderColor: 'rgba(255,255,255,0.2)', color: 'rgba(255,255,255,0.8)' }}
-                >
-                  {selectedTags.length} active
-                </span>
-              )}
-            </div>
-            <div className="p-4 bg-white dark:bg-card">
-              <div className="flex flex-wrap gap-2" data-testid="tag-library">
-                {availableTags.map((tag) => {
-                  const active = selectedTags.includes(tag);
-                  return (
-                    <button
-                      key={tag}
-                      onClick={() => toggleTag(tag)}
-                      className="text-xs px-3 py-1.5 rounded-full border font-medium transition-colors"
-                      style={
-                        active
-                          ? { background: 'var(--lp-teal-deep, #0d4a47)', color: 'white', borderColor: 'var(--lp-teal-deep, #0d4a47)' }
-                          : { background: 'transparent', color: 'var(--lp-ink-light)', borderColor: 'var(--border)' }
-                      }
-                      data-testid={`tag-${tag.replace(/\s+/g, '-').toLowerCase()}`}
+              <div className="ml-auto flex items-center gap-2">
+                {isScreenerActive && (
+                  <>
+                    {/* ANY / ALL toggle */}
+                    <div
+                      className="flex rounded-full border overflow-hidden text-[10px] font-mono"
+                      style={{ borderColor: "rgba(255,255,255,0.2)" }}
+                      data-testid="toggle-filter-mode"
                     >
-                      {tag}
-                    </button>
-                  );
-                })}
+                      <button
+                        className="px-2.5 py-1 transition-colors"
+                        style={
+                          filterMode === "any"
+                            ? { background: "rgba(255,255,255,0.2)", color: "white" }
+                            : { background: "transparent", color: "rgba(255,255,255,0.5)" }
+                        }
+                        onClick={() => setFilterMode("any")}
+                        data-testid="toggle-any"
+                      >
+                        ANY
+                      </button>
+                      <button
+                        className="px-2.5 py-1 transition-colors"
+                        style={
+                          filterMode === "all"
+                            ? { background: "rgba(255,255,255,0.2)", color: "white" }
+                            : { background: "transparent", color: "rgba(255,255,255,0.5)" }
+                        }
+                        onClick={() => setFilterMode("all")}
+                        data-testid="toggle-all"
+                      >
+                        ALL
+                      </button>
+                    </div>
+                    <span
+                      className="text-[10px] px-2 py-0.5 rounded-full border"
+                      style={{ background: "rgba(255,255,255,0.1)", borderColor: "rgba(255,255,255,0.2)", color: "rgba(255,255,255,0.8)" }}
+                    >
+                      {selectedTags.length} active
+                    </span>
+                  </>
+                )}
               </div>
+            </div>
+
+            {/* Body: two grouped rows */}
+            <div className="p-4 bg-white dark:bg-card space-y-4">
+              {/* Moats row */}
+              {moatTagFreqs.length > 0 && (
+                <div>
+                  <p className="font-mono text-[10px] text-muted-foreground uppercase tracking-widest mb-2 flex items-center gap-1.5">
+                    <Shield className="h-3 w-3" /> Competitive Moats
+                  </p>
+                  <div className="flex flex-wrap gap-2" data-testid="tag-library">
+                    {moatTagFreqs.map(({ tag, count }) => (
+                      <TagPill
+                        key={tag}
+                        tag={tag}
+                        count={count}
+                        active={selectedTags.includes(tag)}
+                        onClick={() => toggleTag(tag)}
+                      />
+                    ))}
+                  </div>
+                </div>
+              )}
+              {/* Themes row */}
+              {themeTagFreqs.length > 0 && (
+                <div>
+                  <p className="font-mono text-[10px] text-muted-foreground uppercase tracking-widest mb-2 flex items-center gap-1.5">
+                    <Lightbulb className="h-3 w-3" /> Investment Themes
+                  </p>
+                  <div className="flex flex-wrap gap-2">
+                    {themeTagFreqs.map(({ tag, count }) => (
+                      <TagPill
+                        key={tag}
+                        tag={tag}
+                        count={count}
+                        active={selectedTags.includes(tag)}
+                        onClick={() => toggleTag(tag)}
+                      />
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
           </div>
 
           {/* ── Active Filters ── */}
           {isScreenerActive && (
-            <div className="flex flex-wrap items-center gap-2 mb-4" data-testid="active-filters">
-              <span className="text-xs text-muted-foreground font-medium">Filtered by:</span>
+            <div className="flex flex-wrap items-center gap-2 mb-3" data-testid="active-filters">
+              <span className="text-xs text-muted-foreground font-medium">
+                Filtered by ({filterMode === "all" ? "ALL" : "ANY"}):
+              </span>
               {selectedTags.map((tag) => (
                 <button
                   key={tag}
                   onClick={() => toggleTag(tag)}
                   className="inline-flex items-center gap-1 text-xs px-2.5 py-1 rounded-full border font-medium"
-                  style={{ background: 'var(--lp-teal-pale, #e8f5f4)', color: 'var(--lp-teal-deep, #0d4a47)', borderColor: 'rgba(13,74,71,0.15)' }}
-                  data-testid={`active-tag-${tag.replace(/\s+/g, '-').toLowerCase()}`}
+                  style={{ background: "var(--lp-teal-pale, #e8f5f4)", color: "var(--lp-teal-deep, #0d4a47)", borderColor: "rgba(13,74,71,0.15)" }}
+                  data-testid={`active-tag-${tag.replace(/\s+/g, "-").toLowerCase()}`}
                 >
                   {tag}
                   <X className="h-3 w-3" />
@@ -395,6 +645,65 @@ export default function DiscoverPage() {
             </div>
           )}
 
+          {/* ── Related Tags ── */}
+          {isScreenerActive && relatedTags.length > 0 && (
+            <div className="flex flex-wrap items-center gap-2 mb-4" data-testid="related-tags-row">
+              <span className="text-xs text-muted-foreground font-medium flex items-center gap-1">
+                <Sparkles className="h-3 w-3" /> Related:
+              </span>
+              {relatedTags.map((tag) => (
+                <button
+                  key={tag}
+                  onClick={() => toggleTag(tag)}
+                  className="text-xs px-2.5 py-1 rounded-full border font-medium transition-colors"
+                  style={{ background: "transparent", color: "var(--muted-foreground)", borderColor: "var(--border)" }}
+                >
+                  + {tag}
+                </button>
+              ))}
+            </div>
+          )}
+
+          {/* ── Insights Bar ── */}
+          {insights && (
+            <div
+              className="flex flex-wrap items-center gap-4 px-4 py-2.5 rounded-lg mb-5 text-xs"
+              style={{ background: "var(--muted)", opacity: 0.9 }}
+              data-testid="insights-bar"
+            >
+              {insights.topMoat && (
+                <span className="flex items-center gap-1.5">
+                  <Shield className="h-3.5 w-3.5 text-muted-foreground" />
+                  <span className="text-muted-foreground font-mono text-[10px] uppercase tracking-wide">Top Moat</span>
+                  <span className="font-medium ml-0.5">{insights.topMoat}</span>
+                </span>
+              )}
+              {insights.topMoat && insights.topTheme && (
+                <span className="text-muted-foreground/40">|</span>
+              )}
+              {insights.topTheme && (
+                <span className="flex items-center gap-1.5">
+                  <Lightbulb className="h-3.5 w-3.5 text-muted-foreground" />
+                  <span className="text-muted-foreground font-mono text-[10px] uppercase tracking-wide">Top Theme</span>
+                  <span className="font-medium ml-0.5">{insights.topTheme}</span>
+                </span>
+              )}
+              {insights.topTheme && (
+                <span className="text-muted-foreground/40">|</span>
+              )}
+              <span className="flex items-center gap-1.5 flex-wrap">
+                <BarChart3 className="h-3.5 w-3.5 text-muted-foreground" />
+                {["A", "B", "C", "D", "F"].map((g) =>
+                  insights.grades[g] > 0 ? (
+                    <span key={g} className={`inline-flex items-center justify-center px-1.5 py-0.5 rounded text-[10px] font-bold ${gradeColors[g]}`}>
+                      {g} {insights.grades[g]}
+                    </span>
+                  ) : null
+                )}
+              </span>
+            </div>
+          )}
+
           {/* ── Search + Sort bar ── */}
           <div
             className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 mb-6"
@@ -404,7 +713,7 @@ export default function DiscoverPage() {
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
               <input
                 type="text"
-                placeholder="Search by ticker or company..."
+                placeholder="Search by ticker, company, or tag..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="w-full h-9 pl-9 pr-3 rounded-md border border-input bg-background text-sm focus:outline-none focus:ring-2 focus:ring-ring"
@@ -417,9 +726,7 @@ export default function DiscoverPage() {
                 <SelectValue placeholder="All Grades" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">
-                  All Grades ({companies.length})
-                </SelectItem>
+                <SelectItem value="all">All Grades ({companies.length})</SelectItem>
                 {["A", "B", "C", "D", "F"].map((g) => (
                   <SelectItem key={g} value={g}>
                     Grade {g} ({gradeCounts[g]})
@@ -429,18 +736,73 @@ export default function DiscoverPage() {
             </Select>
 
             <Select value={sortMode} onValueChange={(v) => setSortMode(v as SortMode)}>
-              <SelectTrigger className="w-full sm:w-[160px]" data-testid="select-sort">
+              <SelectTrigger className="w-full sm:w-[170px]" data-testid="select-sort">
                 <SelectValue placeholder="Sort by" />
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="highest">Highest Grade</SelectItem>
                 <SelectItem value="lowest">Lowest Grade</SelectItem>
+                <SelectItem value="moats">Most Moats</SelectItem>
+                <SelectItem value="newest">Newest</SelectItem>
                 <SelectItem value="az">A &rarr; Z</SelectItem>
                 <SelectItem value="za">Z &rarr; A</SelectItem>
               </SelectContent>
             </Select>
           </div>
 
+          {/* ── Similar Companies Panel ── */}
+          {similarTicker && (
+            <div
+              className="rounded-xl border mb-6 overflow-hidden"
+              style={{ borderColor: "var(--lp-teal-deep, #0d4a47)", borderWidth: "1.5px" }}
+              data-testid="similar-panel"
+            >
+              <div
+                className="flex items-center justify-between px-4 py-2.5"
+                style={{ background: "var(--lp-teal-pale, #e8f5f4)" }}
+              >
+                <div className="flex items-center gap-2">
+                  <Users className="h-3.5 w-3.5" style={{ color: "var(--lp-teal-deep, #0d4a47)" }} />
+                  <span className="text-xs font-medium" style={{ color: "var(--lp-teal-deep, #0d4a47)" }}>
+                    Companies similar to{" "}
+                    <strong>{similarData?.baseName || similarTicker}</strong>
+                  </span>
+                </div>
+                <button
+                  onClick={() => setSimilarTicker(null)}
+                  className="p-1 rounded hover-elevate"
+                  style={{ color: "var(--lp-teal-deep, #0d4a47)" }}
+                  data-testid="button-close-similar"
+                >
+                  <X className="h-3.5 w-3.5" />
+                </button>
+              </div>
+              <div className="p-3 bg-white dark:bg-card">
+                {similarLoading ? (
+                  <div className="flex gap-3 overflow-x-auto pb-1">
+                    {Array.from({ length: 4 }).map((_, i) => (
+                      <div key={i} className="flex-shrink-0 w-44 h-28 bg-muted rounded-lg animate-pulse" />
+                    ))}
+                  </div>
+                ) : !similarData?.similar?.length ? (
+                  <p className="text-sm text-muted-foreground py-2">No similar companies found.</p>
+                ) : (
+                  <div className="flex gap-3 overflow-x-auto pb-1">
+                    {similarData.similar.map((c) => (
+                      <SimilarMiniCard
+                        key={c.ticker}
+                        company={c}
+                        baseMoatTags={similarCompanyBase?.moatTags || []}
+                        baseThemeTags={similarCompanyBase?.themeTags || []}
+                      />
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* ── Results grid ── */}
           {isLoading ? (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
               {Array.from({ length: 12 }).map((_, i) => (
@@ -452,7 +814,9 @@ export default function DiscoverPage() {
               <p className="text-lg font-medium mb-1">No companies match.</p>
               <p className="text-sm">
                 {isScreenerActive
-                  ? "Try removing some tags or broadening your search."
+                  ? filterMode === "all"
+                    ? "Try switching to ANY mode, or remove some tags."
+                    : "Try removing some tags or broadening your search."
                   : "Try a different search or clear the grade filter."}
               </p>
               {isScreenerActive && (
@@ -466,14 +830,19 @@ export default function DiscoverPage() {
               <p className="text-sm text-muted-foreground mb-4" data-testid="text-results-count">
                 {filtered.length} {filtered.length === 1 ? "company" : "companies"}
                 {isScreenerActive && (
-                  <span className="ml-1 font-medium" style={{ color: 'var(--lp-teal-deep, #0d4a47)' }}>
-                    matching your filters
+                  <span className="ml-1 font-medium" style={{ color: "var(--lp-teal-deep, #0d4a47)" }}>
+                    matching {filterMode === "all" ? "ALL" : "ANY"} tag{selectedTags.length > 1 ? "s" : ""}
                   </span>
                 )}
               </p>
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
                 {filtered.map((company) => (
-                  <StockTile key={company.ticker} company={company} selectedTags={selectedTags} />
+                  <StockTile
+                    key={company.ticker}
+                    company={company}
+                    selectedTags={selectedTags}
+                    onFindSimilar={(ticker) => setSimilarTicker(ticker === similarTicker ? null : ticker)}
+                  />
                 ))}
               </div>
             </>
@@ -481,22 +850,19 @@ export default function DiscoverPage() {
         </div>
       </section>
 
+      {/* ── How it works ── */}
       <section
         className="py-16 sm:py-20 px-4 sm:px-6 lg:px-8 bg-muted/30"
         data-testid="section-how-it-works"
       >
         <div className="mx-auto max-w-5xl">
-          <h2 className="text-2xl sm:text-3xl font-bold text-center mb-10">
-            How It Works
-          </h2>
+          <h2 className="text-2xl sm:text-3xl font-bold text-center mb-10">How It Works</h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
             {howItWorks.map((item, i) => (
               <Card key={i} className="p-5" data-testid={`card-how-${i}`}>
                 <item.icon className="h-8 w-8 text-primary mb-3" />
                 <h3 className="font-semibold mb-1.5">{item.title}</h3>
-                <p className="text-sm text-muted-foreground leading-relaxed">
-                  {item.desc}
-                </p>
+                <p className="text-sm text-muted-foreground leading-relaxed">{item.desc}</p>
               </Card>
             ))}
           </div>
@@ -504,9 +870,7 @@ export default function DiscoverPage() {
       </section>
 
       <section className="py-12 px-4 sm:px-6 lg:px-8 text-center" data-testid="section-discover-footer-cta">
-        <p className="text-muted-foreground text-sm">
-          Informed investing, built to last.
-        </p>
+        <p className="text-muted-foreground text-sm">Informed investing, built to last.</p>
       </section>
     </SiteLayout>
   );

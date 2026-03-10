@@ -1083,21 +1083,32 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const { db: extDb } = await import("./db");
       const { aiBusinessAnalysis } = await import("../shared/schema");
-      const { sql, desc, or } = await import("drizzle-orm");
+      const { sql, desc, or, and } = await import("drizzle-orm");
 
       // Parse optional ?tags param (comma-separated or repeated &tags=)
       const rawTags = req.query.tags;
       const filterTags: string[] = rawTags
-        ? (Array.isArray(rawTags) ? rawTags : String(rawTags).split(","))
+        ? (Array.isArray(rawTags) ? rawTags.map(String) : String(rawTags).split(","))
             .map((t) => t.trim())
             .filter(Boolean)
         : [];
 
-      // Build WHERE conditions using @> containment (uses idx_business_result_gin)
-      const tagConditions = filterTags.flatMap((tag) => [
+      // ?mode=all → AND logic (each tag must match); default is OR
+      const mode = req.query.mode === "all" ? "all" : "any";
+
+      // OR mode: flat list — any condition across all tags matches
+      const orConditions = filterTags.flatMap((tag) => [
         sql`result->'moats' @> jsonb_build_array(jsonb_build_object('name', ${tag}::text))`,
         sql`result->'investmentThemes' @> jsonb_build_array(jsonb_build_object('name', ${tag}::text))`,
       ]);
+
+      // AND mode: per-tag groups — each tag must match in moats OR themes
+      const andGroups = filterTags.map((tag) =>
+        or(
+          sql`result->'moats' @> jsonb_build_array(jsonb_build_object('name', ${tag}::text))`,
+          sql`result->'investmentThemes' @> jsonb_build_array(jsonb_build_object('name', ${tag}::text))`,
+        )
+      );
 
       // Slim SELECT: extract only the specific JSONB subfields we need
       const baseQuery = extDb
@@ -1119,8 +1130,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
         .orderBy(desc(aiBusinessAnalysis.createdAt));
 
       const rows =
-        tagConditions.length > 0
-          ? await baseQuery.where(or(...tagConditions))
+        filterTags.length > 0
+          ? mode === "all"
+            ? await baseQuery.where(and(...andGroups))
+            : await baseQuery.where(or(...orConditions))
           : await baseQuery;
 
       const seen = new Set<string>();
@@ -1206,6 +1219,143 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (err: any) {
       console.error("[DISCOVER]", err.message);
       res.status(500).json({ error: "Failed to load discover data" });
+    }
+  });
+
+  // --------------------------------------------------------------------------
+  // SIMILAR COMPANIES — Jaccard similarity on moat + theme tag overlap
+  // --------------------------------------------------------------------------
+  app.get("/api/discover/similar", async (req, res) => {
+    try {
+      const { db: extDb } = await import("./db");
+      const { aiBusinessAnalysis } = await import("../shared/schema");
+      const { sql, desc } = await import("drizzle-orm");
+
+      const tickerParam = (req.query.ticker as string || "").toUpperCase().trim();
+      if (!tickerParam) {
+        return res.status(400).json({ error: "ticker query param is required" });
+      }
+
+      const rows = await extDb
+        .select({
+          ticker: aiBusinessAnalysis.ticker,
+          companyName: aiBusinessAnalysis.companyName,
+          fiscalYear: aiBusinessAnalysis.fiscalYear,
+          rCompanyName: sql<string>`result->>'companyName'`,
+          tagline: sql<string>`result->>'tagline'`,
+          analysisDepth: sql<string>`result->>'analysisDepth'`,
+          unavailable: sql<string>`result->>'businessAnalysisUnavailable'`,
+          moats: sql<any[]>`result->'moats'`,
+          investmentThemes: sql<any[]>`result->'investmentThemes'`,
+          valueCreation: sql<any[]>`result->'valueCreation'`,
+          marketOpportunity: sql<any[]>`result->'marketOpportunity'`,
+          quadrant: sql<string>`result->'valuationData'->'positioning'->>'quadrant'`,
+        })
+        .from(aiBusinessAnalysis)
+        .orderBy(desc(aiBusinessAnalysis.createdAt));
+
+      // Process rows into company objects
+      const seen = new Set<string>();
+      const allCompanies: Array<{
+        ticker: string;
+        name: string;
+        tagline: string;
+        grade: string;
+        gradeScore: number;
+        moatCount: number;
+        themeCount: number;
+        valueCount: number;
+        topMoat: string;
+        topTheme: string;
+        topValue: string;
+        analysisDepth: string;
+        fiscalYear: string;
+        moatTags: string[];
+        themeTags: string[];
+        quadrant: string;
+      }> = [];
+
+      for (const row of rows) {
+        const t = row.ticker.toUpperCase();
+        if (seen.has(t)) continue;
+        seen.add(t);
+        if (row.unavailable === "true") continue;
+
+        const moats: any[] = row.moats || [];
+        const themes: any[] = row.investmentThemes || [];
+        const valueCreation: any[] = row.valueCreation || [];
+        const marketOpportunity: any[] = row.marketOpportunity || [];
+
+        const countHigh = (arr: any[]) => arr.filter((x: any) => x.emphasis === "high").length;
+        const highMoats = countHigh(moats);
+        const highThemes = countHigh(themes);
+        const highValue = countHigh(valueCreation);
+        const highOpp = countHigh(marketOpportunity);
+
+        let score = highMoats * 2 + highThemes + highValue + highOpp;
+        const depth = row.analysisDepth || "full";
+        if (depth === "full") score += 1;
+        if (depth === "limited") score -= 1;
+
+        let grade: string;
+        if (score >= 8) grade = "A";
+        else if (score >= 6) grade = "B";
+        else if (score >= 4) grade = "C";
+        else if (score >= 2) grade = "D";
+        else grade = "F";
+
+        const topOf = (arr: any[]) => {
+          const h = arr.find((x: any) => x.emphasis === "high");
+          return h?.name || arr[0]?.name || "";
+        };
+
+        allCompanies.push({
+          ticker: t,
+          name: stripLegalSuffix(row.rCompanyName || row.companyName),
+          tagline: row.tagline || "",
+          grade,
+          gradeScore: score,
+          moatCount: moats.length,
+          themeCount: themes.length,
+          valueCount: valueCreation.length,
+          topMoat: topOf(moats),
+          topTheme: topOf(themes),
+          topValue: topOf(valueCreation),
+          analysisDepth: depth,
+          fiscalYear: row.fiscalYear,
+          moatTags: moats.map((m: any) => m.name).filter(Boolean),
+          themeTags: themes.map((tt: any) => tt.name).filter(Boolean),
+          quadrant: row.quadrant || "",
+        });
+      }
+
+      const target = allCompanies.find((c) => c.ticker === tickerParam);
+      if (!target) {
+        return res.status(404).json({ error: `No analysis found for ${tickerParam}` });
+      }
+
+      const targetSet = new Set([...target.moatTags, ...target.themeTags]);
+
+      const scored = allCompanies
+        .filter((c) => c.ticker !== tickerParam)
+        .map((c) => {
+          const candidateSet = new Set([...c.moatTags, ...c.themeTags]);
+          let intersection = 0;
+          for (const tag of Array.from(targetSet)) {
+            if (candidateSet.has(tag)) intersection++;
+          }
+          const union = targetSet.size + candidateSet.size - intersection;
+          const jaccard = union === 0 ? 0 : intersection / union;
+          return { ...c, jaccard };
+        })
+        .filter((c) => c.jaccard > 0)
+        .sort((a, b) => b.jaccard - a.jaccard)
+        .slice(0, 8);
+
+      res.json({ ticker: tickerParam, baseName: target.name, similar: scored });
+    } catch (err: any) {
+      console.error("[SIMILAR]", err.message);
+      res.status(500).json({ error: "Failed to load similar companies" });
     }
   });
 
