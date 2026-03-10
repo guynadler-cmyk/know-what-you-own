@@ -3,7 +3,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-import { Globe, ChevronDown, AlertTriangle, Info, ArrowRight, ShieldCheck } from "lucide-react";
+import { Globe, ChevronDown, ChevronUp, AlertTriangle, Info, ArrowRight, ShieldCheck, ExternalLink } from "lucide-react";
 import { LucideIcon } from "lucide-react";
 import { Link } from "wouter";
 
@@ -11,6 +11,7 @@ import { useQuery } from "@tanstack/react-query";
 import { InvestmentTheme, Moat, MarketOpportunity, ValueCreation, TemporalAnalysis as TemporalAnalysisType, FinePrintAnalysis as FinePrintAnalysisType } from "@shared/schema";
 import { TagWithTooltip } from "@/components/TagWithTooltip";
 import { CompanyLogo } from "@/components/CompanyLogo";
+import { FinePrintAnalysis } from "@/components/FinePrintAnalysis";
 
 interface Product {
   name: string;
@@ -143,6 +144,7 @@ export function SummaryCard({
   onStageChange,
 }: SummaryCardProps) {
   const [thesisOpen, setThesisOpen] = useState(false);
+  const [expandedCompetitor, setExpandedCompetitor] = useState<number | null>(null);
 
   const filteredCompetitors = competitors.filter(
     (c) => !c.ticker || c.ticker.toUpperCase() !== ticker.toUpperCase()
@@ -194,18 +196,6 @@ export function SummaryCard({
       temporalPreviewItems.push({ label: 'product', text: temporalAnalysis.newProducts[0].name, year: temporalAnalysis.newProducts[0].introducedYear, type: 'product' });
     }
   }
-
-  /* --- fine print counters --- */
-  const fpOther = finePrintAnalysis
-    ? (finePrintAnalysis.relatedPartyTransactions?.length || 0) + (finePrintAnalysis.otherMaterialDisclosures?.length || 0)
-    : 0;
-  const fpCounters = finePrintAnalysis ? [
-    { label: 'Critical Risks', count: finePrintAnalysis.criticalRisks?.length || 0, isRisk: true },
-    { label: 'Commitments', count: finePrintAnalysis.financialCommitments?.length || 0, isRisk: false },
-    { label: 'Accounting', count: finePrintAnalysis.accountingChanges?.length || 0, isRisk: false },
-    { label: 'Other', count: fpOther, isRisk: false },
-  ] : [];
-  const topRisk = finePrintAnalysis?.criticalRisks?.[0] || finePrintAnalysis?.financialCommitments?.[0];
 
   const yearsLabel = temporalAnalysis?.summary?.yearsAnalyzed?.length
     ? `${temporalAnalysis.summary.yearsAnalyzed.length} yrs`
@@ -569,8 +559,8 @@ export function SummaryCard({
               </div>
             )}
           </SectionCard>
-        ) : temporalAnalysis ? (
-          <SectionCard header="Changes Over Time" badge={yearsLabel}>
+        ) : (
+          <SectionCard header="Changes Over Time" badge={yearsLabel ?? "—"}>
             <div className="flex flex-col items-center justify-center py-4 gap-3 text-center">
               <div
                 className="rounded-full p-2.5"
@@ -589,12 +579,6 @@ export function SummaryCard({
                 </p>
               </div>
             </div>
-          </SectionCard>
-        ) : (
-          <SectionCard header="Changes Over Time" badge="—">
-            <p className="text-xs py-4 text-center" style={{ color: 'var(--lp-ink-ghost)' }}>
-              Multi-year comparison not yet available for this company.
-            </p>
           </SectionCard>
         )}
 
@@ -629,27 +613,57 @@ export function SummaryCard({
           <div className="space-y-1.5">
             {filteredCompetitors.slice(0, 5).map((comp, i) => (
               comp.ticker ? (
-                <Link
+                <div
                   key={i}
-                  href={`/stocks/${comp.ticker}`}
-                  className="flex items-center justify-between p-2.5 rounded-lg border transition-all"
-                  style={{ background: cream, borderColor: border }}
+                  className="rounded-lg border overflow-hidden cursor-pointer"
+                  style={{ borderColor: border }}
                   data-testid={`competitor-${i}`}
                 >
-                  <div className="flex items-center gap-2 min-w-0">
-                    <span
-                      className="font-mono text-[9px] font-medium px-1.5 py-0.5 rounded-sm flex-shrink-0 text-white"
-                      style={{ background: tealDeep }}
-                    >
-                      {comp.ticker}
-                    </span>
-                    <div className="min-w-0">
-                      <p className="text-[11px] font-medium truncate" style={{ color: 'var(--lp-ink)' }}>{comp.name}</p>
-                      <p className="text-[10px] truncate" style={{ color: 'var(--lp-ink-ghost)' }}>{comp.focus}</p>
+                  <div
+                    className="flex items-center justify-between p-2.5 transition-colors"
+                    style={{ background: expandedCompetitor === i ? 'var(--lp-teal-pale)' : cream }}
+                    onClick={() => setExpandedCompetitor(expandedCompetitor === i ? null : i)}
+                  >
+                    <div className="flex items-center gap-2 min-w-0">
+                      <span
+                        className="font-mono text-[9px] font-medium px-1.5 py-0.5 rounded-sm flex-shrink-0 text-white"
+                        style={{ background: tealDeep }}
+                      >
+                        {comp.ticker}
+                      </span>
+                      <div className="min-w-0">
+                        <p className="text-[11px] font-medium truncate" style={{ color: 'var(--lp-ink)' }}>{comp.name}</p>
+                        <p className="text-[10px] truncate" style={{ color: 'var(--lp-ink-ghost)' }}>{comp.focus}</p>
+                      </div>
                     </div>
+                    {expandedCompetitor === i
+                      ? <ChevronUp className="h-3 w-3 flex-shrink-0 ml-2" style={{ color: 'var(--lp-ink-ghost)' }} />
+                      : <ChevronDown className="h-3 w-3 flex-shrink-0 ml-2" style={{ color: 'var(--lp-ink-ghost)' }} />
+                    }
                   </div>
-                  <ArrowRight className="h-3 w-3 flex-shrink-0 ml-2" style={{ color: 'var(--lp-ink-ghost)' }} />
-                </Link>
+                  {expandedCompetitor === i && (
+                    <div
+                      className="px-3 py-2.5 border-t flex items-center justify-between gap-3"
+                      style={{ background: 'var(--lp-warm-white)', borderColor: border }}
+                    >
+                      <p className="text-[10px] leading-relaxed flex-1" style={{ color: 'var(--lp-ink-light)' }}>
+                        {comp.focus}
+                      </p>
+                      <a
+                        href={`/stocks/${comp.ticker}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex items-center gap-1 flex-shrink-0 text-[10px] font-medium px-2.5 py-1.5 rounded-md border"
+                        style={{ color: 'var(--lp-teal-deep)', borderColor: 'rgba(13,74,71,0.2)', background: 'var(--lp-teal-pale)' }}
+                        onClick={(e) => e.stopPropagation()}
+                        data-testid={`competitor-${i}-open-link`}
+                      >
+                        Open analysis
+                        <ExternalLink className="h-2.5 w-2.5" />
+                      </a>
+                    </div>
+                  )}
+                </div>
               ) : (
                 <div
                   key={i}
@@ -668,46 +682,7 @@ export function SummaryCard({
 
       {/* ── fine print ── */}
       {finePrintAnalysis && (
-        <SectionCard
-          header={`Fine Print Analysis — ${ticker}`}
-          badge={`${(finePrintAnalysis.criticalRisks?.length || 0) + (finePrintAnalysis.financialCommitments?.length || 0) + (finePrintAnalysis.accountingChanges?.length || 0) + fpOther} items`}
-        >
-          <div className="grid grid-cols-4 gap-2 mb-3">
-            {fpCounters.map((fp) => (
-              <div
-                key={fp.label}
-                className="rounded-lg p-2.5 text-center border"
-                style={
-                  fp.isRisk
-                    ? { background: 'rgba(239,68,68,0.04)', borderColor: 'rgba(239,68,68,0.12)' }
-                    : { background: cream, borderColor: border }
-                }
-              >
-                <p
-                  className="font-serif text-xl font-bold leading-none mb-1"
-                  style={{ fontFamily: "'Playfair Display', serif", color: fp.isRisk ? '#dc2626' : 'var(--lp-ink)' }}
-                >
-                  {fp.count}
-                </p>
-                <p className="text-[9px]" style={{ color: 'var(--lp-ink-ghost)' }}>{fp.label}</p>
-              </div>
-            ))}
-          </div>
-          {topRisk && (
-            <div
-              className="flex items-center justify-between rounded-lg p-2.5 border"
-              style={{ background: 'rgba(239,68,68,0.03)', borderColor: 'rgba(239,68,68,0.1)' }}
-            >
-              <span className="text-[11px]" style={{ color: 'var(--lp-ink-mid)' }}>{topRisk.title}</span>
-              <span
-                className="text-[9px] px-2 py-0.5 rounded-sm font-medium border flex-shrink-0 ml-3"
-                style={{ background: 'rgba(239,68,68,0.08)', color: '#dc2626', borderColor: 'rgba(239,68,68,0.15)' }}
-              >
-                {topRisk.importance === 'high' ? 'High Risk' : topRisk.importance === 'medium' ? 'Medium Risk' : 'Low Risk'}
-              </span>
-            </div>
-          )}
-        </SectionCard>
+        <FinePrintAnalysis analysis={finePrintAnalysis} companyName={companyName} />
       )}
 
       {/* ── bottom CTA: teaser for Stage 2 ── */}
