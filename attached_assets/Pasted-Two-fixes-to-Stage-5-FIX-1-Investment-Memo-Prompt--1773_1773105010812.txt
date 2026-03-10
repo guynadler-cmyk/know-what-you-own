@@ -1,0 +1,68 @@
+Two fixes to Stage 5:
+
+─────────────────────────────────────
+FIX 1 — Investment Memo Prompt
+─────────────────────────────────────
+Update the /api/memo/:ticker prompt to this:
+
+"You are writing a personal investment memo based 
+ONLY on the following research data. Do not add 
+any external context, macroeconomic commentary, 
+or information not present in this data.
+
+Research data for [TICKER]:
+- Business thesis: [thesis from stage 1]
+- Strategic themes: [themes from stage 1]
+- Competitive moats: [moats from stage 1]
+- Financial health signals: [signals from stage 2]
+- Valuation signals: [signals from stage 3]
+- Timing signals: [signals from stage 4]
+
+Write three fields. Return only valid JSON:
+{
+  why_own: "2-3 sentences. The core investment case 
+            based strictly on the business thesis 
+            and competitive moats above. First person. 
+            Plain English. Nothing outside this data.",
+  time_horizon: "1-2 sentences. Suggested holding 
+                 period based only on the business 
+                 quality and financial health signals 
+                 above. No external market commentary.",
+  watching: "2-3 sentences. Specific risks based only 
+             on what the signals above flagged as weak 
+             or uncertain. Do not invent risks that 
+             aren't reflected in the data."
+}
+
+If a signal is strong, say so. If something was 
+flagged as a warning in the data, reference it 
+specifically. Stay inside the research."
+
+─────────────────────────────────────
+FIX 2 — Tranche Auto-rebalancing
+─────────────────────────────────────
+Change the entry plan logic so the total amount 
+is always the hard constraint.
+
+Rules:
+- Total amount field is the source of truth
+- When user adds or removes a tranche, 
+  automatically redistribute the total evenly 
+  across all tranches
+- When user manually edits one tranche amount, 
+  redistribute the remainder evenly across the 
+  other tranches to keep the total exact
+- Never show "over budget" — instead silently 
+  rebalance
+- Show a small recalculation indicator 
+  (e.g. "↻ Recalculated") that fades out 
+  after 1.5s when rebalancing happens
+- Total allocated display always equals the 
+  total amount exactly
+
+Example: $5,000 total, 3 tranches → 
+$1,667 / $1,667 / $1,666
+User edits tranche 1 to $2,000 → 
+remaining $3,000 splits as $1,500 / $1,500
+
+Screenshot the entry plan section when done.
