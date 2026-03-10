@@ -22,6 +22,8 @@ import {
   BarChart3,
   Eye,
   Zap,
+  X,
+  SlidersHorizontal,
 } from "lucide-react";
 
 interface DiscoverCompany {
@@ -38,6 +40,9 @@ interface DiscoverCompany {
   topValue: string;
   analysisDepth: string;
   fiscalYear: string;
+  moatTags: string[];
+  themeTags: string[];
+  quadrant: string;
 }
 
 const gradeColors: Record<string, string> = {
@@ -47,6 +52,25 @@ const gradeColors: Record<string, string> = {
   D: "bg-orange-100 text-orange-800 dark:bg-orange-900/40 dark:text-orange-300",
   F: "bg-red-100 text-red-800 dark:bg-red-900/40 dark:text-red-300",
 };
+
+const CURATED_TAGS = [
+  "AI",
+  "Cloud Infrastructure",
+  "Enterprise Software",
+  "Recurring Revenue",
+  "Cybersecurity",
+  "Marketplace",
+  "Network Effects",
+  "High Switching Costs",
+  "Developer Tools",
+  "Data Platforms",
+  "Brand Power",
+  "Scale Economies",
+  "Healthcare",
+  "Financial Services",
+  "Consumer",
+  "SaaS",
+];
 
 function GradeBadge({ grade }: { grade: string }) {
   return (
@@ -59,11 +83,25 @@ function GradeBadge({ grade }: { grade: string }) {
   );
 }
 
-function StockTile({ company }: { company: DiscoverCompany }) {
+function tagMatchesCompany(tag: string, company: DiscoverCompany): boolean {
+  const t = tag.toLowerCase();
+  return (
+    company.moatTags.some((m) => m.toLowerCase().includes(t) || t.includes(m.toLowerCase())) ||
+    company.themeTags.some((th) => th.toLowerCase().includes(t) || t.includes(th.toLowerCase()))
+  );
+}
+
+function getMatchedTags(selectedTags: string[], company: DiscoverCompany): string[] {
+  return selectedTags.filter((tag) => tagMatchesCompany(tag, company));
+}
+
+function StockTile({ company, selectedTags }: { company: DiscoverCompany; selectedTags: string[] }) {
+  const matchedTags = selectedTags.length > 0 ? getMatchedTags(selectedTags, company) : [];
+
   return (
     <Link href={`/stocks/${company.ticker}`}>
       <Card
-        className="h-full p-4 hover-elevate cursor-pointer transition-colors"
+        className="h-full p-4 hover-elevate cursor-pointer transition-colors flex flex-col"
         data-testid={`card-stock-${company.ticker}`}
       >
         <div className="flex items-start justify-between gap-2 mb-2">
@@ -82,11 +120,25 @@ function StockTile({ company }: { company: DiscoverCompany }) {
         </div>
 
         <p
-          className="text-xs text-muted-foreground line-clamp-2 mb-3 leading-relaxed"
+          className="text-xs text-muted-foreground line-clamp-2 mb-3 leading-relaxed flex-1"
           data-testid={`text-tagline-${company.ticker}`}
         >
           {company.tagline}
         </p>
+
+        {matchedTags.length > 0 && (
+          <div className="flex flex-wrap gap-1 mb-2.5">
+            {matchedTags.slice(0, 3).map((tag) => (
+              <span
+                key={tag}
+                className="text-[10px] px-1.5 py-0.5 rounded-sm font-medium"
+                style={{ background: 'var(--lp-teal-pale, #e8f5f4)', color: 'var(--lp-teal-deep, #0d4a47)' }}
+              >
+                {tag}
+              </span>
+            ))}
+          </div>
+        )}
 
         <div className="flex items-center gap-3 text-xs text-muted-foreground">
           <span className="inline-flex items-center gap-1" title="Competitive Moats">
@@ -159,6 +211,7 @@ export default function DiscoverPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [gradeFilter, setGradeFilter] = useState("all");
   const [sortMode, setSortMode] = useState<SortMode>("highest");
+  const [selectedTags, setSelectedTags] = useState<string[]>([]);
 
   const { data, isLoading } = useQuery<{ companies: DiscoverCompany[] }>({
     queryKey: ["/api/discover"],
@@ -166,8 +219,49 @@ export default function DiscoverPage() {
 
   const companies = data?.companies || [];
 
+  const dynamicTags = useMemo(() => {
+    const tagCounts = new Map<string, number>();
+    for (const c of companies) {
+      for (const tag of [...c.moatTags, ...c.themeTags]) {
+        const normalised = tag.trim();
+        if (!normalised) continue;
+        const alreadyCurated = CURATED_TAGS.some(
+          (ct) => ct.toLowerCase() === normalised.toLowerCase()
+        );
+        if (!alreadyCurated) {
+          tagCounts.set(normalised, (tagCounts.get(normalised) || 0) + 1);
+        }
+      }
+    }
+    return Array.from(tagCounts.entries())
+      .filter(([, count]) => count >= 2)
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 12)
+      .map(([tag]) => tag);
+  }, [companies]);
+
+  const allTags = useMemo(() => {
+    const seen = new Set<string>(CURATED_TAGS.map((t) => t.toLowerCase()));
+    const extras = dynamicTags.filter((t) => !seen.has(t.toLowerCase()));
+    return [...CURATED_TAGS, ...extras];
+  }, [dynamicTags]);
+
+  const toggleTag = (tag: string) => {
+    setSelectedTags((prev) =>
+      prev.includes(tag) ? prev.filter((t) => t !== tag) : [...prev, tag]
+    );
+  };
+
+  const clearTags = () => setSelectedTags([]);
+
   const filtered = useMemo(() => {
     let list = [...companies];
+
+    if (selectedTags.length > 0) {
+      list = list.filter((c) =>
+        selectedTags.some((tag) => tagMatchesCompany(tag, c))
+      );
+    }
 
     if (searchQuery.trim()) {
       const q = searchQuery.toLowerCase();
@@ -198,7 +292,7 @@ export default function DiscoverPage() {
     }
 
     return list;
-  }, [companies, searchQuery, gradeFilter, sortMode]);
+  }, [companies, searchQuery, gradeFilter, sortMode, selectedTags]);
 
   const gradeCounts = useMemo(() => {
     const counts: Record<string, number> = { A: 0, B: 0, C: 0, D: 0, F: 0 };
@@ -207,6 +301,8 @@ export default function DiscoverPage() {
     }
     return counts;
   }, [companies]);
+
+  const isScreenerActive = selectedTags.length > 0;
 
   return (
     <SiteLayout>
@@ -225,11 +321,10 @@ export default function DiscoverPage() {
             className="text-3xl sm:text-4xl lg:text-5xl font-bold tracking-tight leading-[1.1]"
             data-testid="text-discover-headline"
           >
-            Today's Research Picks
+            Discover Companies
           </h1>
           <p className="mt-4 text-lg text-muted-foreground max-w-2xl mx-auto leading-relaxed">
-            Every company graded by the Restnvest engine. Click any tile to
-            explore the full 10-K analysis.
+            Filter by investment themes and competitive moats to find companies that match your criteria.
           </p>
           <div className="mt-6">
             <Link href="/app">
@@ -247,6 +342,84 @@ export default function DiscoverPage() {
         data-testid="section-discover-grid"
       >
         <div className="mx-auto max-w-7xl">
+
+          {/* ── Tag Screener ── */}
+          <div
+            className="rounded-xl border mb-6 overflow-hidden"
+            style={{ borderColor: 'var(--border)' }}
+            data-testid="screener-panel"
+          >
+            <div
+              className="flex items-center gap-2.5 px-4 py-3 border-b"
+              style={{ background: 'var(--lp-teal-deep, #0d4a47)', borderColor: 'rgba(255,255,255,0.1)' }}
+            >
+              <SlidersHorizontal className="h-3.5 w-3.5" style={{ color: 'rgba(255,255,255,0.6)' }} />
+              <span
+                className="font-mono text-[11px] tracking-[0.04em]"
+                style={{ color: 'rgba(255,255,255,0.7)' }}
+              >
+                Screen by Theme or Moat
+              </span>
+              {isScreenerActive && (
+                <span
+                  className="ml-auto text-[10px] px-2 py-0.5 rounded-full border"
+                  style={{ background: 'rgba(255,255,255,0.1)', borderColor: 'rgba(255,255,255,0.2)', color: 'rgba(255,255,255,0.8)' }}
+                >
+                  {selectedTags.length} active
+                </span>
+              )}
+            </div>
+            <div className="p-4 bg-white dark:bg-card">
+              <div className="flex flex-wrap gap-2" data-testid="tag-library">
+                {allTags.map((tag) => {
+                  const active = selectedTags.includes(tag);
+                  return (
+                    <button
+                      key={tag}
+                      onClick={() => toggleTag(tag)}
+                      className="text-xs px-3 py-1.5 rounded-full border font-medium transition-colors"
+                      style={
+                        active
+                          ? { background: 'var(--lp-teal-deep, #0d4a47)', color: 'white', borderColor: 'var(--lp-teal-deep, #0d4a47)' }
+                          : { background: 'transparent', color: 'var(--lp-ink-light)', borderColor: 'var(--border)' }
+                      }
+                      data-testid={`tag-${tag.replace(/\s+/g, '-').toLowerCase()}`}
+                    >
+                      {tag}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          </div>
+
+          {/* ── Active Filters ── */}
+          {isScreenerActive && (
+            <div className="flex flex-wrap items-center gap-2 mb-4" data-testid="active-filters">
+              <span className="text-xs text-muted-foreground font-medium">Filtered by:</span>
+              {selectedTags.map((tag) => (
+                <button
+                  key={tag}
+                  onClick={() => toggleTag(tag)}
+                  className="inline-flex items-center gap-1 text-xs px-2.5 py-1 rounded-full border font-medium"
+                  style={{ background: 'var(--lp-teal-pale, #e8f5f4)', color: 'var(--lp-teal-deep, #0d4a47)', borderColor: 'rgba(13,74,71,0.15)' }}
+                  data-testid={`active-tag-${tag.replace(/\s+/g, '-').toLowerCase()}`}
+                >
+                  {tag}
+                  <X className="h-3 w-3" />
+                </button>
+              ))}
+              <button
+                onClick={clearTags}
+                className="text-xs text-muted-foreground underline underline-offset-2 ml-1"
+                data-testid="button-clear-filters"
+              >
+                Clear all
+              </button>
+            </div>
+          )}
+
+          {/* ── Search + Sort bar ── */}
           <div
             className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 mb-6"
             data-testid="filter-bar"
@@ -299,18 +472,32 @@ export default function DiscoverPage() {
               ))}
             </div>
           ) : filtered.length === 0 ? (
-            <div className="text-center py-16 text-muted-foreground">
-              <p className="text-lg">No companies match your filters.</p>
-              <p className="text-sm mt-1">Try a different search or clear the grade filter.</p>
+            <div className="text-center py-16 text-muted-foreground" data-testid="empty-state">
+              <p className="text-lg font-medium mb-1">No companies match.</p>
+              <p className="text-sm">
+                {isScreenerActive
+                  ? "Try removing some tags or broadening your search."
+                  : "Try a different search or clear the grade filter."}
+              </p>
+              {isScreenerActive && (
+                <Button variant="outline" size="sm" className="mt-4" onClick={clearTags} data-testid="button-empty-clear">
+                  Clear all filters
+                </Button>
+              )}
             </div>
           ) : (
             <>
               <p className="text-sm text-muted-foreground mb-4" data-testid="text-results-count">
                 {filtered.length} {filtered.length === 1 ? "company" : "companies"}
+                {isScreenerActive && (
+                  <span className="ml-1 font-medium" style={{ color: 'var(--lp-teal-deep, #0d4a47)' }}>
+                    matching your filters
+                  </span>
+                )}
               </p>
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
                 {filtered.map((company) => (
-                  <StockTile key={company.ticker} company={company} />
+                  <StockTile key={company.ticker} company={company} selectedTags={selectedTags} />
                 ))}
               </div>
             </>

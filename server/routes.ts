@@ -1110,6 +1110,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         topValue: string;
         analysisDepth: string;
         fiscalYear: string;
+        moatTags: string[];
+        themeTags: string[];
+        quadrant: string;
       }> = [];
 
       for (const row of rows) {
@@ -1145,6 +1148,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
           return h?.name || (arr || [])[0]?.name || "";
         };
 
+        const moatTags = (r.moats || []).map((m: any) => m.name).filter(Boolean);
+        const themeTags = (r.investmentThemes || []).map((t: any) => t.name).filter(Boolean);
+        const quadrant = r.valuationData?.positioning?.quadrant || r.quadrant || "";
+
         companies.push({
           ticker: t,
           name: stripLegalSuffix(r.companyName || row.companyName),
@@ -1159,6 +1166,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
           topValue: topOf(r.valueCreation),
           analysisDepth: r.analysisDepth || "full",
           fiscalYear: row.fiscalYear,
+          moatTags,
+          themeTags,
+          quadrant,
         });
       }
 
