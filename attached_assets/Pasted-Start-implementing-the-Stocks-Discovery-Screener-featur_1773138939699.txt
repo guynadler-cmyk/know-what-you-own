@@ -1,0 +1,95 @@
+Start implementing the Stocks Discovery / Screener feature for the app.
+
+Context
+The backend already exposes /api/discover which returns companies with:
+- ticker
+- company_name
+- moatTags
+- themeTags
+- qualityScore
+- valuationScore
+- quadrant
+
+The database table is ai_business_analysis and the data is inside the result JSONB column.
+
+Goal
+Build the Discover / Screener UI so users can filter companies by business model tags such as AI, Cloud Infrastructure, Network Effects, Marketplace, etc.
+
+Implementation Steps
+
+1. Discover Page UI
+Create a tag-based screener panel at the top of the Discover page.
+
+Tag pills should:
+- be clickable
+- toggle active/inactive
+- change color when active
+- support multiple selected tags
+
+Example tags:
+AI
+Cloud Infrastructure
+Enterprise Software
+Network Effects
+Marketplace
+Developer Tools
+Cybersecurity
+Recurring Revenue
+
+2. Dynamic Tag Generation
+Do not use a static tag list.
+
+Instead derive tags from the companies returned by /api/discover:
+
+- Combine all moatTags and themeTags
+- Count frequency of each tag
+- Sort by frequency
+- Show top 20 tags in the screener panel
+
+3. Tag Selection Logic
+
+When a tag pill is clicked:
+- add it to selectedTags
+- filter companies where the tag appears in moatTags OR themeTags
+
+Filtering can remain client-side for now.
+
+4. Results UI
+
+Display companies in card format:
+
+Ticker
+Company Name
+Matched Tags
+Quality Score
+Valuation Score
+Quadrant
+
+Each card should also show which tags matched the current filter.
+
+5. Results Count
+
+Show a dynamic label:
+
+"X companies matching your filters"
+
+6. Performance
+
+Fetch companies once from:
+
+/api/discover
+
+Store in state and filter locally so the UI feels instant.
+
+7. Deliverables
+
+Implement:
+- Screener tag panel
+- Tag aggregation logic
+- Tag filtering
+- Company cards
+- Results counter
+
+Use the existing frontend architecture and keep the backend unchanged.
+
+After implementation, show the updated Discover page layout and components.

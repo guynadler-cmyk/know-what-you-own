@@ -1,0 +1,170 @@
+Upgrade the existing Discover page into a VC-style “Stock Discovery Engine”.
+
+Context
+The current system already works:
+
+- /api/discover returns ~170 companies
+- Each company has:
+  ticker
+  company_name
+  moatTags
+  themeTags
+  qualityScore
+  valuationScore
+  quadrant
+- The Discover page already has a tag screener and company cards.
+
+Do NOT rebuild the page. Extend it.
+
+Goal
+Turn the Discover page into a powerful company discovery tool similar to venture capital research platforms where users can explore companies by business model, moat, and themes.
+
+Features to implement
+
+1. Tag Discovery Panel
+Enhance the existing tag screener.
+
+Show tags grouped by category:
+
+Investment Themes
+- AI
+- Cloud Infrastructure
+- Cybersecurity
+- Developer Tools
+- Data Platforms
+
+Moats
+- Network Effects
+- Switching Costs
+- Brand
+- Ecosystem Lock-in
+
+Business Models
+- Marketplace
+- SaaS
+- Usage-Based Pricing
+- Subscription
+- Platform
+
+Sort tags by frequency across the dataset.
+
+Each tag shows a count:
+
+AI (75)
+Network Effects (36)
+
+Clicking a tag filters companies.
+
+2. Tag Relationship Discovery
+When a tag is selected:
+
+Show “Related Tags” under it.
+
+Example:
+
+If user clicks "AI"
+
+Show:
+
+Related tags:
+Cloud Infrastructure
+Developer Tools
+Data Platforms
+
+Compute this by analyzing which tags frequently appear together in companies.
+
+3. Company Discovery Cards
+Upgrade the existing company cards.
+
+Each card should show:
+
+Ticker
+Company Name
+Quadrant
+Quality Score
+Valuation Score
+
+Tag chips:
+
+Moats
+Themes
+
+Add two buttons:
+
+View Analysis
+Find Similar Companies
+
+4. Similar Companies Discovery
+Add a “Find Similar” button.
+
+When clicked:
+
+Call a new endpoint:
+
+/api/discover/similar?ticker=MSFT
+
+Return 5-10 most similar companies based on:
+
+- overlapping themes
+- overlapping moats
+- quadrant similarity
+- score similarity
+
+Display them in a modal panel.
+
+5. Discovery Insights Panel
+Add a sidebar panel showing insights about the current filter.
+
+Examples:
+
+"Most common moat among results"
+"Average quality score"
+"Top investment theme"
+
+Compute this dynamically from the filtered companies.
+
+6. Smart Search
+Enhance the existing search box.
+
+Allow searching by:
+
+ticker
+company name
+tag name
+
+Example:
+
+Search "AI" → shows AI companies.
+
+7. UX Improvements
+
+Add:
+
+- active filter chips
+- clear all filters
+- results count
+
+Example:
+
+"32 companies matching your filters"
+
+8. Performance
+
+Fetch companies once from:
+
+/api/discover
+
+Store in state and perform filtering client-side for instant UX.
+
+Keep the backend unchanged unless needed for similar-company lookup.
+
+Goal Outcome
+
+The Discover page should feel like a professional research tool where users can:
+
+- explore companies by business model
+- discover new companies via tags
+- find similar businesses
+- understand investment patterns
+
+Do not break existing functionality. Only extend it.
