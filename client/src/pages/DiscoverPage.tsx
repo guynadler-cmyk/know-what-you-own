@@ -53,24 +53,6 @@ const gradeColors: Record<string, string> = {
   F: "bg-red-100 text-red-800 dark:bg-red-900/40 dark:text-red-300",
 };
 
-const CURATED_TAGS = [
-  "AI",
-  "Cloud Infrastructure",
-  "Enterprise Software",
-  "Recurring Revenue",
-  "Cybersecurity",
-  "Marketplace",
-  "Network Effects",
-  "High Switching Costs",
-  "Developer Tools",
-  "Data Platforms",
-  "Brand Power",
-  "Scale Economies",
-  "Healthcare",
-  "Financial Services",
-  "Consumer",
-  "SaaS",
-];
 
 function GradeBadge({ grade }: { grade: string }) {
   return (
@@ -219,32 +201,26 @@ export default function DiscoverPage() {
 
   const companies = data?.companies || [];
 
-  const dynamicTags = useMemo(() => {
-    const tagCounts = new Map<string, number>();
+  const availableTags = useMemo(() => {
+    const countMap = new Map<string, number>();
+    const displayForm = new Map<string, string>();
     for (const c of companies) {
+      const seen = new Set<string>();
       for (const tag of [...c.moatTags, ...c.themeTags]) {
-        const normalised = tag.trim();
-        if (!normalised) continue;
-        const alreadyCurated = CURATED_TAGS.some(
-          (ct) => ct.toLowerCase() === normalised.toLowerCase()
-        );
-        if (!alreadyCurated) {
-          tagCounts.set(normalised, (tagCounts.get(normalised) || 0) + 1);
-        }
+        const trimmed = tag.trim();
+        if (!trimmed) continue;
+        const key = trimmed.toLowerCase();
+        if (seen.has(key)) continue;
+        seen.add(key);
+        if (!displayForm.has(key)) displayForm.set(key, trimmed);
+        countMap.set(key, (countMap.get(key) || 0) + 1);
       }
     }
-    return Array.from(tagCounts.entries())
+    return Array.from(countMap.entries())
       .filter(([, count]) => count >= 2)
       .sort((a, b) => b[1] - a[1])
-      .slice(0, 12)
-      .map(([tag]) => tag);
+      .map(([key]) => displayForm.get(key)!);
   }, [companies]);
-
-  const allTags = useMemo(() => {
-    const seen = new Set<string>(CURATED_TAGS.map((t) => t.toLowerCase()));
-    const extras = dynamicTags.filter((t) => !seen.has(t.toLowerCase()));
-    return [...CURATED_TAGS, ...extras];
-  }, [dynamicTags]);
 
   const toggleTag = (tag: string) => {
     setSelectedTags((prev) =>
@@ -371,7 +347,7 @@ export default function DiscoverPage() {
             </div>
             <div className="p-4 bg-white dark:bg-card">
               <div className="flex flex-wrap gap-2" data-testid="tag-library">
-                {allTags.map((tag) => {
+                {availableTags.map((tag) => {
                   const active = selectedTags.includes(tag);
                   return (
                     <button
