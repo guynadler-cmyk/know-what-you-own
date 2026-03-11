@@ -146,6 +146,7 @@ export default function StockPage() {
   const handleMobileScroll = useCallback(() => {
     if (window.innerWidth >= 768) return;
     if (paywallState === "unlocked") return;
+    if (getStoredEmail()) return;
     if (mobileGateDismissedRef.current) return;
     setShowMobileGate(true);
   }, [paywallState]);
@@ -427,33 +428,49 @@ export default function StockPage() {
                       onUnlocked={handlePaywallUnlocked}
                     />
                     <StageContent {...stageContentProps} />
+                    {showMobileGate && currentStage === 1 && (
+                      <InlineEmailCapture
+                        ticker={ticker}
+                        onUnlocked={handlePaywallUnlocked}
+                        onDismissed={handleMobileGateDismissed}
+                      />
+                    )}
                   </>
                 );
               }
 
               return (
-                <div className="relative" style={{ display: "grid" }}>
-                  <div
-                    className="select-none"
-                    style={{ gridArea: "1 / 1", filter: "blur(5px)", pointerEvents: "none" }}
-                    aria-hidden="true"
-                  >
-                    <StageContent {...stageContentProps} />
-                  </div>
-                  <div
-                    className="pointer-events-none"
-                    style={{ gridArea: "1 / 1", position: "sticky", top: "25vh", zIndex: 40, height: 0 }}
-                  >
-                    <div className="pointer-events-auto mx-auto max-w-lg">
-                      <EmailPaywall
-                        ticker={ticker}
-                        onUnlocked={handlePaywallUnlocked}
-                        onSkipped={currentStage < 5 ? handlePaywallSkipped : undefined}
-                        mode={currentStage < 5 ? "friday_report" : "action_gate"}
-                      />
+                <>
+                  <div className="relative" style={{ display: "grid" }}>
+                    <div
+                      className="select-none"
+                      style={{ gridArea: "1 / 1", filter: "blur(5px)", pointerEvents: "none" }}
+                      aria-hidden="true"
+                    >
+                      <StageContent {...stageContentProps} />
+                    </div>
+                    <div
+                      className="pointer-events-none"
+                      style={{ gridArea: "1 / 1", position: "sticky", top: "25vh", zIndex: 40, height: 0 }}
+                    >
+                      <div className="pointer-events-auto mx-auto max-w-lg">
+                        <EmailPaywall
+                          ticker={ticker}
+                          onUnlocked={handlePaywallUnlocked}
+                          onSkipped={currentStage < 5 ? handlePaywallSkipped : undefined}
+                          mode={currentStage < 5 ? "friday_report" : "action_gate"}
+                        />
+                      </div>
                     </div>
                   </div>
-                </div>
+                  {showMobileGate && currentStage === 1 && (
+                    <InlineEmailCapture
+                      ticker={ticker}
+                      onUnlocked={handlePaywallUnlocked}
+                      onDismissed={handleMobileGateDismissed}
+                    />
+                  )}
+                </>
               );
             })()}
 
