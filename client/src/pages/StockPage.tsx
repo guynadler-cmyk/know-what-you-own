@@ -141,12 +141,20 @@ export default function StockPage() {
     setShowMobileGate(false);
   }, [ticker]);
 
+  const mobileGateDismissedRef = useRef(false);
+
   const handleMobileScroll = useCallback(() => {
     if (window.innerWidth >= 768) return;
     if (paywallState === "unlocked") return;
     if (getStoredEmail()) return;
+    if (mobileGateDismissedRef.current) return;
     setShowMobileGate(true);
   }, [paywallState]);
+
+  const handleMobileGateDismissed = useCallback(() => {
+    mobileGateDismissedRef.current = true;
+    setShowMobileGate(false);
+  }, []);
 
   const fetchFinancialMetrics = async (t: string) => {
     const requestedTicker = t.toUpperCase();
@@ -405,6 +413,7 @@ export default function StockPage() {
                       <InlineEmailCapture
                         ticker={ticker}
                         onUnlocked={handlePaywallUnlocked}
+                        onDismissed={handleMobileGateDismissed}
                       />
                     )}
                   </>

@@ -9,9 +9,10 @@ import { trackEvent } from "@/lib/analytics";
 interface InlineEmailCaptureProps {
   ticker: string;
   onUnlocked: () => void;
+  onDismissed?: () => void;
 }
 
-export function InlineEmailCapture({ ticker, onUnlocked }: InlineEmailCaptureProps) {
+export function InlineEmailCapture({ ticker, onUnlocked, onDismissed }: InlineEmailCaptureProps) {
   const [email, setEmail] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
@@ -103,7 +104,7 @@ export function InlineEmailCapture({ ticker, onUnlocked }: InlineEmailCapturePro
             type="button"
             variant="ghost"
             size="icon"
-            onClick={() => setIsDismissed(true)}
+            onClick={() => { setIsDismissed(true); onDismissed?.(); }}
             data-testid="button-inline-dismiss"
             aria-label="Dismiss"
           >
