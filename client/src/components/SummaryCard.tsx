@@ -151,28 +151,17 @@ export function SummaryCard({
 
   useEffect(() => {
     if (!onMobileScroll || !mobileScrollSentinelRef.current) return;
-    let observer: IntersectionObserver | null = null;
-
-    const armObserver = () => {
-      if (!mobileScrollSentinelRef.current) return;
-      window.removeEventListener("scroll", armObserver, { capture: true });
-      observer = new IntersectionObserver(
-        ([entry]) => {
-          if (entry.isIntersecting) {
-            onMobileScroll();
-            observer?.disconnect();
-          }
-        },
-        { threshold: 0 }
-      );
-      observer.observe(mobileScrollSentinelRef.current);
-    };
-
-    window.addEventListener("scroll", armObserver, { capture: true, passive: true });
-    return () => {
-      window.removeEventListener("scroll", armObserver, { capture: true });
-      observer?.disconnect();
-    };
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          onMobileScroll();
+          observer.disconnect();
+        }
+      },
+      { threshold: 0, rootMargin: "0px 0px -30% 0px" }
+    );
+    observer.observe(mobileScrollSentinelRef.current);
+    return () => observer.disconnect();
   }, [onMobileScroll]);
   const [expandedCompetitor, setExpandedCompetitor] = useState<number | null>(null);
   const [showTemporalDetail, setShowTemporalDetail] = useState(true);
@@ -434,8 +423,6 @@ export function SummaryCard({
             )}
           </div>
 
-          <div ref={mobileScrollSentinelRef} aria-hidden="true" data-testid="thesis-scroll-sentinel" />
-
           {/* Read Full Thesis collapsible */}
           <Collapsible open={thesisOpen} onOpenChange={setThesisOpen}>
             <div className="flex items-center justify-center mt-3 pt-3 border-t" style={{ borderColor: border }}>
@@ -571,6 +558,8 @@ export function SummaryCard({
             ))}
           </div>
         </SectionCard>
+
+        <div ref={mobileScrollSentinelRef} aria-hidden="true" data-testid="thesis-scroll-sentinel" />
 
         {/* Competition */}
         <SectionCard
