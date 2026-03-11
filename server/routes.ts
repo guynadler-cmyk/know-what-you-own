@@ -1044,9 +1044,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const info = await getLatestCompanyInfoByTicker(ticker);
       const companyName = info?.companyName ? stripLegalSuffix(info.companyName) : null;
 
-      const title = companyName
-        ? `${companyName} (${ticker}) — Investment Thesis & Analysis | restnvest`
-        : `${ticker} Analysis | restnvest`;
+      const title = `${ticker} — Investment Thesis & Analysis | restnvest`;
       const description = companyName
         ? `Skip the noise. See the metrics that actually matter for ${companyName} — and walk through the decision of whether ${ticker} belongs in your portfolio.`
         : `Skip the noise. See the metrics that actually matter for ${ticker} — and walk through the decision of whether ${ticker} belongs in your portfolio.`;
