@@ -146,7 +146,6 @@ export default function StockPage() {
   const handleMobileScroll = useCallback(() => {
     if (window.innerWidth >= 768) return;
     if (paywallState === "unlocked") return;
-    if (getStoredEmail()) return;
     if (mobileGateDismissedRef.current) return;
     setShowMobileGate(true);
   }, [paywallState]);
