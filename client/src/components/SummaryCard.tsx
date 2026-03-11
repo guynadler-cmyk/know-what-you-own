@@ -152,8 +152,10 @@ export function SummaryCard({
   useEffect(() => {
     if (!onMobileScroll || !mobileScrollSentinelRef.current) return;
     let observer: IntersectionObserver | null = null;
-    const timer = setTimeout(() => {
+
+    const armObserver = () => {
       if (!mobileScrollSentinelRef.current) return;
+      window.removeEventListener("scroll", armObserver, { capture: true });
       observer = new IntersectionObserver(
         ([entry]) => {
           if (entry.isIntersecting) {
@@ -164,9 +166,11 @@ export function SummaryCard({
         { threshold: 0 }
       );
       observer.observe(mobileScrollSentinelRef.current);
-    }, 1500);
+    };
+
+    window.addEventListener("scroll", armObserver, { capture: true, passive: true });
     return () => {
-      clearTimeout(timer);
+      window.removeEventListener("scroll", armObserver, { capture: true });
       observer?.disconnect();
     };
   }, [onMobileScroll]);
