@@ -25,6 +25,7 @@ interface StageContentProps {
   ticker?: string;
   onStageChange?: (stage: number) => void;
   onMobileScroll?: () => void;
+  onSubSectionClick?: (subsectionId: string) => void;
 }
 
 const COMING_SOON_STAGES = {
@@ -179,7 +180,7 @@ function ComingUpNext({
   );
 }
 
-export function StageContent({ stage, summaryData, financialMetrics, balanceSheetMetrics, ticker, onStageChange, onMobileScroll }: StageContentProps) {
+export function StageContent({ stage, summaryData, financialMetrics, balanceSheetMetrics, ticker, onStageChange, onMobileScroll, onSubSectionClick }: StageContentProps) {
   const quadrantData = useMemo(
     () => generateQuadrantData(financialMetrics, balanceSheetMetrics),
     [financialMetrics, balanceSheetMetrics]
@@ -324,7 +325,7 @@ export function StageContent({ stage, summaryData, financialMetrics, balanceShee
           sub="Sensible investing isn't about finding the cheapest stock — it's about knowing whether the price, expectations, and potential returns make sense together."
         />
 
-        <ValuationExplorer ticker={ticker} onQuadrantDataChange={setValuationQuadrantData} />
+        <ValuationExplorer ticker={ticker} onQuadrantDataChange={setValuationQuadrantData} onSubSectionClick={onSubSectionClick} />
         
         <ValuationScorecard quadrantData={valuationQuadrantData} />
 
@@ -375,6 +376,7 @@ export function StageContent({ stage, summaryData, financialMetrics, balanceShee
           ticker={ticker}
           companyName={summaryData?.companyName}
           homepage={summaryData?.metadata?.homepage}
+          onSubSectionClick={onSubSectionClick}
         />
 
         <ComingUpNext

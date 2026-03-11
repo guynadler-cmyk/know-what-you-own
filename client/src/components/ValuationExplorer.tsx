@@ -716,9 +716,10 @@ function QuadrantTierExplanation({ tier1, tier2, quadrantId }: { tier1: string; 
 interface ValuationExplorerProps {
   ticker?: string;
   onQuadrantDataChange?: (data: ValuationQuadrantData[]) => void;
+  onSubSectionClick?: (subsectionId: string) => void;
 }
 
-export function ValuationExplorer({ ticker, onQuadrantDataChange }: ValuationExplorerProps) {
+export function ValuationExplorer({ ticker, onQuadrantDataChange, onSubSectionClick }: ValuationExplorerProps) {
   const { data: valuationData, isLoading, isError, error, refetch, isFetching } = useQuery<ValuationMetrics>({
     queryKey: [`/api/valuation/${ticker}`],
     enabled: !!ticker,
@@ -739,6 +740,13 @@ export function ValuationExplorer({ ticker, onQuadrantDataChange }: ValuationExp
   }, [quadrantData, onQuadrantDataChange]);
 
   const [selectedId, setSelectedId] = useState<string>(quadrantData[0]?.id || 'price-discipline');
+
+  const handleSelect = (id: string) => {
+    setSelectedId(id);
+    if (onSubSectionClick && window.innerWidth < 768) {
+      onSubSectionClick(id);
+    }
+  };
   
   const selectedQuadrant = quadrantData.find(q => q.id === selectedId) || quadrantData[0];
 
@@ -792,7 +800,7 @@ export function ValuationExplorer({ ticker, onQuadrantDataChange }: ValuationExp
     <div className="space-y-6" data-testid="valuation-explorer">
       <ValuationSummaryCardRow 
         selectedId={selectedId} 
-        onSelect={setSelectedId}
+        onSelect={handleSelect}
         quadrantData={quadrantData}
       />
       

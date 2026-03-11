@@ -12,6 +12,7 @@ import { StageContent } from "@/components/StageContent";
 import { EmailPaywall } from "@/components/EmailPaywall";
 import { InlineEmailCapture } from "@/components/InlineEmailCapture";
 import { MobileGateSheet } from "@/components/MobileGateSheet";
+import { MobileAnalysisPaywall } from "@/components/MobileAnalysisPaywall";
 import { TickerFollowPrompt } from "@/components/TickerFollowPrompt";
 import { Button } from "@/components/ui/button";
 import { CompanySummary, FinancialMetrics, BalanceSheetMetrics, WatchlistSnapshot } from "@shared/schema";
@@ -49,6 +50,24 @@ export default function StockPage() {
   const [tickerFollowed, setTickerFollowed] = useState(true);
   const [isFirstAnalysis, setIsFirstAnalysis] = useState(false);
   const [showMobileGate, setShowMobileGate] = useState(false);
+  const [showAnalysisPaywall, setShowAnalysisPaywall] = useState<3 | 4 | null>(null);
+
+  const stage3SubSectionsClickedRef = useRef<Set<string>>(new Set());
+  const stage4SubSectionsClickedRef = useRef<Set<string>>(new Set());
+  const analysisPaywallTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const isAnalysisPaywallSkipped = (stage: 3 | 4): boolean => {
+    return sessionStorage.getItem(`analysis_paywall_skipped_stage_${stage}`) === "true";
+  };
+  const markAnalysisPaywallSkipped = (stage: 3 | 4): void => {
+    sessionStorage.setItem(`analysis_paywall_skipped_stage_${stage}`, "true");
+  };
+  const isAnalysisPaywallFired = (stage: 3 | 4): boolean => {
+    return sessionStorage.getItem(`analysis_paywall_fired_stage_${stage}`) === "true";
+  };
+  const markAnalysisPaywallFired = (stage: 3 | 4): void => {
+    sessionStorage.setItem(`analysis_paywall_fired_stage_${stage}`, "true");
+  };
 
   useEffect(() => {
     if (viewState !== "loading") {
@@ -140,6 +159,13 @@ export default function StockPage() {
 
   useEffect(() => {
     setShowMobileGate(false);
+    setShowAnalysisPaywall(null);
+    stage3SubSectionsClickedRef.current = new Set();
+    stage4SubSectionsClickedRef.current = new Set();
+    if (analysisPaywallTimerRef.current) {
+      clearTimeout(analysisPaywallTimerRef.current);
+      analysisPaywallTimerRef.current = null;
+    }
   }, [ticker]);
 
   const mobileGateDismissedRef = useRef(false);
@@ -155,6 +181,51 @@ export default function StockPage() {
   const handleMobileGateDismissed = useCallback(() => {
     mobileGateDismissedRef.current = true;
     setShowMobileGate(false);
+  }, []);
+
+  const handleStage3SubSectionClick = useCallback((subsectionId: string) => {
+    if (paywallState === "unlocked") return;
+    if (isAnalysisPaywallFired(3) || isAnalysisPaywallSkipped(3)) return;
+    const clicked = stage3SubSectionsClickedRef.current;
+    clicked.add(subsectionId);
+    if (clicked.size >= 2 && !analysisPaywallTimerRef.current) {
+      analysisPaywallTimerRef.current = setTimeout(() => {
+        analysisPaywallTimerRef.current = null;
+        if (!isAnalysisPaywallFired(3) && !isAnalysisPaywallSkipped(3)) {
+          markAnalysisPaywallFired(3);
+          setShowAnalysisPaywall(3);
+        }
+      }, 5000);
+    }
+  }, [paywallState]);
+
+  const handleStage4SubSectionClick = useCallback((subsectionId: string) => {
+    if (paywallState === "unlocked") return;
+    if (isAnalysisPaywallFired(4) || isAnalysisPaywallSkipped(4)) return;
+    const clicked = stage4SubSectionsClickedRef.current;
+    clicked.add(subsectionId);
+    if (clicked.size >= 2 && !analysisPaywallTimerRef.current) {
+      analysisPaywallTimerRef.current = setTimeout(() => {
+        analysisPaywallTimerRef.current = null;
+        if (!isAnalysisPaywallFired(4) && !isAnalysisPaywallSkipped(4)) {
+          markAnalysisPaywallFired(4);
+          setShowAnalysisPaywall(4);
+        }
+      }, 4000);
+    }
+  }, [paywallState]);
+
+  const handleAnalysisPaywallSkip = useCallback(() => {
+    if (showAnalysisPaywall !== null) {
+      markAnalysisPaywallSkipped(showAnalysisPaywall);
+    }
+    setShowAnalysisPaywall(null);
+  }, [showAnalysisPaywall]);
+
+  const handleAnalysisPaywallSignup = useCallback(async () => {
+    setShowAnalysisPaywall(null);
+    const { signInWithGoogle } = await import("@/lib/firebase");
+    signInWithGoogle().catch(console.error);
   }, []);
 
   const fetchFinancialMetrics = async (t: string) => {
@@ -242,6 +313,16 @@ export default function StockPage() {
   const STAGE_NAMES = ['Business', 'Performance', 'Valuation', 'Strategy', 'Timing', 'Protection'];
 
   const handleStageChange = (stage: number) => {
+    if (analysisPaywallTimerRef.current) {
+      clearTimeout(analysisPaywallTimerRef.current);
+      analysisPaywallTimerRef.current = null;
+    }
+    if (currentStage === 3 && stage !== 3) {
+      stage3SubSectionsClickedRef.current = new Set();
+    }
+    if (currentStage === 4 && stage !== 4) {
+      stage4SubSectionsClickedRef.current = new Set();
+    }
     setCurrentStage(stage);
     window.scrollTo(0, 0);
     analytics.trackStageViewed(stage, STAGE_NAMES[stage - 1] || 'Unknown', ticker);
@@ -397,6 +478,7 @@ export default function StockPage() {
                 ticker: ticker,
                 onStageChange: handleStageChange,
                 onMobileScroll: currentStage === 1 ? handleMobileScroll : undefined,
+                onSubSectionClick: currentStage === 3 ? handleStage3SubSectionClick : currentStage === 4 ? handleStage4SubSectionClick : undefined,
               };
 
               if (!isGated || isUnlocked) {
@@ -474,6 +556,12 @@ export default function StockPage() {
                 </>
               );
             })()}
+
+            <MobileAnalysisPaywall
+              isOpen={showAnalysisPaywall !== null && paywallState !== "unlocked"}
+              onSkip={handleAnalysisPaywallSkip}
+              onSignup={handleAnalysisPaywallSignup}
+            />
 
             {showPreviousStageButton && (!shouldShowPaywall(currentStage) || paywallState === "unlocked") && (
               <div className="mt-8">

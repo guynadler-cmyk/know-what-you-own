@@ -24,6 +24,7 @@ interface TimingStageProps {
   companyName?: string;
   homepage?: string;
   placeholderData?: TimingAnalysis;
+  onSubSectionClick?: (subsectionId: string) => void;
 }
 
 type TimingMetricType = "trend" | "momentum" | "stretch";
@@ -298,9 +299,11 @@ function SummaryCardRow({ selectedId, onSelect, metrics }: SummaryCardRowProps) 
 interface TimingInsightTagProps {
   signal: TimingAnalysis["trend"]["signal"];
   deepDive: { title: string; explanation: string };
+  metricType?: TimingMetricType;
+  onSubSectionClick?: (subsectionId: string) => void;
 }
 
-function TimingInsightTag({ signal, deepDive }: TimingInsightTagProps) {
+function TimingInsightTag({ signal, deepDive, metricType, onSubSectionClick }: TimingInsightTagProps) {
   const [isExpanded, setIsExpanded] = useState(false);
   const strength = statusToStrength(signal.status);
   const styles = getStrengthStyles(strength);
@@ -334,7 +337,13 @@ function TimingInsightTag({ signal, deepDive }: TimingInsightTagProps) {
           {showExpandSection && (
             <>
               <button
-                onClick={() => setIsExpanded(!isExpanded)}
+                onClick={() => {
+                  const opening = !isExpanded;
+                  setIsExpanded(opening);
+                  if (opening && onSubSectionClick && metricType && window.innerWidth < 768) {
+                    onSubSectionClick(metricType);
+                  }
+                }}
                 className="flex items-center gap-1 text-xs text-muted-foreground hover-elevate px-2 py-1 -ml-2 rounded-md transition-colors"
                 data-testid="button-expand-timing-details"
               >
@@ -567,9 +576,10 @@ interface TimingDetailPanelProps {
   signal: TimingAnalysis["trend"]["signal"];
   deepDive: { title: string; explanation: string };
   chartData: TimingAnalysis["trend"]["chartData"] | TimingAnalysis["momentum"]["chartData"] | TimingAnalysis["stretch"]["chartData"];
+  onSubSectionClick?: (subsectionId: string) => void;
 }
 
-function TimingDetailPanel({ type, signal, deepDive, chartData }: TimingDetailPanelProps) {
+function TimingDetailPanel({ type, signal, deepDive, chartData, onSubSectionClick }: TimingDetailPanelProps) {
   const [showGoDeeper, setShowGoDeeper] = useState(false);
   const config = QUADRANT_CONFIGS[type];
   const position = signal.position || { x: 50, y: 50 };
@@ -639,13 +649,19 @@ function TimingDetailPanel({ type, signal, deepDive, chartData }: TimingDetailPa
             </div>
           )}
           
-          <TimingInsightTag signal={signal} deepDive={deepDive} />
+          <TimingInsightTag signal={signal} deepDive={deepDive} metricType={type} onSubSectionClick={onSubSectionClick} />
           
           <Button
             variant="ghost"
             size="sm"
             className="w-fit text-muted-foreground"
-            onClick={() => setShowGoDeeper(!showGoDeeper)}
+            onClick={() => {
+              const opening = !showGoDeeper;
+              setShowGoDeeper(opening);
+              if (opening && onSubSectionClick && window.innerWidth < 768) {
+                onSubSectionClick(type);
+              }
+            }}
             data-testid={`expand-${type}`}
           >
             {showGoDeeper ? (
@@ -965,7 +981,7 @@ function DebugDrawer({ debug, isOpen, onToggle }: { debug: TimingAnalysis['debug
   );
 }
 
-export function TimingStage({ ticker, companyName, homepage, placeholderData }: TimingStageProps) {
+export function TimingStage({ ticker, companyName, homepage, placeholderData, onSubSectionClick }: TimingStageProps) {
   const [selectedMetric, setSelectedMetric] = useState<TimingMetricType>("trend");
   const [showDebug, setShowDebug] = useState(false);
   
@@ -1052,6 +1068,7 @@ export function TimingStage({ ticker, companyName, homepage, placeholderData }: 
           signal={selectedSignal}
           deepDive={selectedDeepDive}
           chartData={selectedChartData}
+          onSubSectionClick={onSubSectionClick}
         />
       </div>
       
