@@ -24,6 +24,7 @@ interface StageContentProps {
   balanceSheetMetrics?: BalanceSheetMetrics;
   ticker?: string;
   onStageChange?: (stage: number) => void;
+  onMobileScroll?: () => void;
 }
 
 const COMING_SOON_STAGES = {
@@ -178,7 +179,7 @@ function ComingUpNext({
   );
 }
 
-export function StageContent({ stage, summaryData, financialMetrics, balanceSheetMetrics, ticker, onStageChange }: StageContentProps) {
+export function StageContent({ stage, summaryData, financialMetrics, balanceSheetMetrics, ticker, onStageChange, onMobileScroll }: StageContentProps) {
   const quadrantData = useMemo(
     () => generateQuadrantData(financialMetrics, balanceSheetMetrics),
     [financialMetrics, balanceSheetMetrics]
@@ -255,7 +256,7 @@ export function StageContent({ stage, summaryData, financialMetrics, balanceShee
         icon: iconMap[p.icon] || Package
       }))
     };
-    return <SummaryCard {...preparedSummary} onStageChange={onStageChange} />;
+    return <SummaryCard {...preparedSummary} onStageChange={onStageChange} onMobileScroll={onMobileScroll} />;
   }
 
   if (stage === 2) {

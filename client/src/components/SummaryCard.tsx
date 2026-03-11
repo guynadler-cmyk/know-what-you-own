@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
@@ -67,6 +67,7 @@ interface SummaryCardProps {
   analysisDepth?: 'full' | 'limited' | 'unavailable';
   no10KAvailable?: boolean;
   onStageChange?: (stage: number) => void;
+  onMobileScroll?: () => void;
 }
 
 /* ─── helpers ─────────────────────────────────────────────── */
@@ -143,8 +144,25 @@ export function SummaryCard({
   analysisDepth,
   no10KAvailable,
   onStageChange,
+  onMobileScroll,
 }: SummaryCardProps) {
   const [thesisOpen, setThesisOpen] = useState(false);
+  const mobileScrollSentinelRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!onMobileScroll || !mobileScrollSentinelRef.current) return;
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          onMobileScroll();
+          observer.disconnect();
+        }
+      },
+      { threshold: 0 }
+    );
+    observer.observe(mobileScrollSentinelRef.current);
+    return () => observer.disconnect();
+  }, [onMobileScroll]);
   const [expandedCompetitor, setExpandedCompetitor] = useState<number | null>(null);
   const [showTemporalDetail, setShowTemporalDetail] = useState(true);
   const [showFinePrintDetail, setShowFinePrintDetail] = useState(true);
@@ -404,6 +422,8 @@ export function SummaryCard({
               </div>
             )}
           </div>
+
+          <div ref={mobileScrollSentinelRef} aria-hidden="true" data-testid="thesis-scroll-sentinel" />
 
           {/* Read Full Thesis collapsible */}
           <Collapsible open={thesisOpen} onOpenChange={setThesisOpen}>

@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { useParams, useLocation } from "wouter";
 import { Helmet } from "react-helmet-async";
 import { queryClient } from "@/lib/queryClient";
@@ -47,6 +47,7 @@ export default function StockPage() {
   const [lastSkippedStage, setLastSkippedStage] = useState<number | null>(null);
   const [tickerFollowed, setTickerFollowed] = useState(true);
   const [isFirstAnalysis, setIsFirstAnalysis] = useState(false);
+  const [showMobileGate, setShowMobileGate] = useState(false);
 
   useEffect(() => {
     if (viewState !== "loading") {
@@ -135,6 +136,17 @@ export default function StockPage() {
     setLastSkippedStage(currentStage);
     setShowFloatingModal(false);
   };
+
+  useEffect(() => {
+    setShowMobileGate(false);
+  }, [ticker]);
+
+  const handleMobileScroll = useCallback(() => {
+    if (window.innerWidth >= 768) return;
+    if (paywallState === "unlocked") return;
+    if (getStoredEmail()) return;
+    setShowMobileGate(true);
+  }, [paywallState]);
 
   const fetchFinancialMetrics = async (t: string) => {
     const requestedTicker = t.toUpperCase();
@@ -375,6 +387,7 @@ export default function StockPage() {
                 balanceSheetMetrics: balanceSheetMetrics ?? undefined,
                 ticker: ticker,
                 onStageChange: handleStageChange,
+                onMobileScroll: currentStage === 1 ? handleMobileScroll : undefined,
               };
 
               if (!isGated || isUnlocked) {
@@ -388,6 +401,12 @@ export default function StockPage() {
                       />
                     )}
                     <StageContent {...stageContentProps} />
+                    {showMobileGate && currentStage === 1 && paywallState !== "unlocked" && (
+                      <InlineEmailCapture
+                        ticker={ticker}
+                        onUnlocked={handlePaywallUnlocked}
+                      />
+                    )}
                   </>
                 );
               }
