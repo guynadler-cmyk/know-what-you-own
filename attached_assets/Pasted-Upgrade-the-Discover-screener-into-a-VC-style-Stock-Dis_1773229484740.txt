@@ -1,0 +1,190 @@
+Upgrade the Discover screener into a VC-style Stock Discovery Engine.
+
+Context
+The Discover page already works:
+
+- /api/discover returns ~170 companies
+- Each company includes:
+  ticker
+  company_name
+  moatTags
+  themeTags
+  qualityScore
+  valuationScore
+  quadrant
+
+The screener already supports tag filtering.
+
+Do NOT rebuild anything. Extend the current system.
+
+Goal
+Add intelligence to the screener so users can explore relationships between business models, moats, and investment themes — similar to venture capital research platforms.
+
+--------------------------------------------------
+
+Feature 1 — Related Tags
+
+When a user selects a tag, show related tags that frequently appear with it.
+
+Example:
+
+User clicks:
+AI
+
+Show:
+
+Related tags:
+Cloud Infrastructure
+Developer Tools
+Data Platforms
+Enterprise Software
+
+Implementation logic:
+
+1. For each company:
+   collect all tags (moatTags + themeTags)
+
+2. When a tag is selected:
+   find all companies containing that tag
+
+3. Count which other tags appear alongside it
+
+4. Sort by frequency
+
+Display top 5 related tags.
+
+UI:
+
+AI (75)
+
+Related tags:
+Cloud Infrastructure (34)
+Developer Tools (29)
+Data Platforms (21)
+
+Clicking a related tag adds it to filters.
+
+--------------------------------------------------
+
+Feature 2 — Tag Clusters
+
+Group frequently co-occurring tags into clusters.
+
+Example clusters:
+
+AI Stack
+AI
+Data Platforms
+Cloud Infrastructure
+Developer Tools
+
+Marketplace Economy
+Marketplace
+Network Effects
+Payments
+Creator Economy
+
+Implementation logic:
+
+Analyze tag co-occurrence across companies and group tags that frequently appear together.
+
+Display clusters as clickable sections above the screener.
+
+--------------------------------------------------
+
+Feature 3 — Theme Insights Panel
+
+Add a sidebar showing insights about the current filtered companies.
+
+Examples:
+
+Most common moat
+Average quality score
+Top investment theme
+Number of companies in each quadrant
+
+Example display:
+
+Results Insights
+
+Companies: 36
+
+Top Theme:
+AI
+
+Top Moat:
+Network Effects
+
+Average Quality Score:
+8.1
+
+Quadrant Breakdown:
+Compounders: 12
+Turnarounds: 8
+Deep Value: 6
+Speculative: 10
+
+Compute this dynamically from the filtered dataset.
+
+--------------------------------------------------
+
+Feature 4 — Tag Frequency Visualization
+
+Add a simple visualization showing which themes dominate the dataset.
+
+Implementation:
+
+Create a horizontal bar chart of the top 10 tags by company count.
+
+Example:
+
+AI                ███████████ 75
+Network Effects   ████████ 36
+Cloud Infrastructure ██████ 28
+Developer Tools   █████ 24
+
+This should update dynamically based on current filters.
+
+--------------------------------------------------
+
+Feature 5 — Smart Discovery UX
+
+Enhance the screener experience:
+
+Add:
+
+• Active filter chips
+• Clear all filters
+• Results count
+
+Example:
+
+"32 companies matching your filters"
+
+--------------------------------------------------
+
+Feature 6 — Performance
+
+Continue fetching companies once from:
+
+/api/discover
+
+Store them in state and compute:
+
+tag counts
+tag relationships
+insights
+clusters
+
+client-side for instant interaction.
+
+--------------------------------------------------
+
+Goal Outcome
+
+The Discover page should feel like a professional investment research platform where users can:
+
+• explore companies by themes and moats
+• discover related business models
+• see investment patterns across industries
+• uncover new companies through tag relationships

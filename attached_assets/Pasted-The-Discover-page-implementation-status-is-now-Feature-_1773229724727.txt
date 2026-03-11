@@ -1,0 +1,121 @@
+The Discover page implementation status is now:
+
+Feature 1 — Related Tags → Already implemented
+Feature 2 — Tag Clusters → NOT implemented
+Feature 3 — Theme Insights Panel → Already implemented
+Feature 4 — Tag Frequency Bar Chart → NOT implemented
+Feature 5 — Smart Discovery UX → Already implemented
+Feature 6 — Performance → Already implemented
+
+Do NOT modify any existing working features.
+
+Only implement the two missing features:
+
+--------------------------------------------
+
+Feature 2 — Tag Clusters
+
+Goal:
+Automatically group tags that frequently appear together across companies.
+
+Implementation:
+
+1. For each company:
+   combine moatTags and themeTags.
+
+2. Create a co-occurrence matrix:
+   count how often each pair of tags appears together.
+
+Example:
+
+AI + Cloud Infrastructure → 28 companies  
+Marketplace + Network Effects → 21 companies
+
+3. Use this data to generate clusters of tags that commonly appear together.
+
+Example clusters:
+
+AI Stack
+- AI
+- Cloud Infrastructure
+- Developer Tools
+- Data Platforms
+
+Marketplace Economy
+- Marketplace
+- Network Effects
+- Payments
+- Creator Economy
+
+Developer Platforms
+- Developer Tools
+- APIs
+- Infrastructure Software
+
+4. Show clusters as sections above the screener tag panel.
+
+UI Example:
+
+Popular Theme Clusters
+
+AI Stack
+AI
+Cloud Infrastructure
+Developer Tools
+Data Platforms
+
+Marketplace Economy
+Marketplace
+Network Effects
+Payments
+
+Clicking a tag in a cluster should activate it in the screener.
+
+--------------------------------------------
+
+Feature 4 — Tag Frequency Bar Chart
+
+Goal:
+Visualize which themes dominate the dataset.
+
+Implementation:
+
+1. Use the existing tagCounts map already computed in the screener logic.
+
+2. Select the top 10 tags by company frequency.
+
+3. Render a horizontal bar chart.
+
+Example display:
+
+AI                    ███████████ 75
+Network Effects       ████████ 36
+Cloud Infrastructure  ██████ 28
+Developer Tools       █████ 24
+
+4. The chart should update dynamically when filters are applied.
+
+If the user selects tags, the chart should recompute counts using the filtered company list.
+
+--------------------------------------------
+
+UI Placement
+
+Place both components above the results grid:
+
+1. Tag Clusters section
+2. Tag Frequency chart
+3. Existing tag screener
+4. Results cards
+
+--------------------------------------------
+
+Important
+
+Do not modify:
+- existing tag screener logic
+- existing related tags feature
+- existing insights panel
+- existing API calls
+
+Use the existing companies dataset already loaded from /api/discover.
