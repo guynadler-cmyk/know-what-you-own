@@ -364,7 +364,7 @@ export default function StockPage() {
   }, [viewState, ticker, summaryData?.companyName]);
 
   return (
-    <div className="flex min-h-screen flex-col">
+    <div className="flex min-h-screen flex-col max-w-[100vw] overflow-x-hidden">
       <Helmet>
         <title>{ticker} — Investment Thesis & Analysis | restnvest</title>
       </Helmet>

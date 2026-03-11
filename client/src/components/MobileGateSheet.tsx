@@ -86,7 +86,6 @@ export function MobileGateSheet({ ticker, onUnlocked, onDismissed }: MobileGateS
       <div
         className="fixed inset-0 z-40 bg-black/50 transition-opacity duration-300"
         style={{ opacity: visible ? 1 : 0 }}
-        onClick={handleDismiss}
         aria-hidden="true"
       />
 

@@ -102,19 +102,71 @@ function CardHeader({ label, badge }: { label: string; badge?: string }) {
   );
 }
 
-function SectionCard({ header, badge, children, className = '' }: {
+function useIsMobile(breakpoint = 768) {
+  const [isMobile, setIsMobile] = useState(
+    typeof window !== 'undefined' ? window.innerWidth < breakpoint : false
+  );
+  useEffect(() => {
+    const mql = window.matchMedia(`(max-width: ${breakpoint - 1}px)`);
+    const handler = (e: MediaQueryListEvent) => setIsMobile(e.matches);
+    setIsMobile(mql.matches);
+    mql.addEventListener('change', handler);
+    return () => mql.removeEventListener('change', handler);
+  }, [breakpoint]);
+  return isMobile;
+}
+
+function SectionCard({ header, badge, children, className = '', collapsed, onToggle }: {
   header: string;
   badge?: string;
   children: React.ReactNode;
   className?: string;
+  collapsed?: boolean;
+  onToggle?: () => void;
 }) {
+  const isCollapsible = collapsed !== undefined && onToggle !== undefined;
   return (
     <div
       className={`rounded-xl overflow-hidden border ${className}`}
       style={{ borderColor: border, boxShadow: '0 2px 20px rgba(13,74,71,0.07)' }}
     >
-      <CardHeader label={header} badge={badge} />
-      <div className="bg-white p-4">{children}</div>
+      {isCollapsible ? (
+        <button
+          className="w-full"
+          onClick={onToggle}
+          type="button"
+        >
+          <div
+            className="flex items-center justify-between px-4 py-2.5"
+            style={{ background: tealDeep }}
+          >
+            <span className="font-mono text-[11px] tracking-wider" style={{ color: 'rgba(255,255,255,0.7)' }}>
+              {header}
+            </span>
+            <div className="flex items-center gap-2">
+              {badge && (
+                <span
+                  className="text-[10px] px-2 py-0.5 rounded-full border"
+                  style={{
+                    background: 'rgba(255,255,255,0.1)',
+                    borderColor: 'rgba(255,255,255,0.15)',
+                    color: 'rgba(255,255,255,0.8)',
+                  }}
+                >
+                  {badge}
+                </span>
+              )}
+              {collapsed
+                ? <ChevronDown className="h-3 w-3" style={{ color: 'rgba(255,255,255,0.7)' }} />
+                : <ChevronUp className="h-3 w-3" style={{ color: 'rgba(255,255,255,0.7)' }} />
+              }
+            </div>
+          </div>
+        </button>
+      ) : (
+        <CardHeader label={header} badge={badge} />
+      )}
+      {!collapsed && <div className="bg-white p-4">{children}</div>}
     </div>
   );
 }
@@ -148,24 +200,41 @@ export function SummaryCard({
 }: SummaryCardProps) {
   const [thesisOpen, setThesisOpen] = useState(false);
   const mobileScrollSentinelRef = useRef<HTMLDivElement>(null);
+  const isMobile = useIsMobile();
+  const [mobileExpandedSection, setMobileExpandedSection] = useState<string | null>(null);
+  const mobileExpandCountRef = useRef(0);
+  const mobileGateTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const mobileGateFiredRef = useRef(false);
+
+  const toggleMobileSection = (section: string) => {
+    setMobileExpandedSection(prev => {
+      const isExpanding = prev !== section;
+      if (isExpanding && isMobile && onMobileScroll && !mobileGateFiredRef.current) {
+        mobileExpandCountRef.current += 1;
+        if (mobileExpandCountRef.current >= 2 && !mobileGateTimerRef.current) {
+          mobileGateTimerRef.current = setTimeout(() => {
+            mobileGateFiredRef.current = true;
+            onMobileScroll();
+          }, 4800);
+        }
+      }
+      return isExpanding ? section : null;
+    });
+  };
 
   useEffect(() => {
-    if (!onMobileScroll || !mobileScrollSentinelRef.current) return;
-    const observer = new IntersectionObserver(
-      ([entry]) => {
-        if (entry.isIntersecting) {
-          onMobileScroll();
-          observer.disconnect();
-        }
-      },
-      { threshold: 0, rootMargin: "0px 0px -30% 0px" }
-    );
-    observer.observe(mobileScrollSentinelRef.current);
-    return () => observer.disconnect();
-  }, [onMobileScroll]);
+    return () => {
+      if (mobileGateTimerRef.current) clearTimeout(mobileGateTimerRef.current);
+    };
+  }, []);
   const [expandedCompetitor, setExpandedCompetitor] = useState<number | null>(null);
-  const [showTemporalDetail, setShowTemporalDetail] = useState(true);
-  const [showFinePrintDetail, setShowFinePrintDetail] = useState(true);
+
+  const showTemporalDetail = isMobile ? mobileExpandedSection === 'changesOverTime' : true;
+  const showFinePrintDetail = isMobile ? mobileExpandedSection === 'finePrint' : true;
+  const [desktopShowTemporal, setDesktopShowTemporal] = useState(true);
+  const [desktopShowFinePrint, setDesktopShowFinePrint] = useState(true);
+  const effectiveShowTemporal = isMobile ? showTemporalDetail : desktopShowTemporal;
+  const effectiveShowFinePrint = isMobile ? showFinePrintDetail : desktopShowFinePrint;
 
   const filteredCompetitors = competitors.filter(
     (c) => !c.ticker || c.ticker.toUpperCase() !== ticker.toUpperCase()
@@ -329,6 +398,8 @@ export function SummaryCard({
         <SectionCard
           header={`Investment Thesis — ${ticker}`}
           badge={`${(investmentThemes?.length || 0) + (moats?.length || 0) > 0 ? Math.round(((investmentThemes?.length || 0) + (moats?.length || 0)) / 2) : 4} themes`}
+          collapsed={isMobile ? mobileExpandedSection !== 'investmentThesis' : undefined}
+          onToggle={isMobile ? () => toggleMobileSection('investmentThesis') : undefined}
         >
           {/* legend */}
           <div className="flex items-center gap-4 pb-3 mb-3 border-b" style={{ borderColor: border }}>
@@ -453,6 +524,8 @@ export function SummaryCard({
         <SectionCard
           header={`Business Overview — ${ticker}`}
           badge={`${products?.length || 0} products`}
+          collapsed={isMobile ? mobileExpandedSection !== 'businessOverview' : undefined}
+          onToggle={isMobile ? () => toggleMobileSection('businessOverview') : undefined}
         >
           {/* 2x2 products grid */}
           <div className="grid grid-cols-2 gap-2.5 mb-3">
@@ -537,7 +610,12 @@ export function SummaryCard({
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
 
         {/* Performance Snapshot */}
-        <SectionCard header="Performance Snapshot" badge={fiscalYear ? `FY ${fiscalYear}` : undefined}>
+        <SectionCard
+          header="Performance Snapshot"
+          badge={fiscalYear ? `FY ${fiscalYear}` : undefined}
+          collapsed={isMobile ? mobileExpandedSection !== 'performanceSnapshot' : undefined}
+          onToggle={isMobile ? () => toggleMobileSection('performanceSnapshot') : undefined}
+        >
           <div className="space-y-2.5">
             {metrics.slice(0, 3).map((m, i) => (
               <div
@@ -565,6 +643,8 @@ export function SummaryCard({
         <SectionCard
           header={`Competition — ${ticker}`}
           badge={`${filteredCompetitors.length} peers`}
+          collapsed={isMobile ? mobileExpandedSection !== 'competition' : undefined}
+          onToggle={isMobile ? () => toggleMobileSection('competition') : undefined}
         >
           <div className="space-y-1.5">
             {filteredCompetitors.slice(0, 5).map((comp, i) => (
@@ -646,7 +726,7 @@ export function SummaryCard({
           <button
             className="w-full flex items-center justify-between text-left"
             style={{ background: tealDeep, padding: '10px 16px' }}
-            onClick={() => setShowTemporalDetail((v) => !v)}
+            onClick={() => isMobile ? toggleMobileSection('changesOverTime') : setDesktopShowTemporal((v) => !v)}
             data-testid="button-toggle-temporal"
           >
             <div className="flex items-center gap-2.5">
@@ -669,14 +749,14 @@ export function SummaryCard({
               className="text-[10px] font-medium px-2.5 py-1 rounded-full border flex items-center gap-1.5"
               style={{ background: 'rgba(255,255,255,0.1)', borderColor: 'rgba(255,255,255,0.18)', color: 'rgba(255,255,255,0.7)' }}
             >
-              {showTemporalDetail ? 'Collapse' : 'Expand'}
-              {showTemporalDetail
+              {effectiveShowTemporal ? 'Collapse' : 'Expand'}
+              {effectiveShowTemporal
                 ? <ChevronUp className="h-3 w-3" />
                 : <ChevronDown className="h-3 w-3" />
               }
             </span>
           </button>
-          {showTemporalDetail && (
+          {effectiveShowTemporal && (
             <div style={{ padding: '20px', background: 'white' }}>
               <TemporalAnalysis analysis={temporalAnalysis} companyName={companyName} />
             </div>
@@ -694,7 +774,7 @@ export function SummaryCard({
           <button
             className="w-full flex items-center justify-between text-left"
             style={{ background: tealDeep, padding: '10px 16px' }}
-            onClick={() => setShowFinePrintDetail((v) => !v)}
+            onClick={() => isMobile ? toggleMobileSection('finePrint') : setDesktopShowFinePrint((v) => !v)}
             data-testid="button-toggle-fine-print"
           >
             <span
@@ -707,14 +787,14 @@ export function SummaryCard({
               className="text-[10px] font-medium px-2.5 py-1 rounded-full border flex items-center gap-1.5"
               style={{ background: 'rgba(255,255,255,0.1)', borderColor: 'rgba(255,255,255,0.18)', color: 'rgba(255,255,255,0.7)' }}
             >
-              {showFinePrintDetail ? 'Collapse' : 'Expand'}
-              {showFinePrintDetail
+              {effectiveShowFinePrint ? 'Collapse' : 'Expand'}
+              {effectiveShowFinePrint
                 ? <ChevronUp className="h-3 w-3" />
                 : <ChevronDown className="h-3 w-3" />
               }
             </span>
           </button>
-          {showFinePrintDetail && (
+          {effectiveShowFinePrint && (
             <div style={{ padding: '20px', background: 'white' }}>
               <FinePrintAnalysis analysis={finePrintAnalysis} companyName={companyName} />
             </div>

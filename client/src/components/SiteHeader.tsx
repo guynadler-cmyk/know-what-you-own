@@ -130,7 +130,7 @@ export function SiteHeader() {
 
   return (
     <header
-      className="fixed top-0 left-0 right-0 z-[100] bg-background/95 backdrop-blur border-b border-border"
+      className="fixed top-0 left-0 right-0 z-[100] bg-background/95 backdrop-blur border-b border-border max-w-[100vw] overflow-hidden"
       data-testid="site-header"
     >
       <div className="flex items-center justify-between px-4 sm:px-8 h-16 max-w-[1200px] mx-auto gap-4">

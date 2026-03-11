@@ -244,6 +244,8 @@ export function Header() {
         alignItems: "center",
         padding: "0 24px",
         gap: 0,
+        maxWidth: "100vw",
+        overflow: "hidden",
       }}
     >
       <Link
@@ -327,6 +329,7 @@ export function Header() {
           <form
             onSubmit={handleNavSearch}
             className="nav-search-bar"
+            style={{ minWidth: 0 }}
             data-testid="nav-search-form"
           >
             <Search style={{ width: 12, height: 12, color: "var(--lp-ink-ghost)", flexShrink: 0 }} />

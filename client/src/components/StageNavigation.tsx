@@ -21,7 +21,7 @@ export function StageNavigation({ currentStage, onStageChange }: StageNavigation
       className="mb-8 bg-card border border-border rounded-md px-4 py-3"
       data-testid="stage-navigation"
     >
-      <div className="flex items-center justify-center gap-0.5 sm:gap-1 overflow-x-auto">
+      <div className="flex items-center justify-center gap-[4px] sm:gap-1">
         {STAGES.map((stage, index) => {
           const isCompleted = stage.number < currentStage;
           const isActive = stage.number === currentStage;
@@ -33,7 +33,7 @@ export function StageNavigation({ currentStage, onStageChange }: StageNavigation
                 onClick={() => onStageChange(stage.number)}
                 className={cn(
                   "flex flex-col items-center gap-1 px-2 sm:px-3 py-1.5 rounded-md transition-all duration-200 hover-elevate active-elevate-2",
-                  "min-w-[48px] sm:min-w-[64px]"
+                  "min-w-0 sm:min-w-[64px]"
                 )}
                 data-testid={`stage-button-${stage.number}`}
               >
@@ -73,7 +73,7 @@ export function StageNavigation({ currentStage, onStageChange }: StageNavigation
               {index < STAGES.length - 1 && (
                 <div
                   className={cn(
-                    "w-3 sm:w-6 h-px mx-0.5 transition-colors",
+                    "w-2 sm:w-6 h-px mx-0 sm:mx-0.5 transition-colors",
                     stage.number < currentStage ? "opacity-50" : "bg-border"
                   )}
                   style={stage.number < currentStage ? { background: "var(--lp-teal-deep)" } : undefined}

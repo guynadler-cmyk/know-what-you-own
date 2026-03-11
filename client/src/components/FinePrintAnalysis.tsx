@@ -132,7 +132,7 @@ function FinePrintItem({ item, index, categoryKey }: FinePrintItemProps) {
   );
 }
 
-const tileBase = "h-auto py-4 px-3 flex-col items-center rounded-lg border bg-white data-[state=inactive]:border-[var(--border)] hover-elevate";
+const tileBase = "h-auto py-4 px-1 md:px-3 flex-col items-center rounded-lg border bg-white data-[state=inactive]:border-[var(--border)] hover-elevate";
 
 export function FinePrintAnalysis({ analysis, companyName }: FinePrintAnalysisProps) {
   const totalItems =
@@ -161,7 +161,7 @@ export function FinePrintAnalysis({ analysis, companyName }: FinePrintAnalysisPr
     <div data-testid="fine-print-analysis-section">
       <Tabs defaultValue={defaultTab} className="w-full">
         <TabsList
-          className="h-auto bg-transparent p-0 mb-5 grid gap-2.5"
+          className="h-auto bg-transparent p-0 mb-5 grid gap-1 md:gap-2.5"
           style={{ gridTemplateColumns: `repeat(${Math.min(activeTabs.length, 5)}, minmax(0, 1fr))` }}
         >
           {Object.entries(CATEGORY_CONFIG).map(([key, config]) => {
@@ -179,7 +179,7 @@ export function FinePrintAnalysis({ analysis, companyName }: FinePrintAnalysisPr
                 <div className={`text-[24px] font-bold leading-none mb-1 ${config.countClass}`}>
                   {items.length}
                 </div>
-                <div className="text-[11px] text-center" style={{ color: 'var(--lp-ink-ghost)' }}>
+                <div className="text-[10px] md:text-[11px] text-center whitespace-normal" style={{ color: 'var(--lp-ink-ghost)' }}>
                   {config.label}
                 </div>
               </TabsTrigger>
