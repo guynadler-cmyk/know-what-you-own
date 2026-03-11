@@ -151,17 +151,24 @@ export function SummaryCard({
 
   useEffect(() => {
     if (!onMobileScroll || !mobileScrollSentinelRef.current) return;
-    const observer = new IntersectionObserver(
-      ([entry]) => {
-        if (entry.isIntersecting) {
-          onMobileScroll();
-          observer.disconnect();
-        }
-      },
-      { threshold: 0 }
-    );
-    observer.observe(mobileScrollSentinelRef.current);
-    return () => observer.disconnect();
+    let observer: IntersectionObserver | null = null;
+    const timer = setTimeout(() => {
+      if (!mobileScrollSentinelRef.current) return;
+      observer = new IntersectionObserver(
+        ([entry]) => {
+          if (entry.isIntersecting) {
+            onMobileScroll();
+            observer?.disconnect();
+          }
+        },
+        { threshold: 0 }
+      );
+      observer.observe(mobileScrollSentinelRef.current);
+    }, 1500);
+    return () => {
+      clearTimeout(timer);
+      observer?.disconnect();
+    };
   }, [onMobileScroll]);
   const [expandedCompetitor, setExpandedCompetitor] = useState<number | null>(null);
   const [showTemporalDetail, setShowTemporalDetail] = useState(true);
