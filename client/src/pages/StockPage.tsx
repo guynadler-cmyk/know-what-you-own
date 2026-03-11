@@ -11,6 +11,7 @@ import { StageNavigation } from "@/components/StageNavigation";
 import { StageContent } from "@/components/StageContent";
 import { EmailPaywall } from "@/components/EmailPaywall";
 import { InlineEmailCapture } from "@/components/InlineEmailCapture";
+import { MobileGateSheet } from "@/components/MobileGateSheet";
 import { TickerFollowPrompt } from "@/components/TickerFollowPrompt";
 import { Button } from "@/components/ui/button";
 import { CompanySummary, FinancialMetrics, BalanceSheetMetrics, WatchlistSnapshot } from "@shared/schema";
@@ -410,7 +411,7 @@ export default function StockPage() {
                     )}
                     <StageContent {...stageContentProps} />
                     {showMobileGate && currentStage === 1 && paywallState !== "unlocked" && (
-                      <InlineEmailCapture
+                      <MobileGateSheet
                         ticker={ticker}
                         onUnlocked={handlePaywallUnlocked}
                         onDismissed={handleMobileGateDismissed}
@@ -429,7 +430,7 @@ export default function StockPage() {
                     />
                     <StageContent {...stageContentProps} />
                     {showMobileGate && currentStage === 1 && (
-                      <InlineEmailCapture
+                      <MobileGateSheet
                         ticker={ticker}
                         onUnlocked={handlePaywallUnlocked}
                         onDismissed={handleMobileGateDismissed}
@@ -464,7 +465,7 @@ export default function StockPage() {
                     </div>
                   </div>
                   {showMobileGate && currentStage === 1 && (
-                    <InlineEmailCapture
+                    <MobileGateSheet
                       ticker={ticker}
                       onUnlocked={handlePaywallUnlocked}
                       onDismissed={handleMobileGateDismissed}
