@@ -465,6 +465,121 @@ export default function DiscoverPage() {
 
   const isScreenerActive = selectedTags.length > 0;
 
+  // ── Tag Clusters ──────────────────────────────────────────────────────────
+
+  const clusters = useMemo(() => {
+    if (companies.length === 0) return [];
+
+    const cooccur = new Map<string, Map<string, number>>();
+    const tagFreq = new Map<string, number>();
+    const tagDisplay = new Map<string, string>();
+
+    for (const c of companies) {
+      const tags: string[] = [];
+      const seen = new Set<string>();
+      for (const t of [...c.moatTags, ...c.themeTags]) {
+        const trimmed = t.trim();
+        if (!trimmed) continue;
+        const key = trimmed.toLowerCase();
+        if (seen.has(key)) continue;
+        seen.add(key);
+        tags.push(key);
+        if (!tagDisplay.has(key)) tagDisplay.set(key, trimmed);
+        tagFreq.set(key, (tagFreq.get(key) || 0) + 1);
+      }
+      for (let i = 0; i < tags.length; i++) {
+        for (let j = i + 1; j < tags.length; j++) {
+          const a = tags[i];
+          const b = tags[j];
+          if (!cooccur.has(a)) cooccur.set(a, new Map());
+          if (!cooccur.has(b)) cooccur.set(b, new Map());
+          cooccur.get(a)!.set(b, (cooccur.get(a)!.get(b) || 0) + 1);
+          cooccur.get(b)!.set(a, (cooccur.get(b)!.get(a) || 0) + 1);
+        }
+      }
+    }
+
+    const sortedTags = Array.from(tagFreq.entries())
+      .filter(([, count]) => count >= 3)
+      .sort((a, b) => b[1] - a[1])
+      .map(([key]) => key);
+
+    const assigned = new Set<string>();
+    const result: { name: string; tags: string[]; count: number }[] = [];
+
+    for (const seed of sortedTags) {
+      if (assigned.has(seed)) continue;
+      if (result.length >= 4) break;
+
+      const comap = cooccur.get(seed) || new Map<string, number>();
+      const partners = Array.from(comap.entries())
+        .filter(([key]) => !assigned.has(key) && (tagFreq.get(key) || 0) >= 3)
+        .sort((a, b) => b[1] - a[1])
+        .slice(0, 3)
+        .map(([key]) => key);
+
+      if (partners.length < 2) continue;
+
+      const clusterKeys = [seed, ...partners];
+      clusterKeys.forEach((k) => assigned.add(k));
+
+      const clusterSet = new Set(clusterKeys);
+      const count = companies.filter((c) => {
+        const compTags = new Set(
+          [...c.moatTags, ...c.themeTags].map((t) => t.toLowerCase().trim())
+        );
+        let matches = 0;
+        for (const key of Array.from(clusterSet)) {
+          if (compTags.has(key)) matches++;
+        }
+        return matches >= 2;
+      }).length;
+
+      result.push({
+        name: tagDisplay.get(seed)!,
+        tags: clusterKeys.map((k) => tagDisplay.get(k)!).filter(Boolean),
+        count,
+      });
+    }
+
+    return result;
+  }, [companies]);
+
+  // ── Tag Frequency Chart ───────────────────────────────────────────────────
+
+  const [showFreqChart, setShowFreqChart] = useState(false);
+
+  const freqChartData = useMemo(() => {
+    const source = filtered.length < companies.length ? filtered : companies;
+    const freq = new Map<string, number>();
+    const displayForm = new Map<string, string>();
+
+    for (const c of source) {
+      const seen = new Set<string>();
+      for (const tag of [...c.moatTags, ...c.themeTags]) {
+        const trimmed = tag.trim();
+        if (!trimmed) continue;
+        const key = trimmed.toLowerCase();
+        if (seen.has(key)) continue;
+        seen.add(key);
+        if (!displayForm.has(key)) displayForm.set(key, trimmed);
+        freq.set(key, (freq.get(key) || 0) + 1);
+      }
+    }
+
+    const entries = Array.from(freq.entries())
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 10);
+
+    const maxCount = entries[0]?.[1] || 1;
+
+    return entries.map(([key, count]) => ({
+      tag: displayForm.get(key)!,
+      count,
+      pct: count / maxCount,
+    }));
+  }, [filtered, companies]);
+
   // ── Find similar company data ─────────────────────────────────────────────
 
   const similarCompanyBase = similarTicker
@@ -510,6 +625,98 @@ export default function DiscoverPage() {
 
       <section className="px-4 sm:px-6 lg:px-8 pb-16" data-testid="section-discover-grid">
         <div className="mx-auto max-w-7xl">
+
+          {/* ── Tag Clusters ── */}
+          {clusters.length > 0 && (
+            <div className="mb-6" data-testid="clusters-section">
+              <p className="font-mono text-[10px] text-muted-foreground uppercase tracking-widest mb-3 flex items-center gap-1.5">
+                <Sparkles className="h-3 w-3" />
+                Popular Theme Clusters
+              </p>
+              <div className="flex gap-3 overflow-x-auto pb-1">
+                {clusters.map((cluster, i) => (
+                  <Card
+                    key={i}
+                    className="flex-shrink-0 p-3 w-48"
+                    data-testid={`cluster-card-${i}`}
+                  >
+                    <p className="text-xs font-semibold mb-0.5 truncate">{cluster.name}</p>
+                    <p className="text-[10px] text-muted-foreground mb-2.5">{cluster.count} companies</p>
+                    <div className="flex flex-wrap gap-1">
+                      {cluster.tags.map((tag) => {
+                        const active = selectedTags.includes(tag);
+                        return (
+                          <button
+                            key={tag}
+                            onClick={() => toggleTag(tag)}
+                            className="text-[10px] px-2 py-0.5 rounded-full border font-medium transition-colors"
+                            style={
+                              active
+                                ? { background: "var(--lp-teal-deep, #0d4a47)", color: "white", borderColor: "var(--lp-teal-deep, #0d4a47)" }
+                                : { background: "transparent", color: "var(--lp-ink-light)", borderColor: "var(--border)" }
+                            }
+                            data-testid={`cluster-tag-${tag.replace(/[^a-z0-9]/gi, "-").toLowerCase()}`}
+                          >
+                            {tag}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </Card>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* ── Tag Frequency Chart ── */}
+          {companies.length > 0 && (
+            <div
+              className="rounded-xl border mb-6 overflow-hidden"
+              style={{ borderColor: "var(--border)" }}
+              data-testid="freq-chart-section"
+            >
+              <div className="flex items-center justify-between px-4 py-2.5 border-b bg-muted/30">
+                <p className="font-mono text-[10px] text-muted-foreground uppercase tracking-widest flex items-center gap-1.5">
+                  <BarChart3 className="h-3 w-3" />
+                  Tag Frequency
+                  {filtered.length < companies.length && (
+                    <span className="normal-case tracking-normal text-[9px] opacity-70 ml-0.5">(filtered)</span>
+                  )}
+                </p>
+                <button
+                  onClick={() => setShowFreqChart((v) => !v)}
+                  className="text-[10px] text-muted-foreground hover:text-foreground transition-colors"
+                  data-testid="freq-chart-toggle"
+                >
+                  {showFreqChart ? "Hide ↑" : "Show ↓"}
+                </button>
+              </div>
+              {showFreqChart && (
+                <div className="p-4 bg-white dark:bg-card space-y-2.5">
+                  {freqChartData.map(({ tag, count, pct }) => (
+                    <div key={tag} className="flex items-center gap-3">
+                      <span
+                        className="text-xs text-muted-foreground flex-shrink-0 truncate"
+                        style={{ width: "140px" }}
+                        title={tag}
+                      >
+                        {tag}
+                      </span>
+                      <div className="flex-1 bg-muted rounded-full h-1.5 overflow-hidden">
+                        <div
+                          className="h-full rounded-full transition-all duration-300"
+                          style={{ width: `${pct * 100}%`, background: "var(--lp-teal-deep, #0d4a47)" }}
+                        />
+                      </div>
+                      <span className="text-xs text-muted-foreground flex-shrink-0 text-right" style={{ width: "28px" }}>
+                        {count}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
 
           {/* ── Tag Screener Panel ── */}
           <div
