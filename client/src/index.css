@@ -419,6 +419,12 @@
   margin: 0 20px;
   transition: border-color 0.2s, box-shadow 0.2s;
 }
+@media (max-width: 767px) {
+  .nav-search-bar {
+    margin: 0 6px;
+    max-width: none;
+  }
+}
 .nav-search-bar:focus-within {
   border-color: var(--lp-teal-brand);
   box-shadow: 0 2px 12px rgba(42,140,133,0.12);

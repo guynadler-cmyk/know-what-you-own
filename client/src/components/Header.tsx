@@ -301,6 +301,7 @@ export function Header() {
               {companyInitial}
             </div>
             <span
+              className="hidden sm:inline"
               style={{
                 fontSize: 12,
                 fontWeight: 500,
