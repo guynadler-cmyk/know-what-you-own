@@ -1,6 +1,6 @@
 import { Button } from "@/components/ui/button";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
-import { TrendingUp, Shield, Target, Coins, ChevronDown } from "lucide-react";
+import { TrendingUp, Shield, Target, Coins, ChevronDown, Users } from "lucide-react";
 import { TagWithTooltip } from "@/components/TagWithTooltip";
 import { InvestmentTheme, Moat, MarketOpportunity, ValueCreation } from "@shared/schema";
 
@@ -10,6 +10,8 @@ export interface InvestmentThesisCardProps {
   moats: Moat[];
   marketOpportunity: MarketOpportunity[];
   valueCreation: ValueCreation[];
+  ticker?: string;
+  companyName?: string;
 }
 
 const getThemeBadgeClasses = (emphasis: "high" | "medium" | "low") => {
@@ -29,7 +31,20 @@ export function InvestmentThesisCard({
   moats,
   marketOpportunity,
   valueCreation,
+  ticker,
+  companyName,
 }: InvestmentThesisCardProps) {
+  const handleShowSimilar = () => {
+    const themeNames = investmentThemes.map((t) => t.name).join(",");
+    const moatNames = moats.map((m) => m.name).join(",");
+    const params = new URLSearchParams();
+    if (themeNames) params.set("themes", themeNames);
+    if (moatNames) params.set("moats", moatNames);
+    if (ticker) params.set("origin", ticker);
+    if (companyName) params.set("name", companyName);
+    window.open(`/discover?${params.toString()}`, "_blank");
+  };
+
   return (
     <div className="border-2 border-primary/20 rounded-2xl bg-primary/5">
       <div className="bg-primary px-8 py-4 border-b-2 border-primary">
@@ -170,6 +185,20 @@ export function InvestmentThesisCard({
               </div>
             </CollapsibleContent>
           </Collapsible>
+
+          {ticker && (
+            <div className="flex justify-center pt-4">
+              <Button
+                variant="outline"
+                className="gap-2"
+                onClick={handleShowSimilar}
+                data-testid="button-show-similar-companies"
+              >
+                <Users className="h-4 w-4" />
+                <span>Show Companies Similar to {ticker}</span>
+              </Button>
+            </div>
+          )}
         </div>
       </div>
     </div>

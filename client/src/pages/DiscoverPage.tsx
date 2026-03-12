@@ -1,11 +1,12 @@
-import { useState, useMemo } from "react";
-import { useLocation } from "wouter";
+import { useState, useMemo, useEffect } from "react";
+import { useLocation, Link } from "wouter";
 import { useQuery } from "@tanstack/react-query";
 import { Helmet } from "react-helmet-async";
 import { SiteLayout } from "@/components/SiteLayout";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import {
   Select,
   SelectContent,
@@ -27,7 +28,24 @@ import {
   Users,
   Sparkles,
   Tag,
+  ChevronDown,
+  ArrowLeft,
+  GripVertical,
+  Layers,
 } from "lucide-react";
+import {
+  DndContext,
+  closestCenter,
+  DragOverlay,
+  useDroppable,
+  useSensor,
+  useSensors,
+  PointerSensor,
+  type DragStartEvent,
+  type DragEndEvent,
+} from "@dnd-kit/core";
+import { useSortable, SortableContext, rectSortingStrategy } from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -381,6 +399,61 @@ function TagPill({
   );
 }
 
+// ─── DroppableZone ───────────────────────────────────────────────────────────
+
+function DroppableZone({ id, children, className, style: zoneStyle }: { id: string; children: React.ReactNode; className?: string; style?: React.CSSProperties }) {
+  const { setNodeRef, isOver } = useDroppable({ id });
+  return (
+    <div
+      ref={setNodeRef}
+      className={className}
+      style={{
+        ...zoneStyle,
+        outline: isOver ? "2px solid var(--lp-teal-brand, #1a6b67)" : undefined,
+        outlineOffset: isOver ? "-2px" : undefined,
+      }}
+    >
+      {children}
+    </div>
+  );
+}
+
+// ─── DraggableTag ────────────────────────────────────────────────────────────
+
+function DraggableTag({ id, tag, count, side }: { id: string; tag: string; count?: number; side: "available" | "selected" }) {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id });
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.4 : 1,
+  };
+  const isSelected = side === "selected";
+  return (
+    <div
+      ref={setNodeRef}
+      style={style}
+      {...attributes}
+      {...listeners}
+      className="inline-flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-full border font-medium cursor-grab active:cursor-grabbing select-none"
+      data-testid={`dnd-tag-${side}-${tag.replace(/\s+/g, "-").toLowerCase()}`}
+    >
+      <GripVertical className="h-3 w-3 opacity-40 flex-shrink-0" />
+      <span
+        style={
+          isSelected
+            ? { color: "var(--lp-teal-deep, #0d4a47)" }
+            : { color: "var(--lp-ink-light)" }
+        }
+      >
+        {tag}
+      </span>
+      {count !== undefined && (
+        <span className="text-[10px] opacity-60 font-normal">{count}</span>
+      )}
+    </div>
+  );
+}
+
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
 interface ByTagCompany {
@@ -401,6 +474,29 @@ export default function DiscoverPage() {
   const [filterMode, setFilterMode] = useState<FilterMode>("any");
   const [similarTicker, setSimilarTicker] = useState<string | null>(null);
   const [focusedTag, setFocusedTag] = useState<string | null>(null);
+  const [originTicker, setOriginTicker] = useState<string | null>(null);
+  const [originName, setOriginName] = useState<string | null>(null);
+  const [activeDragId, setActiveDragId] = useState<string | null>(null);
+
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 5 } })
+  );
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const themes = params.get("themes");
+    const moatsParam = params.get("moats");
+    const origin = params.get("origin");
+    const name = params.get("name");
+
+    const tags: string[] = [];
+    if (themes) tags.push(...themes.split(",").map((t) => t.trim()).filter(Boolean));
+    if (moatsParam) tags.push(...moatsParam.split(",").map((t) => t.trim()).filter(Boolean));
+    const uniqueTags = [...new Set(tags)];
+    if (uniqueTags.length > 0) setSelectedTags(uniqueTags);
+    if (origin) setOriginTicker(origin);
+    if (name) setOriginName(name);
+  }, []);
 
   // ── Queries ────────────────────────────────────────────────────────────────
 
@@ -436,6 +532,33 @@ export default function DiscoverPage() {
   const clearTags = () => {
     setSelectedTags([]);
     setFilterMode("any");
+    setOriginTicker(null);
+    setOriginName(null);
+  };
+
+  const handleDragStart = (event: DragStartEvent) => {
+    setActiveDragId(event.active.id as string);
+  };
+
+  const handleDragEnd = (event: DragEndEvent) => {
+    setActiveDragId(null);
+    const { active, over } = event;
+    if (!over) return;
+    const activeId = active.id as string;
+    const overId = over.id as string;
+
+    const tag = activeId.replace(/^(avail|sel):/, "");
+    const isFromAvailable = activeId.startsWith("avail:");
+    const isOverSelected = overId === "selected-drop-zone" || overId.startsWith("sel:");
+    const isOverAvailable = overId === "available-drop-zone" || overId.startsWith("avail:");
+
+    if (isFromAvailable && isOverSelected) {
+      if (!selectedTags.includes(tag)) {
+        setSelectedTags((prev) => [...prev, tag]);
+      }
+    } else if (!isFromAvailable && isOverAvailable) {
+      setSelectedTags((prev) => prev.filter((t) => t !== tag));
+    }
   };
 
   // ── Filtered + sorted companies ───────────────────────────────────────────
@@ -690,6 +813,40 @@ export default function DiscoverPage() {
           </div>
         </div>
       </section>
+
+      {originTicker && (
+        <section className="px-4 sm:px-6 lg:px-8" data-testid="section-origin-banner">
+          <div className="mx-auto max-w-7xl">
+            <div
+              className="flex flex-wrap items-center justify-between gap-3 px-4 py-3 rounded-lg mb-6"
+              style={{ background: "var(--lp-teal-pale, #e8f5f4)", color: "var(--lp-teal-deep, #0d4a47)" }}
+              data-testid="origin-banner"
+            >
+              <span className="text-sm font-medium" data-testid="text-origin-banner">
+                Showing companies similar to <strong>{originName || originTicker}</strong>
+              </span>
+              <div className="flex items-center gap-3">
+                <Link href={`/stocks/${originTicker}`}>
+                  <span
+                    className="inline-flex items-center gap-1.5 text-xs font-medium underline underline-offset-2 cursor-pointer"
+                    data-testid="link-back-to-origin"
+                  >
+                    <ArrowLeft className="h-3 w-3" />
+                    Back to {originTicker} analysis
+                  </span>
+                </Link>
+                <button
+                  onClick={() => { setOriginTicker(null); setOriginName(null); }}
+                  className="p-1 rounded hover-elevate"
+                  data-testid="button-dismiss-origin"
+                >
+                  <X className="h-3.5 w-3.5" />
+                </button>
+              </div>
+            </div>
+          </div>
+        </section>
+      )}
 
       <section className="px-4 sm:px-6 lg:px-8 pb-16" data-testid="section-discover-grid">
         <div className="mx-auto max-w-7xl">
@@ -1038,6 +1195,124 @@ export default function DiscoverPage() {
             </Select>
           </div>
 
+          {/* ── Build Your Discovery DnD Panel ── */}
+          {companies.length > 0 && (
+            <Collapsible>
+              <div
+                className="rounded-xl border mb-6 overflow-hidden"
+                style={{ borderColor: "var(--border)" }}
+                data-testid="build-discovery-panel"
+              >
+                <CollapsibleTrigger asChild>
+                  <button
+                    className="flex items-center gap-2.5 px-4 py-3 w-full text-left"
+                    style={{ background: "var(--muted)" }}
+                    data-testid="button-toggle-build-discovery"
+                  >
+                    <Layers className="h-3.5 w-3.5 text-muted-foreground flex-shrink-0" />
+                    <span className="font-mono text-[11px] tracking-[0.04em] text-muted-foreground">
+                      Build Your Discovery
+                    </span>
+                    <ChevronDown className="h-3.5 w-3.5 text-muted-foreground ml-auto transition-transform" />
+                  </button>
+                </CollapsibleTrigger>
+                <CollapsibleContent>
+                  <DndContext
+                    sensors={sensors}
+                    collisionDetection={closestCenter}
+                    onDragStart={handleDragStart}
+                    onDragEnd={handleDragEnd}
+                  >
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 p-4 bg-white dark:bg-card">
+                      <div data-testid="dnd-available-tags">
+                        <p className="font-mono text-[10px] text-muted-foreground uppercase tracking-widest mb-2 flex items-center gap-1.5">
+                          Available Tags
+                        </p>
+                        <SortableContext
+                          items={[
+                            ...moatTagFreqs.filter((f) => !selectedTags.includes(f.tag)).map((f) => `avail:${f.tag}`),
+                            ...themeTagFreqs.filter((f) => !selectedTags.includes(f.tag)).map((f) => `avail:${f.tag}`),
+                          ]}
+                          strategy={rectSortingStrategy}
+                        >
+                          <DroppableZone
+                            id="available-drop-zone"
+                            className="min-h-[60px] rounded-lg border border-dashed p-2 flex flex-wrap gap-2"
+                            style={{ borderColor: "var(--border)" }}
+                          >
+                            {moatTagFreqs
+                              .filter((f) => !selectedTags.includes(f.tag))
+                              .map((f) => (
+                                <DraggableTag key={`avail:${f.tag}`} id={`avail:${f.tag}`} tag={f.tag} count={f.count} side="available" />
+                              ))}
+                            {themeTagFreqs
+                              .filter((f) => !selectedTags.includes(f.tag))
+                              .map((f) => (
+                                <DraggableTag key={`avail:${f.tag}`} id={`avail:${f.tag}`} tag={f.tag} count={f.count} side="available" />
+                              ))}
+                            {moatTagFreqs.filter((f) => !selectedTags.includes(f.tag)).length === 0 &&
+                             themeTagFreqs.filter((f) => !selectedTags.includes(f.tag)).length === 0 && (
+                              <span className="text-xs text-muted-foreground py-2 px-1">All tags selected</span>
+                            )}
+                          </DroppableZone>
+                        </SortableContext>
+                      </div>
+                      <div data-testid="dnd-selected-tags">
+                        <p className="font-mono text-[10px] text-muted-foreground uppercase tracking-widest mb-2 flex items-center gap-1.5">
+                          Selected Tags
+                          {selectedTags.length > 0 && (
+                            <button
+                              onClick={clearTags}
+                              className="text-[10px] text-muted-foreground underline underline-offset-2 ml-auto normal-case tracking-normal font-normal"
+                              data-testid="button-dnd-clear-all"
+                            >
+                              Clear All
+                            </button>
+                          )}
+                        </p>
+                        <SortableContext
+                          items={selectedTags.map((t) => `sel:${t}`)}
+                          strategy={rectSortingStrategy}
+                        >
+                          <DroppableZone
+                            id="selected-drop-zone"
+                            className="min-h-[60px] rounded-lg border border-dashed p-2 flex flex-wrap gap-2"
+                            style={{ borderColor: selectedTags.length > 0 ? "var(--lp-teal-deep, #0d4a47)" : "var(--border)" }}
+                          >
+                            {selectedTags.map((tag) => (
+                              <div key={`sel:${tag}`} className="inline-flex items-center gap-1">
+                                <DraggableTag id={`sel:${tag}`} tag={tag} side="selected" />
+                                <button
+                                  onClick={() => toggleTag(tag)}
+                                  className="p-0.5 rounded hover-elevate"
+                                  style={{ color: "var(--lp-teal-deep, #0d4a47)" }}
+                                  data-testid={`button-dnd-remove-${tag.replace(/\s+/g, "-").toLowerCase()}`}
+                                >
+                                  <X className="h-3 w-3" />
+                                </button>
+                              </div>
+                            ))}
+                            {selectedTags.length === 0 && (
+                              <span className="text-xs text-muted-foreground py-2 px-1">Drag tags here to filter</span>
+                            )}
+                          </DroppableZone>
+                        </SortableContext>
+                      </div>
+                    </div>
+                    <DragOverlay>
+                      {activeDragId ? (
+                        <div className="inline-flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-full border font-medium bg-background shadow-md">
+                          <GripVertical className="h-3 w-3 opacity-40 flex-shrink-0" />
+                          <span>{activeDragId.replace(/^(avail|sel):/, "")}</span>
+                        </div>
+                      ) : null}
+                    </DragOverlay>
+                  </DndContext>
+                </CollapsibleContent>
+              </div>
+            </Collapsible>
+          )}
+
           {/* ── Similar Companies Panel ── */}
           {similarTicker && (
             <div
@@ -1162,11 +1437,17 @@ export default function DiscoverPage() {
           ) : (
             <>
               <p className="text-sm text-muted-foreground mb-4" data-testid="text-results-count">
-                {filtered.length} {filtered.length === 1 ? "company" : "companies"}
-                {isScreenerActive && (
-                  <span className="ml-1 font-medium" style={{ color: "var(--lp-teal-deep, #0d4a47)" }}>
-                    matching {filterMode === "all" ? "ALL" : "ANY"} tag{selectedTags.length > 1 ? "s" : ""}
-                  </span>
+                {isScreenerActive ? (
+                  <>
+                    <span className="font-medium" style={{ color: "var(--lp-teal-deep, #0d4a47)" }}>
+                      {filtered.length} {filtered.length === 1 ? "company matches" : "companies match"} your strategy
+                    </span>
+                    <span className="ml-1">
+                      ({filterMode === "all" ? "ALL" : "ANY"} of {selectedTags.length} tag{selectedTags.length > 1 ? "s" : ""})
+                    </span>
+                  </>
+                ) : (
+                  <>{filtered.length} {filtered.length === 1 ? "company" : "companies"}</>
                 )}
               </p>
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">

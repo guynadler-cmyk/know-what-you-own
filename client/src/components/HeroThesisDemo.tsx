@@ -118,6 +118,8 @@ export function HeroThesisDemo() {
           moats={data.moats || []}
           marketOpportunity={data.marketOpportunity || []}
           valueCreation={data.valueCreation || []}
+          ticker={selected}
+          companyName={data.companyName || selected}
         />
       )}
 

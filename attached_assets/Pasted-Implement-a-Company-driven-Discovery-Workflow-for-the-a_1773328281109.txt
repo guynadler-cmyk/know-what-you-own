@@ -1,0 +1,173 @@
+Implement a "Company-driven Discovery Workflow" for the analysis page.
+
+Goal
+
+Instead of users manually selecting tags first, the discovery flow should start from a company they like.
+
+Example flow:
+User analyzes NVIDIA → clicks "Show Similar Companies" → opens /discover page with NVIDIA tags preloaded.
+
+Feature 1 — "Show Similar Companies" Button
+
+On the Investment Thesis panel add a button:
+
+"Show Similar Companies"
+
+When clicked:
+
+1. Collect all tags from the current analysis:
+   - Strategic Themes
+   - Competitive Moats
+   - Market Opportunity
+   - Value Creation
+
+Example tags from NVIDIA:
+AI/ML
+Cloud Infrastructure
+Network Effects
+Brand Power
+Gaming
+Scale Economies
+
+2. Open a new tab:
+
+/discover?tags=AI/ML,Cloud Infrastructure,Network Effects
+
+Example code:
+
+const tags = [
+  ...analysis.themes,
+  ...analysis.moats,
+  ...analysis.marketOpportunities
+];
+
+window.open(`/discover?tags=${tags.join(",")}`, "_blank");
+
+Feature 2 — Drag-and-Drop Discovery Panel
+
+Add a new section under Investment Thesis called:
+
+"Discovery Builder"
+
+Layout:
+
+-------------------------------------------------
+Available Tags        | Discovery Basket
+-------------------------------------------------
+AI/ML                 |  (drop tags here)
+Cloud Infrastructure  |
+Gaming                |
+Network Effects       |
+Brand Power           |
+-------------------------------------------------
+                [ Show Results ]
+-------------------------------------------------
+
+Implementation
+
+Use drag and drop.
+
+Available tags should be draggable chips.
+
+Example:
+
+<div draggable="true" class="tag-chip">AI/ML</div>
+
+Discovery Basket should accept drops.
+
+Example:
+
+<div id="discovery-basket"></div>
+
+On drop:
+
+Add the tag into the basket UI.
+
+Example chip:
+
+<div class="basket-chip">AI/ML</div>
+
+Feature 3 — Show Results Button
+
+When clicking "Show Results":
+
+Collect all basket tags.
+
+Example:
+
+const tags = basketTags.join(",");
+
+Redirect to:
+
+/discover?tags=${tags}
+
+Feature 4 — Discover Page Behavior
+
+On /discover page:
+
+If tags query param exists:
+
+1. Preselect those tags in the screener
+2. Automatically run filtering
+3. Show matching companies
+
+Example:
+
+/discover?tags=AI/ML,Cloud Infrastructure
+
+Feature 5 — Tag UI Improvements
+
+Tag chips should look like:
+
+.tag-chip {
+  background: #0f4f4f;
+  color: white;
+  padding: 6px 12px;
+  border-radius: 16px;
+  cursor: grab;
+}
+
+.basket-chip {
+  background: #e6f3f3;
+  color: #0f4f4f;
+  padding: 6px 12px;
+  border-radius: 16px;
+}
+
+Feature 6 — Responsive Layout
+
+Desktop:
+
+Left = Available Tags  
+Right = Discovery Basket
+
+Mobile:
+
+Stack vertically.
+
+Feature 7 — Keep Existing Analysis System
+
+Do not change:
+
+• analysis pipeline
+• result JSON structure
+• discover filtering logic
+
+Only add:
+
+• Similar Companies button
+• Drag and Drop Discovery Builder
+
+Expected User Flow
+
+User opens NVIDIA analysis  
+↓  
+Clicks "Show Similar Companies"  
+↓  
+Discover page opens with NVIDIA tags  
+↓  
+User can drag/remove tags  
+↓  
+Click "Show Results"  
+↓  
+See companies with similar business models

@@ -1,11 +1,15 @@
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useMemo, useCallback } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-import { Globe, ChevronDown, ChevronUp, AlertTriangle, Info, ArrowRight, ExternalLink } from "lucide-react";
+import { Globe, ChevronDown, ChevronUp, AlertTriangle, Info, ArrowRight, ExternalLink, Users, GripVertical, X, Layers } from "lucide-react";
 import { LucideIcon } from "lucide-react";
 import { Link } from "wouter";
+import { DndContext, closestCenter, DragOverlay, useSensor, useSensors, PointerSensor, useDroppable } from "@dnd-kit/core";
+import type { DragStartEvent, DragEndEvent } from "@dnd-kit/core";
+import { SortableContext, rectSortingStrategy, useSortable } from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
 
 import { useQuery } from "@tanstack/react-query";
 import { InvestmentTheme, Moat, MarketOpportunity, ValueCreation, TemporalAnalysis as TemporalAnalysisType, FinePrintAnalysis as FinePrintAnalysisType } from "@shared/schema";
@@ -167,6 +171,220 @@ function SectionCard({ header, badge, children, className = '', collapsed, onTog
         <CardHeader label={header} badge={badge} />
       )}
       {!collapsed && <div className="bg-white p-4">{children}</div>}
+    </div>
+  );
+}
+
+/* ─── Discovery Builder DnD sub-components ────────────────── */
+
+function BuilderDraggableTag({ id, tag, side }: { id: string; tag: string; side: "available" | "selected" }) {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id });
+  const style: React.CSSProperties = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.4 : 1,
+    cursor: "grab",
+    ...(side === "selected"
+      ? { background: "var(--lp-teal-pale, #e8f5f4)", color: "var(--lp-teal-deep, #0d4a47)", borderColor: "rgba(13,74,71,0.15)" }
+      : { background: "transparent", color: "var(--lp-ink-light, #666)", borderColor: "var(--border)" }),
+  };
+  return (
+    <div
+      ref={setNodeRef}
+      {...attributes}
+      {...listeners}
+      className="inline-flex items-center gap-1 text-[10px] px-2 py-0.5 rounded-full border font-medium select-none"
+      style={style}
+      data-testid={`builder-drag-${side}-${tag.replace(/\s+/g, "-").toLowerCase()}`}
+    >
+      <GripVertical className="h-2.5 w-2.5 opacity-40 flex-shrink-0" />
+      <span>{tag}</span>
+    </div>
+  );
+}
+
+function BuilderDropZone({ id, children, className, style }: { id: string; children: React.ReactNode; className?: string; style?: React.CSSProperties }) {
+  const { setNodeRef, isOver } = useDroppable({ id });
+  return (
+    <div
+      ref={setNodeRef}
+      className={className}
+      style={{ ...style, outline: isOver ? "2px solid var(--lp-teal-brand, #1a6b67)" : undefined, outlineOffset: "-2px" }}
+    >
+      {children}
+    </div>
+  );
+}
+
+interface DiscoveryBuilderProps {
+  investmentThemes?: InvestmentTheme[];
+  moats?: Moat[];
+  ticker: string;
+  companyName: string;
+}
+
+function DiscoveryBuilder({ investmentThemes, moats, ticker, companyName }: DiscoveryBuilderProps) {
+  const allTags = useMemo(() => {
+    const tags: string[] = [];
+    investmentThemes?.forEach((t) => tags.push(t.name));
+    moats?.forEach((m) => tags.push(m.name));
+    return [...new Set(tags)];
+  }, [investmentThemes, moats]);
+
+  const [basketTags, setBasketTags] = useState<string[]>([]);
+  const [activeDragId, setActiveDragId] = useState<string | null>(null);
+
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 5 } })
+  );
+
+  const availableTags = useMemo(
+    () => allTags.filter((t) => !basketTags.includes(t)),
+    [allTags, basketTags]
+  );
+
+  const handleDragStart = useCallback((event: DragStartEvent) => {
+    setActiveDragId(event.active.id as string);
+  }, []);
+
+  const handleDragEnd = useCallback((event: DragEndEvent) => {
+    setActiveDragId(null);
+    const { active, over } = event;
+    if (!over) return;
+    const activeId = active.id as string;
+    const overId = over.id as string;
+    const tag = activeId.replace(/^(avail|sel):/, "");
+    const isFromAvailable = activeId.startsWith("avail:");
+    const isOverBasket = overId === "builder-basket-zone" || overId.startsWith("sel:");
+    const isOverAvailable = overId === "builder-available-zone" || overId.startsWith("avail:");
+
+    if (isFromAvailable && isOverBasket) {
+      if (!basketTags.includes(tag)) setBasketTags((prev) => [...prev, tag]);
+    } else if (!isFromAvailable && isOverAvailable) {
+      setBasketTags((prev) => prev.filter((t) => t !== tag));
+    }
+  }, [basketTags]);
+
+  const handleShowResults = () => {
+    const tags = basketTags.length > 0 ? basketTags : allTags;
+    const themeNames = investmentThemes?.map((t) => t.name) || [];
+    const moatNames = moats?.map((m) => m.name) || [];
+    const selectedThemes = tags.filter((t) => themeNames.includes(t));
+    const selectedMoats = tags.filter((t) => moatNames.includes(t));
+    const params = new URLSearchParams();
+    if (selectedThemes.length > 0) params.set("themes", selectedThemes.join(","));
+    if (selectedMoats.length > 0) params.set("moats", selectedMoats.join(","));
+    params.set("origin", ticker);
+    params.set("name", companyName);
+    window.open(`/discover?${params.toString()}`, "_blank");
+  };
+
+  if (allTags.length === 0) return null;
+
+  return (
+    <div className="pt-3 mt-3 border-t" style={{ borderColor: border }}>
+      <Collapsible>
+        <CollapsibleTrigger asChild>
+          <button
+            className="flex items-center gap-1.5 w-full text-left text-[11px] font-medium mb-2"
+            style={{ color: 'var(--lp-teal-brand)' }}
+            data-testid="button-toggle-discovery-builder"
+          >
+            <Layers className="h-3 w-3" />
+            <span>Discovery Builder</span>
+            <ChevronDown className="h-3 w-3 ml-auto transition-transform" />
+          </button>
+        </CollapsibleTrigger>
+        <CollapsibleContent>
+          <DndContext
+            sensors={sensors}
+            collisionDetection={closestCenter}
+            onDragStart={handleDragStart}
+            onDragEnd={handleDragEnd}
+          >
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <p className="text-[9px] font-medium uppercase tracking-widest mb-1.5" style={{ color: 'var(--lp-ink-ghost)' }}>
+                  Available Tags
+                </p>
+                <SortableContext items={availableTags.map((t) => `avail:${t}`)} strategy={rectSortingStrategy}>
+                  <BuilderDropZone
+                    id="builder-available-zone"
+                    className="min-h-[48px] rounded-md border border-dashed p-1.5 flex flex-wrap gap-1"
+                    style={{ borderColor: border }}
+                  >
+                    {availableTags.map((tag) => (
+                      <BuilderDraggableTag key={`avail:${tag}`} id={`avail:${tag}`} tag={tag} side="available" />
+                    ))}
+                    {availableTags.length === 0 && (
+                      <span className="text-[9px] py-1 px-0.5" style={{ color: 'var(--lp-ink-ghost)' }}>All tags selected</span>
+                    )}
+                  </BuilderDropZone>
+                </SortableContext>
+              </div>
+              <div>
+                <p className="text-[9px] font-medium uppercase tracking-widest mb-1.5 flex items-center" style={{ color: 'var(--lp-ink-ghost)' }}>
+                  Discovery Basket
+                  {basketTags.length > 0 && (
+                    <button
+                      onClick={() => setBasketTags([])}
+                      className="text-[9px] underline underline-offset-2 ml-auto normal-case tracking-normal font-normal"
+                      style={{ color: 'var(--lp-ink-ghost)' }}
+                      data-testid="button-builder-clear-basket"
+                    >
+                      Clear
+                    </button>
+                  )}
+                </p>
+                <SortableContext items={basketTags.map((t) => `sel:${t}`)} strategy={rectSortingStrategy}>
+                  <BuilderDropZone
+                    id="builder-basket-zone"
+                    className="min-h-[48px] rounded-md border border-dashed p-1.5 flex flex-wrap gap-1"
+                    style={{ borderColor: basketTags.length > 0 ? 'var(--lp-teal-deep, #0d4a47)' : border }}
+                  >
+                    {basketTags.map((tag) => (
+                      <div key={`sel:${tag}`} className="inline-flex items-center gap-0.5">
+                        <BuilderDraggableTag id={`sel:${tag}`} tag={tag} side="selected" />
+                        <button
+                          onClick={() => setBasketTags((prev) => prev.filter((t) => t !== tag))}
+                          className="p-0.5 rounded"
+                          style={{ color: 'var(--lp-teal-deep, #0d4a47)' }}
+                          data-testid={`button-builder-remove-${tag.replace(/\s+/g, "-").toLowerCase()}`}
+                        >
+                          <X className="h-2.5 w-2.5" />
+                        </button>
+                      </div>
+                    ))}
+                    {basketTags.length === 0 && (
+                      <span className="text-[9px] py-1 px-0.5" style={{ color: 'var(--lp-ink-ghost)' }}>Drop tags here</span>
+                    )}
+                  </BuilderDropZone>
+                </SortableContext>
+              </div>
+            </div>
+            <DragOverlay>
+              {activeDragId ? (
+                <div className="inline-flex items-center gap-1 text-[10px] px-2 py-0.5 rounded-full border font-medium bg-white shadow-md">
+                  <GripVertical className="h-2.5 w-2.5 opacity-40 flex-shrink-0" />
+                  <span>{activeDragId.replace(/^(avail|sel):/, "")}</span>
+                </div>
+              ) : null}
+            </DragOverlay>
+          </DndContext>
+          <div className="flex justify-center mt-3">
+            <Button
+              variant="outline"
+              size="sm"
+              className="gap-1.5"
+              onClick={handleShowResults}
+              data-testid="button-builder-show-results"
+            >
+              <ArrowRight className="h-3.5 w-3.5" />
+              Show Results
+            </Button>
+          </div>
+        </CollapsibleContent>
+      </Collapsible>
     </div>
   );
 }
@@ -518,6 +736,35 @@ export function SummaryCard({
               </div>
             </CollapsibleContent>
           </Collapsible>
+
+          <div className="pt-3 mt-3 border-t flex justify-center" style={{ borderColor: border }}>
+            <Button
+              variant="outline"
+              size="sm"
+              className="gap-1.5"
+              onClick={() => {
+                const params = new URLSearchParams();
+                const themeNames = investmentThemes?.map((t) => t.name).join(",");
+                const moatNames = moats?.map((m) => m.name).join(",");
+                if (themeNames) params.set("themes", themeNames);
+                if (moatNames) params.set("moats", moatNames);
+                params.set("origin", ticker);
+                params.set("name", companyName);
+                window.open(`/discover?${params.toString()}`, "_blank");
+              }}
+              data-testid="button-show-similar-companies"
+            >
+              <Users className="h-3.5 w-3.5" />
+              Show Companies Similar to {ticker}
+            </Button>
+          </div>
+
+          <DiscoveryBuilder
+            investmentThemes={investmentThemes}
+            moats={moats}
+            ticker={ticker}
+            companyName={companyName}
+          />
         </SectionCard>
 
         {/* Business Overview */}
