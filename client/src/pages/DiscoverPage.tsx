@@ -545,32 +545,6 @@ export default function DiscoverPage() {
     return result;
   }, [companies]);
 
-  // ── Full Tag Cloud (collapsed by default) ────────────────────────────────
-
-  const [showAllTags, setShowAllTags] = useState(false);
-  const INITIAL_TAG_LIMIT = 20;
-
-  const allTagFreqs = useMemo(() => {
-    const freq = new Map<string, number>();
-    const displayForm = new Map<string, string>();
-    for (const c of companies) {
-      const seen = new Set<string>();
-      for (const tag of [...c.moatTags, ...c.themeTags]) {
-        const trimmed = tag.trim();
-        if (!trimmed) continue;
-        const key = trimmed.toLowerCase();
-        if (seen.has(key)) continue;
-        seen.add(key);
-        if (!displayForm.has(key)) displayForm.set(key, trimmed);
-        freq.set(key, (freq.get(key) || 0) + 1);
-      }
-    }
-    return Array.from(freq.entries())
-      .filter(([, count]) => count >= 2)
-      .sort((a, b) => b[1] - a[1])
-      .map(([key, count]) => ({ tag: displayForm.get(key)!, count }));
-  }, [companies]);
-
   // ── Tag Frequency Chart ───────────────────────────────────────────────────
 
   const freqChartData = useMemo(() => {
@@ -840,44 +814,6 @@ export default function DiscoverPage() {
               )}
             </div>
           </div>
-
-          {/* ── Section divider ── */}
-          <div className="border-t my-8" style={{ borderColor: "var(--border)" }} />
-
-          {/* ── Full Tag Cloud ── */}
-          {allTagFreqs.length > 0 && (
-            <div className="mb-8" data-testid="full-tag-cloud-section">
-              <p className="font-mono text-[10px] text-muted-foreground uppercase tracking-widest mb-4 flex items-center gap-1.5">
-                <Sparkles className="h-3 w-3" />
-                Full Tag Cloud
-              </p>
-              <div className="flex flex-wrap gap-2" data-testid="full-tag-cloud">
-                {(showAllTags ? allTagFreqs : allTagFreqs.slice(0, INITIAL_TAG_LIMIT)).map(({ tag, count }) => (
-                  <TagPill
-                    key={tag}
-                    tag={tag}
-                    count={count}
-                    active={selectedTags.includes(tag)}
-                    onClick={() => toggleTag(tag)}
-                  />
-                ))}
-              </div>
-              {allTagFreqs.length > INITIAL_TAG_LIMIT && (
-                <button
-                  className="mt-4 text-xs text-muted-foreground underline underline-offset-2 hover:text-foreground transition-colors"
-                  onClick={() => setShowAllTags((v) => !v)}
-                  data-testid="button-show-more-tags"
-                >
-                  {showAllTags
-                    ? "Show less ↑"
-                    : `Show ${allTagFreqs.length - INITIAL_TAG_LIMIT} more tags ↓`}
-                </button>
-              )}
-            </div>
-          )}
-
-          {/* ── Section divider ── */}
-          <div className="border-t my-8" style={{ borderColor: "var(--border)" }} />
 
           {/* ── Active Filters ── */}
           {isScreenerActive && (
