@@ -49,6 +49,15 @@ export async function insertBusinessAnalysis(params: {
   result: CompanySummary;
 }) {
   if (!params.cacheKey) throw new Error("cacheKey is required for insertBusinessAnalysis");
+
+  const r = params.result as any;
+  const themeTags: string[] = (r.investmentThemes || [])
+    .map((t: any) => t?.name)
+    .filter(Boolean);
+  const moatTags: string[] = (r.moats || [])
+    .map((m: any) => m?.name)
+    .filter(Boolean);
+
   await db
     .insert(aiBusinessAnalysis)
     .values({
@@ -59,6 +68,8 @@ export async function insertBusinessAnalysis(params: {
       fiscalYear: params.fiscalYear,
       filingDate: params.filingDate,
       result: params.result,
+      themeTags,
+      moatTags,
     })
     .onConflictDoNothing();
 }

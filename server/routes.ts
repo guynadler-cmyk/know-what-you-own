@@ -1358,6 +1358,78 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // --------------------------------------------------------------------------
+  // DISCOVER BY TAG
+  // --------------------------------------------------------------------------
+  app.get("/api/discover/by-tag", async (req, res) => {
+    try {
+      const tag = (req.query.tag as string || "").trim();
+      if (!tag) return res.status(400).json({ error: "tag query param is required" });
+
+      const { db: extDb } = await import("./db");
+      const { aiBusinessAnalysis } = await import("../shared/schema");
+      const { sql, desc } = await import("drizzle-orm");
+
+      const rows = await extDb
+        .select({
+          ticker: aiBusinessAnalysis.ticker,
+          companyName: aiBusinessAnalysis.companyName,
+          fiscalYear: aiBusinessAnalysis.fiscalYear,
+          rCompanyName: sql<string>`result->>'companyName'`,
+          tagline: sql<string>`result->>'tagline'`,
+          unavailable: sql<string>`result->>'businessAnalysisUnavailable'`,
+          moats: sql<any[]>`result->'moats'`,
+          investmentThemes: sql<any[]>`result->'investmentThemes'`,
+          themeTags: aiBusinessAnalysis.themeTags,
+          moatTags: aiBusinessAnalysis.moatTags,
+        })
+        .from(aiBusinessAnalysis)
+        .where(
+          sql`(${tag} = ANY(COALESCE(moat_tags, ARRAY[]::text[])) OR ${tag} = ANY(COALESCE(theme_tags, ARRAY[]::text[])))`
+        )
+        .orderBy(desc(aiBusinessAnalysis.createdAt));
+
+      const seen = new Set<string>();
+      const companies: Array<{
+        ticker: string;
+        name: string;
+        tagline: string;
+        fiscalYear: string;
+        moatTags: string[];
+        themeTags: string[];
+        matchType: "moat" | "theme" | "both";
+      }> = [];
+
+      for (const row of rows) {
+        const t = row.ticker.toUpperCase();
+        if (seen.has(t)) continue;
+        seen.add(t);
+        if (row.unavailable === "true") continue;
+
+        const tagLower = tag.toLowerCase();
+        const rowMoatTags = (row.moatTags || []) as string[];
+        const rowThemeTags = (row.themeTags || []) as string[];
+        const inMoats = rowMoatTags.some((m) => m.toLowerCase() === tagLower);
+        const inThemes = rowThemeTags.some((th) => th.toLowerCase() === tagLower);
+
+        companies.push({
+          ticker: t,
+          name: row.rCompanyName || row.companyName,
+          tagline: row.tagline || "",
+          fiscalYear: row.fiscalYear,
+          moatTags: rowMoatTags,
+          themeTags: rowThemeTags,
+          matchType: inMoats && inThemes ? "both" : inMoats ? "moat" : "theme",
+        });
+      }
+
+      res.json({ tag, companies });
+    } catch (err: any) {
+      console.error("[BY-TAG]", err.message);
+      res.status(500).json({ error: "Failed to fetch companies by tag" });
+    }
+  });
+
+  // --------------------------------------------------------------------------
   // COMPANY SEARCH
   // --------------------------------------------------------------------------
   app.get("/api/search", async (req: any, res) => {

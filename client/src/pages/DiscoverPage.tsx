@@ -26,6 +26,7 @@ import {
   SlidersHorizontal,
   Users,
   Sparkles,
+  Tag,
 } from "lucide-react";
 
 // ─── Types ───────────────────────────────────────────────────────────────────
@@ -150,6 +151,59 @@ function SimilarMiniCard({
               style={{ background: "var(--lp-teal-pale, #e8f5f4)", color: "var(--lp-teal-deep, #0d4a47)" }}
             >
               {tag}
+            </span>
+          ))}
+        </div>
+      )}
+    </Card>
+  );
+}
+
+// ─── ByTagMiniCard ────────────────────────────────────────────────────────────
+
+function ByTagMiniCard({
+  company,
+  focusedTag,
+}: {
+  company: { ticker: string; name: string; tagline: string; fiscalYear: string; moatTags: string[]; themeTags: string[]; matchType: "moat" | "theme" | "both" };
+  focusedTag: string;
+}) {
+  const [, navigate] = useLocation();
+  const matchTypeLabel =
+    company.matchType === "both" ? "Moat + Theme" : company.matchType === "moat" ? "Moat" : "Theme";
+  const otherTags = [
+    ...company.moatTags.filter((t) => t !== focusedTag).slice(0, 1),
+    ...company.themeTags.filter((t) => t !== focusedTag).slice(0, 1),
+  ].slice(0, 2);
+
+  return (
+    <Card
+      className="p-3 hover-elevate cursor-pointer flex-shrink-0 w-48 flex flex-col gap-1.5"
+      onClick={() => navigate(`/stocks/${company.ticker}`)}
+      data-testid={`card-bytag-${company.ticker}`}
+    >
+      <div className="flex items-start justify-between gap-1">
+        <p className="text-xs font-semibold leading-tight line-clamp-2 flex-1">{company.name}</p>
+        <span
+          className="text-[9px] font-mono px-1.5 py-0.5 rounded flex-shrink-0 whitespace-nowrap"
+          style={{ background: "var(--lp-teal-pale, #e8f5f4)", color: "var(--lp-teal-deep, #0d4a47)" }}
+        >
+          {matchTypeLabel}
+        </span>
+      </div>
+      <Badge variant="secondary" className="text-[10px] self-start">{company.ticker}</Badge>
+      {company.tagline && (
+        <p className="text-[10px] text-muted-foreground leading-snug line-clamp-2">{company.tagline}</p>
+      )}
+      {otherTags.length > 0 && (
+        <div className="flex flex-wrap gap-1 mt-auto pt-1">
+          {otherTags.map((t) => (
+            <span
+              key={t}
+              className="text-[9px] px-1.5 py-0.5 rounded-sm font-medium leading-tight"
+              style={{ background: "var(--muted)", color: "var(--muted-foreground)" }}
+            >
+              {t}
             </span>
           ))}
         </div>
@@ -329,6 +383,16 @@ function TagPill({
 
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
+interface ByTagCompany {
+  ticker: string;
+  name: string;
+  tagline: string;
+  fiscalYear: string;
+  moatTags: string[];
+  themeTags: string[];
+  matchType: "moat" | "theme" | "both";
+}
+
 export default function DiscoverPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [gradeFilter, setGradeFilter] = useState("all");
@@ -336,6 +400,7 @@ export default function DiscoverPage() {
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const [filterMode, setFilterMode] = useState<FilterMode>("any");
   const [similarTicker, setSimilarTicker] = useState<string | null>(null);
+  const [focusedTag, setFocusedTag] = useState<string | null>(null);
 
   // ── Queries ────────────────────────────────────────────────────────────────
 
@@ -346,6 +411,11 @@ export default function DiscoverPage() {
   const { data: similarData, isLoading: similarLoading } = useQuery<SimilarResponse>({
     queryKey: [`/api/discover/similar?ticker=${similarTicker}`],
     enabled: !!similarTicker,
+  });
+
+  const { data: byTagData, isLoading: byTagLoading } = useQuery<{ tag: string; companies: ByTagCompany[] }>({
+    queryKey: [`/api/discover/by-tag?tag=${encodeURIComponent(focusedTag || "")}`],
+    enabled: !!focusedTag,
   });
 
   const companies = data?.companies || [];
@@ -679,26 +749,46 @@ export default function DiscoverPage() {
                 )}
               </p>
               <div className="space-y-2.5">
-                {freqChartData.map(({ tag, count, pct }) => (
-                  <div key={tag} className="flex items-center gap-3">
-                    <span
-                      className="text-xs text-muted-foreground flex-shrink-0 truncate"
-                      style={{ width: "140px" }}
-                      title={tag}
+                {freqChartData.map(({ tag, count, pct }) => {
+                  const isActive = focusedTag === tag;
+                  return (
+                    <button
+                      key={tag}
+                      className="flex items-center gap-3 w-full text-left group hover-elevate rounded"
+                      style={{ padding: "2px 4px", margin: "-2px -4px" }}
+                      onClick={() => setFocusedTag(isActive ? null : tag)}
+                      data-testid={`button-freq-tag-${tag.replace(/\s+/g, "-").toLowerCase()}`}
+                      title={`See all companies with "${tag}"`}
                     >
-                      {tag}
-                    </span>
-                    <div className="flex-1 bg-muted rounded-full h-1.5 overflow-hidden">
-                      <div
-                        className="h-full rounded-full transition-all duration-300"
-                        style={{ width: `${pct * 100}%`, background: "var(--lp-teal-deep, #0d4a47)" }}
-                      />
-                    </div>
-                    <span className="text-xs text-muted-foreground flex-shrink-0 text-right" style={{ width: "28px" }}>
-                      {count}
-                    </span>
-                  </div>
-                ))}
+                      <span
+                        className="text-xs flex-shrink-0 truncate transition-colors"
+                        style={{
+                          width: "140px",
+                          color: isActive ? "var(--lp-teal-deep, #0d4a47)" : undefined,
+                          fontWeight: isActive ? 600 : undefined,
+                        }}
+                        title={tag}
+                      >
+                        {tag}
+                      </span>
+                      <div className="flex-1 bg-muted rounded-full h-1.5 overflow-hidden">
+                        <div
+                          className="h-full rounded-full transition-all duration-300"
+                          style={{
+                            width: `${pct * 100}%`,
+                            background: isActive ? "var(--lp-teal-brand, #1a6b67)" : "var(--lp-teal-deep, #0d4a47)",
+                          }}
+                        />
+                      </div>
+                      <span
+                        className="text-xs text-muted-foreground flex-shrink-0 text-right"
+                        style={{ width: "28px" }}
+                      >
+                        {count}
+                      </span>
+                    </button>
+                  );
+                })}
               </div>
             </div>
             </>
@@ -993,6 +1083,52 @@ export default function DiscoverPage() {
                         baseMoatTags={similarCompanyBase?.moatTags || []}
                         baseThemeTags={similarCompanyBase?.themeTags || []}
                       />
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* ── By-Tag Panel ── */}
+          {focusedTag && (
+            <div
+              className="rounded-xl border mb-6 overflow-hidden"
+              style={{ borderColor: "var(--lp-teal-deep, #0d4a47)", borderWidth: "1.5px" }}
+              data-testid="by-tag-panel"
+            >
+              <div
+                className="flex items-center justify-between px-4 py-2.5"
+                style={{ background: "var(--lp-teal-pale, #e8f5f4)" }}
+              >
+                <div className="flex items-center gap-2">
+                  <Tag className="h-3.5 w-3.5 flex-shrink-0" style={{ color: "var(--lp-teal-deep, #0d4a47)" }} />
+                  <span className="text-xs font-medium" style={{ color: "var(--lp-teal-deep, #0d4a47)" }}>
+                    Companies with{" "}<strong>&ldquo;{focusedTag}&rdquo;</strong>
+                  </span>
+                </div>
+                <button
+                  onClick={() => setFocusedTag(null)}
+                  className="p-1 rounded hover-elevate"
+                  style={{ color: "var(--lp-teal-deep, #0d4a47)" }}
+                  data-testid="button-close-by-tag"
+                >
+                  <X className="h-3.5 w-3.5" />
+                </button>
+              </div>
+              <div className="p-3 bg-white dark:bg-card">
+                {byTagLoading ? (
+                  <div className="flex gap-3 overflow-x-auto pb-1">
+                    {Array.from({ length: 5 }).map((_, i) => (
+                      <div key={i} className="flex-shrink-0 w-44 h-24 bg-muted rounded-lg animate-pulse" />
+                    ))}
+                  </div>
+                ) : !byTagData?.companies?.length ? (
+                  <p className="text-sm text-muted-foreground py-2">No companies found for this tag.</p>
+                ) : (
+                  <div className="flex gap-3 overflow-x-auto pb-1">
+                    {byTagData.companies.map((c) => (
+                      <ByTagMiniCard key={c.ticker} company={c} focusedTag={focusedTag} />
                     ))}
                   </div>
                 )}

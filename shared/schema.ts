@@ -610,6 +610,8 @@ export const aiBusinessAnalysis = pgTable("ai_business_analysis", {
   fiscalYear: text("fiscal_year").notNull(),
   filingDate: text("filing_date").notNull(),
   result: jsonb("result").notNull(),
+  themeTags: text("theme_tags").array(),
+  moatTags: text("moat_tags").array(),
   createdAt: timestamp("created_at").defaultNow(),
 });
 
