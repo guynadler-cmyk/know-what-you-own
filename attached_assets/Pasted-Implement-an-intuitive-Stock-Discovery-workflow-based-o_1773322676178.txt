@@ -1,0 +1,124 @@
+Implement an intuitive Stock Discovery workflow based on a company page.
+
+Goal
+Users should not start by manually selecting tags. Instead they start with a company they like (example: NVDA) and click "Show Similar Companies". The discovery page should then open with that company's tags already applied.
+
+Feature 1 — "Show Similar Companies" Button
+
+Add a button on the company analysis page under the Investment Thesis section.
+
+Button label:
+Show Companies Similar to NVDA
+
+Behavior:
+When clicked, open the discover page in a new tab.
+
+Example route:
+/discover?themes=AI/ML,Cloud Infrastructure&moats=Network Effects,Brand Power
+
+Extract these values from the company’s result JSON:
+result.investmentThemes[].name
+result.moats[].name
+
+Feature 2 — Auto-Apply Tags in Discover Page
+
+When the discover page loads, parse the URL parameters:
+
+themes=
+moats=
+
+Example:
+/discover?themes=AI/ML,Cloud Infrastructure
+
+Automatically apply these tags as active filters.
+
+Example logic:
+
+const params = new URLSearchParams(window.location.search);
+const themes = params.get("themes")?.split(",") || [];
+const moats = params.get("moats")?.split(",");
+
+Initialize the discovery filter state using these values.
+
+Feature 3 — Drag-and-Drop Discovery Area
+
+Add a new UI section above the results called:
+
+"Build Your Discovery"
+
+Layout:
+
+Available Tags (left)
+Selected Tags (right)
+
+Users can drag tags into the selected area.
+
+Example tags:
+AI/ML
+Cloud Infrastructure
+Network Effects
+Platform Economics
+Recurring Revenue
+Scale Economies
+
+Use a drag-and-drop library such as:
+react-beautiful-dnd or @dnd-kit/core.
+
+Feature 4 — Show Results Button
+
+Add a button below the selected tags area:
+
+Show Similar Companies
+
+When clicked:
+
+Query the API:
+
+GET /api/discover?themes=AI/ML,Cloud Infrastructure&moats=Network Effects
+
+Return companies that share those tags.
+
+Feature 5 — Highlight Origin Company
+
+If the user came from a company page:
+
+Show a banner at the top:
+
+"Showing companies similar to NVIDIA"
+
+Include a small link:
+
+Back to NVIDIA analysis.
+
+Feature 6 — UX Improvements
+
+1. Selected tags appear as chips
+2. Chips can be removed
+3. Add a "Clear Filters" button
+4. Show results count:
+
+"24 companies match your strategy"
+
+5. Sort results by similarity score.
+
+Feature 7 — Similarity Score
+
+Score companies based on tag overlap:
+
+Example:
+
+sharedThemes + sharedMoats
+
+Sort descending so the most similar companies appear first.
+
+Goal Outcome
+
+Users can:
+
+1. Start with a company they like
+2. Click "Show Similar Companies"
+3. Land in the discovery engine with relevant tags already selected
+4. Add/remove tags
+5. Discover new investment opportunities
+
+This creates a venture-capital style discovery experience similar to tools like PitchBook or CB Insights.
