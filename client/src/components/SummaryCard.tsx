@@ -606,8 +606,10 @@ export function SummaryCard({
         </SectionCard>
       </div>
 
+      <div ref={mobileScrollSentinelRef} aria-hidden="true" data-testid="thesis-scroll-sentinel" />
+
       {/* ── two-col row: Performance · Competition ── */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
 
         {/* Performance Snapshot */}
         <SectionCard
@@ -636,8 +638,6 @@ export function SummaryCard({
             ))}
           </div>
         </SectionCard>
-
-        <div ref={mobileScrollSentinelRef} aria-hidden="true" data-testid="thesis-scroll-sentinel" />
 
         {/* Competition */}
         <SectionCard
