@@ -6,7 +6,7 @@ import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 import { LoadingState } from "@/components/LoadingState";
 import { ErrorState } from "@/components/ErrorState";
-import { JourneyNarrative } from "@/components/JourneyNarrative";
+import { TickerContextCard } from "@/components/TickerContextCard";
 import { StageNavigation } from "@/components/StageNavigation";
 import { StageContent } from "@/components/StageContent";
 import { EmailPaywall } from "@/components/EmailPaywall";
@@ -459,8 +459,8 @@ export default function StockPage() {
         )}
 
         {viewState === "success" && summaryData && (
-          <div className="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8" data-active-ticker={ticker}>
-            <JourneyNarrative />
+          <div className="mx-auto max-w-7xl px-4 py-4 sm:py-12 sm:px-6 lg:px-8" data-active-ticker={ticker}>
+            <TickerContextCard ticker={ticker} />
             <StageNavigation
               currentStage={currentStage}
               onStageChange={handleStageChange}
