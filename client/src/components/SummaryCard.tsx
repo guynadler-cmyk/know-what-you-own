@@ -858,9 +858,6 @@ export function SummaryCard({
         </SectionCard>
       </div>
 
-      {/* Mobile scroll gate sentinel — fires when user scrolls here */}
-      <div ref={mobileGateSentinelRef} aria-hidden="true" data-testid="thesis-scroll-sentinel" style={{ height: 0, overflow: 'hidden' }} />
-
       {/* ── two-col row: Performance · Competition ── */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
 
