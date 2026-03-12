@@ -430,11 +430,13 @@
 }
 @media (max-width: 767px) {
   .nav-search-bar {
-    margin: 0 6px;
-    max-width: none;
+    display: none;
   }
   .nav-company-name {
     max-width: 80px;
+  }
+  .nav-hide-mobile {
+    display: none !important;
   }
 }
 .nav-search-bar:focus-within {

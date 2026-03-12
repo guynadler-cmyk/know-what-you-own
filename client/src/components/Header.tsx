@@ -208,24 +208,26 @@ export function Header() {
   const navRightActions = (
     <>
       <ShareButton variant="outline" size="sm" showText={true} />
-      <InstallButton />
-      <Dialog>
-        <DialogTrigger asChild>
-          <button className="nav-icon-btn" data-testid="button-install-qr">
-            <Smartphone style={{ width: 11, height: 11 }} />
-            Install
-          </button>
-        </DialogTrigger>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <Smartphone className="h-5 w-5" />
-              Install restnvest
-            </DialogTitle>
-          </DialogHeader>
-          <QRCodeDisplay url={window.location.origin} showInstructions={true} />
-        </DialogContent>
-      </Dialog>
+      <div className="nav-hide-mobile" style={{ display: "flex", alignItems: "center", gap: 6 }}>
+        <InstallButton />
+        <Dialog>
+          <DialogTrigger asChild>
+            <button className="nav-icon-btn" data-testid="button-install-qr">
+              <Smartphone style={{ width: 11, height: 11 }} />
+              Install
+            </button>
+          </DialogTrigger>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                <Smartphone className="h-5 w-5" />
+                Install restnvest
+              </DialogTitle>
+            </DialogHeader>
+            <QRCodeDisplay url={window.location.origin} showInstructions={true} />
+          </DialogContent>
+        </Dialog>
+      </div>
       <ThemeToggle />
     </>
   );
@@ -242,10 +244,10 @@ export function Header() {
         zIndex: 100,
         display: "flex",
         alignItems: "center",
-        padding: "0 24px",
+        padding: "0 clamp(10px, 3vw, 24px)",
         gap: 0,
         maxWidth: "100vw",
-        overflow: "hidden",
+        overflow: "visible",
       }}
     >
       <Link
