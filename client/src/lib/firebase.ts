@@ -1,5 +1,5 @@
 import { initializeApp, getApps, getApp } from 'firebase/app';
-import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged, type User } from 'firebase/auth';
+import { getAuth, GoogleAuthProvider, signInWithPopup, signInWithRedirect, getRedirectResult, signOut, onAuthStateChanged, type User } from 'firebase/auth';
 import { getFirestore, doc, getDoc, setDoc } from 'firebase/firestore';
 
 const firebaseConfig = {
@@ -18,8 +18,25 @@ const db = getFirestore(app);
 const googleProvider = new GoogleAuthProvider();
 
 export async function signInWithGoogle() {
-  const result = await signInWithPopup(auth, googleProvider);
-  return result.user;
+  try {
+    const result = await signInWithPopup(auth, googleProvider);
+    return result.user;
+  } catch (err: any) {
+    if (err?.code === 'auth/popup-blocked' || err?.code === 'auth/cancelled-popup-request') {
+      await signInWithRedirect(auth, googleProvider);
+      return null;
+    }
+    throw err;
+  }
+}
+
+export async function handleRedirectResult() {
+  try {
+    const result = await getRedirectResult(auth);
+    return result?.user ?? null;
+  } catch {
+    return null;
+  }
 }
 
 export async function firebaseSignOut() {

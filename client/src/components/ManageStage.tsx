@@ -935,7 +935,13 @@ export function ManageStage({ ticker, companyName, fundamentalsScore }: ManageSt
             </div>
           ) : (
             <Button
-              onClick={() => activateMutation.mutate()}
+              onClick={() => {
+                if (!isAuthenticated) {
+                  window.location.href = `/sign-in?return=${encodeURIComponent(window.location.pathname + window.location.search)}`;
+                  return;
+                }
+                activateMutation.mutate();
+              }}
               disabled={activateMutation.isPending}
               className="text-xs font-semibold px-4 py-2 rounded-lg cursor-pointer"
               style={{ background: "white", color: "var(--lp-teal-deep)", border: "1px solid white" }}

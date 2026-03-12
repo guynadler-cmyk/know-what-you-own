@@ -14,7 +14,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Search, LogIn, LogOut, Bookmark } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
-import { signInWithGoogle, firebaseSignOut } from "@/lib/firebase";
+import { firebaseSignOut } from "@/lib/firebase";
 import { queryClient, getQueryFn } from "@/lib/queryClient";
 import ChatGPT_Image_Jan_22__2026__01_43_07_PM_cropped from "@assets/ChatGPT Image Jan 22, 2026, 01_43_07 PM_cropped.png";
 
@@ -30,6 +30,7 @@ const navLinks = [
 
 function UserMenu() {
   const { user, isLoading, isAuthenticated } = useAuth();
+  const [, setLocation] = useLocation();
 
   const { data: watchlistItems } = useQuery<any[]>({
     queryKey: ["/api/watchlist"],
@@ -50,7 +51,7 @@ function UserMenu() {
         size="sm"
         className="gap-2"
         data-testid="button-sign-in"
-        onClick={() => signInWithGoogle().catch(console.error)}
+        onClick={() => setLocation("/sign-in")}
       >
         <LogIn className="h-4 w-4" />
         <span className="hidden sm:inline">Sign in with Google</span>

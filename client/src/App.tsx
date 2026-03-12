@@ -24,6 +24,7 @@ const WatchlistPage = lazy(() => import("@/pages/WatchlistPage"));
 const StockPage = lazy(() => import("@/pages/StockPage"));
 const DiscoverPage = lazy(() => import("@/pages/DiscoverPage"));
 const FoundingPage = lazy(() => import("@/pages/FoundingPage"));
+const SignInPage = lazy(() => import("@/pages/SignInPage"));
 const NotFound = lazy(() => import("@/pages/not-found"));
 
 function LoadingFallback() {
@@ -55,6 +56,7 @@ function Router() {
         <Route path="/watchlist" component={WatchlistPage} />
         <Route path="/stocks/:ticker" component={StockPage} />
         <Route path="/founding" component={FoundingPage} />
+        <Route path="/sign-in" component={SignInPage} />
         <Route component={NotFound} />
       </Switch>
     </Suspense>
