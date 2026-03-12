@@ -228,7 +228,7 @@ function DiscoveryBuilder({ investmentThemes, moats, ticker, companyName }: Disc
     const tags: string[] = [];
     investmentThemes?.forEach((t) => tags.push(t.name));
     moats?.forEach((m) => tags.push(m.name));
-    return [...new Set(tags)];
+    return Array.from(new Set(tags));
   }, [investmentThemes, moats]);
 
   const [basketTags, setBasketTags] = useState<string[]>([]);
@@ -417,34 +417,17 @@ export function SummaryCard({
   onMobileScroll,
 }: SummaryCardProps) {
   const [thesisOpen, setThesisOpen] = useState(false);
-  const mobileScrollSentinelRef = useRef<HTMLDivElement>(null);
   const isMobile = useIsMobile();
   const [mobileExpandedSection, setMobileExpandedSection] = useState<string | null>(null);
-  const mobileExpandCountRef = useRef(0);
-  const mobileGateTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const mobileGateFiredRef = useRef(false);
 
   const toggleMobileSection = (section: string) => {
     setMobileExpandedSection(prev => {
       const isExpanding = prev !== section;
-      if (isExpanding && isMobile && onMobileScroll && !mobileGateFiredRef.current) {
-        mobileExpandCountRef.current += 1;
-        if (mobileExpandCountRef.current >= 2 && !mobileGateTimerRef.current) {
-          mobileGateTimerRef.current = setTimeout(() => {
-            mobileGateFiredRef.current = true;
-            onMobileScroll();
-          }, 4800);
-        }
-      }
       return isExpanding ? section : null;
     });
   };
 
-  useEffect(() => {
-    return () => {
-      if (mobileGateTimerRef.current) clearTimeout(mobileGateTimerRef.current);
-    };
-  }, []);
+  const mobileGateFiredRef = useRef(false);
   const [expandedCompetitor, setExpandedCompetitor] = useState<number | null>(null);
 
   const showTemporalDetail = isMobile ? mobileExpandedSection === 'changesOverTime' : true;
@@ -453,6 +436,25 @@ export function SummaryCard({
   const [desktopShowFinePrint, setDesktopShowFinePrint] = useState(true);
   const effectiveShowTemporal = isMobile ? showTemporalDetail : desktopShowTemporal;
   const effectiveShowFinePrint = isMobile ? showFinePrintDetail : desktopShowFinePrint;
+
+  const mobileGateSentinelRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!onMobileScroll || mobileGateFiredRef.current) return;
+    const el = mobileGateSentinelRef.current;
+    if (!el) return;
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting && !mobileGateFiredRef.current) {
+          mobileGateFiredRef.current = true;
+          onMobileScroll();
+        }
+      },
+      { rootMargin: "0px 0px -10% 0px", threshold: 0 }
+    );
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, [onMobileScroll]);
 
   const filteredCompetitors = competitors.filter(
     (c) => !c.ticker || c.ticker.toUpperCase() !== ticker.toUpperCase()
@@ -853,8 +855,6 @@ export function SummaryCard({
         </SectionCard>
       </div>
 
-      <div ref={mobileScrollSentinelRef} aria-hidden="true" data-testid="thesis-scroll-sentinel" />
-
       {/* ── two-col row: Performance · Competition ── */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
 
@@ -885,6 +885,9 @@ export function SummaryCard({
             ))}
           </div>
         </SectionCard>
+
+        {/* Mobile scroll gate sentinel — fires when user scrolls here */}
+        <div ref={mobileGateSentinelRef} aria-hidden="true" data-testid="thesis-scroll-sentinel" style={{ height: 0, overflow: 'hidden' }} />
 
         {/* Competition */}
         <SectionCard

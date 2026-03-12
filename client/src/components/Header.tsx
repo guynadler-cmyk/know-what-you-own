@@ -249,7 +249,7 @@ export function Header() {
         padding: "0 clamp(10px, 3vw, 24px)",
         gap: 0,
         maxWidth: "100vw",
-        overflow: "visible",
+        overflow: "hidden",
       }}
     >
       <Link

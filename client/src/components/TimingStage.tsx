@@ -1058,7 +1058,7 @@ export function TimingStage({ ticker, companyName, homepage, placeholderData, on
       <div className="space-y-6">
         <SummaryCardRow 
           selectedId={selectedMetric}
-          onSelect={setSelectedMetric}
+          onSelect={(id) => { setSelectedMetric(id); onSubSectionClick?.(id); }}
           metrics={metrics}
         />
         

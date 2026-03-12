@@ -127,7 +127,7 @@ export const analytics = {
   },
 
   trackNewLead: (params: {
-    lead_source: 'popup' | 'strategy_email' | 'reminder' | 'paywall_gate' | 'inline_gate' | 'google_signin' | 'coming_soon';
+    lead_source: 'popup' | 'strategy_email' | 'reminder' | 'paywall_gate' | 'inline_gate' | 'google_signin' | 'coming_soon' | 'mobile_gate_sheet';
     ticker?: string;
     stage?: number;
     company_name?: string;

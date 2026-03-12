@@ -1,14 +1,17 @@
 import { useState, useEffect } from "react";
 import { X } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { signInWithGoogle } from "@/lib/firebase";
+import { trackEvent } from "@/lib/analytics";
 
 interface MobileAnalysisPaywallProps {
+  stage: 3 | 4;
   isOpen: boolean;
-  onSkip: () => void;
-  onSignup: () => void;
+  onSignedIn: () => void;
+  onDismissed: () => void;
 }
 
-export function MobileAnalysisPaywall({ isOpen, onSkip, onSignup }: MobileAnalysisPaywallProps) {
+export function MobileAnalysisPaywall({ stage, isOpen, onSignedIn, onDismissed }: MobileAnalysisPaywallProps) {
   const [visible, setVisible] = useState(false);
   const [closeEnabled, setCloseEnabled] = useState(false);
 
@@ -33,16 +36,22 @@ export function MobileAnalysisPaywall({ isOpen, onSkip, onSignup }: MobileAnalys
 
   if (!isOpen) return null;
 
-  const handleSkip = () => {
+  const handleDismiss = () => {
     if (!closeEnabled) return;
     setVisible(false);
     document.body.style.overflow = "";
-    setTimeout(onSkip, 300);
+    setTimeout(onDismissed, 300);
   };
 
-  const handleSignup = () => {
-    document.body.style.overflow = "";
-    onSignup();
+  const handleSignIn = async () => {
+    try {
+      trackEvent("mobile_analysis_paywall_signin_click", "engagement", `stage_${stage}`);
+      document.body.style.overflow = "";
+      await signInWithGoogle();
+      onSignedIn();
+    } catch {
+      // user cancelled or error — stay open
+    }
   };
 
   return (
@@ -58,13 +67,13 @@ export function MobileAnalysisPaywall({ isOpen, onSkip, onSignup }: MobileAnalys
         style={{ transform: visible ? "translateY(0)" : "translateY(100%)" }}
         role="dialog"
         aria-modal="true"
-        aria-label="Save your analysis"
+        aria-label="Save your research"
         data-testid="mobile-analysis-paywall-panel"
       >
         <div className="flex justify-end pt-3 pr-3">
           <button
             type="button"
-            onClick={handleSkip}
+            onClick={handleDismiss}
             disabled={!closeEnabled}
             className="p-2 rounded-full transition-opacity"
             style={{ opacity: closeEnabled ? 1 : 0.3, cursor: closeEnabled ? "pointer" : "not-allowed" }}
@@ -82,15 +91,15 @@ export function MobileAnalysisPaywall({ isOpen, onSkip, onSignup }: MobileAnalys
               style={{ color: "var(--lp-ink)", fontFamily: "Playfair Display, serif" }}
               data-testid="text-analysis-paywall-headline"
             >
-              Don't lose your work
+              You're getting into the details
             </h2>
-            <p className="mt-2 text-sm" style={{ color: "var(--lp-ink-light)" }}>
-              Create a free account to save this analysis. Your work disappears when you close this tab.
+            <p className="mt-2 text-sm" style={{ color: "var(--lp-ink-mid)" }}>
+              Create a free account to save your research and track this company over time.
             </p>
           </div>
 
           <Button
-            onClick={handleSignup}
+            onClick={handleSignIn}
             className="h-12 w-full text-base font-semibold"
             style={{
               backgroundColor: "var(--lp-teal-deep)",
@@ -99,10 +108,26 @@ export function MobileAnalysisPaywall({ isOpen, onSkip, onSignup }: MobileAnalys
             }}
             data-testid="button-analysis-paywall-cta"
           >
-            Save my analysis — it's free
+            Continue with Google
           </Button>
+
+          <button
+            type="button"
+            onClick={handleDismiss}
+            disabled={!closeEnabled}
+            className="mt-4 w-full text-center text-sm transition-opacity"
+            style={{ 
+              color: "var(--lp-ink-ghost)",
+              opacity: closeEnabled ? 1 : 0.3,
+              cursor: closeEnabled ? "pointer" : "not-allowed"
+            }}
+            data-testid="button-analysis-paywall-dismiss"
+          >
+            Maybe later
+          </button>
         </div>
       </div>
     </div>
   );
 }
+
