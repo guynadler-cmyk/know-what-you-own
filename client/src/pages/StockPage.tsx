@@ -55,9 +55,9 @@ export default function StockPage() {
   const [showAnalysisPaywall, setShowAnalysisPaywall] = useState<3 | 4 | null>(null);
   const mobileGateDismissedRef = useRef(false);
   const analysisPaywallDismissedRef = useRef(false);
-  const stage3ClicksRef = useRef(new Set<string>());
+  const stage3ClicksRef = useRef(0);
   const stage3TimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const stage4ClicksRef = useRef(new Set<string>());
+  const stage4ClicksRef = useRef(0);
   const stage4TimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const { isAuthenticated } = useAuth();
 
@@ -152,8 +152,8 @@ export default function StockPage() {
   useEffect(() => {
     setShowMobileGate(false);
     setShowAnalysisPaywall(null);
-    stage3ClicksRef.current = new Set();
-    stage4ClicksRef.current = new Set();
+    stage3ClicksRef.current = 0;
+    stage4ClicksRef.current = 0;
     if (stage3TimerRef.current) {
       clearTimeout(stage3TimerRef.current);
       stage3TimerRef.current = null;
@@ -185,8 +185,8 @@ export default function StockPage() {
     if (window.innerWidth >= 768) return;
     if (isAuthenticated) return;
     if (analysisPaywallDismissedRef.current) return;
-    stage3ClicksRef.current.add(id);
-    if (stage3ClicksRef.current.size >= 2 && !stage3TimerRef.current) {
+    stage3ClicksRef.current += 1;
+    if (stage3ClicksRef.current >= 2 && !stage3TimerRef.current) {
       stage3TimerRef.current = setTimeout(() => setShowAnalysisPaywall(3), 5000);
     }
   }, [isAuthenticated]);
@@ -195,8 +195,8 @@ export default function StockPage() {
     if (window.innerWidth >= 768) return;
     if (isAuthenticated) return;
     if (analysisPaywallDismissedRef.current) return;
-    stage4ClicksRef.current.add(id);
-    if (stage4ClicksRef.current.size >= 2 && !stage4TimerRef.current) {
+    stage4ClicksRef.current += 1;
+    if (stage4ClicksRef.current >= 2 && !stage4TimerRef.current) {
       stage4TimerRef.current = setTimeout(() => setShowAnalysisPaywall(4), 4000);
     }
   }, [isAuthenticated]);
@@ -303,10 +303,10 @@ export default function StockPage() {
       stage4TimerRef.current = null;
     }
     if (currentStage === 3 && stage !== 3) {
-      stage3ClicksRef.current = new Set();
+      stage3ClicksRef.current = 0;
     }
     if (currentStage === 4 && stage !== 4) {
-      stage4ClicksRef.current = new Set();
+      stage4ClicksRef.current = 0;
     }
     setCurrentStage(stage);
     window.scrollTo(0, 0);

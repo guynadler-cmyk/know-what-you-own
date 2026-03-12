@@ -420,14 +420,36 @@ export function SummaryCard({
   const isMobile = useIsMobile();
   const [mobileExpandedSection, setMobileExpandedSection] = useState<string | null>(null);
 
+  const mobileGateFiredRef = useRef(false);
+  const mobileExpansionCountRef = useRef(0);
+  const mobileExpansionTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
   const toggleMobileSection = (section: string) => {
     setMobileExpandedSection(prev => {
       const isExpanding = prev !== section;
+      if (isExpanding && onMobileScroll && !mobileGateFiredRef.current) {
+        mobileExpansionCountRef.current += 1;
+        if (mobileExpansionCountRef.current >= 3 && !mobileExpansionTimerRef.current) {
+          mobileExpansionTimerRef.current = setTimeout(() => {
+            if (!mobileGateFiredRef.current) {
+              mobileGateFiredRef.current = true;
+              onMobileScroll();
+            }
+          }, 4000);
+        }
+      }
       return isExpanding ? section : null;
     });
   };
 
-  const mobileGateFiredRef = useRef(false);
+  useEffect(() => {
+    return () => {
+      if (mobileExpansionTimerRef.current) {
+        clearTimeout(mobileExpansionTimerRef.current);
+      }
+    };
+  }, []);
+
   const [expandedCompetitor, setExpandedCompetitor] = useState<number | null>(null);
 
   const showTemporalDetail = isMobile ? mobileExpandedSection === 'changesOverTime' : true;
@@ -436,25 +458,6 @@ export function SummaryCard({
   const [desktopShowFinePrint, setDesktopShowFinePrint] = useState(true);
   const effectiveShowTemporal = isMobile ? showTemporalDetail : desktopShowTemporal;
   const effectiveShowFinePrint = isMobile ? showFinePrintDetail : desktopShowFinePrint;
-
-  const mobileGateSentinelRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    if (!onMobileScroll || mobileGateFiredRef.current) return;
-    const el = mobileGateSentinelRef.current;
-    if (!el) return;
-    const observer = new IntersectionObserver(
-      ([entry]) => {
-        if (entry.isIntersecting && !mobileGateFiredRef.current) {
-          mobileGateFiredRef.current = true;
-          onMobileScroll();
-        }
-      },
-      { rootMargin: "0px 0px -10% 0px", threshold: 0 }
-    );
-    observer.observe(el);
-    return () => observer.disconnect();
-  }, [onMobileScroll]);
 
   const filteredCompetitors = competitors.filter(
     (c) => !c.ticker || c.ticker.toUpperCase() !== ticker.toUpperCase()
