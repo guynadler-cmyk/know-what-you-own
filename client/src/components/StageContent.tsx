@@ -54,7 +54,7 @@ function StagePageHeader({ eyebrow, headline, sub }: StagePageHeaderProps) {
         {eyebrow}
       </p>
       <h2
-        className="text-3xl font-bold mb-3 leading-tight"
+        className="text-2xl sm:text-3xl font-bold mb-3 leading-tight"
         style={{ fontFamily: "var(--font-serif, 'Playfair Display', Georgia, serif)" }}
       >
         {headline}
@@ -105,7 +105,7 @@ function ComingUpNext({
           Coming up next
         </p>
         <h3
-          className="text-2xl font-bold mb-2 leading-snug"
+          className="text-xl sm:text-2xl font-bold mb-2 leading-snug"
           style={{ fontFamily: "var(--font-serif, 'Playfair Display', Georgia, serif)" }}
         >
           {previewHeadline}
@@ -140,7 +140,7 @@ function ComingUpNext({
 
       {/* Stage-complete banner — matches Stage 1's SummaryCard approach */}
       <div
-        className="mt-6 relative flex items-center justify-between gap-6 rounded-xl px-7 py-5 overflow-hidden"
+        className="mt-6 relative flex flex-col sm:flex-row sm:items-center justify-between gap-4 sm:gap-6 rounded-xl px-5 sm:px-7 py-5 overflow-hidden"
         style={{ background: tealDeep }}
         data-testid={`banner-stage-${completedStageNumber}-complete`}
       >
@@ -167,7 +167,7 @@ function ComingUpNext({
         </div>
         {onNavigate && (
           <button
-            className="relative z-10 flex items-center gap-2 rounded-lg text-[12px] font-medium px-5 py-2.5 flex-shrink-0 ml-6 transition-opacity hover:opacity-90"
+            className="relative z-10 flex items-center justify-center gap-2 rounded-lg text-[12px] font-medium w-full sm:w-auto min-h-[44px] px-5 py-2.5 sm:flex-shrink-0 sm:ml-6 transition-opacity hover:opacity-90"
             style={{ background: "white", color: tealDeep, fontFamily: "'DM Sans', sans-serif" }}
             data-testid={`button-next-stage-${nextStageNumber}`}
             onClick={onNavigate}

@@ -75,7 +75,7 @@ export function MobileAnalysisPaywall({ stage, isOpen, onSignedIn, onDismissed }
             type="button"
             onClick={handleDismiss}
             disabled={!closeEnabled}
-            className="p-2 rounded-full transition-opacity"
+            className="min-w-[44px] min-h-[44px] flex items-center justify-center rounded-full transition-opacity"
             style={{ opacity: closeEnabled ? 1 : 0.3, cursor: closeEnabled ? "pointer" : "not-allowed" }}
             data-testid="button-analysis-paywall-close"
             aria-label="Close"
@@ -115,7 +115,7 @@ export function MobileAnalysisPaywall({ stage, isOpen, onSignedIn, onDismissed }
             type="button"
             onClick={handleDismiss}
             disabled={!closeEnabled}
-            className="mt-4 w-full text-center text-sm transition-opacity"
+            className="mt-4 w-full min-h-[44px] flex items-center justify-center text-sm transition-opacity"
             style={{ 
               color: "var(--lp-ink-ghost)",
               opacity: closeEnabled ? 1 : 0.3,

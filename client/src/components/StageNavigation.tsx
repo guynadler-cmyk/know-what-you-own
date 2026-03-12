@@ -16,6 +16,8 @@ const STAGES = [
 ];
 
 export function StageNavigation({ currentStage, onStageChange }: StageNavigationProps) {
+  const activeStage = STAGES.find(s => s.number === currentStage);
+
   return (
     <div
       className="bg-card border border-border rounded-md px-4 py-3"
@@ -32,14 +34,15 @@ export function StageNavigation({ currentStage, onStageChange }: StageNavigation
               <button
                 onClick={() => onStageChange(stage.number)}
                 className={cn(
-                  "flex flex-col items-center gap-1 px-2 sm:px-3 py-1.5 rounded-md transition-all duration-200 hover-elevate active-elevate-2",
-                  "min-w-0 sm:min-w-[64px]"
+                  "flex flex-col items-center gap-1 rounded-md transition-all duration-200 hover-elevate active-elevate-2",
+                  "min-w-[44px] min-h-[44px] justify-center px-1 sm:px-3 py-1.5",
+                  "sm:min-w-[64px]"
                 )}
                 data-testid={`stage-button-${stage.number}`}
               >
                 <div
                   className={cn(
-                    "w-7 h-7 rounded-full flex items-center justify-center text-xs font-semibold transition-all duration-200",
+                    "w-8 h-8 sm:w-7 sm:h-7 rounded-full flex items-center justify-center text-xs font-semibold transition-all duration-200",
                     isActive && "text-white shadow-sm",
                     isCompleted && "border-2 border-[color:var(--lp-teal-deep)] text-[color:var(--lp-teal-deep)]",
                     isFuture && "bg-muted text-muted-foreground"
@@ -84,6 +87,15 @@ export function StageNavigation({ currentStage, onStageChange }: StageNavigation
           );
         })}
       </div>
+      {activeStage && (
+        <p
+          className="sm:hidden text-center text-xs font-semibold mt-2"
+          style={{ color: "var(--lp-teal-deep)" }}
+          data-testid="stage-active-label-mobile"
+        >
+          Stage {activeStage.number} · {activeStage.label}
+        </p>
+      )}
     </div>
   );
 }

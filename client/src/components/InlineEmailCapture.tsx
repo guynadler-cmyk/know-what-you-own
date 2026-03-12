@@ -76,39 +76,40 @@ export function InlineEmailCapture({ ticker, onUnlocked, onDismissed }: InlineEm
   }
 
   return (
-    <div className="mb-6 rounded-md border bg-muted/50 px-4 py-3" data-testid="inline-email-capture">
-      <form onSubmit={handleSubmit} className="flex flex-wrap items-center gap-3">
-        <span className="shrink-0 text-sm text-muted-foreground" data-testid="text-inline-capture-label">
+    <div className="relative mb-6 rounded-md border bg-muted/50 px-4 py-3" data-testid="inline-email-capture">
+      <Button
+        type="button"
+        variant="ghost"
+        size="icon"
+        onClick={() => { setIsDismissed(true); onDismissed?.(); }}
+        className="absolute top-2 right-2 min-w-[44px] min-h-[44px] sm:static sm:top-auto sm:right-auto"
+        data-testid="button-inline-dismiss"
+        aria-label="Dismiss"
+      >
+        <X className="h-4 w-4" />
+      </Button>
+      <form onSubmit={handleSubmit} className="flex flex-col sm:flex-row sm:flex-wrap sm:items-center gap-3">
+        <span className="shrink-0 text-sm text-muted-foreground pr-8 sm:pr-0" data-testid="text-inline-capture-label">
           Get the Friday report for {ticker.toUpperCase()} — weekly insights, straight to your inbox.
         </span>
-        <div className="flex items-center gap-2">
+        <div className="flex flex-col sm:flex-row sm:items-center gap-2 w-full sm:w-auto">
           <Input
             type="email"
             placeholder="Enter your email"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             disabled={isSubmitting}
-            className="h-9 w-56"
+            className="h-12 text-base w-full sm:w-56"
             data-testid="input-inline-email"
           />
           <Button
             type="submit"
-            size="sm"
             disabled={isSubmitting}
+            className="w-full sm:w-auto min-h-[44px] sm:min-h-0"
             data-testid="button-inline-send"
           >
             <Send className="mr-1 h-3 w-3" />
             {isSubmitting ? "..." : "Send"}
-          </Button>
-          <Button
-            type="button"
-            variant="ghost"
-            size="icon"
-            onClick={() => { setIsDismissed(true); onDismissed?.(); }}
-            data-testid="button-inline-dismiss"
-            aria-label="Dismiss"
-          >
-            <X className="h-4 w-4" />
           </Button>
         </div>
         {error && (

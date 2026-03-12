@@ -532,19 +532,19 @@ export default function StockPage() {
 
               return (
                 <>
-                  <div className="relative" style={{ display: "grid" }}>
+                  <div className="relative">
                     <div
                       className="select-none"
-                      style={{ gridArea: "1 / 1", filter: "blur(5px)", pointerEvents: "none" }}
+                      style={{ filter: "blur(5px)", pointerEvents: "none" }}
                       aria-hidden="true"
                     >
                       <StageContent {...stageContentProps} />
                     </div>
                     <div
-                      className="pointer-events-none"
-                      style={{ gridArea: "1 / 1", position: "sticky", top: "25vh", zIndex: 40, height: 0 }}
+                      className="fixed inset-0 z-40 flex items-start sm:items-center justify-center overflow-y-auto"
+                      style={{ paddingTop: "max(env(safe-area-inset-top, 0px), 2rem)", paddingBottom: "max(env(safe-area-inset-bottom, 0px), 2rem)" }}
                     >
-                      <div className="pointer-events-auto mx-auto max-w-lg">
+                      <div className="w-full max-w-lg px-4 my-auto">
                         <EmailPaywall
                           ticker={ticker}
                           onUnlocked={handlePaywallUnlocked}

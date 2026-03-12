@@ -168,7 +168,7 @@ export function MobileGateSheet({ ticker, onUnlocked, onDismissed }: MobileGateS
                 <button
                   type="button"
                   onClick={handleDismiss}
-                  className="text-sm"
+                  className="min-h-[44px] w-full flex items-center justify-center text-sm"
                   style={{ color: "var(--lp-ink-ghost)" }}
                   data-testid="button-mobile-gate-dismiss"
                 >

@@ -157,6 +157,7 @@ export function EmailPaywall({
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               disabled={isSubmitting}
+              className="h-12 text-base"
               data-testid="input-paywall-email"
             />
             {error && (
@@ -222,6 +223,7 @@ export function EmailPaywall({
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             disabled={isSubmitting}
+            className="h-12 text-base"
             data-testid="input-paywall-email"
           />
           {error && (
@@ -247,7 +249,7 @@ export function EmailPaywall({
           <button
             type="button"
             onClick={handleSkip}
-            className="w-full text-center text-xs text-muted-foreground underline underline-offset-2"
+            className="w-full min-h-[44px] flex items-center justify-center text-xs text-muted-foreground underline underline-offset-2"
             data-testid="button-paywall-skip"
           >
             Not now — continue with limited view
