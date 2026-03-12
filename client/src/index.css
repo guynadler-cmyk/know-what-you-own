@@ -419,10 +419,22 @@
   margin: 0 20px;
   transition: border-color 0.2s, box-shadow 0.2s;
 }
+.nav-company-name {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--lp-ink);
+  white-space: nowrap;
+  max-width: 180px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
 @media (max-width: 767px) {
   .nav-search-bar {
     margin: 0 6px;
     max-width: none;
+  }
+  .nav-company-name {
+    max-width: 80px;
   }
 }
 .nav-search-bar:focus-within {

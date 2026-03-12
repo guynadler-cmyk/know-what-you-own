@@ -301,16 +301,7 @@ export function Header() {
               {companyInitial}
             </div>
             <span
-              className="hidden sm:inline"
-              style={{
-                fontSize: 12,
-                fontWeight: 500,
-                color: "var(--lp-ink)",
-                whiteSpace: "nowrap",
-                maxWidth: 180,
-                overflow: "hidden",
-                textOverflow: "ellipsis",
-              }}
+              className="nav-company-name"
               data-testid="text-nav-company-name"
             >
               {analysisState.companyName}
@@ -371,7 +362,7 @@ export function Header() {
               }}
               data-testid="button-nav-analyze"
             >
-              Analyze →
+              <span className="hidden sm:inline">Analyze </span>→
             </button>
           </form>
 
