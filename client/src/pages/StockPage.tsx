@@ -8,6 +8,7 @@ import { LoadingState } from "@/components/LoadingState";
 import { ErrorState } from "@/components/ErrorState";
 import { TickerContextCard } from "@/components/TickerContextCard";
 import { StageNavigation } from "@/components/StageNavigation";
+import { StickyTickerBar } from "@/components/StickyTickerBar";
 import { StageContent } from "@/components/StageContent";
 import { EmailPaywall } from "@/components/EmailPaywall";
 import { InlineEmailCapture } from "@/components/InlineEmailCapture";
@@ -461,10 +462,17 @@ export default function StockPage() {
         {viewState === "success" && summaryData && (
           <div className="mx-auto max-w-7xl px-4 py-4 sm:py-12 sm:px-6 lg:px-8" data-active-ticker={ticker}>
             <TickerContextCard ticker={ticker} />
-            <StageNavigation
-              currentStage={currentStage}
-              onStageChange={handleStageChange}
-            />
+            <div className="sm:sticky sm:top-0 sm:z-50 mb-8 sm:bg-background sm:-mx-6 sm:px-6 sm:py-2 lg:-mx-8 lg:px-8">
+              <StickyTickerBar
+                ticker={ticker}
+                companyName={summaryData.companyName}
+                homepage={summaryData.metadata?.homepage}
+              />
+              <StageNavigation
+                currentStage={currentStage}
+                onStageChange={handleStageChange}
+              />
+            </div>
 
             {(() => {
               const isGated = shouldShowPaywall(currentStage);

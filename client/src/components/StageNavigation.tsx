@@ -18,7 +18,7 @@ const STAGES = [
 export function StageNavigation({ currentStage, onStageChange }: StageNavigationProps) {
   return (
     <div
-      className="mb-8 bg-card border border-border rounded-md px-4 py-3"
+      className="bg-card border border-border rounded-md px-4 py-3"
       data-testid="stage-navigation"
     >
       <div className="flex items-center justify-center gap-[4px] sm:gap-1 pl-4 md:pl-0">
