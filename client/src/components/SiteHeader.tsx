@@ -1,10 +1,8 @@
-import { useState } from "react";
 import { Link, useLocation } from "wouter";
 import { useQuery } from "@tanstack/react-query";
 import { ThemeToggle } from "./ThemeToggle";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import {
   DropdownMenu,
@@ -14,7 +12,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Menu, Search, X, LogIn, LogOut, User, Bookmark } from "lucide-react";
+import { Search, LogIn, LogOut, Bookmark } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
 import { signInWithGoogle, firebaseSignOut } from "@/lib/firebase";
 import { queryClient, getQueryFn } from "@/lib/queryClient";
@@ -117,16 +115,6 @@ function UserMenu() {
 
 export function SiteHeader() {
   const [location] = useLocation();
-  const [mobileOpen, setMobileOpen] = useState(false);
-  const { user, isAuthenticated } = useAuth();
-
-  const { data: watchlistData } = useQuery<any[]>({
-    queryKey: ["/api/watchlist"],
-    queryFn: getQueryFn({ on401: "returnNull" }),
-    enabled: isAuthenticated,
-    staleTime: 60 * 1000,
-  });
-  const mobileWatchlistCount = watchlistData?.length ?? 0;
 
   return (
     <header
@@ -161,7 +149,7 @@ export function SiteHeader() {
         </nav>
 
         <div className="flex items-center gap-2">
-          <Link href="/app" className="hidden sm:block">
+          <Link href="/app" className="hidden md:block">
             <Button size="sm" className="rounded-full gap-2" data-testid="button-header-cta">
               <Search className="h-4 w-4" />
               Research a Stock
@@ -169,141 +157,6 @@ export function SiteHeader() {
           </Link>
           <ThemeToggle />
           <UserMenu />
-
-          <Sheet open={mobileOpen} onOpenChange={setMobileOpen}>
-            <SheetTrigger asChild>
-              <Button
-                variant="ghost"
-                size="icon"
-                className="md:hidden"
-                data-testid="button-mobile-menu"
-                aria-label="Open menu"
-              >
-                <Menu className="h-5 w-5" />
-              </Button>
-            </SheetTrigger>
-            <SheetContent side="right" className="w-[280px] p-0">
-              <div className="flex flex-col h-full">
-                <div className="flex items-center justify-between gap-2 p-4 border-b border-border">
-                  <span className="text-sm font-semibold" data-testid="text-mobile-menu-title">Menu</span>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={() => setMobileOpen(false)}
-                    data-testid="button-mobile-close"
-                  >
-                    <X className="h-4 w-4" />
-                  </Button>
-                </div>
-                <nav className="flex flex-col p-4 gap-1" data-testid="nav-mobile">
-                  {navLinks.map((link) => {
-                    const isActive = location === link.href;
-                    return (
-                      <Link key={link.href} href={link.href}>
-                        <Button
-                          variant="ghost"
-                          className={`w-full justify-start ${isActive ? "bg-muted text-foreground" : "text-muted-foreground"}`}
-                          onClick={() => setMobileOpen(false)}
-                          data-testid={`link-mobile-${link.label.toLowerCase().replace(/\s+/g, "-")}`}
-                        >
-                          {link.label}
-                        </Button>
-                      </Link>
-                    );
-                  })}
-                  <Link href="/faq">
-                    <Button
-                      variant="ghost"
-                      className={`w-full justify-start ${location === "/faq" ? "bg-muted text-foreground" : "text-muted-foreground"}`}
-                      onClick={() => setMobileOpen(false)}
-                      data-testid="link-mobile-faq"
-                    >
-                      FAQ
-                    </Button>
-                  </Link>
-                </nav>
-                <div className="mt-auto p-4 border-t border-border space-y-2">
-                  {isAuthenticated && user ? (
-                    <div className="flex items-center gap-3 px-2 py-2">
-                      <Avatar className="h-8 w-8">
-                        {user.profile_image_url && (
-                          <AvatarImage src={user.profile_image_url} alt="Profile" />
-                        )}
-                        <AvatarFallback className="text-xs">
-                          {[user.first_name, user.last_name]
-                            .filter(Boolean)
-                            .map((n) => n!.charAt(0).toUpperCase())
-                            .join("") || "?"}
-                        </AvatarFallback>
-                      </Avatar>
-                      <div className="flex-1 min-w-0">
-                        <p className="text-sm font-medium truncate" data-testid="text-mobile-user-name">
-                          {[user.first_name, user.last_name].filter(Boolean).join(" ") || "User"}
-                        </p>
-                        {user.email && (
-                          <p className="text-xs text-muted-foreground truncate">{user.email}</p>
-                        )}
-                      </div>
-                    </div>
-                  ) : null}
-                  {isAuthenticated ? (
-                    <>
-                      <Link href="/watchlist">
-                        <Button
-                          variant="ghost"
-                          className={`w-full justify-start gap-2 ${location === "/watchlist" ? "bg-muted text-foreground" : "text-muted-foreground"}`}
-                          onClick={() => setMobileOpen(false)}
-                          data-testid="link-mobile-watchlist"
-                        >
-                          <Bookmark className="h-4 w-4" />
-                          My Watchlist
-                          {mobileWatchlistCount > 0 && (
-                            <Badge variant="secondary" className="ml-auto text-xs no-default-active-elevate">{mobileWatchlistCount}</Badge>
-                          )}
-                        </Button>
-                      </Link>
-                      <Button
-                        variant="outline"
-                        className="w-full gap-2"
-                        data-testid="button-mobile-sign-out"
-                        onClick={() => {
-                          firebaseSignOut().then(() => {
-                            queryClient.clear();
-                            setMobileOpen(false);
-                          }).catch(console.error);
-                        }}
-                      >
-                        <LogOut className="h-4 w-4" />
-                        Sign out
-                      </Button>
-                    </>
-                  ) : (
-                    <Button
-                      variant="outline"
-                      className="w-full gap-2"
-                      data-testid="button-mobile-sign-in"
-                      onClick={() => {
-                        signInWithGoogle().then(() => setMobileOpen(false)).catch(console.error);
-                      }}
-                    >
-                      <LogIn className="h-4 w-4" />
-                      Sign in with Google
-                    </Button>
-                  )}
-                  <Link href="/app">
-                    <Button
-                      className="w-full rounded-full gap-2"
-                      onClick={() => setMobileOpen(false)}
-                      data-testid="button-mobile-cta"
-                    >
-                      <Search className="h-4 w-4" />
-                      Research a Stock
-                    </Button>
-                  </Link>
-                </div>
-              </div>
-            </SheetContent>
-          </Sheet>
         </div>
       </div>
     </header>

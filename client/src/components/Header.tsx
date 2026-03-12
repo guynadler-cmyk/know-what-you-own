@@ -207,7 +207,9 @@ export function Header() {
 
   const navRightActions = (
     <>
-      <ShareButton variant="outline" size="sm" showText={true} />
+      <div className="nav-hide-mobile">
+        <ShareButton variant="outline" size="sm" showText={true} />
+      </div>
       <div className="nav-hide-mobile" style={{ display: "flex", alignItems: "center", gap: 6 }}>
         <InstallButton />
         <Dialog>
@@ -392,7 +394,7 @@ export function Header() {
         </>
       ) : (
         <>
-          <nav style={{ display: "flex", alignItems: "center", gap: 2, flexShrink: 0 }}>
+          <nav className="nav-hide-mobile" style={{ display: "flex", alignItems: "center", gap: 2, flexShrink: 0 }}>
             {[
               { label: "Product", href: "/product" },
               { label: "How It Works", href: "/how-it-works" },

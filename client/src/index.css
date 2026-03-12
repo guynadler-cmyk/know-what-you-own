@@ -433,7 +433,7 @@
     display: none;
   }
   .nav-company-name {
-    max-width: 80px;
+    display: none;
   }
   .nav-hide-mobile {
     display: none !important;
