@@ -1,0 +1,63 @@
+The context card that replaced "Our Investment 
+Philosophy" is currently showing the same text 
+on all 6 stages. It needs to be stage-aware.
+
+Each stage has a different purpose — the context 
+card should tell the user what they're looking at 
+RIGHT NOW, not a generic description of the product.
+
+Update the card content to change based on the 
+current active stage:
+
+Stage 1 — Business (Investment Thesis):
+  Eyebrow: "What you're looking at"
+  Headline: "Key themes from [TICKER]'s own filings 
+  — what the company says about itself."
+  Sub: "Built from 5 years of 10-K filings. 
+  Plain English. No jargon."
+
+Stage 2 — Performance:
+  Eyebrow: "What you're looking at"
+  Headline: "How [TICKER] has actually performed 
+  — revenue, margins, and financial health."
+  Sub: "Numbers from their filings, explained 
+  in plain English."
+
+Stage 3 — Valuation:
+  Eyebrow: "What you're looking at"
+  Headline: "Is [TICKER] priced fairly right now 
+  — or are you overpaying?"
+  Sub: "Valuation signals based on fundamentals, 
+  not hype."
+
+Stage 4 — Timing:
+  Eyebrow: "What you're looking at"
+  Headline: "When to consider entering [TICKER] 
+  — price trend, momentum, and stretch signals."
+  Sub: "Technical signals to help you act 
+  at the right moment."
+
+Stage 5 — Strategy:
+  Eyebrow: "What you're looking at"
+  Headline: "How to size and manage a [TICKER] 
+  position — if the thesis holds."
+  Sub: "Position sizing, entry points, and 
+  what would change the thesis."
+
+Stage 6 — Manage:
+  Eyebrow: "What you're looking at"  
+  Headline: "What to watch after you invest 
+  in [TICKER] — signals that matter."
+  Sub: "Ongoing monitoring so you stay 
+  informed without the noise."
+
+Requirements:
+- Use the existing currentStage variable 
+  (or equivalent) to determine which text to show
+- Ticker remains dynamic in all stages
+- Card animates or transitions smoothly when 
+  stage changes — a simple fade or slide is fine
+- All other card styling unchanged
+
+Show me where currentStage is tracked before 
+applying.

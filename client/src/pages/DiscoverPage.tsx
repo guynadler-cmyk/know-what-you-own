@@ -545,9 +545,33 @@ export default function DiscoverPage() {
     return result;
   }, [companies]);
 
-  // ── Tag Frequency Chart ───────────────────────────────────────────────────
+  // ── Full Tag Cloud (collapsed by default) ────────────────────────────────
 
-  const [showFreqChart, setShowFreqChart] = useState(false);
+  const [showAllTags, setShowAllTags] = useState(false);
+  const INITIAL_TAG_LIMIT = 20;
+
+  const allTagFreqs = useMemo(() => {
+    const freq = new Map<string, number>();
+    const displayForm = new Map<string, string>();
+    for (const c of companies) {
+      const seen = new Set<string>();
+      for (const tag of [...c.moatTags, ...c.themeTags]) {
+        const trimmed = tag.trim();
+        if (!trimmed) continue;
+        const key = trimmed.toLowerCase();
+        if (seen.has(key)) continue;
+        seen.add(key);
+        if (!displayForm.has(key)) displayForm.set(key, trimmed);
+        freq.set(key, (freq.get(key) || 0) + 1);
+      }
+    }
+    return Array.from(freq.entries())
+      .filter(([, count]) => count >= 2)
+      .sort((a, b) => b[1] - a[1])
+      .map(([key, count]) => ({ tag: displayForm.get(key)!, count }));
+  }, [companies]);
+
+  // ── Tag Frequency Chart ───────────────────────────────────────────────────
 
   const freqChartData = useMemo(() => {
     const source = filtered.length < companies.length ? filtered : companies;
@@ -628,7 +652,7 @@ export default function DiscoverPage() {
 
           {/* ── Tag Clusters ── */}
           {clusters.length > 0 && (
-            <div className="mb-6" data-testid="clusters-section">
+            <div className="mb-8" data-testid="clusters-section">
               <p className="font-mono text-[10px] text-muted-foreground uppercase tracking-widest mb-3 flex items-center gap-1.5">
                 <Sparkles className="h-3 w-3" />
                 Popular Theme Clusters
@@ -670,57 +694,50 @@ export default function DiscoverPage() {
 
           {/* ── Tag Frequency Chart ── */}
           {companies.length > 0 && (
-            <div
-              className="rounded-xl border mb-6 overflow-hidden"
-              style={{ borderColor: "var(--border)" }}
-              data-testid="freq-chart-section"
-            >
-              <div className="flex items-center justify-between px-4 py-2.5 border-b bg-muted/30">
-                <p className="font-mono text-[10px] text-muted-foreground uppercase tracking-widest flex items-center gap-1.5">
-                  <BarChart3 className="h-3 w-3" />
-                  Tag Frequency
-                  {filtered.length < companies.length && (
-                    <span className="normal-case tracking-normal text-[9px] opacity-70 ml-0.5">(filtered)</span>
-                  )}
-                </p>
-                <button
-                  onClick={() => setShowFreqChart((v) => !v)}
-                  className="text-[10px] text-muted-foreground hover:text-foreground transition-colors"
-                  data-testid="freq-chart-toggle"
-                >
-                  {showFreqChart ? "Hide ↑" : "Show ↓"}
-                </button>
-              </div>
-              {showFreqChart && (
-                <div className="p-4 bg-white dark:bg-card space-y-2.5">
-                  {freqChartData.map(({ tag, count, pct }) => (
-                    <div key={tag} className="flex items-center gap-3">
-                      <span
-                        className="text-xs text-muted-foreground flex-shrink-0 truncate"
-                        style={{ width: "140px" }}
-                        title={tag}
-                      >
-                        {tag}
-                      </span>
-                      <div className="flex-1 bg-muted rounded-full h-1.5 overflow-hidden">
-                        <div
-                          className="h-full rounded-full transition-all duration-300"
-                          style={{ width: `${pct * 100}%`, background: "var(--lp-teal-deep, #0d4a47)" }}
-                        />
-                      </div>
-                      <span className="text-xs text-muted-foreground flex-shrink-0 text-right" style={{ width: "28px" }}>
-                        {count}
-                      </span>
+            <>
+            <div className="border-t my-8" style={{ borderColor: "var(--border)" }} />
+            <div className="mb-8" data-testid="freq-chart-section">
+              <p className="font-mono text-[10px] text-muted-foreground uppercase tracking-widest mb-4 flex items-center gap-1.5">
+                <BarChart3 className="h-3 w-3" />
+                Tag Frequency
+                {filtered.length < companies.length && (
+                  <span className="normal-case tracking-normal text-[9px] opacity-70 ml-0.5">(filtered)</span>
+                )}
+              </p>
+              <div className="space-y-2.5">
+                {freqChartData.map(({ tag, count, pct }) => (
+                  <div key={tag} className="flex items-center gap-3">
+                    <span
+                      className="text-xs text-muted-foreground flex-shrink-0 truncate"
+                      style={{ width: "140px" }}
+                      title={tag}
+                    >
+                      {tag}
+                    </span>
+                    <div className="flex-1 bg-muted rounded-full h-1.5 overflow-hidden">
+                      <div
+                        className="h-full rounded-full transition-all duration-300"
+                        style={{ width: `${pct * 100}%`, background: "var(--lp-teal-deep, #0d4a47)" }}
+                      />
                     </div>
-                  ))}
-                </div>
-              )}
+                    <span className="text-xs text-muted-foreground flex-shrink-0 text-right" style={{ width: "28px" }}>
+                      {count}
+                    </span>
+                  </div>
+                ))}
+              </div>
             </div>
+            </>
+          )}
+
+          {/* ── Section divider ── */}
+          {companies.length > 0 && (
+            <div className="border-t my-8" style={{ borderColor: "var(--border)" }} />
           )}
 
           {/* ── Tag Screener Panel ── */}
           <div
-            className="rounded-xl border mb-6 overflow-hidden"
+            className="rounded-xl border mb-8 overflow-hidden"
             style={{ borderColor: "var(--border)" }}
             data-testid="screener-panel"
           >
@@ -823,6 +840,44 @@ export default function DiscoverPage() {
               )}
             </div>
           </div>
+
+          {/* ── Section divider ── */}
+          <div className="border-t my-8" style={{ borderColor: "var(--border)" }} />
+
+          {/* ── Full Tag Cloud ── */}
+          {allTagFreqs.length > 0 && (
+            <div className="mb-8" data-testid="full-tag-cloud-section">
+              <p className="font-mono text-[10px] text-muted-foreground uppercase tracking-widest mb-4 flex items-center gap-1.5">
+                <Sparkles className="h-3 w-3" />
+                Full Tag Cloud
+              </p>
+              <div className="flex flex-wrap gap-2" data-testid="full-tag-cloud">
+                {(showAllTags ? allTagFreqs : allTagFreqs.slice(0, INITIAL_TAG_LIMIT)).map(({ tag, count }) => (
+                  <TagPill
+                    key={tag}
+                    tag={tag}
+                    count={count}
+                    active={selectedTags.includes(tag)}
+                    onClick={() => toggleTag(tag)}
+                  />
+                ))}
+              </div>
+              {allTagFreqs.length > INITIAL_TAG_LIMIT && (
+                <button
+                  className="mt-4 text-xs text-muted-foreground underline underline-offset-2 hover:text-foreground transition-colors"
+                  onClick={() => setShowAllTags((v) => !v)}
+                  data-testid="button-show-more-tags"
+                >
+                  {showAllTags
+                    ? "Show less ↑"
+                    : `Show ${allTagFreqs.length - INITIAL_TAG_LIMIT} more tags ↓`}
+                </button>
+              )}
+            </div>
+          )}
+
+          {/* ── Section divider ── */}
+          <div className="border-t my-8" style={{ borderColor: "var(--border)" }} />
 
           {/* ── Active Filters ── */}
           {isScreenerActive && (
