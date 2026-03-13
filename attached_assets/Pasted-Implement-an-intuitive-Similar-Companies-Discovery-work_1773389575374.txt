@@ -1,0 +1,221 @@
+Implement an intuitive “Similar Companies Discovery” workflow on the company analysis page.
+
+Context
+
+On the company page (example: NVDA), we already display an "Investment Thesis" section containing tags such as:
+
+Strategic Themes
+- AI/ML
+- Cloud Infrastructure
+- Gaming
+- Professional Visualization
+
+Competitive Moats
+- Network Effects
+- Brand Power
+- Patents
+- Scale Economies
+
+Market Opportunity
+- TAM: $500B
+- Growing 20% YoY
+- International Expansion
+
+Value Creation
+- High Margins 70%+
+- Platform Economics
+- Recurring Revenue
+
+Goal
+
+Allow users to discover similar companies using these tags.
+
+Instead of manually selecting filters first, the workflow should be:
+
+1. User views a company (e.g., NVIDIA)
+2. User clicks or drags tags they find interesting
+3. The discovery engine shows other companies with those same tags.
+
+Feature 1 — Clickable Tags
+
+Every tag in the Investment Thesis section must be clickable.
+
+Example:
+
+<div class="tag-chip" data-tag="AI/ML">
+  AI/ML
+</div>
+
+When clicked:
+- open /discover page in a new tab
+- apply the selected tag as a filter
+
+Example URL:
+
+/discover?tags=AI/ML
+
+If multiple tags are clicked:
+
+/discover?tags=AI/ML,Cloud Infrastructure
+
+Feature 2 — Drag & Drop Discovery Area
+
+Add a discovery panel below the Investment Thesis section.
+
+UI layout:
+
+-------------------------------------
+Drag Tags Here to Discover Companies
+-------------------------------------
+
+[ Drop Zone ]
+
+Selected Tags:
+AI/ML   Cloud Infrastructure
+
+[ Show Similar Companies ]
+-------------------------------------
+
+Users can drag tags from the thesis section into this drop zone.
+
+Implementation
+
+1. Make tag chips draggable:
+
+<div draggable="true" class="tag-chip">
+  AI/ML
+</div>
+
+2. Add drop zone component:
+
+<div id="discovery-dropzone">
+  Drag tags here to discover similar companies
+</div>
+
+3. JavaScript behavior:
+
+On drag start:
+store tag name
+
+On drop:
+add tag to selectedTags array
+
+selectedTags = ["AI/ML", "Cloud Infrastructure"]
+
+4. Show selected tags visually inside the drop zone.
+
+Example UI:
+
+Selected Tags
+
+[ AI/ML ] [ Cloud Infrastructure ]
+
+Feature 3 — Show Results Button
+
+Add button:
+
+<button id="show-results">
+Show Similar Companies
+</button>
+
+When clicked:
+
+open:
+
+/discover?tags=AI/ML,Cloud Infrastructure
+
+in a new tab.
+
+Feature 4 — Tag Chips UX
+
+Improve tag styling:
+
+.tag-chip {
+  display: inline-block;
+  padding: 8px 14px;
+  border-radius: 10px;
+  background: #134e4a;
+  color: white;
+  font-weight: 500;
+  cursor: pointer;
+  margin: 6px;
+}
+
+.tag-chip:hover {
+  opacity: 0.85;
+  transform: translateY(-1px);
+}
+
+When tag is dragged or selected:
+highlight it.
+
+Feature 5 — Discovery Dropzone Styling
+
+#discovery-dropzone {
+  border: 2px dashed #cbd5e1;
+  border-radius: 12px;
+  padding: 24px;
+  text-align: center;
+  margin-top: 20px;
+  background: #f8fafc;
+}
+
+When tag is dragged over:
+
+#discovery-dropzone.drag-over {
+  background: #ecfeff;
+  border-color: #14b8a6;
+}
+
+Feature 6 — Deduplicate Tags
+
+If a tag is already selected, do not add it again.
+
+Feature 7 — Remove Tag
+
+Allow users to remove tags from the drop zone.
+
+Example:
+
+[ AI/ML ✕ ]
+
+Clicking ✕ removes the tag.
+
+Feature 8 — Backend Compatibility
+
+The discovery page already supports:
+
+/api/discover?tags=
+
+Ensure this feature sends tags in the same format:
+
+tags=AI/ML,Cloud Infrastructure
+
+No backend changes required.
+
+Expected User Flow
+
+User opens NVIDIA page
+
+→ sees tags like AI/ML and Cloud Infrastructure
+
+User drags AI/ML and Cloud Infrastructure into discovery area
+
+User clicks:
+
+"Show Similar Companies"
+
+System opens:
+
+/discover?tags=AI/ML,Cloud Infrastructure
+
+Results show companies like:
+
+AMD
+Microsoft
+Snowflake
+Palantir
+
+Goal
+
+Make the discovery process feel like a modern investment research tool where users explore companies visually instead of filling forms.
