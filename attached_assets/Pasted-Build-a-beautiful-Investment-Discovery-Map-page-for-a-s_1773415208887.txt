@@ -1,0 +1,208 @@
+Build a beautiful "Investment Discovery Map" page for a stock research platform.
+
+The page should visually show how companies relate to each other using an interactive network graph.
+
+Design inspiration: modern fintech dashboards (Bloomberg / PitchBook / Stripe style).
+
+TECH STACK
+React
+TypeScript
+TailwindCSS
+react-force-graph-2d
+
+Create a page:
+
+/discover/map
+
+--------------------------------------------------
+
+PAGE HEADER
+
+Title:
+Investment Discovery Map
+
+Subtitle:
+Explore clusters of companies with similar business models & strategic advantages.
+
+Add a search bar on the top right:
+Placeholder:
+Search company or ticker...
+
+--------------------------------------------------
+
+GRAPH CONTAINER
+
+Full width card with rounded corners.
+
+Background should be slightly dark with subtle gradient.
+
+Height:
+700px
+
+Add soft grid background pattern.
+
+--------------------------------------------------
+
+GRAPH DESIGN
+
+Companies should appear as nodes connected by similarity edges.
+
+Clusters should appear grouped visually.
+
+Cluster colors:
+
+AI Infrastructure → #8b5cf6 (purple)
+Cloud Platforms → #3b82f6 (blue)
+Cybersecurity → #f97316 (orange)
+Data Platforms → #14b8a6 (teal)
+Enterprise SaaS → #22c55e (green)
+Semiconductors → #eab308 (yellow)
+
+--------------------------------------------------
+
+NODE DESIGN
+
+Nodes should be circles.
+
+Node size depends on importance.
+
+Example:
+NVDA larger node.
+
+Node glow effect on hover.
+
+Node label displayed near node.
+
+--------------------------------------------------
+
+EDGE DESIGN
+
+Edges should be thin curved lines.
+
+Opacity around 0.25.
+
+Edge thickness based on similarity score.
+
+--------------------------------------------------
+
+INTERACTION
+
+User should be able to:
+
+Zoom
+Pan
+Drag nodes
+Hover nodes
+
+When hovering a node:
+
+Highlight connected nodes
+Fade unrelated nodes
+
+--------------------------------------------------
+
+NODE CLICK
+
+Clicking a node should navigate to:
+
+/stocks/:ticker
+
+--------------------------------------------------
+
+SEARCH FEATURE
+
+Search box should allow typing ticker or company name.
+
+When a company is found:
+
+Center the graph on that node
+Zoom into it
+
+Example:
+
+graph.centerAt(node.x, node.y, 600)
+graph.zoom(2.5, 600)
+
+--------------------------------------------------
+
+CLUSTER LEGEND
+
+Add legend bottom-left:
+
+CLUSTERS
+
+● AI Infrastructure
+● Cloud Platforms
+● Cybersecurity
+● Data Platforms
+● Enterprise SaaS
+● Semiconductors
+
+Each with colored dot.
+
+--------------------------------------------------
+
+SAMPLE DATA
+
+Create example nodes:
+
+NVDA
+AMD
+TSMC
+MSFT
+GOOG
+AMZN
+ORCL
+CRWD
+SNOW
+MDB
+NOW
+TEAM
+HUBS
+PANW
+FTNT
+
+Add connections to form clusters.
+
+Example:
+
+NVDA connected to AMD and TSMC
+MSFT connected to GOOG and SNOW
+CRWD connected to PANW and FTNT
+
+--------------------------------------------------
+
+GRAPH PHYSICS
+
+Use d3-force settings:
+
+charge strength: -120
+link distance: 90
+center strength: 0.05
+
+Cooldown ticks: 200
+
+--------------------------------------------------
+
+PERFORMANCE
+
+Limit graph to:
+
+300 nodes
+2000 links
+
+--------------------------------------------------
+
+VISUAL STYLE
+
+Clean fintech UI.
+
+Soft shadows.
+
+Rounded cards.
+
+Smooth hover transitions.
+
+Subtle animations.
+
+The final result should look like a modern investment discovery visualization dashboard.

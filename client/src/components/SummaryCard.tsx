@@ -890,7 +890,7 @@ export function SummaryCard({
                 </div>
               </div>
             )}
-            {!isDesktop && marketOpportunity && marketOpportunity.length > 0 && (
+            {marketOpportunity && marketOpportunity.length > 0 && (
               <div>
                 <p className="text-[9px] font-medium uppercase tracking-widest mb-2" style={{ color: 'var(--lp-ink-ghost)' }}>
                   ◎ Market Opportunity
@@ -904,12 +904,14 @@ export function SummaryCard({
                       explanation={opp.explanation}
                       testId={`opportunity-${opp.emphasis}-${i}`}
                       getThemeBadgeClasses={getThemeBadgeClasses}
+                      draggable={isDesktop}
+                      dragIdSuffix={`opp-${i}`}
                     />
                   ))}
                 </div>
               </div>
             )}
-            {!isDesktop && valueCreation && valueCreation.length > 0 && (
+            {valueCreation && valueCreation.length > 0 && (
               <div>
                 <p className="text-[9px] font-medium uppercase tracking-widest mb-2" style={{ color: 'var(--lp-ink-ghost)' }}>
                   ◈ Value Creation
@@ -923,6 +925,8 @@ export function SummaryCard({
                       explanation={val.explanation}
                       testId={`value-${val.emphasis}-${i}`}
                       getThemeBadgeClasses={getThemeBadgeClasses}
+                      draggable={isDesktop}
+                      dragIdSuffix={`val-${i}`}
                     />
                   ))}
                 </div>
@@ -1190,49 +1194,6 @@ export function SummaryCard({
           </div>
         </SectionCard>
 
-        {isDesktop && marketOpportunity && marketOpportunity.length > 0 && (
-          <SectionCard
-            header="Market Opportunity"
-            badge={`${marketOpportunity.length} signals`}
-          >
-            <div className="flex flex-wrap gap-1" data-testid="market-opportunity">
-              {marketOpportunity.map((opp, i) => (
-                <TagWithTooltip
-                  key={i}
-                  name={opp.name}
-                  emphasis={opp.emphasis}
-                  explanation={opp.explanation}
-                  testId={`opportunity-${opp.emphasis}-${i}`}
-                  getThemeBadgeClasses={getThemeBadgeClasses}
-                  draggable
-                  dragIdSuffix={`opp-${i}`}
-                />
-              ))}
-            </div>
-          </SectionCard>
-        )}
-
-        {isDesktop && valueCreation && valueCreation.length > 0 && (
-          <SectionCard
-            header="Value Creation"
-            badge={`${valueCreation.length} drivers`}
-          >
-            <div className="flex flex-wrap gap-1" data-testid="value-creation">
-              {valueCreation.map((val, i) => (
-                <TagWithTooltip
-                  key={i}
-                  name={val.name}
-                  emphasis={val.emphasis}
-                  explanation={val.explanation}
-                  testId={`value-${val.emphasis}-${i}`}
-                  getThemeBadgeClasses={getThemeBadgeClasses}
-                  draggable
-                  dragIdSuffix={`val-${i}`}
-                />
-              ))}
-            </div>
-          </SectionCard>
-        )}
         </div>
 
         {/* ── Right column: Desktop Discovery Sidebar ── */}
