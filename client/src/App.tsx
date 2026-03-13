@@ -5,7 +5,6 @@ import { QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { HelmetProvider } from "react-helmet-async";
-import { initGA } from "./lib/analytics";
 import { useAnalytics } from "./hooks/use-analytics";
 import { NavProvider } from "@/contexts/NavContext";
 
@@ -65,7 +64,7 @@ function Router() {
 
 function App() {
   useEffect(() => {
-    initGA();
+    import("./lib/analytics").then(({ initGA }) => initGA());
   }, []);
 
   return (

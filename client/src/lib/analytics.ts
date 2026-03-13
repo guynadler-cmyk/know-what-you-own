@@ -1,10 +1,9 @@
 // Firebase Analytics Integration (single pathway to avoid duplicate events)
 // See: blueprint:javascript_google_analytics
+// Firebase SDK is loaded lazily to keep it out of the initial JS bundle.
 
-import { initializeApp, getApps } from 'firebase/app';
-import { getAnalytics, logEvent, Analytics } from 'firebase/analytics';
+type Analytics = import('firebase/analytics').Analytics;
 
-// Firebase configuration from environment variables
 const firebaseConfig = {
   apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
   authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
@@ -15,85 +14,92 @@ const firebaseConfig = {
   measurementId: import.meta.env.VITE_FIREBASE_MEASUREMENT_ID,
 };
 
-// Firebase Analytics instance
 let firebaseAnalytics: Analytics | null = null;
+let initPromise: Promise<Analytics | null> | null = null;
 
-// Initialize Firebase
-const initFirebase = () => {
-  try {
-    // Check if Firebase config is available
-    if (!firebaseConfig.apiKey || !firebaseConfig.projectId) {
-      console.warn('Firebase config not available, skipping Firebase initialization');
+const initFirebase = async (): Promise<Analytics | null> => {
+  if (firebaseAnalytics) return firebaseAnalytics;
+  if (initPromise) return initPromise;
+
+  initPromise = (async () => {
+    try {
+      if (!firebaseConfig.apiKey || !firebaseConfig.projectId) {
+        console.warn('Firebase config not available, skipping Firebase initialization');
+        return null;
+      }
+
+      const [{ initializeApp, getApps }, { getAnalytics }] = await Promise.all([
+        import('firebase/app'),
+        import('firebase/analytics'),
+      ]);
+
+      const app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApps()[0];
+      firebaseAnalytics = getAnalytics(app);
+      console.log('Firebase Analytics initialized successfully');
+      return firebaseAnalytics;
+    } catch (error) {
+      console.warn('Failed to initialize Firebase Analytics:', error);
       return null;
     }
+  })();
 
-    // Only initialize if not already initialized
-    const app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApps()[0];
-    firebaseAnalytics = getAnalytics(app);
-    console.log('Firebase Analytics initialized successfully');
-    return firebaseAnalytics;
-  } catch (error) {
-    console.warn('Failed to initialize Firebase Analytics:', error);
-    return null;
-  }
+  return initPromise;
 };
 
-// Initialize Analytics (Firebase only - no direct gtag to avoid duplicate events)
 export const initGA = () => {
-  // Initialize Firebase Analytics only
   initFirebase();
 };
 
-// Track page views - useful for single-page applications
-export const trackPageView = (url: string) => {
-  // Firebase Analytics only
-  if (firebaseAnalytics) {
-    logEvent(firebaseAnalytics, 'page_view', {
-      page_path: url
-    });
-  }
+const ensureAnalytics = async (): Promise<Analytics | null> => {
+  if (firebaseAnalytics) return firebaseAnalytics;
+  return initFirebase();
 };
 
-// Track custom events - sends to Firebase only
-export const trackEvent = (
-  action: string, 
-  category?: string, 
-  label?: string, 
-  value?: number
+const lazyLogEvent = async (
+  eventName: string,
+  params?: Record<string, unknown>,
 ) => {
-  // Firebase Analytics only
-  if (firebaseAnalytics) {
-    logEvent(firebaseAnalytics, action, {
-      event_category: category,
-      event_label: label,
-      value: value,
-    });
+  const instance = await ensureAnalytics();
+  if (instance) {
+    const { logEvent } = await import('firebase/analytics');
+    logEvent(instance, eventName, params);
   }
 };
 
-// Custom event helpers for restnvest-specific tracking
+export const trackPageView = (url: string) => {
+  lazyLogEvent('page_view', { page_path: url });
+};
+
+export const trackEvent = (
+  action: string,
+  category?: string,
+  label?: string,
+  value?: number,
+) => {
+  lazyLogEvent(action, {
+    event_category: category,
+    event_label: label,
+    value: value,
+  });
+};
+
 export const analytics = {
-  // Track when a user submits a ticker for analysis
   trackTickerSearch: (ticker: string) => {
     trackEvent('ticker_search', 'engagement', ticker);
   },
 
-  // Track when analysis starts loading
   trackAnalysisStarted: (ticker: string) => {
     trackEvent('analysis_started', 'engagement', ticker);
   },
 
-  // Track when analysis completes successfully
   trackAnalysisCompleted: (ticker: string) => {
     trackEvent('analysis_completed', 'engagement', ticker);
   },
 
-  // Track when analysis fails
   trackAnalysisError: (ticker: string, errorMessage: string) => {
     trackEvent('analysis_error', 'error', `${ticker}: ${errorMessage}`);
   },
 
-  // Track stage navigation
   trackStageViewed: (stage: number, stageName: string, ticker?: string) => {
     trackEvent('stage_viewed', 'navigation', `Stage ${stage}: ${stageName}`, stage);
     if (ticker) {
@@ -101,27 +107,22 @@ export const analytics = {
     }
   },
 
-  // Track share button clicks
   trackShareClicked: (method: string) => {
     trackEvent('share_clicked', 'engagement', method);
   },
 
-  // Track theme toggle
   trackThemeToggled: (theme: string) => {
     trackEvent('theme_toggled', 'preferences', theme);
   },
 
-  // Track PWA install attempts
   trackInstallClicked: () => {
     trackEvent('pwa_install_clicked', 'engagement');
   },
 
-  // Track landing page section views
   trackLandingSection: (sectionId: string) => {
     trackEvent('landing_section_viewed', 'navigation', sectionId);
   },
 
-  // Track CTA clicks
   trackCtaClicked: (ctaName: string) => {
     trackEvent('cta_clicked', 'engagement', ctaName);
   },
@@ -132,13 +133,11 @@ export const analytics = {
     stage?: number;
     company_name?: string;
   }) => {
-    if (firebaseAnalytics) {
-      logEvent(firebaseAnalytics, 'new_lead', {
-        lead_source: params.lead_source,
-        ticker: params.ticker || '',
-        stage: params.stage ?? 0,
-        company_name: params.company_name || '',
-      });
-    }
+    lazyLogEvent('new_lead', {
+      lead_source: params.lead_source,
+      ticker: params.ticker || '',
+      stage: params.stage ?? 0,
+      company_name: params.company_name || '',
+    });
   },
 };
