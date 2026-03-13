@@ -1001,90 +1001,6 @@ export function SummaryCard({
           )}
         </SectionCard>
 
-        {/* Business Overview */}
-        <SectionCard
-          header={`Business Overview — ${ticker}`}
-          badge={`${products?.length || 0} products`}
-          collapsed={isMobile ? mobileExpandedSection !== 'businessOverview' : undefined}
-          onToggle={isMobile ? () => toggleMobileSection('businessOverview') : undefined}
-        >
-          {/* 2x2 products grid */}
-          <div className="grid grid-cols-2 gap-2.5 mb-3">
-            {products.map((product, i) => {
-              const Icon = product.icon;
-              return (
-                <div
-                  key={i}
-                  className="rounded-lg p-3 border"
-                  style={{ background: cream, borderColor: border }}
-                >
-                  <div
-                    className="w-6 h-6 rounded-md flex items-center justify-center mb-2"
-                    style={{ background: 'var(--lp-teal-ghost)' }}
-                  >
-                    <Icon className="h-3.5 w-3.5" style={{ color: 'var(--lp-teal-brand)' }} />
-                  </div>
-                  <p className="text-[11px] font-medium mb-0.5" style={{ color: 'var(--lp-ink)' }}>{product.name}</p>
-                  <p className="text-[10px] leading-[1.4]" style={{ color: 'var(--lp-ink-light)' }}>{product.description}</p>
-                </div>
-              );
-            })}
-          </div>
-
-          {/* where & how 3-col strip */}
-          <div
-            className="pt-3 border-t grid grid-cols-3 gap-2.5"
-            style={{ borderColor: border }}
-          >
-            <div>
-              <p className="text-[9px] font-medium uppercase tracking-widest mb-1.5" style={{ color: 'var(--lp-ink-ghost)' }}>
-                Reach
-              </p>
-              <div className="flex flex-wrap gap-1">
-                {operations.regions.map((r, i) => (
-                  <span
-                    key={i}
-                    className="text-[9px] px-1.5 py-0.5 rounded-sm border"
-                    style={{ background: 'var(--lp-teal-ghost)', color: 'var(--lp-teal-mid)', borderColor: border }}
-                  >
-                    {r}
-                  </span>
-                ))}
-              </div>
-            </div>
-            <div>
-              <p className="text-[9px] font-medium uppercase tracking-widest mb-1.5" style={{ color: 'var(--lp-ink-ghost)' }}>
-                Sales
-              </p>
-              <div className="flex flex-wrap gap-1">
-                {operations.channels.map((ch, i) => (
-                  <Tooltip key={i}>
-                    <TooltipTrigger asChild>
-                      <span
-                        className="text-[9px] px-1.5 py-0.5 rounded-sm border cursor-help"
-                        style={{ background: 'var(--lp-teal-ghost)', color: 'var(--lp-teal-mid)', borderColor: border }}
-                        data-testid={`badge-channel-${i}`}
-                      >
-                        {ch.name}
-                      </span>
-                    </TooltipTrigger>
-                    <TooltipContent className="max-w-xs p-2 text-xs">
-                      <p>{ch.explanation}</p>
-                    </TooltipContent>
-                  </Tooltip>
-                ))}
-              </div>
-            </div>
-            <div>
-              <p className="text-[9px] font-medium uppercase tracking-widest mb-1.5" style={{ color: 'var(--lp-ink-ghost)' }}>
-                Scale
-              </p>
-              <p className="text-[10px] leading-[1.4]" style={{ color: 'var(--lp-ink-light)' }}>
-                {operations.scale}
-              </p>
-            </div>
-          </div>
-        </SectionCard>
         </div>
 
         {/* ── Center column ── */}
@@ -1191,6 +1107,91 @@ export function SummaryCard({
                 </div>
               )
             ))}
+          </div>
+        </SectionCard>
+
+        {/* Business Overview */}
+        <SectionCard
+          header={`Business Overview — ${ticker}`}
+          badge={`${products?.length || 0} products`}
+          collapsed={isMobile ? mobileExpandedSection !== 'businessOverview' : undefined}
+          onToggle={isMobile ? () => toggleMobileSection('businessOverview') : undefined}
+        >
+          {/* products grid — 2 cols, more breathing room */}
+          <div className="grid grid-cols-2 gap-3 mb-4">
+            {products.map((product, i) => {
+              const Icon = product.icon;
+              return (
+                <div
+                  key={i}
+                  className="rounded-lg p-4 border flex flex-col gap-2"
+                  style={{ background: cream, borderColor: border }}
+                >
+                  <div
+                    className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0"
+                    style={{ background: 'var(--lp-teal-ghost)' }}
+                  >
+                    <Icon className="h-4 w-4" style={{ color: 'var(--lp-teal-brand)' }} />
+                  </div>
+                  <p className="text-xs font-semibold leading-snug" style={{ color: 'var(--lp-ink)' }}>{product.name}</p>
+                  <p className="text-[11px] leading-relaxed" style={{ color: 'var(--lp-ink-light)' }}>{product.description}</p>
+                </div>
+              );
+            })}
+          </div>
+
+          {/* where & how 3-col strip */}
+          <div
+            className="pt-3 border-t grid grid-cols-3 gap-3"
+            style={{ borderColor: border }}
+          >
+            <div>
+              <p className="text-[9px] font-medium uppercase tracking-widest mb-1.5" style={{ color: 'var(--lp-ink-ghost)' }}>
+                Reach
+              </p>
+              <div className="flex flex-wrap gap-1">
+                {operations.regions.map((r, i) => (
+                  <span
+                    key={i}
+                    className="text-[9px] px-1.5 py-0.5 rounded-sm border"
+                    style={{ background: 'var(--lp-teal-ghost)', color: 'var(--lp-teal-mid)', borderColor: border }}
+                  >
+                    {r}
+                  </span>
+                ))}
+              </div>
+            </div>
+            <div>
+              <p className="text-[9px] font-medium uppercase tracking-widest mb-1.5" style={{ color: 'var(--lp-ink-ghost)' }}>
+                Sales
+              </p>
+              <div className="flex flex-wrap gap-1">
+                {operations.channels.map((ch, i) => (
+                  <Tooltip key={i}>
+                    <TooltipTrigger asChild>
+                      <span
+                        className="text-[9px] px-1.5 py-0.5 rounded-sm border cursor-help"
+                        style={{ background: 'var(--lp-teal-ghost)', color: 'var(--lp-teal-mid)', borderColor: border }}
+                        data-testid={`badge-channel-${i}`}
+                      >
+                        {ch.name}
+                      </span>
+                    </TooltipTrigger>
+                    <TooltipContent className="max-w-xs p-2 text-xs">
+                      <p>{ch.explanation}</p>
+                    </TooltipContent>
+                  </Tooltip>
+                ))}
+              </div>
+            </div>
+            <div>
+              <p className="text-[9px] font-medium uppercase tracking-widest mb-1.5" style={{ color: 'var(--lp-ink-ghost)' }}>
+                Scale
+              </p>
+              <p className="text-[11px] leading-relaxed" style={{ color: 'var(--lp-ink-light)' }}>
+                {operations.scale}
+              </p>
+            </div>
           </div>
         </SectionCard>
 
