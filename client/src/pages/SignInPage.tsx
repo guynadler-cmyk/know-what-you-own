@@ -5,7 +5,7 @@ import { Card } from "@/components/ui/card";
 import { useAuth } from "@/hooks/use-auth";
 import { signInWithGoogle, handleRedirectResult } from "@/lib/firebase";
 import { useToast } from "@/hooks/use-toast";
-import ChatGPT_Image_Jan_22__2026__01_43_07_PM_cropped from "@assets/ChatGPT Image Jan 22, 2026, 01_43_07 PM_cropped.png";
+const headerLogoSrc = "/images/header-logo.webp";
 
 export default function SignInPage() {
   const { isAuthenticated, isLoading } = useAuth();
@@ -59,7 +59,7 @@ export default function SignInPage() {
     <div className="flex items-center justify-center min-h-screen bg-background px-4">
       <Card className="w-full max-w-md p-8 flex flex-col items-center gap-6">
         <img
-          src={ChatGPT_Image_Jan_22__2026__01_43_07_PM_cropped}
+          src={headerLogoSrc}
           alt="Restnvest"
           className="h-12 w-auto object-contain"
           data-testid="img-signin-logo"

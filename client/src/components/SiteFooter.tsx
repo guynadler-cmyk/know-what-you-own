@@ -1,5 +1,5 @@
 import { Link } from "wouter";
-import wordmarkWithTagline from "@assets/ChatGPT_Image_Jan_12,_2026,_06_06_56_PM_1769108399893.png";
+const footerWordmarkSrc = "/images/footer-wordmark.webp";
 
 const footerLinks = {
   product: [
@@ -28,9 +28,11 @@ export function SiteFooter() {
           <div className="col-span-2 md:col-span-1">
             <Link href="/" data-testid="link-footer-logo">
               <img
-                src={wordmarkWithTagline}
+                src={footerWordmarkSrc}
                 alt="Restnvest - Informed investing, built to last"
-                className="h-16 sm:h-20 object-contain dark:brightness-110"
+                width={240}
+                height={160}
+                className="h-16 sm:h-20 w-auto object-contain dark:brightness-110"
               />
             </Link>
             <p className="mt-4 text-sm text-muted-foreground leading-relaxed max-w-[240px]">

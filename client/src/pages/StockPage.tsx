@@ -15,7 +15,7 @@ import { InlineEmailCapture } from "@/components/InlineEmailCapture";
 import { MobileGateSheet } from "@/components/MobileGateSheet";
 import { MobileAnalysisPaywall } from "@/components/MobileAnalysisPaywall";
 import { TickerFollowPrompt } from "@/components/TickerFollowPrompt";
-import { useAuth } from "@/hooks/use-auth";
+import { useDeferredAuth } from "@/hooks/use-auth";
 import { Button } from "@/components/ui/button";
 import { CompanySummary, FinancialMetrics, BalanceSheetMetrics, WatchlistSnapshot } from "@shared/schema";
 
@@ -59,7 +59,14 @@ export default function StockPage() {
   const stage3TimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const stage4ClicksRef = useRef(0);
   const stage4TimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, authResolved } = useDeferredAuth();
+
+  useEffect(() => {
+    if (authResolved && isAuthenticated && ticker) {
+      unlockPaywall(ticker);
+      setPaywallState("unlocked");
+    }
+  }, [authResolved, isAuthenticated, ticker]);
 
   useEffect(() => {
     if (viewState !== "loading") {
@@ -126,6 +133,8 @@ export default function StockPage() {
   useEffect(() => {
     if (!shouldShowPaywall(currentStage)) { setShowFloatingModal(false); return; }
     if (paywallState === "unlocked") { setShowFloatingModal(false); return; }
+    if (isAuthenticated) { setShowFloatingModal(false); return; }
+    if (!authResolved) { setShowFloatingModal(false); return; }
     if (paywallState === "locked") { setShowFloatingModal(true); return; }
     if (paywallState === "skipped") {
       if (lastSkippedStage !== null && currentStage <= lastSkippedStage) {
@@ -134,7 +143,7 @@ export default function StockPage() {
         setShowFloatingModal(true);
       }
     }
-  }, [currentStage, paywallState, lastSkippedStage]);
+  }, [currentStage, paywallState, lastSkippedStage, authResolved, isAuthenticated]);
 
   const handlePaywallUnlocked = () => {
     setPaywallState("unlocked");
@@ -165,11 +174,13 @@ export default function StockPage() {
   }, [ticker]);
   const handleMobileScroll = useCallback(() => {
     if (window.innerWidth >= 768) return;
+    if (!authResolved) return;
+    if (isAuthenticated) return;
     if (paywallState === "unlocked") return;
     if (getStoredEmail()) return;
     if (mobileGateDismissedRef.current) return;
     setShowMobileGate(true);
-  }, [paywallState]);
+  }, [paywallState, authResolved, isAuthenticated]);
 
   const handleMobileGateDismissed = useCallback(() => {
     mobileGateDismissedRef.current = true;
@@ -183,23 +194,25 @@ export default function StockPage() {
 
   const handleStage3SubSectionClick = useCallback((id: string) => {
     if (window.innerWidth >= 768) return;
+    if (!authResolved) return;
     if (isAuthenticated) return;
     if (analysisPaywallDismissedRef.current) return;
     stage3ClicksRef.current += 1;
     if (stage3ClicksRef.current >= 2 && !stage3TimerRef.current) {
       stage3TimerRef.current = setTimeout(() => setShowAnalysisPaywall(3), 5000);
     }
-  }, [isAuthenticated]);
+  }, [isAuthenticated, authResolved]);
 
   const handleStage4SubSectionClick = useCallback((id: string) => {
     if (window.innerWidth >= 768) return;
+    if (!authResolved) return;
     if (isAuthenticated) return;
     if (analysisPaywallDismissedRef.current) return;
     stage4ClicksRef.current += 1;
     if (stage4ClicksRef.current >= 2 && !stage4TimerRef.current) {
       stage4TimerRef.current = setTimeout(() => setShowAnalysisPaywall(4), 4000);
     }
-  }, [isAuthenticated]);
+  }, [isAuthenticated, authResolved]);
 
   const handleAnalysisPaywallDismissed = useCallback(() => {
     analysisPaywallDismissedRef.current = true;
@@ -473,7 +486,7 @@ export default function StockPage() {
                 onSubSectionClick: currentStage === 3 ? handleStage3SubSectionClick : currentStage === 4 ? handleStage4SubSectionClick : undefined,
               };
 
-              if (!isGated || isUnlocked) {
+              if (!isGated || isUnlocked || isAuthenticated || !authResolved) {
                 const showFollowPrompt = isGated && isUnlocked && !tickerFollowed;
                 return (
                   <>
@@ -484,14 +497,14 @@ export default function StockPage() {
                       />
                     )}
                     <StageContent {...stageContentProps} />
-                    {showMobileGate && currentStage === 1 && paywallState !== "unlocked" && (
+                    {showMobileGate && currentStage === 1 && !isAuthenticated && paywallState !== "unlocked" && (
                       <MobileGateSheet
                         ticker={ticker}
                         onUnlocked={handleMobileGateUnlocked}
                         onDismissed={handleMobileGateDismissed}
                       />
                     )}
-                    {showAnalysisPaywall !== null && (currentStage === 3 || currentStage === 4) && (
+                    {showAnalysisPaywall !== null && !isAuthenticated && (currentStage === 3 || currentStage === 4) && (
                       <MobileAnalysisPaywall
                         stage={showAnalysisPaywall}
                         isOpen={true}

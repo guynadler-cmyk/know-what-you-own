@@ -16,7 +16,7 @@ import { Search, LogIn, LogOut, Bookmark } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
 import { firebaseSignOut } from "@/lib/firebase";
 import { queryClient, getQueryFn } from "@/lib/queryClient";
-import ChatGPT_Image_Jan_22__2026__01_43_07_PM_cropped from "@assets/ChatGPT Image Jan 22, 2026, 01_43_07 PM_cropped.png";
+const headerLogoSrc = "/images/header-logo.webp";
 
 const navLinks = [
   { label: "Discover", href: "/discover" },
@@ -125,8 +125,10 @@ export function SiteHeader() {
       <div className="flex items-center justify-between px-4 sm:px-8 h-16 max-w-[1200px] mx-auto gap-4">
         <Link href="/" data-testid="link-header-logo" className="flex items-center shrink-0">
           <img
-            src={ChatGPT_Image_Jan_22__2026__01_43_07_PM_cropped}
+            src={headerLogoSrc}
             alt="Restnvest"
+            width={338}
+            height={96}
             className="h-10 md:h-12 w-auto object-contain"
           />
         </Link>
