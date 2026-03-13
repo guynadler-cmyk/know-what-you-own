@@ -1,0 +1,25 @@
+Redesign the Investment Thesis card and Business Overview card. Do not change any data, logic, or colors — only fix layout and spacing. Follow these rules exactly:
+
+INVESTMENT THESIS CARD
+- Change the thesis sections from a 2-col tag dump to a clean 2×2 grid
+- Each quadrant (Strategic Themes / Competitive Moats / Market Opportunity / Value Creation) gets its own cell with: a border separator between cells, 24px internal padding, a small icon + uppercase 11px section label, and the tags below with 8px gap between them
+- Move the legend (Strong / Moderate / Mentioned dots) to a thin strip between the header and the grid — not inside the grid
+- Tags must not be truncated. Wrap them. Each tag: border-radius 20px, 5px 12px padding, font-size 12px
+- Strong tags: background #0D5C4A, text #E1F5EE. Moderate tags: background #9FE1CB, text #04342C. Light/mentioned: secondary background + border
+
+BUSINESS OVERVIEW / PRODUCTS
+- Change from a 4-column cramped row to a 2×2 grid
+- Each product cell: 24px padding, small colored icon (each product gets a different color — Gotham: green #E1F5EE, Foundry: blue #E6F1FB, Apollo: amber #FAEEDA, AIP: purple #EEEDFE), icon 36×36px with border-radius 10px
+- Product name: 14px 500 weight. Description: 12px secondary color, line-height 1.55
+- Icon and text sit side by side (flex row, gap 16px)
+- Borders: 0.5px var(--color-border-tertiary) between cells only — no outer shadow
+
+COMPETITION (if inside the same card)
+- Each competitor row: ticker badge on the left (11px, secondary background, 3px 9px padding), company name + description in the middle (flex: 1), chevron on the right
+- 16px 28px padding per row, border-bottom between rows
+
+GENERAL RULES
+- No changes to colors, data, or existing functionality
+- All cards: border-radius 16px, border 0.5px solid var(--color-border-tertiary)
+- Card header: background #0D5C4A, white text, uppercase 11px, letter-spacing 0.08em, padding 13px 24px
+- Add proper section sub-labels ("Products", "Competition") as 13px secondary text at 20px 28px padding before each section
