@@ -1,5 +1,8 @@
 import { useState, useEffect } from "react";
+import { useLocation } from "wouter";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Map } from "lucide-react";
 
 interface StageContent {
   eyebrow: string;
@@ -58,6 +61,7 @@ interface TickerContextCardProps {
 }
 
 export function TickerContextCard({ ticker, currentStage = 1 }: TickerContextCardProps) {
+  const [, navigate] = useLocation();
   const [visible, setVisible] = useState(true);
   const [displayStage, setDisplayStage] = useState(currentStage);
 
@@ -104,7 +108,7 @@ export function TickerContextCard({ ticker, currentStage = 1 }: TickerContextCar
           {content.sub}
         </p>
       </div>
-      <div className="flex flex-wrap gap-2">
+      <div className="flex flex-wrap items-center gap-2">
         <Badge
           variant="outline"
           className="no-default-hover-elevate no-default-active-elevate text-xs border-white/20 text-white/80"
@@ -129,6 +133,19 @@ export function TickerContextCard({ ticker, currentStage = 1 }: TickerContextCar
         >
           6 dimensions
         </Badge>
+        <Button
+          variant="outline"
+          size="sm"
+          className="ml-auto border-white/20 text-white/90 bg-white/5"
+          onClick={(e) => {
+            e.stopPropagation();
+            navigate(`/discover/map?focus=${ticker}`);
+          }}
+          data-testid="button-explore-map"
+        >
+          <Map className="h-3.5 w-3.5 mr-1.5" />
+          Explore Investment Map
+        </Button>
       </div>
     </div>
   );

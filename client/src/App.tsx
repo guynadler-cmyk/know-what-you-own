@@ -22,6 +22,7 @@ const PrivacyPage = lazy(() => import("@/pages/PrivacyPage"));
 const WatchlistPage = lazy(() => import("@/pages/WatchlistPage"));
 const StockPage = lazy(() => import("@/pages/StockPage"));
 const DiscoverPage = lazy(() => import("@/pages/DiscoverPage"));
+const DiscoverMapPage = lazy(() => import("@/pages/DiscoverMapPage"));
 const FoundingPage = lazy(() => import("@/pages/FoundingPage"));
 const SignInPage = lazy(() => import("@/pages/SignInPage"));
 const NotFound = lazy(() => import("@/pages/not-found"));
@@ -51,6 +52,7 @@ function Router() {
         <Route path="/faq" component={FAQPage} />
         <Route path="/terms" component={TermsPage} />
         <Route path="/privacy" component={PrivacyPage} />
+        <Route path="/discover/map" component={DiscoverMapPage} />
         <Route path="/discover" component={DiscoverPage} />
         <Route path="/watchlist" component={WatchlistPage} />
         <Route path="/stocks/:ticker" component={StockPage} />

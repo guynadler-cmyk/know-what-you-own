@@ -467,6 +467,7 @@ interface ByTagCompany {
 }
 
 export default function DiscoverPage() {
+  const [, navigate] = useLocation();
   const [searchQuery, setSearchQuery] = useState("");
   const [gradeFilter, setGradeFilter] = useState("all");
   const [sortMode, setSortMode] = useState<SortMode>("highest");
@@ -802,15 +803,25 @@ export default function DiscoverPage() {
           <p className="mt-4 text-lg text-muted-foreground max-w-2xl mx-auto leading-relaxed">
             Filter by competitive moats and investment themes to find companies that match your criteria.
           </p>
-          <div className="mt-6">
+          <div className="mt-6 flex flex-wrap items-center justify-center gap-3">
             <Button
               size="lg"
               className="rounded-full gap-2"
               data-testid="button-discover-cta"
-              onClick={() => window.location.href = "/app"}
+              onClick={() => navigate("/app")}
             >
               <Search className="h-5 w-5" />
               Research a stock
+            </Button>
+            <Button
+              variant="outline"
+              size="lg"
+              className="rounded-full gap-2"
+              data-testid="button-discover-map"
+              onClick={() => navigate("/discover/map")}
+            >
+              <Layers className="h-5 w-5" />
+              Investment Map
             </Button>
           </div>
         </div>

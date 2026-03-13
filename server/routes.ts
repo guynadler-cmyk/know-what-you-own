@@ -2871,6 +2871,176 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.get("/api/discover/map", async (req, res) => {
+    try {
+      const { db: extDb } = await import("./db");
+      const { aiBusinessAnalysis } = await import("../shared/schema");
+      const { sql, desc } = await import("drizzle-orm");
+
+      type TagItem = { name: string; emphasis: string };
+
+      const rows = await extDb
+        .select({
+          ticker: aiBusinessAnalysis.ticker,
+          companyName: aiBusinessAnalysis.companyName,
+          fiscalYear: aiBusinessAnalysis.fiscalYear,
+          rCompanyName: sql<string>`result->>'companyName'`,
+          tagline: sql<string>`result->>'tagline'`,
+          analysisDepth: sql<string>`result->>'analysisDepth'`,
+          unavailable: sql<string>`result->>'businessAnalysisUnavailable'`,
+          moats: sql<TagItem[]>`result->'moats'`,
+          investmentThemes: sql<TagItem[]>`result->'investmentThemes'`,
+        })
+        .from(aiBusinessAnalysis)
+        .orderBy(desc(aiBusinessAnalysis.createdAt));
+
+      const seen = new Set<string>();
+      type MapCompany = {
+        ticker: string;
+        name: string;
+        moatTags: string[];
+        themeTags: string[];
+      };
+      const companies: MapCompany[] = [];
+
+      for (const row of rows) {
+        const t = row.ticker.toUpperCase();
+        if (seen.has(t)) continue;
+        seen.add(t);
+        if (row.unavailable === "true") continue;
+
+        const moats: TagItem[] = (row.moats as TagItem[]) || [];
+        const themes: TagItem[] = (row.investmentThemes as TagItem[]) || [];
+        const moatTags = moats.map((m) => m.name).filter(Boolean);
+        const themeTags = themes.map((th) => th.name).filter(Boolean);
+        if (moatTags.length === 0 && themeTags.length === 0) continue;
+
+        companies.push({
+          ticker: t,
+          name: stripLegalSuffix(row.rCompanyName || row.companyName),
+          moatTags,
+          themeTags,
+        });
+      }
+
+      const capped = companies.slice(0, 300);
+
+      const themeToCluster: Record<string, string> = {
+        "ai/ml": "AI Infrastructure",
+        "artificial intelligence": "AI Infrastructure",
+        "machine learning": "AI Infrastructure",
+        "deep learning": "AI Infrastructure",
+        "generative ai": "AI Infrastructure",
+        "ai infrastructure": "AI Infrastructure",
+        "cloud infrastructure": "Cloud Platforms",
+        "cloud solutions": "Cloud Platforms",
+        "cloud computing": "Cloud Platforms",
+        "cloud platform": "Cloud Platforms",
+        "cloud services": "Cloud Platforms",
+        "platform ecosystem": "Cloud Platforms",
+        "cybersecurity": "Cybersecurity",
+        "security": "Cybersecurity",
+        "identity management": "Cybersecurity",
+        "zero trust": "Cybersecurity",
+        "threat detection": "Cybersecurity",
+        "data analytics": "Data Platforms",
+        "data platform": "Data Platforms",
+        "big data": "Data Platforms",
+        "business intelligence": "Data Platforms",
+        "data management": "Data Platforms",
+        "enterprise software": "Enterprise SaaS",
+        "saas": "Enterprise SaaS",
+        "digital transformation": "Enterprise SaaS",
+        "subscription model": "Enterprise SaaS",
+        "enterprise solutions": "Enterprise SaaS",
+        "semiconductor": "Semiconductors",
+        "chip design": "Semiconductors",
+        "gpu computing": "Semiconductors",
+        "processor technology": "Semiconductors",
+        "silicon": "Semiconductors",
+      };
+
+      const assignCluster = (c: MapCompany): string => {
+        const clusterVotes: Record<string, number> = {};
+        for (const tag of c.themeTags) {
+          const key = tag.toLowerCase().trim();
+          const mapped = themeToCluster[key];
+          if (mapped) {
+            clusterVotes[mapped] = (clusterVotes[mapped] || 0) + 1;
+          }
+        }
+        let bestCluster = "Enterprise SaaS";
+        let bestCount = 0;
+        for (const [cluster, count] of Object.entries(clusterVotes)) {
+          if (count > bestCount) {
+            bestCount = count;
+            bestCluster = cluster;
+          }
+        }
+        return bestCluster;
+      };
+
+      const nodes = capped.map((c) => ({
+        id: c.ticker,
+        name: c.name,
+        cluster: assignCluster(c),
+        moatTags: c.moatTags,
+        themeTags: c.themeTags,
+      }));
+
+      const jaccardSimilarity = (a: string[], b: string[]): number => {
+        const setA = new Set(a.map(s => s.toLowerCase()));
+        const setB = new Set(b.map(s => s.toLowerCase()));
+        let intersection = 0;
+        const arrA = Array.from(setA);
+        for (let k = 0; k < arrA.length; k++) {
+          if (setB.has(arrA[k])) intersection++;
+        }
+        const union = new Set([...arrA, ...Array.from(setB)]).size;
+        return union === 0 ? 0 : intersection / union;
+      };
+
+      const tagOverlap = (a: string[], b: string[]): number => {
+        const setA = new Set(a.map(s => s.toLowerCase()));
+        const setB = new Set(b.map(s => s.toLowerCase()));
+        let overlap = 0;
+        const arrA = Array.from(setA);
+        for (let k = 0; k < arrA.length; k++) {
+          if (setB.has(arrA[k])) overlap++;
+        }
+        const maxLen = Math.max(setA.size, setB.size);
+        return maxLen === 0 ? 0 : overlap / maxLen;
+      };
+
+      const links: Array<{ source: string; target: string; weight: number }> = [];
+
+      for (let i = 0; i < capped.length; i++) {
+        for (let j = i + 1; j < capped.length; j++) {
+          const a = capped[i];
+          const b = capped[j];
+
+          const allTagsA = [...a.themeTags, ...a.moatTags];
+          const allTagsB = [...b.themeTags, ...b.moatTags];
+          const overlap = tagOverlap(allTagsA, allTagsB);
+          const jaccard = jaccardSimilarity(allTagsA, allTagsB);
+          const similarity = 0.6 * overlap + 0.4 * jaccard;
+
+          if (similarity > 0.65) {
+            links.push({ source: a.ticker, target: b.ticker, weight: similarity });
+          }
+        }
+      }
+
+      links.sort((a, b) => b.weight - a.weight);
+      const topLinks = links.slice(0, 1500);
+
+      res.json({ nodes, links: topLinks });
+    } catch (err: any) {
+      console.error("[DISCOVER MAP]", err.message);
+      res.status(500).json({ error: "Failed to load discover map data" });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }
