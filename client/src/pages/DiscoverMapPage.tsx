@@ -6,6 +6,7 @@ import { SiteLayout } from "@/components/SiteLayout";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Badge } from "@/components/ui/badge";
 import { Search, ArrowLeft, MapPin } from "lucide-react";
 import ForceGraph2D, { type ForceGraphMethods, type NodeObject } from "react-force-graph-2d";
 
@@ -50,11 +51,16 @@ function getClusterColor(cluster: string): string {
   return CLUSTER_COLORS[cluster] || FALLBACK_COLOR;
 }
 
+const GRAPH_HEIGHT = 700;
+
 export default function DiscoverMapPage() {
   const [, navigate] = useLocation();
   const [searchQuery, setSearchQuery] = useState("");
   const [hoveredNode, setHoveredNode] = useState<string | null>(null);
+  const [tooltipPos, setTooltipPos] = useState<{ x: number; y: number } | null>(null);
+  const [activeCluster, setActiveCluster] = useState<string | null>(null);
   const graphRef = useRef<ForceGraphMethods<NodeObject<MapNode>> | undefined>(undefined);
+  const graphContainerRef = useRef<HTMLDivElement>(null);
 
   const focusParam = useMemo(() => {
     const params = new URLSearchParams(window.location.search);
@@ -86,6 +92,15 @@ export default function DiscoverMapPage() {
     return { nodes, links: safeLinks };
   }, [mapData]);
 
+  const dataClusters = useMemo(() => {
+    if (!mapData) return Object.keys(CLUSTER_COLORS);
+    const clusters = new Set<string>();
+    for (const node of (mapData.nodes ?? [])) {
+      if (node.cluster) clusters.add(node.cluster);
+    }
+    return Array.from(clusters).sort();
+  }, [mapData]);
+
   const connectedNodes = useMemo(() => {
     if (!hoveredNode || !mapData) return new Set<string>();
     const connected = new Set<string>();
@@ -97,6 +112,25 @@ export default function DiscoverMapPage() {
       if (targetId === hoveredNode) connected.add(sourceId);
     }
     return connected;
+  }, [hoveredNode, mapData]);
+
+  const neighborNames = useMemo(() => {
+    if (!hoveredNode || !mapData) return [];
+    const seen = new Set<string>();
+    const neighbors: { id: string; name: string }[] = [];
+    for (const link of (mapData.links ?? [])) {
+      const sourceId = typeof link.source === "string" ? link.source : link.source.id;
+      const targetId = typeof link.target === "string" ? link.target : link.target.id;
+      let neighborId: string | null = null;
+      if (sourceId === hoveredNode) neighborId = targetId;
+      if (targetId === hoveredNode) neighborId = sourceId;
+      if (neighborId && !seen.has(neighborId)) {
+        seen.add(neighborId);
+        const node = mapData.nodes.find((n) => n.id === neighborId);
+        if (node) neighbors.push({ id: node.id, name: node.name });
+      }
+    }
+    return neighbors.slice(0, 5);
   }, [hoveredNode, mapData]);
 
   const focusOnNode = useCallback(
@@ -172,6 +206,17 @@ export default function DiscoverMapPage() {
 
   const handleNodeHover = useCallback((node: NodeObject<MapNode> | null) => {
     setHoveredNode(node ? node.id as string : null);
+    if (!node) {
+      setTooltipPos(null);
+    }
+  }, []);
+
+  const handleContainerMouseMove = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
+    if (!graphContainerRef.current) return;
+    const rect = graphContainerRef.current.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const y = e.clientY - rect.top;
+    setTooltipPos({ x, y });
   }, []);
 
   const nodeCanvasObject = useCallback(
@@ -184,7 +229,9 @@ export default function DiscoverMapPage() {
       const nodeX = n.x ?? 0;
       const nodeY = n.y ?? 0;
 
-      const isActive = !hoveredNode || connectedNodes.has(label);
+      const isHoverActive = !hoveredNode || connectedNodes.has(label);
+      const isClusterActive = !activeCluster || n.cluster === activeCluster;
+      const isActive = isHoverActive && isClusterActive;
       const alpha = isActive ? 1 : 0.06;
 
       ctx.globalAlpha = alpha;
@@ -224,7 +271,7 @@ export default function DiscoverMapPage() {
 
       ctx.globalAlpha = 1;
     },
-    [hoveredNode, connectedNodes]
+    [hoveredNode, connectedNodes, activeCluster]
   );
 
   const linkColor = useCallback(
@@ -246,6 +293,23 @@ export default function DiscoverMapPage() {
     },
     []
   );
+
+  const tooltipNode = hoveredNode && mapData ? mapData.nodes.find((n) => n.id === hoveredNode) : null;
+
+  const clampedTooltipPos = useMemo(() => {
+    if (!tooltipPos || !graphContainerRef.current) return null;
+    const containerWidth = graphContainerRef.current.offsetWidth;
+    const tooltipW = 240;
+    const tooltipH = 180;
+    const offset = 16;
+    let x = tooltipPos.x + offset;
+    let y = tooltipPos.y + offset;
+    if (x + tooltipW > containerWidth - 8) x = tooltipPos.x - tooltipW - offset;
+    if (y + tooltipH > GRAPH_HEIGHT - 8) y = GRAPH_HEIGHT - tooltipH - 8;
+    if (x < 8) x = 8;
+    if (y < 8) y = 8;
+    return { x, y };
+  }, [tooltipPos]);
 
   return (
     <SiteLayout>
@@ -270,24 +334,23 @@ export default function DiscoverMapPage() {
           </Button>
         </div>
 
-        <div className="mb-6">
-          <h1
-            className="text-2xl sm:text-3xl font-bold mb-2"
-            data-testid="text-map-title"
-          >
-            Investment Discovery Map
-          </h1>
-          <p
-            className="text-sm text-muted-foreground max-w-2xl"
-            data-testid="text-map-subtitle"
-          >
-            Explore how companies relate to each other based on shared investment
-            themes and competitive moats. Click any node to view its full analysis.
-          </p>
-        </div>
+        <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4 mb-6">
+          <div className="flex-1 min-w-0">
+            <h1
+              className="text-2xl sm:text-3xl font-bold mb-2"
+              data-testid="text-map-title"
+            >
+              Investment Discovery Map
+            </h1>
+            <p
+              className="text-sm text-muted-foreground max-w-2xl"
+              data-testid="text-map-subtitle"
+            >
+              Explore clusters of companies with similar business models, technologies, and strategic advantages.
+            </p>
+          </div>
 
-        <div className="flex flex-wrap items-center gap-3 mb-4">
-          <form onSubmit={handleSearch} className="flex gap-2 flex-1 min-w-[200px] max-w-sm">
+          <form onSubmit={handleSearch} className="flex gap-2 w-full sm:w-auto sm:min-w-[280px] sm:max-w-sm flex-shrink-0">
             <div className="relative flex-1">
               <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
@@ -305,14 +368,40 @@ export default function DiscoverMapPage() {
           </form>
         </div>
 
-        <div className="relative">
+        <div className="flex flex-wrap items-center gap-2 mb-4" data-testid="cluster-filter-pills">
+          <Badge
+            variant={activeCluster === null ? "default" : "outline"}
+            className="cursor-pointer select-none"
+            onClick={() => setActiveCluster(null)}
+            data-testid="pill-cluster-all"
+          >
+            All
+          </Badge>
+          {dataClusters.map((label) => (
+            <Badge
+              key={label}
+              variant={activeCluster === label ? "default" : "outline"}
+              className="cursor-pointer select-none gap-1.5"
+              onClick={() => setActiveCluster(activeCluster === label ? null : label)}
+              data-testid={`pill-cluster-${label.toLowerCase().replace(/\s+/g, "-")}`}
+            >
+              <span
+                className="inline-block w-2 h-2 rounded-full flex-shrink-0"
+                style={{ background: getClusterColor(label) }}
+              />
+              {label}
+            </Badge>
+          ))}
+        </div>
+
+        <div className="relative" ref={graphContainerRef} onMouseMove={handleContainerMouseMove}>
           <Card
             className="overflow-hidden"
-            style={{ backgroundColor: "#0a0e13", minHeight: 550 }}
+            style={{ backgroundColor: "#0a0e13", minHeight: GRAPH_HEIGHT }}
             data-testid="card-graph-container"
           >
             {isLoading ? (
-              <div className="flex items-center justify-center h-[550px]">
+              <div className="flex items-center justify-center" style={{ height: GRAPH_HEIGHT }}>
                 <div className="flex flex-col items-center gap-3">
                   <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
                   <p className="text-sm text-muted-foreground">
@@ -340,7 +429,7 @@ export default function DiscoverMapPage() {
                 onNodeHover={handleNodeHover}
                 backgroundColor="#0a0e13"
                 width={typeof window !== "undefined" ? Math.min(window.innerWidth - 64, 1200) : 900}
-                height={600}
+                height={GRAPH_HEIGHT}
                 cooldownTicks={200}
                 d3AlphaDecay={0.02}
                 d3VelocityDecay={0.3}
@@ -348,7 +437,7 @@ export default function DiscoverMapPage() {
                 enablePanInteraction={true}
               />
             ) : (
-              <div className="flex items-center justify-center h-[550px]">
+              <div className="flex items-center justify-center" style={{ height: GRAPH_HEIGHT }}>
                 <p className="text-sm text-muted-foreground">
                   No companies found to display on the map.
                 </p>
@@ -386,24 +475,40 @@ export default function DiscoverMapPage() {
               </span>
             )}
           </div>
-        </div>
 
-        {hoveredNode && mapData && (
-          <div className="mt-3 text-xs text-muted-foreground" data-testid="text-hovered-info">
-            {(() => {
-              const node = mapData.nodes.find((n) => n.id === hoveredNode);
-              if (!node) return null;
-              const neighborCount = connectedNodes.size - 1;
-              return (
-                <span>
-                  <span className="font-semibold text-foreground">{node.name}</span>{" "}
-                  ({node.id}) — {node.cluster} — {neighborCount} connected{" "}
-                  {neighborCount === 1 ? "company" : "companies"}
-                </span>
-              );
-            })()}
-          </div>
-        )}
+          {tooltipNode && clampedTooltipPos && (
+            <div
+              className="absolute z-20 rounded-lg p-3 text-xs shadow-lg pointer-events-none"
+              style={{
+                left: clampedTooltipPos.x,
+                top: clampedTooltipPos.y,
+                width: 240,
+                background: "rgba(10,14,19,0.95)",
+                backdropFilter: "blur(16px)",
+                border: "1px solid rgba(255,255,255,0.1)",
+              }}
+              data-testid="tooltip-node-info"
+            >
+              <p className="font-bold text-sm text-gray-100 mb-0.5">{tooltipNode.name}</p>
+              <p className="text-[11px] mb-2" style={{ color: getClusterColor(tooltipNode.cluster) }}>
+                {tooltipNode.cluster}
+              </p>
+              {neighborNames.length > 0 && (
+                <>
+                  <p className="text-[10px] text-gray-500 uppercase tracking-wider mb-1">Similar Companies</p>
+                  <ul className="flex flex-col gap-0.5">
+                    {neighborNames.map((nb) => (
+                      <li key={nb.id} className="text-gray-400 text-[11px] flex items-center gap-1.5">
+                        <span className="inline-block w-1 h-1 rounded-full bg-gray-500 flex-shrink-0" />
+                        {nb.name} <span className="text-gray-600">({nb.id})</span>
+                      </li>
+                    ))}
+                  </ul>
+                </>
+              )}
+            </div>
+          )}
+        </div>
       </div>
     </SiteLayout>
   );
