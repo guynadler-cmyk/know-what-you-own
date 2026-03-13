@@ -1363,23 +1363,39 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/discover/map", async (req, res) => {
     try {
       const { db: extDb } = await import("./db");
-      const { aiBusinessAnalysis } = await import("../shared/schema");
-      const { sql, desc } = await import("drizzle-orm");
+      const { sql } = await import("drizzle-orm");
 
-      const rows = await extDb
-        .select({
-          ticker: aiBusinessAnalysis.ticker,
-          companyName: aiBusinessAnalysis.companyName,
-          fiscalYear: aiBusinessAnalysis.fiscalYear,
-          rCompanyName: sql<string>`result->>'companyName'`,
-          unavailable: sql<string>`result->>'businessAnalysisUnavailable'`,
-          moats: sql<any[]>`result->'moats'`,
-          investmentThemes: sql<any[]>`result->'investmentThemes'`,
-        })
-        .from(aiBusinessAnalysis)
-        .orderBy(desc(aiBusinessAnalysis.createdAt));
+      const rawResult = await extDb.execute(sql`
+        SELECT
+          ticker,
+          company_name,
+          result->>'companyName' AS r_company_name,
+          result->>'businessAnalysisUnavailable' AS unavailable,
+          result->'moats' AS moats,
+          result->'investmentThemes' AS themes
+        FROM ai_business_analysis
+        ORDER BY created_at DESC
+      `);
 
+      const resultObj = rawResult as { rows?: Record<string, unknown>[] };
+      const rows: Record<string, unknown>[] = Array.isArray(rawResult) ? rawResult : resultObj.rows ?? [];
       console.log(`DISCOVERY MAP raw rows: ${rows.length}`);
+
+      function parseJsonField(val: unknown): unknown[] {
+        if (Array.isArray(val)) return val;
+        if (typeof val === "string") {
+          try { const parsed = JSON.parse(val); return Array.isArray(parsed) ? parsed : []; } catch { return []; }
+        }
+        return [];
+      }
+
+      function extractTagName(item: unknown): string | null {
+        if (typeof item === "string") return item || null;
+        if (item && typeof item === "object" && "name" in item && (item as { name: unknown }).name) {
+          return String((item as { name: unknown }).name);
+        }
+        return null;
+      }
 
       const seen = new Set<string>();
       const companies: Array<{
@@ -1392,24 +1408,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
       let skippedUnavailable = 0;
 
       for (const row of rows) {
-        const t = row.ticker.toUpperCase();
-        if (seen.has(t)) continue;
-        seen.add(t);
+        const ticker = (row.ticker ?? "").toString().toUpperCase();
+        if (!ticker || seen.has(ticker)) continue;
+        seen.add(ticker);
 
-        const isUnavailable = row.unavailable != null && String(row.unavailable).toLowerCase() === "true";
+        const unavailableVal = row.unavailable;
+        const isUnavailable = unavailableVal === true || String(unavailableVal).toLowerCase() === "true";
         if (isUnavailable) {
           skippedUnavailable++;
           continue;
         }
 
-        const moats: any[] = Array.isArray(row.moats) ? row.moats : [];
-        const themes: any[] = Array.isArray(row.investmentThemes) ? row.investmentThemes : [];
+        const moats = parseJsonField(row.moats);
+        const themes = parseJsonField(row.themes);
 
         companies.push({
-          ticker: t,
-          name: stripLegalSuffix(row.rCompanyName || row.companyName),
-          moatTags: moats.map((m: any) => m?.name).filter(Boolean),
-          themeTags: themes.map((th: any) => th?.name).filter(Boolean),
+          ticker,
+          name: stripLegalSuffix(row.r_company_name || row.company_name || ticker),
+          moatTags: moats.map(extractTagName).filter(Boolean) as string[],
+          themeTags: themes.map(extractTagName).filter(Boolean) as string[],
         });
       }
 
@@ -1444,53 +1461,86 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return bestCluster || "Enterprise SaaS";
       }
 
+      const clusterGroupMap: Record<string, number> = {
+        "AI Infrastructure": 1,
+        "Cloud Platforms": 2,
+        "Cybersecurity": 3,
+        "Data Platforms": 4,
+        "Enterprise SaaS": 5,
+        "Semiconductors": 6,
+      };
+
+      const hubTickers = new Set(["NVDA", "MSFT", "GOOG", "AMZN", "TSM", "AMD"]);
+
       const limited = companies.slice(0, 300);
 
-      const nodes = limited.map((c) => ({
-        id: c.ticker,
-        name: c.name,
-        cluster: assignCluster(c),
-        moatTags: c.moatTags,
-        themeTags: c.themeTags,
-      }));
+      const enriched = limited.map((c) => {
+        const cluster = assignCluster(c);
+        return { ...c, cluster, group: clusterGroupMap[cluster] ?? 5 };
+      });
 
+      function jaccard(a: string[], b: string[]): number {
+        const setA = new Set(a);
+        const setB = new Set(b);
+        const intersection = [...setA].filter((x) => setB.has(x));
+        const union = new Set([...setA, ...setB]);
+        return union.size ? intersection.length / union.size : 0;
+      }
+
+      const linkCountMap = new Map<string, number>();
       const links: Array<{ source: string; target: string; weight: number }> = [];
 
-      for (let i = 0; i < limited.length; i++) {
-        const a = limited[i];
-        const aSet = new Set([...(a.moatTags || []), ...(a.themeTags || [])]);
+      for (let i = 0; i < enriched.length; i++) {
+        const a = enriched[i];
         const edgesForNode: Array<{ target: string; weight: number }> = [];
 
-        for (let j = i + 1; j < limited.length; j++) {
-          const b = limited[j];
-          const bSet = new Set([...(b.moatTags || []), ...(b.themeTags || [])]);
-          let intersection = 0;
-          for (const tag of Array.from(aSet)) {
-            if (bSet.has(tag)) intersection++;
-          }
-          const union = aSet.size + bSet.size - intersection;
-          const jaccard = union === 0 ? 0 : intersection / union;
-          const overlapScore = Math.max(aSet.size, bSet.size) === 0 ? 0 : intersection / Math.max(aSet.size, bSet.size);
-          const similarity = 0.6 * overlapScore + 0.4 * jaccard;
+        for (let j = i + 1; j < enriched.length; j++) {
+          const b = enriched[j];
 
-          if (similarity > 0.35) {
-            edgesForNode.push({ target: b.ticker, weight: Math.round(similarity * 100) / 100 });
+          const themeScore = jaccard(a.themeTags, b.themeTags);
+          const moatScore = jaccard(a.moatTags, b.moatTags);
+          const industryScore = a.cluster === b.cluster ? 1 : 0;
+
+          let score = themeScore * 0.5 + moatScore * 0.3 + industryScore * 0.2;
+
+          if (hubTickers.has(a.ticker) || hubTickers.has(b.ticker)) {
+            score = score * 1.2;
+          }
+
+          if (score > 0.45) {
+            edgesForNode.push({ target: b.ticker, weight: Math.round(score * 100) / 100 });
           }
         }
 
         edgesForNode
           .sort((x, y) => y.weight - x.weight)
           .slice(0, 10)
-          .forEach((e) => links.push({ source: a.ticker, target: e.target, weight: e.weight }));
+          .forEach((e) => {
+            links.push({ source: a.ticker, target: e.target, weight: e.weight });
+            linkCountMap.set(a.ticker, (linkCountMap.get(a.ticker) || 0) + 1);
+            linkCountMap.set(e.target, (linkCountMap.get(e.target) || 0) + 1);
+          });
       }
 
-      // INVARIANT: nodes must always be returned regardless of whether links are empty.
-      // Even if all companies have zero matching tags (empty links), all qualifying
-      // nodes must still appear so the frontend can render floating nodes on the canvas.
-      console.log(`DISCOVERY MAP nodes: ${nodes.length}, links: ${links.length}`);
-      res.json({ nodes, links });
-    } catch (err: any) {
-      console.error("[DISCOVER MAP]", err.message);
+      const cappedLinks = links
+        .sort((a, b) => b.weight - a.weight)
+        .slice(0, 2000);
+
+      const nodes = enriched.map((c) => ({
+        id: c.ticker,
+        name: c.name,
+        cluster: c.cluster,
+        group: c.group,
+        moatTags: c.moatTags,
+        themeTags: c.themeTags,
+        linkCount: linkCountMap.get(c.ticker) || 0,
+      }));
+
+      console.log(`DISCOVERY MAP nodes: ${nodes.length}`);
+      console.log(`DISCOVERY MAP links: ${cappedLinks.length}`);
+      res.json({ nodes, links: cappedLinks });
+    } catch (err: unknown) {
+      console.error("[DISCOVER MAP]", err instanceof Error ? err.message : String(err));
       res.status(500).json({ error: "Failed to load discover map data" });
     }
   });

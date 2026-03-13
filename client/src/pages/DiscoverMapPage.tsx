@@ -13,8 +13,10 @@ interface MapNode {
   id: string;
   name: string;
   cluster: string;
+  group: number;
   moatTags: string[];
   themeTags: string[];
+  linkCount: number;
   x?: number;
   y?: number;
 }
@@ -34,12 +36,12 @@ type GraphNode = NodeObject<MapNode>;
 type GraphLink = { source: GraphNode | string; target: GraphNode | string; weight: number };
 
 const CLUSTER_COLORS: Record<string, string> = {
-  "AI Infrastructure": "#8B5CF6",
-  "Cloud Platforms": "#3B82F6",
-  "Cybersecurity": "#F97316",
-  "Data Platforms": "#14B8A6",
-  "Enterprise SaaS": "#22C55E",
-  "Semiconductors": "#D97706",
+  "AI Infrastructure": "#8b5cf6",
+  "Cloud Platforms": "#3b82f6",
+  "Cybersecurity": "#f97316",
+  "Data Platforms": "#14b8a6",
+  "Enterprise SaaS": "#22c55e",
+  "Semiconductors": "#eab308",
 };
 
 const FALLBACK_COLOR = "#94A3B8";
@@ -78,6 +80,7 @@ export default function DiscoverMapPage() {
     const nodes = (mapData.nodes ?? []).map((n) => ({
       ...n,
       degree: degreeMap.get(n.id) || 0,
+      linkCount: n.linkCount || degreeMap.get(n.id) || 0,
     }));
 
     return { nodes, links: safeLinks };
@@ -104,7 +107,7 @@ export default function DiscoverMapPage() {
       );
       if (node && node.x !== undefined && node.y !== undefined) {
         graphRef.current.centerAt(node.x, node.y, 600);
-        graphRef.current.zoom(3, 600);
+        graphRef.current.zoom(2.5, 600);
         setHoveredNode(node.id);
         setTimeout(() => setHoveredNode(null), 3000);
       }
@@ -118,6 +121,29 @@ export default function DiscoverMapPage() {
       return () => clearTimeout(timer);
     }
   }, [focusParam, mapData, focusOnNode]);
+
+  useEffect(() => {
+    const fg = graphRef.current;
+    if (!fg) return;
+
+    type D3ForceWithStrength = { strength: (val: number) => void };
+    type D3ForceWithDistance = { distance: (val: number) => void };
+
+    const charge = fg.d3Force("charge") as D3ForceWithStrength | null;
+    if (charge && typeof charge.strength === "function") {
+      charge.strength(-120);
+    }
+
+    const link = fg.d3Force("link") as D3ForceWithDistance | null;
+    if (link && typeof link.distance === "function") {
+      link.distance(90);
+    }
+
+    const center = fg.d3Force("center") as D3ForceWithStrength | null;
+    if (center && typeof center.strength === "function") {
+      center.strength(0.05);
+    }
+  }, [mapData]);
 
   const handleSearch = useCallback(
     (e: React.FormEvent) => {
@@ -152,16 +178,22 @@ export default function DiscoverMapPage() {
     (node: NodeObject<MapNode>, ctx: CanvasRenderingContext2D, globalScale: number) => {
       const n = node as GraphNode;
       const label = n.id as string;
-      const degree = (n as any).degree || 0;
-      const nodeR = Math.max(4, Math.min(14, 4 + degree * 0.8));
+      const lc = n.linkCount || 0;
+      const nodeR = Math.max(3, Math.min(16, 3 + lc * 1.5));
       const color = getClusterColor(n.cluster);
       const nodeX = n.x ?? 0;
       const nodeY = n.y ?? 0;
 
       const isActive = !hoveredNode || connectedNodes.has(label);
-      const alpha = isActive ? 1 : 0.08;
+      const alpha = isActive ? 1 : 0.06;
 
       ctx.globalAlpha = alpha;
+
+      ctx.beginPath();
+      ctx.arc(nodeX, nodeY, nodeR + 1.5, 0, 2 * Math.PI);
+      ctx.fillStyle = `${color}22`;
+      ctx.fill();
+
       ctx.beginPath();
       ctx.arc(nodeX, nodeY, nodeR, 0, 2 * Math.PI);
       ctx.fillStyle = color;
@@ -169,16 +201,24 @@ export default function DiscoverMapPage() {
 
       if (hoveredNode === label) {
         ctx.strokeStyle = "#ffffff";
-        ctx.lineWidth = 2 / globalScale;
+        ctx.lineWidth = 2.5 / globalScale;
         ctx.stroke();
+
+        ctx.shadowColor = color;
+        ctx.shadowBlur = 12;
+        ctx.beginPath();
+        ctx.arc(nodeX, nodeY, nodeR, 0, 2 * Math.PI);
+        ctx.fill();
+        ctx.shadowBlur = 0;
       }
 
       const fontSize = Math.max(10 / globalScale, 2);
-      if (globalScale > 1.2 || hoveredNode === label) {
-        ctx.font = `${hoveredNode === label ? "bold " : ""}${fontSize}px sans-serif`;
+      const showLabel = globalScale > 1.0 || hoveredNode === label || lc >= 5;
+      if (showLabel) {
+        ctx.font = `${hoveredNode === label ? "bold " : ""}${fontSize}px Inter, system-ui, sans-serif`;
         ctx.textAlign = "center";
         ctx.textBaseline = "top";
-        ctx.fillStyle = isActive ? "hsl(0,0%,85%)" : "hsl(0,0%,40%)";
+        ctx.fillStyle = isActive ? "rgba(220,225,230,0.9)" : "rgba(120,125,130,0.3)";
         ctx.fillText(label, nodeX, nodeY + nodeR + 2);
       }
 
@@ -189,15 +229,22 @@ export default function DiscoverMapPage() {
 
   const linkColor = useCallback(
     (link: GraphLink) => {
-      if (!hoveredNode) return "rgba(255,255,255,0.06)";
+      if (!hoveredNode) return "rgba(120,120,120,0.12)";
       const sourceId = typeof link.source === "string" ? link.source : (link.source as GraphNode).id;
       const targetId = typeof link.target === "string" ? link.target : (link.target as GraphNode).id;
       if (sourceId === hoveredNode || targetId === hoveredNode) {
-        return "rgba(255,255,255,0.35)";
+        return "rgba(255,255,255,0.45)";
       }
-      return "rgba(255,255,255,0.02)";
+      return "rgba(120,120,120,0.03)";
     },
     [hoveredNode]
+  );
+
+  const linkWidth = useCallback(
+    (link: GraphLink) => {
+      return 0.5 + (link.weight || 0) * 2;
+    },
+    []
   );
 
   return (
@@ -261,11 +308,11 @@ export default function DiscoverMapPage() {
         <div className="relative">
           <Card
             className="overflow-hidden"
-            style={{ backgroundColor: "#0f1419", minHeight: 500 }}
+            style={{ backgroundColor: "#0a0e13", minHeight: 550 }}
             data-testid="card-graph-container"
           >
             {isLoading ? (
-              <div className="flex items-center justify-center h-[500px]">
+              <div className="flex items-center justify-center h-[550px]">
                 <div className="flex flex-col items-center gap-3">
                   <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
                   <p className="text-sm text-muted-foreground">
@@ -273,35 +320,35 @@ export default function DiscoverMapPage() {
                   </p>
                 </div>
               </div>
-            ) : mapData && mapData.nodes.length > 0 ? (
+            ) : mapData && (mapData.nodes ?? []).length > 0 ? (
               <ForceGraph2D
                 ref={graphRef as React.MutableRefObject<ForceGraphMethods<NodeObject<MapNode>> | undefined>}
-                graphData={processedData || mapData}
+                graphData={{ nodes: processedData?.nodes ?? mapData?.nodes ?? [], links: processedData?.links ?? mapData?.links ?? [] }}
                 nodeCanvasObject={nodeCanvasObject}
                 nodePointerAreaPaint={(node: NodeObject<MapNode>, color: string, ctx: CanvasRenderingContext2D) => {
                   const n = node as GraphNode;
-                  const degree = (n as any).degree || 0;
-                  const nodeR = Math.max(4, Math.min(14, 4 + degree * 0.8));
+                  const lc = n.linkCount || 0;
+                  const nodeR = Math.max(3, Math.min(16, 3 + lc * 1.5));
                   ctx.beginPath();
-                  ctx.arc(n.x ?? 0, n.y ?? 0, nodeR + 2, 0, 2 * Math.PI);
+                  ctx.arc(n.x ?? 0, n.y ?? 0, nodeR + 3, 0, 2 * Math.PI);
                   ctx.fillStyle = color;
                   ctx.fill();
                 }}
                 linkColor={linkColor as (link: object) => string}
-                linkWidth={0.5}
+                linkWidth={linkWidth as (link: object) => number}
                 onNodeClick={handleNodeClick}
                 onNodeHover={handleNodeHover}
-                backgroundColor="#0f1419"
+                backgroundColor="#0a0e13"
                 width={typeof window !== "undefined" ? Math.min(window.innerWidth - 64, 1200) : 900}
-                height={550}
-                cooldownTicks={100}
-                d3AlphaDecay={0.03}
+                height={600}
+                cooldownTicks={200}
+                d3AlphaDecay={0.02}
                 d3VelocityDecay={0.3}
                 enableZoomInteraction={true}
                 enablePanInteraction={true}
               />
             ) : (
-              <div className="flex items-center justify-center h-[500px]">
+              <div className="flex items-center justify-center h-[550px]">
                 <p className="text-sm text-muted-foreground">
                   No companies found to display on the map.
                 </p>
@@ -311,21 +358,33 @@ export default function DiscoverMapPage() {
 
           <div
             className="absolute bottom-4 left-4 rounded-lg p-3 text-xs shadow-md z-10"
-            style={{ background: "rgba(15,20,25,0.9)", backdropFilter: "blur(8px)" }}
+            style={{ background: "rgba(10,14,19,0.92)", backdropFilter: "blur(12px)", border: "1px solid rgba(255,255,255,0.06)" }}
             data-testid="map-legend"
           >
-            <p className="font-semibold text-[11px] mb-2 text-gray-300 uppercase tracking-wider">Clusters</p>
+            <p className="font-semibold text-[11px] mb-2 text-gray-400 uppercase tracking-wider">Clusters</p>
             <div className="flex flex-col gap-1.5">
               {Object.entries(CLUSTER_COLORS).map(([label, color]) => (
                 <div key={label} className="flex items-center gap-2">
                   <span
-                    className="inline-block w-3 h-3 rounded-full flex-shrink-0"
-                    style={{ background: color }}
+                    className="inline-block w-2.5 h-2.5 rounded-full flex-shrink-0"
+                    style={{ background: color, boxShadow: `0 0 6px ${color}44` }}
                   />
-                  <span className="text-gray-400">{label}</span>
+                  <span className="text-gray-400 text-[11px]">{label}</span>
                 </div>
               ))}
             </div>
+          </div>
+
+          <div
+            className="absolute top-4 right-4 rounded-lg px-3 py-2 text-[10px] z-10"
+            style={{ background: "rgba(10,14,19,0.85)", backdropFilter: "blur(8px)", border: "1px solid rgba(255,255,255,0.06)" }}
+            data-testid="map-stats"
+          >
+            {mapData && (
+              <span className="text-gray-500">
+                {(mapData.nodes ?? []).length} companies &middot; {(mapData.links ?? []).length} connections
+              </span>
+            )}
           </div>
         </div>
 

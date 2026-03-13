@@ -1,0 +1,266 @@
+Upgrade the Investment Discovery Map to a Bloomberg-style network visualization.
+
+The current graph works but looks messy and weakly connected. 
+Improve clustering, physics, similarity scoring, and visual design.
+
+--------------------------------------------------
+
+GOAL
+
+Create a professional interactive investment network map where:
+
+• companies are grouped into visible clusters
+• similar companies are strongly connected
+• major companies become hubs
+• clusters are separated spatially
+• the graph feels smooth and responsive
+
+Similar to Bloomberg / PitchBook network graphs.
+
+--------------------------------------------------
+
+STEP 1 — IMPROVE SIMILARITY ALGORITHM
+
+Replace the simple tag similarity with weighted similarity.
+
+Score formula:
+
+SIMILARITY =
+0.5 * Jaccard(themeTags)
++ 0.3 * Jaccard(moatTags)
++ 0.2 * sharedIndustry
+
+Example implementation:
+
+function jaccard(a,b){
+ const setA = new Set(a)
+ const setB = new Set(b)
+
+ const intersection = [...setA].filter(x=>setB.has(x))
+ const union = new Set([...setA,...setB])
+
+ return union.size ? intersection.length / union.size : 0
+}
+
+function similarity(a,b){
+
+ const themeScore = jaccard(a.themeTags,b.themeTags)
+ const moatScore = jaccard(a.moatTags,b.moatTags)
+
+ const industryScore =
+  a.cluster === b.cluster ? 1 : 0
+
+ return (
+   themeScore * 0.5 +
+   moatScore * 0.3 +
+   industryScore * 0.2
+ )
+}
+
+Create links only if:
+
+similarity > 0.45
+
+This produces more natural clusters.
+
+--------------------------------------------------
+
+STEP 2 — HUB NODE BOOST
+
+Major companies should become network hubs.
+
+Define hub tickers:
+
+NVDA
+MSFT
+GOOG
+AMZN
+TSM
+AMD
+
+Boost similarity if one is a hub.
+
+if(hubs.includes(a.ticker) || hubs.includes(b.ticker)){
+ score = score * 1.2
+}
+
+--------------------------------------------------
+
+STEP 3 — BETTER CLUSTER GROUPING
+
+Clusters:
+
+AI Infrastructure
+Cloud Platforms
+Cybersecurity
+Data Platforms
+Enterprise SaaS
+Semiconductors
+
+Each cluster should have a numeric group ID.
+
+Example:
+
+const clusterMap = {
+ "AI Infrastructure":1,
+ "Cloud Platforms":2,
+ "Cybersecurity":3,
+ "Data Platforms":4,
+ "Enterprise SaaS":5,
+ "Semiconductors":6
+}
+
+Nodes must include:
+
+{
+ id: ticker,
+ name: company,
+ group: clusterMap[group],
+ ticker
+}
+
+--------------------------------------------------
+
+STEP 4 — BETTER GRAPH PHYSICS
+
+Update ForceGraph2D physics settings.
+
+graph.cooldownTicks(200)
+
+graph.d3Force("charge")
+ .strength(-120)
+
+graph.d3Force("link")
+ .distance(90)
+
+graph.d3Force("center")
+ .strength(0.05)
+
+This prevents node pileups.
+
+--------------------------------------------------
+
+STEP 5 — CLUSTER GRAVITY
+
+Add cluster centering so clusters stay together.
+
+graph.d3Force("cluster", d3.forceManyBody()
+ .strength(-10))
+
+--------------------------------------------------
+
+STEP 6 — NODE SIZE BY CONNECTIVITY
+
+More connected companies should appear larger.
+
+nodeVal = node.linkCount * 2
+
+Example:
+
+nodeCanvasObject={(node,ctx)=>{
+
+ const radius = 4 + node.linkCount
+
+ ctx.beginPath()
+ ctx.arc(node.x,node.y,radius,0,2*Math.PI)
+
+ ctx.fillStyle = colorByCluster(node.group)
+
+ ctx.fill()
+
+}}
+
+--------------------------------------------------
+
+STEP 7 — BETTER COLORS
+
+Use consistent cluster palette.
+
+AI Infrastructure → #8b5cf6
+Cloud Platforms → #3b82f6
+Cybersecurity → #f97316
+Data Platforms → #14b8a6
+Enterprise SaaS → #22c55e
+Semiconductors → #eab308
+
+--------------------------------------------------
+
+STEP 8 — EDGE STYLING
+
+Make edges subtle.
+
+linkWidth = 0.5 + similarity * 2
+
+linkColor = "rgba(120,120,120,0.25)"
+
+--------------------------------------------------
+
+STEP 9 — HOVER HIGHLIGHT
+
+Hovering a node should highlight its neighbors.
+
+All other nodes fade.
+
+Example:
+
+onNodeHover(node){
+
+ highlightNodes.clear()
+
+ highlightLinks.clear()
+
+ if(node){
+
+  node.neighbors.forEach(n=>highlightNodes.add(n))
+
+ }
+
+}
+
+--------------------------------------------------
+
+STEP 10 — SEARCH FOCUS
+
+Search box should center the graph.
+
+graph.centerAt(node.x,node.y,600)
+
+graph.zoom(2.5,600)
+
+--------------------------------------------------
+
+STEP 11 — PERFORMANCE LIMIT
+
+Limit graph size.
+
+nodes ≤ 300  
+links ≤ 2000  
+
+--------------------------------------------------
+
+EXPECTED RESULT
+
+The map should visually resemble:
+
+NVDA at the center of AI cluster
+MSFT connected to Cloud + AI
+TSMC connected to NVDA and AMD
+GOOG connected to data companies
+Cybersecurity cluster grouped together
+
+Clusters should appear as visible "galaxies" of companies.
+
+The map should feel smooth, interactive, and visually balanced.
+
+--------------------------------------------------
+
+SUCCESS CRITERIA
+
+The graph looks like a professional network visualization with:
+
+clear clusters  
+strong hub companies  
+smooth zoom/pan  
+clean connections  
+
+similar to Bloomberg or PitchBook network maps.
