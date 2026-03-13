@@ -219,19 +219,25 @@ function BuilderDropZone({ id, children, className, style }: { id: string; child
 interface DiscoveryBuilderProps {
   investmentThemes?: InvestmentTheme[];
   moats?: Moat[];
+  marketOpportunity?: MarketOpportunity[];
+  valueCreation?: ValueCreation[];
+  competitors?: Competitor[];
   ticker: string;
   companyName: string;
+  basketTags: string[];
+  setBasketTags: React.Dispatch<React.SetStateAction<string[]>>;
 }
 
-function DiscoveryBuilder({ investmentThemes, moats, ticker, companyName }: DiscoveryBuilderProps) {
+function DiscoveryBuilder({ investmentThemes, moats, marketOpportunity, valueCreation, competitors, ticker, companyName, basketTags, setBasketTags }: DiscoveryBuilderProps) {
   const allTags = useMemo(() => {
     const tags: string[] = [];
     investmentThemes?.forEach((t) => tags.push(t.name));
     moats?.forEach((m) => tags.push(m.name));
+    marketOpportunity?.forEach((o) => tags.push(o.name));
+    valueCreation?.forEach((v) => tags.push(v.name));
+    competitors?.filter((c) => c.name).forEach((c) => tags.push(c.name));
     return Array.from(new Set(tags));
-  }, [investmentThemes, moats]);
-
-  const [basketTags, setBasketTags] = useState<string[]>([]);
+  }, [investmentThemes, moats, marketOpportunity, valueCreation, competitors]);
   const [activeDragId, setActiveDragId] = useState<string | null>(null);
 
   const sensors = useSensors(
@@ -384,6 +390,171 @@ function DiscoveryBuilder({ investmentThemes, moats, ticker, companyName }: Disc
   );
 }
 
+/* ─── Desktop Discovery Sidebar ────────────────────────────── */
+
+function useIsDesktop(breakpoint = 1200) {
+  const [isDesktop, setIsDesktop] = useState(
+    typeof window !== 'undefined' ? window.innerWidth >= breakpoint : false
+  );
+  useEffect(() => {
+    const mql = window.matchMedia(`(min-width: ${breakpoint}px)`);
+    const handler = (e: MediaQueryListEvent) => setIsDesktop(e.matches);
+    setIsDesktop(mql.matches);
+    mql.addEventListener('change', handler);
+    return () => mql.removeEventListener('change', handler);
+  }, [breakpoint]);
+  return isDesktop;
+}
+
+interface DesktopDiscoverySidebarProps {
+  investmentThemes?: InvestmentTheme[];
+  moats?: Moat[];
+  marketOpportunity?: MarketOpportunity[];
+  valueCreation?: ValueCreation[];
+  competitors?: Competitor[];
+  ticker: string;
+  companyName: string;
+  basketTags: string[];
+  setBasketTags: React.Dispatch<React.SetStateAction<string[]>>;
+}
+
+function DesktopDiscoverySidebar({
+  investmentThemes,
+  moats,
+  marketOpportunity,
+  valueCreation,
+  competitors,
+  ticker,
+  companyName,
+  basketTags,
+  setBasketTags,
+}: DesktopDiscoverySidebarProps) {
+  const allTags = useMemo(() => {
+    const tags: string[] = [];
+    investmentThemes?.forEach((t) => tags.push(t.name));
+    moats?.forEach((m) => tags.push(m.name));
+    marketOpportunity?.forEach((o) => tags.push(o.name));
+    valueCreation?.forEach((v) => tags.push(v.name));
+    competitors?.filter((c) => c.name).forEach((c) => tags.push(c.name));
+    return Array.from(new Set(tags));
+  }, [investmentThemes, moats, marketOpportunity, valueCreation, competitors]);
+
+  const handleShowResults = () => {
+    const tags = basketTags.length > 0 ? basketTags : allTags;
+    const params = new URLSearchParams();
+    if (tags.length > 0) params.set("tags", tags.join(","));
+    params.set("origin", ticker);
+    params.set("name", companyName);
+    window.open(`/discover?${params.toString()}`, "_blank");
+  };
+
+  const availableTags = allTags.filter((t) => !basketTags.includes(t));
+
+  const { setNodeRef: setDropRef, isOver } = useDroppable({ id: "desktop-sidebar-drop" });
+
+  if (allTags.length === 0) return null;
+
+  return (
+    <div
+      className="rounded-xl border overflow-hidden"
+      style={{
+        borderColor: border,
+        boxShadow: '0 2px 20px rgba(13,74,71,0.07)',
+        position: 'sticky',
+        top: '120px',
+      }}
+      data-testid="desktop-discovery-sidebar"
+    >
+      <div
+        className="flex items-center gap-1.5 px-4 py-2.5"
+        style={{ background: tealDeep }}
+      >
+        <Layers className="h-3 w-3" style={{ color: 'rgba(255,255,255,0.7)' }} />
+        <span className="font-mono text-[11px] tracking-wider" style={{ color: 'rgba(255,255,255,0.7)' }}>
+          Discovery Builder
+        </span>
+      </div>
+      <div
+        ref={setDropRef}
+        className="bg-white p-4 space-y-3"
+        style={{ outline: isOver ? '2px solid var(--lp-teal-brand, #1a6b67)' : undefined, outlineOffset: isOver ? '-2px' : undefined }}
+      >
+        {basketTags.length > 0 ? (
+          <>
+            <div className="flex items-center justify-between">
+              <p className="text-[9px] font-medium uppercase tracking-widest" style={{ color: 'var(--lp-ink-ghost)' }}>
+                Selected Tags
+              </p>
+              <button
+                onClick={() => setBasketTags([])}
+                className="text-[9px] underline underline-offset-2"
+                style={{ color: 'var(--lp-ink-ghost)' }}
+                data-testid="button-sidebar-clear"
+              >
+                Clear all
+              </button>
+            </div>
+            <div className="flex flex-wrap gap-1">
+              {basketTags.map((tag) => (
+                <span
+                  key={tag}
+                  className="inline-flex items-center gap-1 text-[10px] px-2 py-0.5 rounded-full border font-medium cursor-pointer transition-transform hover:-translate-y-[1px]"
+                  style={{ background: tealPale, color: 'var(--lp-teal-deep)', borderColor: 'rgba(13,74,71,0.15)' }}
+                  data-testid={`sidebar-tag-${tag.replace(/\s+/g, "-").toLowerCase()}`}
+                >
+                  {tag}
+                  <button
+                    onClick={() => setBasketTags((prev) => prev.filter((t) => t !== tag))}
+                    className="ml-0.5"
+                  >
+                    <X className="h-2.5 w-2.5" />
+                  </button>
+                </span>
+              ))}
+            </div>
+          </>
+        ) : (
+          <p className="text-[10px] leading-relaxed" style={{ color: 'var(--lp-ink-light)' }}>
+            Click tags from the analysis to add them here, then discover similar companies.
+          </p>
+        )}
+
+        {availableTags.length > 0 && (
+          <>
+            <p className="text-[9px] font-medium uppercase tracking-widest pt-1" style={{ color: 'var(--lp-ink-ghost)' }}>
+              {basketTags.length > 0 ? 'Available' : 'Click to add'}
+            </p>
+            <div className="flex flex-wrap gap-1 max-h-40 overflow-y-auto">
+              {availableTags.map((tag) => (
+                <button
+                  key={tag}
+                  onClick={() => setBasketTags((prev) => [...prev, tag])}
+                  className="text-[10px] px-2 py-0.5 rounded-full border font-medium cursor-pointer transition-transform hover:-translate-y-[1px]"
+                  style={{ background: 'transparent', color: 'var(--lp-ink-light)', borderColor: 'var(--border)' }}
+                  data-testid={`sidebar-avail-${tag.replace(/\s+/g, "-").toLowerCase()}`}
+                >
+                  {tag}
+                </button>
+              ))}
+            </div>
+          </>
+        )}
+
+        <Button
+          variant="outline"
+          size="sm"
+          className="w-full gap-1.5 mt-2"
+          onClick={handleShowResults}
+          data-testid="button-sidebar-show-similar"
+        >
+          <Users className="h-3.5 w-3.5" />
+          {basketTags.length > 0 ? 'Show Similar Companies' : `Discover Similar to ${ticker}`}
+        </Button>
+      </div>
+    </div>
+  );
+}
+
 /* ─── main component ──────────────────────────────────────── */
 
 export function SummaryCard({
@@ -413,7 +584,32 @@ export function SummaryCard({
 }: SummaryCardProps) {
   const [thesisOpen, setThesisOpen] = useState(false);
   const isMobile = useIsMobile();
+  const isDesktop = useIsDesktop();
   const [mobileExpandedSection, setMobileExpandedSection] = useState<string | null>(null);
+  const [sidebarBasketTags, setSidebarBasketTags] = useState<string[]>([]);
+  const [sidebarDragActiveTag, setSidebarDragActiveTag] = useState<string | null>(null);
+
+  const sidebarDndSensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 8 } })
+  );
+
+  const handleSidebarDragStart = useCallback((event: DragStartEvent) => {
+    const current = event.active.data?.current;
+    const tag = current && typeof current === 'object' && 'tag' in current ? (current as { tag: string }).tag : null;
+    if (tag) setSidebarDragActiveTag(tag);
+  }, []);
+
+  const handleSidebarDragEnd = useCallback((event: DragEndEvent) => {
+    setSidebarDragActiveTag(null);
+    const { active, over } = event;
+    if (!over) return;
+    const current = active.data?.current;
+    const tag = current && typeof current === 'object' && 'tag' in current ? (current as { tag: string }).tag : null;
+    if (!tag) return;
+    if (over.id === "desktop-sidebar-drop") {
+      setSidebarBasketTags((prev) => prev.includes(tag) ? prev : [...prev, tag]);
+    }
+  }, []);
 
   const mobileGateFiredRef = useRef(false);
   const mobileExpansionCountRef = useRef(0);
@@ -518,7 +714,7 @@ export function SummaryCard({
 
   return (
     <TooltipProvider>
-    <div className="w-full max-w-5xl mx-auto space-y-5 pb-16 animate-fade-in" data-testid="stage-1-content">
+    <div className={`w-full mx-auto space-y-5 pb-16 animate-fade-in ${isDesktop ? 'max-w-[1400px]' : 'max-w-5xl'}`} data-testid="stage-1-content">
 
       {/* ── analysis notices ── */}
       {analysisDepth === 'limited' && !businessAnalysisUnavailable && (
@@ -609,8 +805,26 @@ export function SummaryCard({
         </div>
       </div>
 
-      {/* ── two-col row: Investment Thesis + Business Overview ── */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      {/* ── Desktop: 3-col grid / Mobile: stacked ── */}
+      <DndContext
+        sensors={sidebarDndSensors}
+        onDragStart={handleSidebarDragStart}
+        onDragEnd={handleSidebarDragEnd}
+      >
+      <div
+        className="gap-4"
+        style={isDesktop ? {
+          display: 'grid',
+          gridTemplateColumns: '1.4fr 1.2fr 320px',
+          alignItems: 'start',
+        } : {
+          display: 'flex',
+          flexDirection: 'column',
+          gap: '1.25rem',
+        }}
+      >
+        {/* ── Left column ── */}
+        <div className="space-y-4">
 
         {/* Investment Thesis */}
         <SectionCard
@@ -648,6 +862,8 @@ export function SummaryCard({
                       explanation={theme.explanation}
                       testId={`theme-${theme.emphasis}-${i}`}
                       getThemeBadgeClasses={getThemeBadgeClasses}
+                      draggable={isDesktop}
+                      dragIdSuffix={`theme-${i}`}
                     />
                   ))}
                 </div>
@@ -667,12 +883,14 @@ export function SummaryCard({
                       explanation={moat.explanation}
                       testId={`moat-${moat.emphasis}-${i}`}
                       getThemeBadgeClasses={getThemeBadgeClasses}
+                      draggable={isDesktop}
+                      dragIdSuffix={`moat-${i}`}
                     />
                   ))}
                 </div>
               </div>
             )}
-            {marketOpportunity && marketOpportunity.length > 0 && (
+            {!isDesktop && marketOpportunity && marketOpportunity.length > 0 && (
               <div>
                 <p className="text-[9px] font-medium uppercase tracking-widest mb-2" style={{ color: 'var(--lp-ink-ghost)' }}>
                   ◎ Market Opportunity
@@ -691,7 +909,7 @@ export function SummaryCard({
                 </div>
               </div>
             )}
-            {valueCreation && valueCreation.length > 0 && (
+            {!isDesktop && valueCreation && valueCreation.length > 0 && (
               <div>
                 <p className="text-[9px] font-medium uppercase tracking-widest mb-2" style={{ color: 'var(--lp-ink-ghost)' }}>
                   ◈ Value Creation
@@ -747,8 +965,12 @@ export function SummaryCard({
                 const allTagNames = [
                   ...(investmentThemes?.map((t) => t.name) || []),
                   ...(moats?.map((m) => m.name) || []),
+                  ...(marketOpportunity?.map((o) => o.name) || []),
+                  ...(valueCreation?.map((v) => v.name) || []),
+                  ...(competitors?.filter((c) => c.name).map((c) => c.name) || []),
                 ];
-                if (allTagNames.length > 0) params.set("tags", allTagNames.join(","));
+                const uniqueTags = Array.from(new Set(allTagNames));
+                if (uniqueTags.length > 0) params.set("tags", uniqueTags.join(","));
                 params.set("origin", ticker);
                 params.set("name", companyName);
                 window.open(`/discover?${params.toString()}`, "_blank");
@@ -760,12 +982,19 @@ export function SummaryCard({
             </Button>
           </div>
 
-          <DiscoveryBuilder
-            investmentThemes={investmentThemes}
-            moats={moats}
-            ticker={ticker}
-            companyName={companyName}
-          />
+          {!isDesktop && (
+            <DiscoveryBuilder
+              investmentThemes={investmentThemes}
+              moats={moats}
+              marketOpportunity={marketOpportunity}
+              valueCreation={valueCreation}
+              competitors={filteredCompetitors}
+              ticker={ticker}
+              companyName={companyName}
+              basketTags={sidebarBasketTags}
+              setBasketTags={setSidebarBasketTags}
+            />
+          )}
         </SectionCard>
 
         {/* Business Overview */}
@@ -852,10 +1081,10 @@ export function SummaryCard({
             </div>
           </div>
         </SectionCard>
-      </div>
+        </div>
 
-      {/* ── two-col row: Performance · Competition ── */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
+        {/* ── Center column ── */}
+        <div className="space-y-4">
 
         {/* Performance Snapshot */}
         <SectionCard
@@ -960,7 +1189,79 @@ export function SummaryCard({
             ))}
           </div>
         </SectionCard>
+
+        {isDesktop && marketOpportunity && marketOpportunity.length > 0 && (
+          <SectionCard
+            header="Market Opportunity"
+            badge={`${marketOpportunity.length} signals`}
+          >
+            <div className="flex flex-wrap gap-1" data-testid="market-opportunity">
+              {marketOpportunity.map((opp, i) => (
+                <TagWithTooltip
+                  key={i}
+                  name={opp.name}
+                  emphasis={opp.emphasis}
+                  explanation={opp.explanation}
+                  testId={`opportunity-${opp.emphasis}-${i}`}
+                  getThemeBadgeClasses={getThemeBadgeClasses}
+                  draggable
+                  dragIdSuffix={`opp-${i}`}
+                />
+              ))}
+            </div>
+          </SectionCard>
+        )}
+
+        {isDesktop && valueCreation && valueCreation.length > 0 && (
+          <SectionCard
+            header="Value Creation"
+            badge={`${valueCreation.length} drivers`}
+          >
+            <div className="flex flex-wrap gap-1" data-testid="value-creation">
+              {valueCreation.map((val, i) => (
+                <TagWithTooltip
+                  key={i}
+                  name={val.name}
+                  emphasis={val.emphasis}
+                  explanation={val.explanation}
+                  testId={`value-${val.emphasis}-${i}`}
+                  getThemeBadgeClasses={getThemeBadgeClasses}
+                  draggable
+                  dragIdSuffix={`val-${i}`}
+                />
+              ))}
+            </div>
+          </SectionCard>
+        )}
+        </div>
+
+        {/* ── Right column: Desktop Discovery Sidebar ── */}
+        {isDesktop && (
+          <DesktopDiscoverySidebar
+            investmentThemes={investmentThemes}
+            moats={moats}
+            marketOpportunity={marketOpportunity}
+            valueCreation={valueCreation}
+            competitors={filteredCompetitors}
+            ticker={ticker}
+            companyName={companyName}
+            basketTags={sidebarBasketTags}
+            setBasketTags={setSidebarBasketTags}
+          />
+        )}
       </div>
+      <DragOverlay>
+        {sidebarDragActiveTag ? (
+          <div
+            className="inline-flex items-center gap-1 text-[11px] px-2.5 py-1 rounded-md border font-medium bg-white shadow-md"
+            style={{ color: 'var(--lp-teal-deep)', borderColor: 'rgba(13,74,71,0.15)' }}
+          >
+            <GripVertical className="h-2.5 w-2.5 opacity-40 flex-shrink-0" />
+            {sidebarDragActiveTag}
+          </div>
+        ) : null}
+      </DragOverlay>
+      </DndContext>
 
       {/* ── Changes Over Time (collapsible card) ── */}
       {temporalHasItems && temporalAnalysis && (
