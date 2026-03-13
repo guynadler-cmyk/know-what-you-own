@@ -6,7 +6,6 @@ import { SiteLayout } from "@/components/SiteLayout";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Badge } from "@/components/ui/badge";
 import { Search, ArrowLeft, MapPin } from "lucide-react";
 import ForceGraph2D, { type ForceGraphMethods, type NodeObject } from "react-force-graph-2d";
 
@@ -35,16 +34,18 @@ type GraphNode = NodeObject<MapNode>;
 type GraphLink = { source: GraphNode | string; target: GraphNode | string; weight: number };
 
 const CLUSTER_COLORS: Record<string, string> = {
-  "AI Infrastructure": "#6366f1",
-  "Cloud Platforms": "#0ea5e9",
-  "Cybersecurity": "#f43f5e",
-  "Data Platforms": "#f59e0b",
-  "Enterprise SaaS": "#10b981",
-  "Semiconductors": "#8b5cf6",
+  "AI Infrastructure": "#8B5CF6",
+  "Cloud Platforms": "#3B82F6",
+  "Cybersecurity": "#F97316",
+  "Data Platforms": "#14B8A6",
+  "Enterprise SaaS": "#22C55E",
+  "Semiconductors": "#D97706",
 };
 
+const FALLBACK_COLOR = "#94A3B8";
+
 function getClusterColor(cluster: string): string {
-  return CLUSTER_COLORS[cluster] || "#6b7280";
+  return CLUSTER_COLORS[cluster] || FALLBACK_COLOR;
 }
 
 export default function DiscoverMapPage() {
@@ -58,9 +59,28 @@ export default function DiscoverMapPage() {
     return (params.get("focus") || "").toUpperCase().trim();
   }, []);
 
-  const { data: mapData, isLoading, isError, error } = useQuery<MapData>({
+  const { data: mapData, isLoading } = useQuery<MapData>({
     queryKey: ["/api/discover/map"],
   });
+
+  const processedData = useMemo(() => {
+    if (!mapData) return null;
+
+    const degreeMap = new Map<string, number>();
+    for (const link of mapData.links) {
+      const src = typeof link.source === "string" ? link.source : link.source.id;
+      const tgt = typeof link.target === "string" ? link.target : link.target.id;
+      degreeMap.set(src, (degreeMap.get(src) || 0) + 1);
+      degreeMap.set(tgt, (degreeMap.get(tgt) || 0) + 1);
+    }
+
+    const nodes = mapData.nodes.map((n) => ({
+      ...n,
+      degree: degreeMap.get(n.id) || 0,
+    }));
+
+    return { nodes, links: mapData.links };
+  }, [mapData]);
 
   const connectedNodes = useMemo(() => {
     if (!hoveredNode || !mapData) return new Set<string>();
@@ -131,14 +151,14 @@ export default function DiscoverMapPage() {
     (node: NodeObject<MapNode>, ctx: CanvasRenderingContext2D, globalScale: number) => {
       const n = node as GraphNode;
       const label = n.id as string;
-      const fontSize = Math.max(10 / globalScale, 2);
-      const nodeR = Math.max(5, 3 + (n.moatTags?.length || 0) + (n.themeTags?.length || 0));
+      const degree = (n as any).degree || 0;
+      const nodeR = Math.max(4, Math.min(14, 4 + degree * 0.8));
       const color = getClusterColor(n.cluster);
       const nodeX = n.x ?? 0;
       const nodeY = n.y ?? 0;
 
       const isActive = !hoveredNode || connectedNodes.has(label);
-      const alpha = isActive ? 1 : 0.12;
+      const alpha = isActive ? 1 : 0.08;
 
       ctx.globalAlpha = alpha;
       ctx.beginPath();
@@ -152,6 +172,7 @@ export default function DiscoverMapPage() {
         ctx.stroke();
       }
 
+      const fontSize = Math.max(10 / globalScale, 2);
       if (globalScale > 1.2 || hoveredNode === label) {
         ctx.font = `${hoveredNode === label ? "bold " : ""}${fontSize}px sans-serif`;
         ctx.textAlign = "center";
@@ -177,8 +198,6 @@ export default function DiscoverMapPage() {
     },
     [hoveredNode]
   );
-
-  const clusterLegend = Object.entries(CLUSTER_COLORS);
 
   return (
     <SiteLayout>
@@ -236,73 +255,78 @@ export default function DiscoverMapPage() {
               Focus
             </Button>
           </form>
-
-          <div className="flex flex-wrap gap-2">
-            {clusterLegend.map(([name, color]) => (
-              <Badge
-                key={name}
-                variant="outline"
-                className="no-default-hover-elevate no-default-active-elevate text-[11px] gap-1.5"
-                data-testid={`badge-cluster-${name.replace(/\s+/g, "-").toLowerCase()}`}
-              >
-                <span
-                  className="inline-block w-2.5 h-2.5 rounded-full flex-shrink-0"
-                  style={{ backgroundColor: color }}
-                />
-                {name}
-              </Badge>
-            ))}
-          </div>
         </div>
 
-        <Card
-          className="overflow-hidden"
-          style={{ backgroundColor: "#0f1419", minHeight: 500 }}
-          data-testid="card-graph-container"
-        >
-          {isLoading ? (
-            <div className="flex items-center justify-center h-[500px]">
-              <div className="flex flex-col items-center gap-3">
-                <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
+        <div className="relative">
+          <Card
+            className="overflow-hidden"
+            style={{ backgroundColor: "#0f1419", minHeight: 500 }}
+            data-testid="card-graph-container"
+          >
+            {isLoading ? (
+              <div className="flex items-center justify-center h-[500px]">
+                <div className="flex flex-col items-center gap-3">
+                  <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
+                  <p className="text-sm text-muted-foreground">
+                    Building discovery map...
+                  </p>
+                </div>
+              </div>
+            ) : mapData && mapData.nodes.length > 0 ? (
+              <ForceGraph2D
+                ref={graphRef as React.MutableRefObject<ForceGraphMethods<NodeObject<MapNode>> | undefined>}
+                graphData={processedData || mapData}
+                nodeCanvasObject={nodeCanvasObject}
+                nodePointerAreaPaint={(node: NodeObject<MapNode>, color: string, ctx: CanvasRenderingContext2D) => {
+                  const n = node as GraphNode;
+                  const degree = (n as any).degree || 0;
+                  const nodeR = Math.max(4, Math.min(14, 4 + degree * 0.8));
+                  ctx.beginPath();
+                  ctx.arc(n.x ?? 0, n.y ?? 0, nodeR + 2, 0, 2 * Math.PI);
+                  ctx.fillStyle = color;
+                  ctx.fill();
+                }}
+                linkColor={linkColor as (link: object) => string}
+                linkWidth={0.5}
+                onNodeClick={handleNodeClick}
+                onNodeHover={handleNodeHover}
+                backgroundColor="#0f1419"
+                width={typeof window !== "undefined" ? Math.min(window.innerWidth - 64, 1200) : 900}
+                height={550}
+                cooldownTicks={100}
+                d3AlphaDecay={0.03}
+                d3VelocityDecay={0.3}
+                enableZoomInteraction={true}
+                enablePanInteraction={true}
+              />
+            ) : (
+              <div className="flex items-center justify-center h-[500px]">
                 <p className="text-sm text-muted-foreground">
-                  Building discovery map...
+                  No companies found to display on the map.
                 </p>
               </div>
+            )}
+          </Card>
+
+          <div
+            className="absolute bottom-4 left-4 rounded-lg p-3 text-xs shadow-md z-10"
+            style={{ background: "rgba(15,20,25,0.9)", backdropFilter: "blur(8px)" }}
+            data-testid="map-legend"
+          >
+            <p className="font-semibold text-[11px] mb-2 text-gray-300 uppercase tracking-wider">Clusters</p>
+            <div className="flex flex-col gap-1.5">
+              {Object.entries(CLUSTER_COLORS).map(([label, color]) => (
+                <div key={label} className="flex items-center gap-2">
+                  <span
+                    className="inline-block w-3 h-3 rounded-full flex-shrink-0"
+                    style={{ background: color }}
+                  />
+                  <span className="text-gray-400">{label}</span>
+                </div>
+              ))}
             </div>
-          ) : mapData && mapData.nodes.length > 0 ? (
-            <ForceGraph2D
-              ref={graphRef as React.MutableRefObject<ForceGraphMethods<NodeObject<MapNode>> | undefined>}
-              graphData={mapData}
-              nodeCanvasObject={nodeCanvasObject}
-              nodePointerAreaPaint={(node: NodeObject<MapNode>, color: string, ctx: CanvasRenderingContext2D) => {
-                const n = node as GraphNode;
-                const nodeR = Math.max(5, 3 + (n.moatTags?.length || 0) + (n.themeTags?.length || 0));
-                ctx.beginPath();
-                ctx.arc(n.x ?? 0, n.y ?? 0, nodeR + 2, 0, 2 * Math.PI);
-                ctx.fillStyle = color;
-                ctx.fill();
-              }}
-              linkColor={linkColor as (link: object) => string}
-              linkWidth={0.5}
-              onNodeClick={handleNodeClick}
-              onNodeHover={handleNodeHover}
-              backgroundColor="#0f1419"
-              width={typeof window !== "undefined" ? Math.min(window.innerWidth - 64, 1200) : 900}
-              height={550}
-              cooldownTicks={100}
-              d3AlphaDecay={0.03}
-              d3VelocityDecay={0.3}
-              enableZoomInteraction={true}
-              enablePanInteraction={true}
-            />
-          ) : (
-            <div className="flex items-center justify-center h-[500px]">
-              <p className="text-sm text-muted-foreground">
-                No companies found to display on the map.
-              </p>
-            </div>
-          )}
-        </Card>
+          </div>
+        </div>
 
         {hoveredNode && mapData && (
           <div className="mt-3 text-xs text-muted-foreground" data-testid="text-hovered-info">
