@@ -445,7 +445,7 @@ export default function StockPage() {
 
         {viewState === "success" && summaryData && (
           <div className="mx-auto max-w-7xl px-4 py-4 sm:py-12 sm:px-6 lg:px-8" data-active-ticker={ticker}>
-            <TickerContextCard ticker={ticker} currentStage={currentStage} />
+            {currentStage === 1 && <TickerContextCard ticker={ticker} currentStage={currentStage} />}
             <div className="sm:sticky sm:top-0 sm:z-50 mb-8 sm:bg-background sm:-mx-6 sm:px-6 sm:py-2 lg:-mx-8 lg:px-8">
               <StickyTickerBar
                 ticker={ticker}
