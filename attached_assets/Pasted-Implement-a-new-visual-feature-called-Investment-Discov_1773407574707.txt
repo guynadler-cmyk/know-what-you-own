@@ -1,0 +1,276 @@
+Implement a new visual feature called "Investment Discovery Map".
+
+Goal:
+Create an interactive force-directed graph that shows how companies relate to each other based on their investment themes and moats. This map should include every company in the database and allow users to visually explore relationships between businesses.
+
+--------------------------------
+FEATURE OVERVIEW
+--------------------------------
+
+Add a new page:
+
+/discover/map
+
+This page renders an interactive force-directed graph where:
+
+• Each node = one company
+• Node color = company theme cluster
+• Edges = similarity between companies
+• Clicking a node opens the stock page
+
+The graph should support:
+
+• Zoom
+• Pan
+• Hover highlight
+• Click navigation
+• Search company
+
+--------------------------------
+DATA SOURCE
+--------------------------------
+
+Use the existing database table:
+
+company_discovery_index
+
+Fields used:
+
+symbol
+company_name
+moat_tags
+theme_tags
+
+Fetch all companies from this table.
+
+--------------------------------
+SIMILARITY ALGORITHM
+--------------------------------
+
+Compute similarity between companies using tags only.
+
+Similarity score:
+
+similarity =
+(0.6 * tag_overlap_score) +
+(0.4 * jaccard_similarity)
+
+Where:
+
+tag_overlap_score =
+intersection(theme_tags + moat_tags) / max(tag_count)
+
+jaccard_similarity =
+intersection / union
+
+Only create an edge if:
+
+similarity > 0.65
+
+--------------------------------
+CLUSTER ASSIGNMENT
+--------------------------------
+
+Assign each company to a cluster based on its dominant theme tag.
+
+Example mapping:
+
+AI Infrastructure
+Cloud Platforms
+Cybersecurity
+Data Platforms
+Enterprise SaaS
+Semiconductors
+
+Cluster determines node color.
+
+--------------------------------
+BACKEND IMPLEMENTATION
+--------------------------------
+
+Create a new API endpoint:
+
+/api/discover/map
+
+File:
+server/routes.ts
+
+Steps:
+
+1. Query all companies from company_discovery_index
+2. Compute similarity between each pair
+3. Generate graph nodes and links
+
+Return:
+
+{
+  nodes: [
+    {
+      id: "NVDA",
+      name: "NVIDIA",
+      group: "AI Infrastructure"
+    }
+  ],
+  links: [
+    {
+      source: "NVDA",
+      target: "AMD",
+      weight: 0.82
+    }
+  ]
+}
+
+Performance limits:
+
+Maximum nodes: 300
+Only include edges with similarity > 0.65
+Limit each node to top 10 strongest edges.
+
+--------------------------------
+FRONTEND GRAPH PAGE
+--------------------------------
+
+Create new file:
+
+client/src/pages/DiscoverMapPage.tsx
+
+Install graph library:
+
+react-force-graph-2d
+
+Use:
+
+ForceGraph2D
+
+Fetch graph data from:
+
+/api/discover/map
+
+--------------------------------
+GRAPH BEHAVIOR
+--------------------------------
+
+Each company appears as a node.
+
+Node properties:
+
+label = company name
+color = cluster group
+
+Edges connect related companies.
+
+Hover behavior:
+
+• Highlight connected nodes
+• Fade all unrelated nodes
+
+Click behavior:
+
+navigate to
+
+/stocks/:ticker
+
+Example:
+
+/stocks/NVDA
+
+--------------------------------
+SEARCH FEATURE
+--------------------------------
+
+Add a search input at the top right.
+
+Users can search by:
+
+company name
+ticker
+
+When a match is found:
+
+• center graph on that node
+• zoom in slightly
+
+--------------------------------
+FOCUS PARAMETER
+--------------------------------
+
+Support query param:
+
+/discover/map?focus=NVDA
+
+When page loads:
+
+center graph on that company.
+
+--------------------------------
+STOCK PAGE INTEGRATION
+--------------------------------
+
+Add a button to the stock analysis page.
+
+File:
+
+TickerContextCard.tsx
+
+Add button:
+
+"Explore Investment Map"
+
+Click opens:
+
+/discover/map?focus=<ticker>
+
+--------------------------------
+DISCOVER PAGE ENTRY
+--------------------------------
+
+Add a button to DiscoverPage:
+
+"Open Investment Discovery Map"
+
+This navigates to:
+
+/discover/map
+
+--------------------------------
+GRAPH UI DESIGN
+--------------------------------
+
+Title:
+
+Investment Discovery Map
+
+Subtitle:
+
+Explore clusters of companies with similar business models and strategic advantages.
+
+Include a legend showing cluster colors:
+
+AI Infrastructure
+Cloud Platforms
+Cybersecurity
+Data Platforms
+Enterprise SaaS
+Semiconductors
+
+--------------------------------
+PERFORMANCE
+--------------------------------
+
+Graph should render using Canvas (not WebGL).
+
+Limit nodes to 300 for performance.
+
+--------------------------------
+RESULT
+--------------------------------
+
+Users can:
+
+Explore the investment ecosystem visually
+
+Click NVIDIA → see connected companies like AMD, TSMC, Broadcom
+
+Search a company and jump directly to its cluster.
+
+The feature transforms the Discover experience from a simple screener into a visual AI-powered investment discovery tool.
