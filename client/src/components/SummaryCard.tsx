@@ -1117,24 +1117,26 @@ export function SummaryCard({
           collapsed={isMobile ? mobileExpandedSection !== 'businessOverview' : undefined}
           onToggle={isMobile ? () => toggleMobileSection('businessOverview') : undefined}
         >
-          {/* products grid — 2 cols, more breathing room */}
-          <div className="grid grid-cols-2 gap-3 mb-4">
+          {/* products grid — 2 cols, horizontal card layout */}
+          <div className="grid grid-cols-2 gap-2.5 mb-4">
             {products.map((product, i) => {
               const Icon = product.icon;
               return (
                 <div
                   key={i}
-                  className="rounded-lg p-4 border flex flex-col gap-2"
+                  className="rounded-lg p-3 border flex items-start gap-3"
                   style={{ background: cream, borderColor: border }}
                 >
                   <div
-                    className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0"
+                    className="w-7 h-7 rounded-md flex items-center justify-center flex-shrink-0 mt-0.5"
                     style={{ background: 'var(--lp-teal-ghost)' }}
                   >
-                    <Icon className="h-4 w-4" style={{ color: 'var(--lp-teal-brand)' }} />
+                    <Icon className="h-3.5 w-3.5" style={{ color: 'var(--lp-teal-brand)' }} />
                   </div>
-                  <p className="text-xs font-semibold leading-snug" style={{ color: 'var(--lp-ink)' }}>{product.name}</p>
-                  <p className="text-[11px] leading-relaxed" style={{ color: 'var(--lp-ink-light)' }}>{product.description}</p>
+                  <div className="min-w-0">
+                    <p className="text-xs font-semibold leading-snug mb-0.5" style={{ color: 'var(--lp-ink)' }}>{product.name}</p>
+                    <p className="text-[10px] leading-snug" style={{ color: 'var(--lp-ink-light)' }}>{product.description}</p>
+                  </div>
                 </div>
               );
             })}
