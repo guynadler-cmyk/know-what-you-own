@@ -486,10 +486,12 @@ export default function DiscoverPage() {
     const params = new URLSearchParams(window.location.search);
     const themes = params.get("themes");
     const moatsParam = params.get("moats");
+    const tagsParam = params.get("tags");
     const origin = params.get("origin");
     const name = params.get("name");
 
     const tags: string[] = [];
+    if (tagsParam) tags.push(...tagsParam.split(",").map((t) => t.trim()).filter(Boolean));
     if (themes) tags.push(...themes.split(",").map((t) => t.trim()).filter(Boolean));
     if (moatsParam) tags.push(...moatsParam.split(",").map((t) => t.trim()).filter(Boolean));
     const uniqueTags = [...new Set(tags)];

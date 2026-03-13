@@ -1,5 +1,4 @@
-import { Badge } from "@/components/ui/badge";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 
 interface TagWithTooltipProps {
   name: string;
@@ -17,19 +16,22 @@ export function TagWithTooltip({
   getThemeBadgeClasses 
 }: TagWithTooltipProps) {
   return (
-    <Popover>
-      <PopoverTrigger asChild>
-        <button
-          className={`text-sm px-3 py-1 cursor-pointer border rounded-md ${getThemeBadgeClasses(emphasis)}`}
+    <Tooltip>
+      <TooltipTrigger asChild>
+        <a
+          href={`/discover?tags=${encodeURIComponent(name)}`}
+          target="_blank"
+          rel="noopener noreferrer"
+          className={`text-sm px-3 py-1 cursor-pointer border rounded-md inline-block ${getThemeBadgeClasses(emphasis)}`}
           data-testid={testId}
-          aria-label={`${name}. Click for explanation.`}
+          aria-label={`${name}. Click to discover similar companies.`}
         >
           {name}
-        </button>
-      </PopoverTrigger>
-      <PopoverContent className="max-w-xs p-3 text-sm" side="top">
+        </a>
+      </TooltipTrigger>
+      <TooltipContent className="max-w-xs p-3 text-sm" side="top">
         <p>{explanation}</p>
-      </PopoverContent>
-    </Popover>
+      </TooltipContent>
+    </Tooltip>
   );
 }

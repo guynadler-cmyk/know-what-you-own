@@ -267,13 +267,8 @@ function DiscoveryBuilder({ investmentThemes, moats, ticker, companyName }: Disc
 
   const handleShowResults = () => {
     const tags = basketTags.length > 0 ? basketTags : allTags;
-    const themeNames = investmentThemes?.map((t) => t.name) || [];
-    const moatNames = moats?.map((m) => m.name) || [];
-    const selectedThemes = tags.filter((t) => themeNames.includes(t));
-    const selectedMoats = tags.filter((t) => moatNames.includes(t));
     const params = new URLSearchParams();
-    if (selectedThemes.length > 0) params.set("themes", selectedThemes.join(","));
-    if (selectedMoats.length > 0) params.set("moats", selectedMoats.join(","));
+    if (tags.length > 0) params.set("tags", tags.join(","));
     params.set("origin", ticker);
     params.set("name", companyName);
     window.open(`/discover?${params.toString()}`, "_blank");
@@ -749,10 +744,11 @@ export function SummaryCard({
               className="gap-1.5"
               onClick={() => {
                 const params = new URLSearchParams();
-                const themeNames = investmentThemes?.map((t) => t.name).join(",");
-                const moatNames = moats?.map((m) => m.name).join(",");
-                if (themeNames) params.set("themes", themeNames);
-                if (moatNames) params.set("moats", moatNames);
+                const allTagNames = [
+                  ...(investmentThemes?.map((t) => t.name) || []),
+                  ...(moats?.map((m) => m.name) || []),
+                ];
+                if (allTagNames.length > 0) params.set("tags", allTagNames.join(","));
                 params.set("origin", ticker);
                 params.set("name", companyName);
                 window.open(`/discover?${params.toString()}`, "_blank");
