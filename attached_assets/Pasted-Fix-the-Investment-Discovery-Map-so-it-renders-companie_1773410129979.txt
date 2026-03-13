@@ -1,0 +1,228 @@
+Fix the Investment Discovery Map so it renders companies instead of showing:
+
+"No companies found to display on the map."
+
+The problem is the backend /api/discover/map endpoint is returning an empty nodes array.
+
+We must ensure companies are always returned even if similarity links are empty.
+
+--------------------------------------------------
+
+STEP 1 — FIX BACKEND QUERY
+
+File:
+server/routes.ts
+
+Inside /api/discover/map route, fetch companies from ai_business_analysis.
+
+Use this query:
+
+const rows = await db.execute(sql`
+  SELECT
+    ticker,
+    company_name,
+    result->'moats' AS moats,
+    result->'investmentThemes' AS themes,
+    unavailable
+  FROM ai_business_analysis
+`);
+
+Add debug logging:
+
+console.log("DISCOVERY MAP raw rows:", rows.length);
+
+--------------------------------------------------
+
+STEP 2 — FIX UNAVAILABLE FILTER
+
+Do NOT remove rows unless unavailable is explicitly true.
+
+Replace any filter like:
+
+if(row.unavailable === "true")
+
+with:
+
+if (row.unavailable === true || row.unavailable === "true") {
+  skipped++;
+  continue;
+}
+
+Rows with NULL unavailable must be INCLUDED.
+
+--------------------------------------------------
+
+STEP 3 — SAFE TAG HANDLING
+
+Tags may be null. Add fallback arrays.
+
+Example:
+
+const moatTags = Array.isArray(row.moats) ? row.moats : [];
+const themeTags = Array.isArray(row.themes) ? row.themes : [];
+
+--------------------------------------------------
+
+STEP 4 — BUILD NODES (ALWAYS)
+
+Nodes must be created even if there are no edges.
+
+const nodes = rows.map(r => ({
+  id: r.ticker,
+  name: r.company_name,
+  group: determineCluster(r.themes || [])
+}));
+
+Add log:
+
+console.log("DISCOVERY MAP nodes:", nodes.length);
+
+--------------------------------------------------
+
+STEP 5 — CLUSTER COLORS (MATCH DESIGN)
+
+Clusters must match the UI screenshot.
+
+Cluster rules:
+
+AI Infrastructure
+Cloud Platforms
+Cybersecurity
+Data Platforms
+Enterprise SaaS
+Semiconductors
+
+Example function:
+
+function determineCluster(themes) {
+
+  const t = themes.map(x => x.toLowerCase());
+
+  if (t.includes("ai infrastructure")) return "AI Infrastructure";
+  if (t.includes("cloud")) return "Cloud Platforms";
+  if (t.includes("cybersecurity")) return "Cybersecurity";
+  if (t.includes("data")) return "Data Platforms";
+  if (t.includes("enterprise")) return "Enterprise SaaS";
+  if (t.includes("semiconductor")) return "Semiconductors";
+
+  return "Other";
+}
+
+--------------------------------------------------
+
+STEP 6 — SIMILARITY ALGORITHM
+
+Compute tag similarity between companies.
+
+Similarity =
+60% tag overlap
+40% Jaccard similarity
+
+Example:
+
+function similarity(a,b){
+
+ const tagsA = [...a.moatTags,...a.themeTags];
+ const tagsB = [...b.moatTags,...b.themeTags];
+
+ const intersection = tagsA.filter(x=>tagsB.includes(x));
+
+ const union = new Set([...tagsA,...tagsB]);
+
+ return intersection.length / union.size;
+}
+
+--------------------------------------------------
+
+STEP 7 — BUILD LINKS
+
+const links = [];
+
+for(let i=0;i<rows.length;i++){
+ for(let j=i+1;j<rows.length;j++){
+
+   const score = similarity(rows[i],rows[j]);
+
+   if(score > 0.65){
+
+     links.push({
+       source: rows[i].ticker,
+       target: rows[j].ticker,
+       value: score
+     });
+
+   }
+ }
+}
+
+console.log("DISCOVERY MAP links:", links.length);
+
+--------------------------------------------------
+
+STEP 8 — LIMIT GRAPH SIZE
+
+Return only top nodes for performance.
+
+res.json({
+ nodes: nodes.slice(0,300),
+ links: links.slice(0,2000)
+});
+
+IMPORTANT:
+Nodes must ALWAYS be returned even if links are empty.
+
+--------------------------------------------------
+
+STEP 9 — FRONTEND FIX
+
+File:
+client/src/pages/DiscoverMapPage.tsx
+
+Ensure ForceGraph renders nodes even if links are empty.
+
+<ForceGraph2D
+ graphData={{
+   nodes: mapData.nodes,
+   links: mapData.links ?? []
+ }}
+/>
+
+--------------------------------------------------
+
+STEP 10 — RESULT
+
+The Investment Discovery Map should display companies like:
+
+NVDA
+AMD
+TSMC
+MSFT
+GOOG
+ORCL
+AMZN
+CRWD
+SNOW
+MDB
+
+Clusters should appear:
+
+🟣 AI Infrastructure
+🔵 Cloud Platforms
+🟠 Cybersecurity
+🟢 Data Platforms
+🟡 Enterprise SaaS
+🟤 Semiconductors
+
+Nodes should float even if similarity links are minimal.
+
+--------------------------------------------------
+
+EXPECTED CONSOLE OUTPUT
+
+DISCOVERY MAP raw rows: 120
+DISCOVERY MAP nodes: 120
+DISCOVERY MAP links: 450
+
+The UI should no longer display:
+
+"No companies found to display on the map."
