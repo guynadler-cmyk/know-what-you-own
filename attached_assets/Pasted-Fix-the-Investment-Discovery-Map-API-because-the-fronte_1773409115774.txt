@@ -1,0 +1,136 @@
+Fix the Investment Discovery Map API because the frontend shows:
+
+"No companies found to display on the map."
+
+This means /api/discover/map is returning empty nodes.
+
+--------------------------------
+STEP 1 — VERIFY DATABASE QUERY
+--------------------------------
+
+In server/routes.ts inside /api/discover/map:
+
+Fetch companies from the discovery table.
+
+Example:
+
+const companies = await db
+  .select()
+  .from(companyDiscoveryIndex);
+
+Add a debug log:
+
+console.log("DISCOVERY MAP companies:", companies.length);
+
+If zero companies are returned, check the table name and schema import.
+
+--------------------------------
+STEP 2 — ALWAYS RETURN NODES
+--------------------------------
+
+Even if similarity edges are empty, the map should still render company nodes.
+
+Generate nodes like this:
+
+const nodes = companies.map(c => ({
+  id: c.symbol,
+  name: c.companyName,
+  group: determineCluster(c.themeTags)
+}));
+
+--------------------------------
+STEP 3 — SAFE TAG HANDLING
+--------------------------------
+
+Some rows may have null tags.
+
+Fix with fallback:
+
+const themeTags = c.themeTags || [];
+const moatTags = c.moatTags || [];
+
+--------------------------------
+STEP 4 — SIMILARITY COMPUTATION
+--------------------------------
+
+Only compute links if both companies have tags.
+
+If similarity > 0.65 create link.
+
+But DO NOT filter nodes.
+
+Example:
+
+const links = [];
+
+for (let i = 0; i < companies.length; i++) {
+  for (let j = i + 1; j < companies.length; j++) {
+
+    const sim = computeSimilarity(companies[i], companies[j]);
+
+    if (sim > 0.65) {
+      links.push({
+        source: companies[i].symbol,
+        target: companies[j].symbol,
+        weight: sim
+      });
+    }
+  }
+}
+
+--------------------------------
+STEP 5 — LIMIT GRAPH SIZE
+--------------------------------
+
+Return:
+
+{
+  nodes: nodes.slice(0,300),
+  links: links.slice(0,2000)
+}
+
+--------------------------------
+STEP 6 — API RESPONSE
+--------------------------------
+
+Return:
+
+res.json({
+  nodes,
+  links
+});
+
+--------------------------------
+STEP 7 — FRONTEND FALLBACK
+--------------------------------
+
+If links are empty but nodes exist, still render the graph.
+
+ForceGraph2D should display floating nodes.
+
+--------------------------------
+EXPECTED RESULT
+--------------------------------
+
+The map should render companies like:
+
+NVDA
+AMD
+TSMC
+GOOG
+MSFT
+ORCL
+
+Even if edges are limited.
+
+Console log should show:
+
+DISCOVERY MAP companies: 169
+DISCOVERY MAP nodes: 169
+DISCOVERY MAP links: 420
+
+--------------------------------
+GOAL
+--------------------------------
+
+Never show "No companies found" unless the database truly has zero companies.
