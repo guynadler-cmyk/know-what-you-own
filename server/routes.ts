@@ -1379,6 +1379,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         .from(aiBusinessAnalysis)
         .orderBy(desc(aiBusinessAnalysis.createdAt));
 
+      console.log(`DISCOVERY MAP raw rows: ${rows.length}`);
+
       const seen = new Set<string>();
       const companies: Array<{
         ticker: string;
@@ -1387,22 +1389,32 @@ export async function registerRoutes(app: Express): Promise<Server> {
         themeTags: string[];
       }> = [];
 
+      let skippedUnavailable = 0;
+
       for (const row of rows) {
         const t = row.ticker.toUpperCase();
         if (seen.has(t)) continue;
         seen.add(t);
-        if (row.unavailable === "true") continue;
 
-        const moats: any[] = row.moats || [];
-        const themes: any[] = row.investmentThemes || [];
+        const isUnavailable = row.unavailable != null && String(row.unavailable).toLowerCase() === "true";
+        if (isUnavailable) {
+          skippedUnavailable++;
+          continue;
+        }
+
+        const moats: any[] = Array.isArray(row.moats) ? row.moats : [];
+        const themes: any[] = Array.isArray(row.investmentThemes) ? row.investmentThemes : [];
 
         companies.push({
           ticker: t,
           name: stripLegalSuffix(row.rCompanyName || row.companyName),
-          moatTags: moats.map((m: any) => m.name).filter(Boolean),
-          themeTags: themes.map((th: any) => th.name).filter(Boolean),
+          moatTags: moats.map((m: any) => m?.name).filter(Boolean),
+          themeTags: themes.map((th: any) => th?.name).filter(Boolean),
         });
       }
+
+      console.log(`DISCOVERY MAP skipped unavailable: ${skippedUnavailable}`);
+      console.log(`DISCOVERY MAP companies: ${companies.length}`);
 
       const clusterKeywords: Record<string, string[]> = {
         "AI Infrastructure": ["artificial intelligence", "ai", "machine learning", "deep learning", "neural", "gpu", "accelerat"],
@@ -1446,12 +1458,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       for (let i = 0; i < limited.length; i++) {
         const a = limited[i];
-        const aSet = new Set([...a.moatTags, ...a.themeTags]);
+        const aSet = new Set([...(a.moatTags || []), ...(a.themeTags || [])]);
         const edgesForNode: Array<{ target: string; weight: number }> = [];
 
         for (let j = i + 1; j < limited.length; j++) {
           const b = limited[j];
-          const bSet = new Set([...b.moatTags, ...b.themeTags]);
+          const bSet = new Set([...(b.moatTags || []), ...(b.themeTags || [])]);
           let intersection = 0;
           for (const tag of Array.from(aSet)) {
             if (bSet.has(tag)) intersection++;
@@ -1472,6 +1484,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
           .forEach((e) => links.push({ source: a.ticker, target: e.target, weight: e.weight }));
       }
 
+      // INVARIANT: nodes must always be returned regardless of whether links are empty.
+      // Even if all companies have zero matching tags (empty links), all qualifying
+      // nodes must still appear so the frontend can render floating nodes on the canvas.
+      console.log(`DISCOVERY MAP nodes: ${nodes.length}, links: ${links.length}`);
       res.json({ nodes, links });
     } catch (err: any) {
       console.error("[DISCOVER MAP]", err.message);

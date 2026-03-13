@@ -66,27 +66,28 @@ export default function DiscoverMapPage() {
   const processedData = useMemo(() => {
     if (!mapData) return null;
 
+    const safeLinks = mapData.links ?? [];
     const degreeMap = new Map<string, number>();
-    for (const link of mapData.links) {
+    for (const link of safeLinks) {
       const src = typeof link.source === "string" ? link.source : link.source.id;
       const tgt = typeof link.target === "string" ? link.target : link.target.id;
       degreeMap.set(src, (degreeMap.get(src) || 0) + 1);
       degreeMap.set(tgt, (degreeMap.get(tgt) || 0) + 1);
     }
 
-    const nodes = mapData.nodes.map((n) => ({
+    const nodes = (mapData.nodes ?? []).map((n) => ({
       ...n,
       degree: degreeMap.get(n.id) || 0,
     }));
 
-    return { nodes, links: mapData.links };
+    return { nodes, links: safeLinks };
   }, [mapData]);
 
   const connectedNodes = useMemo(() => {
     if (!hoveredNode || !mapData) return new Set<string>();
     const connected = new Set<string>();
     connected.add(hoveredNode);
-    for (const link of mapData.links) {
+    for (const link of (mapData.links ?? [])) {
       const sourceId = typeof link.source === "string" ? link.source : link.source.id;
       const targetId = typeof link.target === "string" ? link.target : link.target.id;
       if (sourceId === hoveredNode) connected.add(targetId);
