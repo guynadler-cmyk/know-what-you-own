@@ -32,6 +32,7 @@ import {
   ArrowLeft,
   GripVertical,
   Layers,
+  Info,
 } from "lucide-react";
 import {
   DndContext,
@@ -799,10 +800,59 @@ export default function DiscoverPage() {
             data-testid="text-discover-headline"
           >
             Discover Companies
+            <span
+              style={{
+                fontSize: 10,
+                fontWeight: 500,
+                textTransform: 'uppercase',
+                letterSpacing: '0.06em',
+                background: '#0c4a3a',
+                color: '#c8f0e4',
+                padding: '3px 10px',
+                borderRadius: 20,
+                verticalAlign: 'middle',
+                marginLeft: 10,
+                display: 'inline-block',
+              }}
+              data-testid="badge-early-access"
+            >
+              Early access
+            </span>
           </h1>
           <p className="mt-4 text-lg text-muted-foreground max-w-2xl mx-auto leading-relaxed">
             Filter by competitive moats and investment themes to find companies that match your criteria.
           </p>
+          <div
+            className="mx-auto max-w-xl mt-5"
+            style={{
+              border: '0.5px solid #9FE1CB',
+              background: '#E1F5EE',
+              borderRadius: 10,
+              padding: '10px 16px',
+              display: 'flex',
+              alignItems: 'flex-start',
+              gap: 10,
+              textAlign: 'left',
+            }}
+            data-testid="callout-early-access"
+          >
+            <div
+              className="flex items-center justify-center flex-shrink-0"
+              style={{ width: 18, height: 18, borderRadius: '50%', background: '#0c4a3a', marginTop: 2 }}
+            >
+              <Info style={{ width: 11, height: 11, color: '#fff' }} />
+            </div>
+            <p style={{ fontSize: '12.5px', color: '#04342C', lineHeight: 1.55, margin: 0 }}>
+              This feature is in early access. We're actively improving the discovery engine — tag coverage, accuracy, and filtering are works in progress. Some companies may be missing or incomplete.{' '}
+              <a
+                href="mailto:feedback@restnvest.com"
+                style={{ color: '#04342C', textDecoration: 'underline' }}
+                data-testid="link-send-feedback"
+              >
+                Send feedback →
+              </a>
+            </p>
+          </div>
           <div className="mt-6 flex flex-wrap items-center justify-center gap-3">
             <Button
               size="lg"

@@ -34,7 +34,15 @@ export function TagWithTooltip({
     wasDraggingRef.current = true;
   }
 
-  const baseClasses = `text-[11px] px-2.5 py-1 cursor-pointer border rounded-md inline-flex items-center gap-1 transition-transform hover:-translate-y-[1px] ${getThemeBadgeClasses(emphasis)}`;
+  const lowStyle: React.CSSProperties = emphasis === "low" ? {
+    background: 'var(--color-background-secondary, #f5f5f5)',
+    color: 'var(--color-text-secondary, #666)',
+    borderColor: 'var(--color-border-tertiary, rgba(42,140,133,0.12))',
+    borderWidth: '0.5px',
+  } : {};
+
+  const baseClasses = `cursor-pointer rounded-full inline-flex items-center transition-transform hover:-translate-y-[1px] ${getThemeBadgeClasses(emphasis)}`;
+  const tagStyle: React.CSSProperties = { padding: '4px 12px', fontSize: '11.5px', fontWeight: 500, ...lowStyle };
 
   if (draggable) {
     return (
@@ -43,7 +51,7 @@ export function TagWithTooltip({
           <span
             ref={setNodeRef}
             className={baseClasses}
-            style={{ opacity: isDragging ? 0.4 : 1, touchAction: 'none' }}
+            style={{ ...tagStyle, opacity: isDragging ? 0.4 : 1, touchAction: 'none' }}
             data-testid={testId}
             aria-label={`${name}. Drag to Discovery Builder or click to discover similar companies.`}
             onClick={(e) => {
@@ -57,7 +65,6 @@ export function TagWithTooltip({
             {...listeners}
             {...attributes}
           >
-            <GripVertical className="h-2.5 w-2.5 opacity-40 flex-shrink-0" />
             {name}
           </span>
         </TooltipTrigger>
@@ -76,6 +83,7 @@ export function TagWithTooltip({
           target="_blank"
           rel="noopener noreferrer"
           className={baseClasses}
+          style={tagStyle}
           data-testid={testId}
           aria-label={`${name}. Click to discover similar companies.`}
         >
