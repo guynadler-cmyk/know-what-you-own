@@ -1,7 +1,7 @@
 import { Card } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
 import { Brain, TrendingUp, HelpCircle, CircleDot, CheckCircle, AlertTriangle, XCircle } from "lucide-react";
-import type { ValuationQuadrantData, ValuationSignalStrength } from "./ValuationExplorer";
+import type { ValuationQuadrantData, ValuationSignalStrength } from "@/lib/valuationData";
 
 interface CoachingSummaryProps {
   quadrantData: ValuationQuadrantData[];

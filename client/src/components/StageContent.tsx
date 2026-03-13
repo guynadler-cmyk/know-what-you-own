@@ -1,21 +1,32 @@
-import { useMemo, useState } from "react";
+import { lazy, Suspense, useMemo, useState } from "react";
 import { SummaryCard } from "@/components/SummaryCard";
 import { ComingSoonStage } from "@/components/ComingSoonStage";
-import { ManageStage } from "@/components/ManageStage";
-import { TimingStage } from "@/components/TimingStage";
-import { StrategyStage } from "@/components/StrategyStage";
-import { QuadrantExplorer, generateQuadrantData } from "@/components/QuadrantExplorer";
-import { FinancialScorecard } from "@/components/FinancialScorecard";
-import { ValuationExplorer, VALUATION_QUADRANT_DATA, type ValuationQuadrantData } from "@/components/ValuationExplorer";
-import { ValuationScorecard } from "@/components/ValuationScorecard";
+import { generateQuadrantData } from "@/lib/quadrantData";
+import { VALUATION_QUADRANT_DATA, type ValuationQuadrantData } from "@/lib/valuationData";
 import { AlertDialog, AlertDialogAction, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Smartphone, Laptop, Tablet, Watch, Car, Zap, Battery, Server, Cloud, Gamepad2, Package, Code, Globe, Music, Video, Tv, Search, Cpu, FileX2 } from "lucide-react";
 import { CompanySummary, FinancialMetrics, BalanceSheetMetrics } from "@shared/schema";
+
+const ManageStage = lazy(() => import("@/components/ManageStage").then(m => ({ default: m.ManageStage })));
+const TimingStage = lazy(() => import("@/components/TimingStage").then(m => ({ default: m.TimingStage })));
+const StrategyStage = lazy(() => import("@/components/StrategyStage").then(m => ({ default: m.StrategyStage })));
+const QuadrantExplorer = lazy(() => import("@/components/QuadrantExplorer").then(m => ({ default: m.QuadrantExplorer })));
+const FinancialScorecard = lazy(() => import("@/components/FinancialScorecard").then(m => ({ default: m.FinancialScorecard })));
+const ValuationExplorer = lazy(() => import("@/components/ValuationExplorer").then(m => ({ default: m.ValuationExplorer })));
+const ValuationScorecard = lazy(() => import("@/components/ValuationScorecard").then(m => ({ default: m.ValuationScorecard })));
 
 const iconMap: Record<string, any> = {
   Smartphone, Laptop, Tablet, Watch, Car, Zap, Battery, Server, 
   Cloud, Gamepad2, Package, Code, Globe, Music, Video, Tv, Search, Cpu
 };
+
+function StageFallback() {
+  return (
+    <div className="flex items-center justify-center py-16">
+      <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
+    </div>
+  );
+}
 
 interface StageContentProps {
   stage: number;
@@ -138,7 +149,6 @@ function ComingUpNext({
         </div>
       </div>
 
-      {/* Stage-complete banner — matches Stage 1's SummaryCard approach */}
       <div
         className="mt-6 relative flex flex-col sm:flex-row sm:items-center justify-between gap-4 sm:gap-6 rounded-xl px-5 sm:px-7 py-5 overflow-hidden"
         style={{ background: tealDeep }}
@@ -200,14 +210,16 @@ export function StageContent({ stage, summaryData, financialMetrics, balanceShee
       : undefined;
 
     return (
-      <StrategyStage 
-        ticker={ticker}
-        companyName={summaryData?.companyName}
-        homepage={summaryData?.metadata?.homepage}
-        fundamentalsScore={fundamentalsScore}
-        valuationLabel={valuationLabel}
-        onStageChange={onStageChange}
-      />
+      <Suspense fallback={<StageFallback />}>
+        <StrategyStage 
+          ticker={ticker}
+          companyName={summaryData?.companyName}
+          homepage={summaryData?.metadata?.homepage}
+          fundamentalsScore={fundamentalsScore}
+          valuationLabel={valuationLabel}
+          onStageChange={onStageChange}
+        />
+      </Suspense>
     );
   }
 
@@ -218,11 +230,13 @@ export function StageContent({ stage, summaryData, financialMetrics, balanceShee
       : undefined;
 
     return (
-      <ManageStage
-        ticker={ticker}
-        companyName={summaryData?.companyName}
-        fundamentalsScore={fundamentalsScore}
-      />
+      <Suspense fallback={<StageFallback />}>
+        <ManageStage
+          ticker={ticker}
+          companyName={summaryData?.companyName}
+          fundamentalsScore={fundamentalsScore}
+        />
+      </Suspense>
     );
   }
 
@@ -273,13 +287,17 @@ export function StageContent({ stage, summaryData, financialMetrics, balanceShee
           sub="We'll guide you through revenue, earnings, cash flow, debt, and reinvestment — to help you decide if this is a business worth holding long term."
         />
 
-        <QuadrantExplorer 
-          financialMetrics={financialMetrics}
-          balanceSheetMetrics={balanceSheetMetrics}
-          ticker={ticker}
-        />
+        <Suspense fallback={<StageFallback />}>
+          <QuadrantExplorer 
+            financialMetrics={financialMetrics}
+            balanceSheetMetrics={balanceSheetMetrics}
+            ticker={ticker}
+          />
+        </Suspense>
         
-        <FinancialScorecard quadrantData={quadrantData} />
+        <Suspense fallback={<StageFallback />}>
+          <FinancialScorecard quadrantData={quadrantData} />
+        </Suspense>
 
         <ComingUpNext
           completedStageNumber={2}
@@ -325,9 +343,13 @@ export function StageContent({ stage, summaryData, financialMetrics, balanceShee
           sub="Sensible investing isn't about finding the cheapest stock — it's about knowing whether the price, expectations, and potential returns make sense together."
         />
 
-        <ValuationExplorer ticker={ticker} onQuadrantDataChange={setValuationQuadrantData} onSubSectionClick={onSubSectionClick} />
+        <Suspense fallback={<StageFallback />}>
+          <ValuationExplorer ticker={ticker} onQuadrantDataChange={setValuationQuadrantData} onSubSectionClick={onSubSectionClick} />
+        </Suspense>
         
-        <ValuationScorecard quadrantData={valuationQuadrantData} />
+        <Suspense fallback={<StageFallback />}>
+          <ValuationScorecard quadrantData={valuationQuadrantData} />
+        </Suspense>
 
         <ComingUpNext
           completedStageNumber={3}
@@ -372,12 +394,14 @@ export function StageContent({ stage, summaryData, financialMetrics, balanceShee
           sub="This isn't about predicting the future — it's about understanding whether current market conditions suggest patience or action."
         />
 
-        <TimingStage 
-          ticker={ticker}
-          companyName={summaryData?.companyName}
-          homepage={summaryData?.metadata?.homepage}
-          onSubSectionClick={onSubSectionClick}
-        />
+        <Suspense fallback={<StageFallback />}>
+          <TimingStage 
+            ticker={ticker}
+            companyName={summaryData?.companyName}
+            homepage={summaryData?.metadata?.homepage}
+            onSubSectionClick={onSubSectionClick}
+          />
+        </Suspense>
 
         <ComingUpNext
           completedStageNumber={4}

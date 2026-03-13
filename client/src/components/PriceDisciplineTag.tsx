@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { cn } from "@/lib/utils";
 import { Compass, ChevronDown, ChevronUp } from "lucide-react";
-import type { ValuationQuadrantData } from "./ValuationExplorer";
+import type { ValuationQuadrantData } from "@/lib/valuationData";
 
 interface PriceDisciplineTagProps {
   quadrant: ValuationQuadrantData;

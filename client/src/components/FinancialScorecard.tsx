@@ -1,5 +1,5 @@
 import { cn } from "@/lib/utils";
-import type { SignalStrength, QuadrantData } from "@/components/QuadrantExplorer";
+import type { SignalStrength, QuadrantData } from "@/lib/quadrantData";
 
 function getStrengthConfig(strength: SignalStrength) {
   switch (strength) {

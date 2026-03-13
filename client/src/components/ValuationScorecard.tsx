@@ -1,5 +1,5 @@
 import { cn } from "@/lib/utils";
-import type { ValuationSignalStrength, ValuationQuadrantData } from "./ValuationExplorer";
+import type { ValuationSignalStrength, ValuationQuadrantData } from "@/lib/valuationData";
 
 function getStrengthConfig(strength: ValuationSignalStrength) {
   switch (strength) {
