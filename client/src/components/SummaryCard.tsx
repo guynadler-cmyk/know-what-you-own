@@ -1117,26 +1117,19 @@ export function SummaryCard({
           collapsed={isMobile ? mobileExpandedSection !== 'businessOverview' : undefined}
           onToggle={isMobile ? () => toggleMobileSection('businessOverview') : undefined}
         >
-          {/* products grid — 2 cols, horizontal card layout */}
+          {/* products grid — clean vertical tiles */}
           <div className="grid grid-cols-2 gap-2.5 mb-4">
             {products.map((product, i) => {
               const Icon = product.icon;
               return (
                 <div
                   key={i}
-                  className="rounded-lg p-3 border flex items-start gap-3"
+                  className="rounded-lg p-3 border"
                   style={{ background: cream, borderColor: border }}
                 >
-                  <div
-                    className="w-7 h-7 rounded-md flex items-center justify-center flex-shrink-0 mt-0.5"
-                    style={{ background: 'var(--lp-teal-ghost)' }}
-                  >
-                    <Icon className="h-3.5 w-3.5" style={{ color: 'var(--lp-teal-brand)' }} />
-                  </div>
-                  <div className="min-w-0">
-                    <p className="text-xs font-semibold leading-snug mb-0.5" style={{ color: 'var(--lp-ink)' }}>{product.name}</p>
-                    <p className="text-[10px] leading-snug" style={{ color: 'var(--lp-ink-light)' }}>{product.description}</p>
-                  </div>
+                  <Icon className="h-5 w-5 mb-2" style={{ color: 'var(--lp-teal-brand)' }} />
+                  <p className="text-[11px] font-semibold leading-snug mb-1" style={{ color: 'var(--lp-ink)' }}>{product.name}</p>
+                  <p className="text-[10px] leading-snug line-clamp-2" style={{ color: 'var(--lp-ink-light)' }}>{product.description}</p>
                 </div>
               );
             })}
